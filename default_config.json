@@ -1,0 +1,56 @@
+{
+  "width": 350,
+  "height": 350,
+  "seed": 42,
+  "num_holes": 18,
+  "total_par": 72,
+  "scale_ratio": 3.0,
+  "terrain": {
+    "octaves": 6,
+    "persistence": 0.5,
+    "scale": 120.0,
+    "elevation_min": 58,
+    "elevation_max": 82,
+    "base_elevation": 64,
+    "central_flat_radius": 45,
+    "central_flat_transition": 25,
+    "ns_gradient_strength": 0.15
+  },
+  "paving": {
+    "target_coverage": 0.92,
+    "par3_weight": 1.0,
+    "par4_weight": 1.5,
+    "par5_weight": 2.0,
+    "elongation": 1.8,
+    "growth_slope_penalty": 2.0,
+    "growth_noise": 0.3,
+    "tile_size": 5,
+    "water_level": 61.0
+  },
+  "clubhouse": {
+    "width": 45,
+    "height": 35,
+    "flat_radius_margin": 40,
+    "flat_transition": 25,
+    "practice_length": 70,
+    "practice_width": 25,
+    "putting_radius": 6
+  },
+  "routing": {
+    "par_distribution": [4, 3, 5, 4, 3, 4, 5, 3, 4, 4, 5, 3, 4, 4, 5, 3, 4, 4],
+    "par3_range": [50, 70],
+    "par4_range": [110, 150],
+    "par5_range": [170, 195],
+    "fairway_width_par3": 9,
+    "fairway_width_par4": 12,
+    "fairway_width_par5": 13,
+    "green_radius_min": 6,
+    "green_radius_max": 10,
+    "tee_width": 10,
+    "tee_height": 6,
+    "max_slope": 0.15,
+    "collision_margin": 0,
+    "max_retries": 3,
+    "segment_length": 35
+  }
+}
