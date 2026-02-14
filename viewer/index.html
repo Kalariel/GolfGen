@@ -43,6 +43,15 @@
       <button id="btn-nums" class="active" onclick="toggle('nums')">Numeros</button>
     </div>
 
+    <h2>ZOOM</h2>
+    <div class="zoom-controls">
+      <button onclick="zoomOut()" title="Dezoom">&minus;</button>
+      <span id="zoom-level">200%</span>
+      <button onclick="zoomIn()" title="Zoom">+</button>
+      <button onclick="resetView()" title="Recentrer" class="reset-btn">Reset</button>
+    </div>
+    <div class="zoom-hint">Molette = zoom &middot; Glisser = deplacer</div>
+
     <div id="hole-tables">
       <div class="info-box">
         Charger un fichier JSON pour voir les trous.<br><br>

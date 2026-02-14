@@ -44,10 +44,10 @@ def run_pipeline(config: CourseConfig, stage: str, output: Path) -> None:
     paver = PavingGenerator(config, heightmap)
     owner, seeds, cell_sizes = paver.pave()
     pars = config.routing.par_distribution[:config.num_holes]
-    exporter.add_paving(owner, seeds, pars)
     print(f"     ({time.time() - t0:.1f}s)")
 
     if stage_idx < 2:
+        exporter.add_paving(owner, seeds, pars)
         exporter.export(output)
         return
 
@@ -65,22 +65,21 @@ def run_pipeline(config: CourseConfig, stage: str, output: Path) -> None:
           f"Putting green: r={clubhouse_data['putting_green']['radius']}  "
           f"({time.time() - t0:.1f}s)")
 
+    # Patch paving : zone 18 clubhouse + remplissage orphelines
+    owner = PavingGenerator.patch_owner(
+        owner, heightmap, config.paving.tile_size,
+        config.paving.water_level, clubhouse_data,
+    )
+    exporter.add_paving(owner, seeds, pars)
+
     if stage_idx < 3:
         exporter.export(output)
         return
 
-    # --- Routing ---
-    t0 = time.time()
-    print("4/7  Routing (placement des 18 trous)...")
-    from golfgen.router import LayoutRouter
-    router = LayoutRouter(config, heightmap)
-    clubhouse, holes = router.route()
-    exporter.add_routing(holes)
-    print(f"     {len(holes)} trous places  ({time.time() - t0:.1f}s)")
-
-    if stage_idx < 4:
-        exporter.export(output)
-        return
+    # --- Routing (TODO) ---
+    print("4/7  Routing — pas encore implemente")
+    exporter.export(output)
+    return
 
     # --- Raffinement ---
     t0 = time.time()
@@ -119,7 +118,7 @@ def run_pipeline(config: CourseConfig, stage: str, output: Path) -> None:
     print("7/7  Features (ponts, ruisseaux)...")
     from golfgen.features import FeatureGenerator
     feat_gen = FeatureGenerator(config, heightmap)
-    features = feat_gen.generate(holes, clubhouse)
+    features = feat_gen.generate(holes, clubhouse_data)
     exporter.add_features(features)
     print(f"     Features generees  ({time.time() - t0:.1f}s)")
 

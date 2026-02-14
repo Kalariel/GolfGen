@@ -29,12 +29,14 @@
 - [x] `tests/test_clubhouse.py` — 11 tests (position, adjacence, aplatissement, practice, putting, déterminisme, régression)
 - [x] Tests de régression terrain et paving mis à jour (50 tests passent)
 
-## Phase 4 : Routing (PROCHAINE)
-- [ ] Refaire `golfgen/router.py` de zéro pour consommer le paving + clubhouse
-- [ ] Placement tee/green dans chaque cellule assignée
+## Phase 4 : Routing (PROCHAINE — a refaire de zero)
+- [ ] `golfgen/router.py` — a ecrire de zero (l'ancien a ete supprime)
+- [ ] Enchainement optimal des 18 cellules (2 boucles de 9)
+- [ ] Placement tee/green dans chaque cellule assignee
 - [ ] Waypoints + doglegs terrain-aware
 - [ ] Boucles : trous 1-9 et 10-18 partant/revenant au clubhouse
-- [ ] Tests de régression routing
+- [ ] `tests/test_routing.py` — a ecrire de zero
+- [ ] Integration dans `pipeline.py` (bloc routing actuellement desactive)
 
 ## Phase 5 : Raffinement + Obstacles
 - [ ] `golfgen/refiner.py` — lissage terrain sous les fairways

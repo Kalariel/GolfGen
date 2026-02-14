@@ -269,6 +269,77 @@ class PavingGenerator:
         return result
 
     # ------------------------------------------------------------------
+    # Patch post-clubhouse
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def patch_owner(owner: np.ndarray, heightmap: np.ndarray,
+                    tile_size: int, water_level: float,
+                    clubhouse: dict) -> np.ndarray:
+        """Met a jour le owner apres aplatissement du clubhouse.
+
+        1. Marque les tiles sous le clubhouse/practice/putting comme zone 18.
+        2. Assigne les tiles orphelines (-1 sur terre) au voisin majoritaire.
+        """
+        owner = owner.copy()
+        th, tw = owner.shape
+
+        def mark_rect(rx: int, ry: int, rw: int, rh: int) -> None:
+            tx0 = max(0, rx // tile_size)
+            ty0 = max(0, ry // tile_size)
+            tx1 = min(tw, (rx + rw + tile_size - 1) // tile_size)
+            ty1 = min(th, (ry + rh + tile_size - 1) // tile_size)
+            owner[ty0:ty1, tx0:tx1] = 18
+
+        # Clubhouse rect (x,y = centre)
+        ch_w, ch_h = clubhouse["width"], clubhouse["height"]
+        ch_x, ch_y = clubhouse["x"], clubhouse["y"]
+        mark_rect(ch_x - ch_w // 2, ch_y - ch_h // 2, ch_w, ch_h)
+
+        # Practice range rect (x,y = coin haut-gauche)
+        pr = clubhouse["practice_range"]
+        mark_rect(pr["x"], pr["y"], pr["width"], pr["height"])
+
+        # Putting green circle + couloir vers le clubhouse
+        pg = clubhouse["putting_green"]
+        r = pg["radius"]
+        mark_rect(pg["x"] - r, pg["y"] - r, r * 2, r * 2)
+
+        # Connecter putting au clubhouse (combler le gap)
+        ch_top = ch_y - ch_h // 2
+        ch_bottom = ch_y + ch_h // 2
+        pg_top = pg["y"] - r
+        pg_bottom = pg["y"] + r
+        if pg_bottom < ch_top:      # putting au nord
+            mark_rect(pg["x"] - r, pg_bottom, r * 2, ch_top - pg_bottom)
+        elif pg_top > ch_bottom:    # putting au sud
+            mark_rect(pg["x"] - r, ch_bottom, r * 2, pg_top - ch_bottom)
+
+        # Remplir les tiles orphelines (-1) qui sont maintenant sur terre
+        tile_elev = heightmap[:th * tile_size, :tw * tile_size].reshape(
+            th, tile_size, tw, tile_size
+        ).mean(axis=(1, 3))
+        land_mask = tile_elev >= water_level
+
+        changed = True
+        while changed:
+            changed = False
+            ys, xs = np.where((owner == -1) & land_mask)
+            for y, x in zip(ys, xs):
+                counts: dict[int, int] = {}
+                for ddx, ddy, _ in DIRS_8:
+                    nx, ny = x + ddx, y + ddy
+                    if 0 <= nx < tw and 0 <= ny < th:
+                        n = int(owner[ny, nx])
+                        if n >= 0:
+                            counts[n] = counts.get(n, 0) + 1
+                if counts:
+                    owner[y, x] = max(counts, key=counts.get)
+                    changed = True
+
+        return owner
+
+    # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
 

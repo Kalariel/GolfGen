@@ -64,7 +64,8 @@ tests/
 ├── conftest.py             # Fixtures partagées (config, heightmap, paving_result, clubhouse_result)
 ├── test_terrain.py         # Tests de régression terrain (seed 42)
 ├── test_paving.py          # Tests de régression paving (seed 42)
-└── test_clubhouse.py       # Tests du clubhouse (position, aplatissement, practice, putting)
+├── test_clubhouse.py       # Tests du clubhouse (position, aplatissement, practice, putting)
+└── test_routing.py         # (à écrire — supprimé, routing à refaire de zéro)
 
 output/
 └── course.json             # Fichier généré par le pipeline
@@ -104,7 +105,7 @@ Le JSON contient des couches optionnelles : `terrain`, `paving`, `clubhouse`, `r
 | 1 | terrain | `terrain.py` | OpenSimplex heightmap 350×350 (~7s) | OK |
 | 2 | paving | `paver.py` | Découpage Dijkstra en 18 cellules organiques | OK |
 | 3 | clubhouse | `clubhouse.py` | Placement optimal + aplatissement + practice/putting | OK |
-| 4 | routing | `router.py` | Placement 18 trous (à refaire depuis le paving) | TODO |
+| 4 | routing | `router.py` | Placement 18 trous (à écrire de zéro) | TODO |
 | 5 | hazards | `hazards.py` | Bunkers, eau, ravins | TODO |
 | 6 | vegetation | `vegetation.py` | Forêts, arbres | TODO |
 | 7 | features | `features.py` | Ponts, ruisseaux | TODO |

@@ -13,7 +13,8 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: 'IBM Plex Mono', monospace;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .header {
@@ -51,7 +52,7 @@ body {
 
 .main-container {
   display: flex;
-  min-height: calc(100vh - 65px);
+  height: calc(100vh - 65px);
 }
 
 /* --- Sidebar --- */
@@ -129,6 +130,55 @@ body {
   background: rgba(255,255,255,0.05);
 }
 
+/* Zoom controls */
+.zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0 4px;
+}
+
+.zoom-controls button {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 14px;
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 3px;
+  background: transparent;
+  color: rgba(255,255,255,0.7);
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.zoom-controls button:hover {
+  background: rgba(255,255,255,0.08);
+  color: var(--accent);
+}
+
+.zoom-controls button.reset-btn {
+  font-size: 9px;
+  width: auto;
+  padding: 0 8px;
+}
+
+.zoom-controls span {
+  font-size: 10px;
+  color: var(--accent);
+  min-width: 40px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.zoom-hint {
+  font-size: 9px;
+  color: rgba(255,255,255,0.25);
+  margin-bottom: 8px;
+}
+
 /* Hole table */
 .hole-table {
   width: 100%;
@@ -182,50 +232,32 @@ body {
 /* --- Map area --- */
 .map-area {
   flex: 1;
-  padding: 10px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  overflow: auto;
-}
-
-.map-controls {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 8px;
-  flex-wrap: wrap;
-}
-
-.map-controls button {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 10px;
-  padding: 4px 10px;
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 4px;
-  background: rgba(0,0,0,0.3);
-  color: rgba(255,255,255,0.5);
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.map-controls button.active {
-  background: rgba(78,207,95,0.12);
-  color: var(--accent);
-  border-color: rgba(78,207,95,0.3);
+  overflow: hidden;
+  min-width: 0;
 }
 
 .canvas-wrapper {
+  flex: 1;
   border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 4px;
   overflow: hidden;
   background: #111;
+  min-height: 0;
+}
+
+.canvas-wrapper canvas {
+  display: block;
+  cursor: crosshair;
 }
 
 .coord-display {
-  margin-top: 6px;
+  padding: 4px 10px;
   font-size: 10px;
   color: rgba(255,255,255,0.35);
   font-family: 'IBM Plex Mono', monospace;
+  background: rgba(0,0,0,0.2);
+  border-top: 1px solid rgba(255,255,255,0.05);
 }
 
 /* Tooltip */

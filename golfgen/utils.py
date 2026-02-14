@@ -82,6 +82,30 @@ def direction_label(tee: tuple[float, float],
     return dirs[idx]
 
 
+def convex_hull_2d(points: list[tuple[float, float]]) -> list[tuple[float, float]]:
+    """Enveloppe convexe 2D (Andrew's monotone chain). O(n log n)."""
+    pts = sorted(set(points))
+    if len(pts) <= 2:
+        return pts
+
+    def cross(o, a, b):
+        return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+
+    lower = []
+    for p in pts:
+        while len(lower) >= 2 and cross(lower[-2], lower[-1], p) <= 0:
+            lower.pop()
+        lower.append(p)
+
+    upper = []
+    for p in reversed(pts):
+        while len(upper) >= 2 and cross(upper[-2], upper[-1], p) <= 0:
+            upper.pop()
+        upper.append(p)
+
+    return lower[:-1] + upper[:-1]
+
+
 def gaussian_kernel_2d(size: int, sigma: float) -> np.ndarray:
     """Crée un noyau gaussien 2D normalisé."""
     x = np.arange(size) - size // 2

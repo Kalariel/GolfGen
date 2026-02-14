@@ -48,6 +48,29 @@
 - Sans garde, "terrain" apparaît 2 fois dans pipeline_stages
 - **Solution** : `if "terrain" not in stages` avant append
 
+## Routing (tentative precedente — supprimee)
+
+### Distances bord-a-bord > endpoints de diagonale
+- La diagonale maximale (convex hull) ne donne que 2 points par cellule
+- Deux cellules adjacentes peuvent avoir des endpoints de diagonale tres eloignes (>200 blocs)
+- **Solution identifiee** : matrice de distances bord-a-bord entre toutes les paires de cellules
+- Un tile est "de bord" si un voisin 4-dir appartient a une autre cellule
+
+### L'enchainement des cellules ≠ le placement tee/green
+- Meme avec un enchainement parfait (5 blocs entre cellules adjacentes), les transitions tee/green peuvent etre catastrophiques (>200 blocs)
+- Cause : la diagonale oriente le tee/green sans tenir compte de la cellule precedente/suivante
+- L'enchainement des cellules doit etre resolu AVANT le placement tee/green
+
+### _fix_continuity cascade
+- Deplacer un green pour corriger une transition casse la transition precedente
+- Ne jamais corriger en cascadant des deplacements post-hoc
+- **Lecon** : resoudre le probleme a la source (bon enchainement) plutot que patcher apres
+
+### patch_owner modifie la geometrie des cellules
+- `PavingGenerator.patch_owner()` cree la zone 18 (clubhouse) et reassigne des tiles
+- Les diagnostics DOIVENT utiliser le owner patche pour etre coherents avec le pipeline
+- Erreur courante : tester sans patch_owner et obtenir des resultats differents
+
 ## Tests
 
 ### Fixtures session-scoped pour performance

@@ -82,6 +82,15 @@ class JSONExporter:
                 "tile_count": tile_count,
             })
 
+        # Zone 18 = complexe clubhouse (si presente)
+        ch_tiles = int((owner == 18).sum())
+        if ch_tiles > 0:
+            cells.append({
+                "id": 18,
+                "type": "clubhouse",
+                "tile_count": ch_tiles,
+            })
+
         self.data["paving"] = {
             "tile_size": tile_size,
             "grid_width": tw,

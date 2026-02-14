@@ -1,15 +1,23 @@
 /**
  * Viewer de parcours de golf — consomme le JSON produit par le pipeline Python.
- * Affiche les couches : terrain, routing, obstacles, végétation, features.
+ * Affiche les couches : terrain, routing, obstacles, vegetation, features.
+ * Zoom/pan interactif (molette + glisser).
  */
 
 // === State ===
 let courseData = null;
-let heightmapPixels = null; // Uint8Array décodée
+let heightmapPixels = null; // Uint8Array pour tooltips
+let terrainCache = null;    // OffscreenCanvas terrain 1:1
+let ownerCache = null;      // Int16Array cache paving
 
-const SCALE = 1.15;
-const PAD = 35;
+// Camera
+let camZoom = 2.0;
+let camPanX = 0;
+let camPanY = 0;
+const MIN_ZOOM = 0.5;
+const MAX_ZOOM = 10;
 
+// Layers
 let show = {
   terrain: true,
   paving: true,
@@ -22,6 +30,12 @@ let show = {
 };
 
 let highlightedHole = null;
+
+// Pan state
+let isPanning = false;
+let panStartX = 0, panStartY = 0;
+let panStartCamX = 0, panStartCamY = 0;
+let didDrag = false;
 
 // === Palette Minecraft ===
 const C = {
@@ -43,21 +57,138 @@ const C = {
   flag: '#ff3b3b',
 };
 
-// === Init ===
+// === DOM ===
 const canvas = document.getElementById('map');
 const ctx = canvas.getContext('2d');
 const tooltip = document.getElementById('tooltip');
 const coordsEl = document.getElementById('coords');
 
+// === Init ===
 function init() {
-  // Bouton de chargement
-  const fileInput = document.getElementById('file-input');
-  fileInput.addEventListener('change', handleFileLoad);
+  document.getElementById('file-input').addEventListener('change', handleFileLoad);
 
-  // Essayer de charger automatiquement depuis ../output/course.json
+  // Resize
+  window.addEventListener('resize', resizeCanvas);
+
+  // Zoom/Pan events
+  canvas.addEventListener('wheel', onWheel, { passive: false });
+  canvas.addEventListener('mousedown', onMouseDown);
+  window.addEventListener('mousemove', onMouseMove);
+  window.addEventListener('mouseup', onMouseUp);
+  canvas.addEventListener('mouseleave', onMouseLeave);
+
+  resizeCanvas();
   tryAutoLoad();
 }
 
+function resizeCanvas() {
+  const wrapper = document.querySelector('.canvas-wrapper');
+  const rect = wrapper.getBoundingClientRect();
+  canvas.width = Math.floor(rect.width);
+  canvas.height = Math.floor(rect.height);
+  if (courseData) draw();
+  else showNoData();
+}
+
+// === Camera ===
+function toCanvas(wx, wy) {
+  return [wx * camZoom + camPanX, wy * camZoom + camPanY];
+}
+
+function toWorld(sx, sy) {
+  return [(sx - camPanX) / camZoom, (sy - camPanY) / camZoom];
+}
+
+function centerMap() {
+  if (!courseData) return;
+  const w = courseData.metadata.config.width || 600;
+  const h = courseData.metadata.config.height || 600;
+  camPanX = (canvas.width - w * camZoom) / 2;
+  camPanY = (canvas.height - h * camZoom) / 2;
+}
+
+function resetView() {
+  camZoom = 2.0;
+  centerMap();
+  updateZoomDisplay();
+  draw();
+}
+
+function zoomIn() {
+  zoomAt(canvas.width / 2, canvas.height / 2, 1.3);
+}
+
+function zoomOut() {
+  zoomAt(canvas.width / 2, canvas.height / 2, 0.77);
+}
+
+function zoomAt(sx, sy, factor) {
+  const [wx, wy] = toWorld(sx, sy);
+  camZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, camZoom * factor));
+  camPanX = sx - wx * camZoom;
+  camPanY = sy - wy * camZoom;
+  updateZoomDisplay();
+  draw();
+}
+
+function updateZoomDisplay() {
+  const el = document.getElementById('zoom-level');
+  if (el) el.textContent = `${Math.round(camZoom * 100)}%`;
+}
+
+// === Zoom/Pan Events ===
+function onWheel(e) {
+  e.preventDefault();
+  const factor = e.deltaY > 0 ? 0.9 : 1.111;
+  const rect = canvas.getBoundingClientRect();
+  zoomAt(e.clientX - rect.left, e.clientY - rect.top, factor);
+}
+
+function onMouseDown(e) {
+  if (e.button === 0) {
+    isPanning = true;
+    didDrag = false;
+    panStartX = e.clientX;
+    panStartY = e.clientY;
+    panStartCamX = camPanX;
+    panStartCamY = camPanY;
+    canvas.style.cursor = 'grabbing';
+  }
+}
+
+function onMouseMove(e) {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+
+  if (isPanning) {
+    const dx = e.clientX - panStartX;
+    const dy = e.clientY - panStartY;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) didDrag = true;
+    camPanX = panStartCamX + dx;
+    camPanY = panStartCamY + dy;
+    draw();
+    updateCoords(mx, my);
+    return;
+  }
+
+  // Tooltip / highlight
+  updateTooltip(e.clientX, e.clientY, mx, my);
+}
+
+function onMouseUp() {
+  if (isPanning) {
+    isPanning = false;
+    canvas.style.cursor = 'crosshair';
+  }
+}
+
+function onMouseLeave() {
+  tooltip.style.display = 'none';
+  if (highlightedHole !== null) setHighlight(null);
+}
+
+// === File Loading ===
 async function tryAutoLoad() {
   try {
     const resp = await fetch('../output/course.json');
@@ -67,7 +198,6 @@ async function tryAutoLoad() {
       document.getElementById('filename').textContent = 'course.json (auto)';
     }
   } catch (e) {
-    // Pas de fichier auto — l'utilisateur devra charger manuellement
     showNoData();
   }
 }
@@ -75,7 +205,6 @@ async function tryAutoLoad() {
 function handleFileLoad(e) {
   const file = e.target.files[0];
   if (!file) return;
-
   const reader = new FileReader();
   reader.onload = (ev) => {
     try {
@@ -91,32 +220,74 @@ function handleFileLoad(e) {
 
 function loadCourseData(json) {
   courseData = json;
+  heightmapPixels = null;
+  terrainCache = null;
+  ownerCache = null;
 
-  // Décoder la heightmap si présente
+  // Decode heightmap
   if (json.terrain && json.terrain.elevation) {
-    const elev = json.terrain.elevation;
-    const b64 = elev.data;
+    const b64 = json.terrain.elevation.data;
     const binary = atob(b64);
     heightmapPixels = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) {
       heightmapPixels[i] = binary.charCodeAt(i);
     }
+    buildTerrainCache();
   }
 
-  // Mettre à jour le header
+  // Cache owner
+  if (json.paving && json.paving.owner) {
+    const b64 = json.paving.owner.data;
+    const binary = atob(b64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    ownerCache = new Int16Array(bytes.buffer);
+  }
+
   updateHeader();
-
-  // Activer/désactiver les boutons de couche
   updateLayerButtons();
-
-  // Remplir la sidebar
   updateSidebar();
 
-  // Configurer le canvas et dessiner
-  setupCanvas();
+  centerMap();
+  updateZoomDisplay();
   draw();
 }
 
+function buildTerrainCache() {
+  const w = courseData.terrain.width;
+  const h = courseData.terrain.height;
+  const elev = courseData.terrain.elevation;
+  const elevMin = elev.min_elevation;
+  const elevMax = elev.max_elevation;
+  const elevRange = elevMax - elevMin;
+  const baseElev = courseData.metadata.config.base_elevation || 64;
+
+  const oc = document.createElement('canvas');
+  oc.width = w;
+  oc.height = h;
+  const octx = oc.getContext('2d');
+  const imageData = octx.createImageData(w, h);
+  const pixels = imageData.data;
+
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const idx = y * w + x;
+      const val = heightmapPixels[idx];
+      const realElev = elevMin + (val / 255) * elevRange;
+      const [r, g, b] = elevationToColor(realElev, baseElev);
+      const pidx = idx * 4;
+      pixels[pidx] = r;
+      pixels[pidx + 1] = g;
+      pixels[pidx + 2] = b;
+      pixels[pidx + 3] = 255;
+    }
+  }
+
+  octx.putImageData(imageData, 0, 0);
+  terrainCache = oc;
+}
+
+// === Header / Sidebar ===
 function updateHeader() {
   const meta = courseData.metadata;
   document.getElementById('stat-seed').textContent = meta.seed;
@@ -128,7 +299,6 @@ function updateHeader() {
   if (courseData.routing) {
     const holes = courseData.routing.holes;
     const totalPar = holes.reduce((s, h) => s + h.par, 0);
-    const totalBlocks = holes.reduce((s, h) => s + h.blocks, 0);
     document.getElementById('stat-holes').textContent =
       `${holes.length} trous, par ${totalPar}`;
   } else {
@@ -157,13 +327,11 @@ function updateSidebar() {
   tableContainer.innerHTML = '';
 
   if (!courseData.routing) {
-    tableContainer.innerHTML = '<div class="info-box">Pas de routing — exécuter le pipeline avec --stage routing</div>';
+    tableContainer.innerHTML = '<div class="info-box">Pas de routing — executer le pipeline avec --stage routing</div>';
     return;
   }
 
   const holes = courseData.routing.holes;
-
-  // Table Aller (1-9)
   const frontHoles = holes.filter(h => h.id <= 9);
   const backHoles = holes.filter(h => h.id > 9);
 
@@ -177,7 +345,6 @@ function updateSidebar() {
 
 function createHoleTable(title, holes) {
   const container = document.createElement('div');
-
   const h2 = document.createElement('h2');
   h2.textContent = title;
   container.appendChild(h2);
@@ -209,7 +376,6 @@ function createHoleTable(title, holes) {
     tbody.appendChild(row);
   });
 
-  // Total
   const totalRow = document.createElement('tr');
   totalRow.className = 'total-row';
   totalRow.innerHTML = `<td></td><td>${totalPar}</td><td>${totalBlocks}</td><td>${Math.round(totalBlocks * (courseData.metadata.config.scale_ratio || 3))}</td><td></td>`;
@@ -228,80 +394,32 @@ function setHighlight(id) {
   draw();
 }
 
-// === Canvas ===
-function setupCanvas() {
-  const w = courseData.metadata.config.width || 600;
-  const h = courseData.metadata.config.height || 600;
-  canvas.width = w * SCALE + PAD * 2;
-  canvas.height = h * SCALE + PAD * 2;
-}
-
-function toCanvas(cx, cy) {
-  return [PAD + cx * SCALE, PAD + cy * SCALE];
-}
-
-// === Dessin ===
+// === Drawing ===
 function draw() {
   if (!courseData) return;
-
-  const w = courseData.metadata.config.width || 600;
-  const h = courseData.metadata.config.height || 600;
 
   ctx.fillStyle = '#1a2410';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  if (show.terrain) drawTerrain(w, h);
-  if (show.paving && courseData.paving) drawPaving(w, h);
+  if (show.terrain) drawTerrain();
+  if (show.paving && courseData.paving) drawPaving();
   if (show.hazards && courseData.hazards) drawHazards();
   if (show.vegetation && courseData.vegetation) drawVegetation();
   if (show.routing && courseData.routing) drawRouting();
   if (show.features && courseData.features) drawFeatures();
-  if (show.grid) drawGrid(w, h);
+  if (show.grid) drawGrid();
 }
 
-function drawTerrain(w, h) {
-  if (!heightmapPixels) return;
-
-  const elev = courseData.terrain.elevation;
-  const elevMin = elev.min_elevation;
-  const elevMax = elev.max_elevation;
-  const elevRange = elevMax - elevMin;
-  const baseElev = courseData.metadata.config.base_elevation || 64;
-
-  // Dessiner pixel par pixel avec un dégradé de verts
-  // Optimisation : utiliser ImageData
-  const imgW = Math.ceil(w * SCALE);
-  const imgH = Math.ceil(h * SCALE);
-  const imageData = ctx.createImageData(imgW, imgH);
-  const pixels = imageData.data;
-
-  for (let py = 0; py < imgH; py++) {
-    const by = Math.floor(py / SCALE);
-    if (by >= h) continue;
-    for (let px = 0; px < imgW; px++) {
-      const bx = Math.floor(px / SCALE);
-      if (bx >= w) continue;
-
-      const idx = by * w + bx;
-      const val = heightmapPixels[idx]; // 0-255
-      const realElev = elevMin + (val / 255) * elevRange;
-
-      // Couleur basée sur l'élévation
-      const [r, g, b] = elevationToColor(realElev, baseElev);
-
-      const pidx = (py * imgW + px) * 4;
-      pixels[pidx] = r;
-      pixels[pidx + 1] = g;
-      pixels[pidx + 2] = b;
-      pixels[pidx + 3] = 255;
-    }
-  }
-
-  ctx.putImageData(imageData, PAD, PAD);
+function drawTerrain() {
+  if (!terrainCache) return;
+  const [dx, dy] = toCanvas(0, 0);
+  const dw = terrainCache.width * camZoom;
+  const dh = terrainCache.height * camZoom;
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(terrainCache, dx, dy, dw, dh);
 }
 
 function elevationToColor(elev, baseElev) {
-  // Sous l'eau (< baseElev - 2)
   if (elev < baseElev - 2) {
     const depth = Math.max(0, Math.min(1, (baseElev - 2 - elev) / 6));
     return [
@@ -310,25 +428,19 @@ function elevationToColor(elev, baseElev) {
       Math.floor(130 + depth * 30)
     ];
   }
-
-  // Plaine basse (baseElev - 2 à baseElev)
   if (elev < baseElev) {
     return [35, 95, 55];
   }
-
-  // Terrain normal (baseElev à baseElev + 10)
   const t = Math.min(1, Math.max(0, (elev - baseElev) / 18));
-
-  // Dégradé : vert foncé (bas) → vert clair (moyen) → brun-vert (haut)
   if (t < 0.5) {
-    const s = t * 2; // 0-1 dans la première moitié
+    const s = t * 2;
     return [
       Math.floor(30 + s * 25),
       Math.floor(70 + s * 50),
       Math.floor(28 + s * 15)
     ];
   } else {
-    const s = (t - 0.5) * 2; // 0-1 dans la seconde moitié
+    const s = (t - 0.5) * 2;
     return [
       Math.floor(55 + s * 40),
       Math.floor(120 - s * 20),
@@ -337,43 +449,46 @@ function elevationToColor(elev, baseElev) {
   }
 }
 
-function drawPaving(w, h) {
+function drawPaving() {
+  if (!ownerCache) return;
   const pav = courseData.paving;
   const ts = pav.tile_size;
   const gw = pav.grid_width;
   const gh = pav.grid_height;
 
-  // Decoder owner base64 int16
-  const b64 = pav.owner.data;
-  const binary = atob(b64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  const owner = new Int16Array(bytes.buffer);
+  // Viewport culling
+  const [visX0, visY0] = toWorld(0, 0);
+  const [visX1, visY1] = toWorld(canvas.width, canvas.height);
+  const tx0 = Math.max(0, Math.floor(visX0 / ts));
+  const ty0 = Math.max(0, Math.floor(visY0 / ts));
+  const tx1 = Math.min(gw - 1, Math.ceil(visX1 / ts));
+  const ty1 = Math.min(gh - 1, Math.ceil(visY1 / ts));
 
-  const nCells = pav.cells.length;
-
-  // Dessiner chaque tile avec couleur HSL
-  for (let ty = 0; ty < gh; ty++) {
-    for (let tx = 0; tx < gw; tx++) {
-      const cellId = owner[ty * gw + tx];
+  for (let ty = ty0; ty <= ty1; ty++) {
+    for (let tx = tx0; tx <= tx1; tx++) {
+      const cellId = ownerCache[ty * gw + tx];
       if (cellId < 0) continue;
 
-      const hue = (cellId * 20) % 360;
       const bx = tx * ts;
       const by = ty * ts;
       const [cx, cy] = toCanvas(bx, by);
-      const sw = ts * SCALE;
-      const sh = ts * SCALE;
+      const sw = ts * camZoom;
+      const sh = ts * camZoom;
 
-      ctx.fillStyle = `hsla(${hue}, 60%, 50%, 0.4)`;
+      if (cellId === 18) {
+        ctx.fillStyle = 'rgba(122, 107, 80, 0.5)';
+      } else {
+        const hue = (cellId * 20) % 360;
+        ctx.fillStyle = `hsla(${hue}, 60%, 50%, 0.4)`;
+      }
       ctx.fillRect(cx, cy, sw, sh);
 
-      // Contour : trait sombre aux frontieres (4 cotes + detection diagonale)
+      // Border
       ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
       ctx.lineWidth = 1;
 
-      const right = tx < gw - 1 ? owner[ty * gw + tx + 1] : -2;
-      const bottom = ty < gh - 1 ? owner[(ty + 1) * gw + tx] : -2;
+      const right = tx < gw - 1 ? ownerCache[ty * gw + tx + 1] : -2;
+      const bottom = ty < gh - 1 ? ownerCache[(ty + 1) * gw + tx] : -2;
 
       if (right !== cellId) {
         ctx.beginPath();
@@ -390,13 +505,15 @@ function drawPaving(w, h) {
     }
   }
 
-  // Labels des seeds
+  // Labels
+  const labelSize = Math.round(Math.max(7, Math.min(18, 9 * camZoom / 1.5)));
   pav.cells.forEach(cell => {
+    if (cell.type === 'clubhouse') return;
     const bx = cell.seed_tx * ts + ts / 2;
     const by = cell.seed_ty * ts + ts / 2;
     const [cx, cy] = toCanvas(bx, by);
 
-    ctx.font = 'bold 9px Silkscreen';
+    ctx.font = `bold ${labelSize}px Silkscreen`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
@@ -411,10 +528,8 @@ function drawPaving(w, h) {
 function drawRouting() {
   const routing = courseData.routing;
   const holes = routing.holes;
-  // Clubhouse : nouvelle section top-level ou fallback routing.clubhouse
   const ch = courseData.clubhouse || routing.clubhouse;
 
-  // Fairways, greens, tees
   holes.forEach(h => {
     const hl = highlightedHole === h.id;
     const alpha = highlightedHole !== null && !hl ? 0.25 : 1;
@@ -431,7 +546,7 @@ function drawRouting() {
       ctx.shadowColor = isBack ? '#4a9ed6' : '#4ecf5f';
       ctx.shadowBlur = 16;
       ctx.strokeStyle = isBack ? 'rgba(74,158,214,0.35)' : 'rgba(78,207,95,0.35)';
-      ctx.lineWidth = fw * SCALE + 10;
+      ctx.lineWidth = fw * camZoom + 10;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
       ctx.beginPath();
@@ -448,7 +563,7 @@ function drawRouting() {
 
     // Fairway
     ctx.strokeStyle = baseColor;
-    ctx.lineWidth = fw * SCALE;
+    ctx.lineWidth = fw * camZoom;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.beginPath();
@@ -464,39 +579,44 @@ function drawRouting() {
     // Green
     const [gx, gy] = toCanvas(h.green.x, h.green.y);
     ctx.beginPath();
-    ctx.arc(gx, gy, gr * SCALE, 0, Math.PI * 2);
+    ctx.arc(gx, gy, gr * camZoom, 0, Math.PI * 2);
     ctx.fillStyle = greenColor;
     ctx.fill();
 
     // Flag
+    const flagScale = Math.max(0.6, Math.min(2, camZoom / 1.5));
     ctx.fillStyle = C.flag;
-    ctx.fillRect(gx - 1, gy - 7, 2, 9);
+    ctx.fillRect(gx - 1 * flagScale, gy - 7 * flagScale, 2 * flagScale, 9 * flagScale);
     ctx.beginPath();
-    ctx.moveTo(gx + 1, gy - 7);
-    ctx.lineTo(gx + 5, gy - 4.5);
-    ctx.lineTo(gx + 1, gy - 2);
+    ctx.moveTo(gx + 1 * flagScale, gy - 7 * flagScale);
+    ctx.lineTo(gx + 5 * flagScale, gy - 4.5 * flagScale);
+    ctx.lineTo(gx + 1 * flagScale, gy - 2 * flagScale);
     ctx.fill();
 
     // Tee
     const [tx, ty] = toCanvas(h.tee.x, h.tee.y);
     ctx.fillStyle = C.tee;
-    ctx.fillRect(tx - 4 * SCALE, ty - 2.5 * SCALE, 8 * SCALE, 5 * SCALE);
+    ctx.fillRect(tx - 4 * camZoom, ty - 2.5 * camZoom, 8 * camZoom, 5 * camZoom);
 
     ctx.globalAlpha = 1;
 
-    // Numéros
+    // Numeros
     if (show.nums) {
       const mi = Math.floor(wps.length / 2);
       const [nx, ny] = toCanvas(wps[mi].x, wps[mi].y);
 
-      ctx.font = hl ? 'bold 12px Silkscreen' : '10px Silkscreen';
+      const numSize = Math.round(Math.max(8, Math.min(20, (hl ? 12 : 10) * camZoom / 1.5)));
+      ctx.font = hl ? `bold ${numSize}px Silkscreen` : `${numSize}px Silkscreen`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
 
       const numText = String(h.id);
       const tw = ctx.measureText(numText).width;
-      const pillW = tw + 10, pillH = 15;
-      const pillX = nx - pillW / 2, pillY = ny - pillH / 2 - 13;
+      const pillPad = Math.max(6, 10 * camZoom / 2);
+      const pillH = numSize + 5;
+      const pillW = tw + pillPad * 2;
+      const pillX = nx - pillW / 2;
+      const pillY = ny - pillH / 2 - numSize;
 
       ctx.fillStyle = hl
         ? (isBack ? 'rgba(74,158,214,0.9)' : 'rgba(78,207,95,0.9)')
@@ -512,15 +632,17 @@ function drawRouting() {
       }
 
       ctx.fillStyle = hl ? '#000' : (isBack ? 'rgba(140,200,255,0.9)' : 'rgba(200,255,200,0.9)');
-      ctx.fillText(numText, nx, ny - 13);
+      ctx.fillText(numText, nx, pillY + pillH / 2);
     }
   });
 
-  // Clubhouse
+  // Clubhouse (ch.x, ch.y = centre)
   if (ch) {
-    const [chx, chy] = toCanvas(ch.x, ch.y);
-    const chw = ch.width * SCALE;
-    const chh = ch.height * SCALE;
+    const [chCx, chCy] = toCanvas(ch.x, ch.y);
+    const chw = ch.width * camZoom;
+    const chh = ch.height * camZoom;
+    const chx = chCx - chw / 2;
+    const chy = chCy - chh / 2;
 
     ctx.fillStyle = 'rgba(0,0,0,0.35)';
     ctx.fillRect(chx + 3, chy + 3, chw, chh);
@@ -534,18 +656,19 @@ function drawRouting() {
     ctx.lineWidth = 1.5;
     ctx.strokeRect(chx, chy, chw, chh);
 
+    const chFontSize = Math.round(Math.max(7, Math.min(14, 9 * camZoom / 1.5)));
     ctx.fillStyle = '#fff';
-    ctx.font = 'bold 9px Silkscreen';
+    ctx.font = `bold ${chFontSize}px Silkscreen`;
     ctx.textAlign = 'center';
-    ctx.fillText('CLUB', chx + chw / 2, chy + chh / 2 - 2);
-    ctx.fillText('HOUSE', chx + chw / 2, chy + chh / 2 + 9);
+    ctx.fillText('CLUB', chCx, chCy - 2);
+    ctx.fillText('HOUSE', chCx, chCy + chFontSize + 1);
 
     // Practice range
     if (ch.practice_range) {
       const pr = ch.practice_range;
       const [px, py] = toCanvas(pr.x, pr.y);
-      const pw = pr.width * SCALE;
-      const ph = pr.height * SCALE;
+      const pw = pr.width * camZoom;
+      const ph = pr.height * camZoom;
 
       ctx.fillStyle = 'rgba(85, 140, 55, 0.4)';
       ctx.fillRect(px, py, pw, ph);
@@ -553,8 +676,9 @@ function drawRouting() {
       ctx.lineWidth = 1;
       ctx.strokeRect(px, py, pw, ph);
 
+      const prFontSize = Math.round(Math.max(6, Math.min(12, 8 * camZoom / 1.5)));
       ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
-      ctx.font = '8px Silkscreen';
+      ctx.font = `${prFontSize}px Silkscreen`;
       ctx.textAlign = 'center';
       ctx.fillText('PRACTICE', px + pw / 2, py + ph / 2 + 3);
     }
@@ -563,7 +687,7 @@ function drawRouting() {
     if (ch.putting_green) {
       const pg = ch.putting_green;
       const [pgx, pgy] = toCanvas(pg.x, pg.y);
-      const pgr = pg.radius * SCALE;
+      const pgr = pg.radius * camZoom;
 
       ctx.fillStyle = 'rgba(61, 189, 78, 0.5)';
       ctx.beginPath();
@@ -573,8 +697,9 @@ function drawRouting() {
       ctx.lineWidth = 1;
       ctx.stroke();
 
+      const pgFontSize = Math.round(Math.max(5, Math.min(10, 7 * camZoom / 1.5)));
       ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-      ctx.font = '7px Silkscreen';
+      ctx.font = `${pgFontSize}px Silkscreen`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('PUTT', pgx, pgy);
@@ -589,8 +714,8 @@ function drawHazards() {
   if (hazards.bunkers) {
     hazards.bunkers.forEach(b => {
       const [bx, by] = toCanvas(b.x, b.y);
-      const rx = (b.radius_x || b.radius || 5) * SCALE;
-      const ry = (b.radius_y || b.radius || 4) * SCALE;
+      const rx = (b.radius_x || b.radius || 5) * camZoom;
+      const ry = (b.radius_y || b.radius || 4) * camZoom;
       ctx.fillStyle = C.sand;
       ctx.beginPath();
       ctx.ellipse(bx, by, rx, ry, b.angle || 0, 0, Math.PI * 2);
@@ -621,15 +746,14 @@ function drawHazards() {
         ctx.stroke();
       } else {
         const [wx, wy] = toCanvas(wb.x, wb.y);
-        const rx = (wb.radius_x || 30) * SCALE;
-        const ry = (wb.radius_y || 20) * SCALE;
+        const rx = (wb.radius_x || 30) * camZoom;
+        const ry = (wb.radius_y || 20) * camZoom;
         ctx.fillStyle = 'rgba(30, 85, 130, 0.75)';
         ctx.beginPath();
         ctx.ellipse(wx, wy, rx, ry, 0, 0, Math.PI * 2);
         ctx.fill();
       }
 
-      // Label
       if (wb.label) {
         const lx = wb.label_x || wb.x;
         const ly = wb.label_y || wb.y;
@@ -646,7 +770,7 @@ function drawHazards() {
     hazards.ravines.forEach(r => {
       if (!r.points || r.points.length < 2) return;
       ctx.strokeStyle = 'rgba(60, 45, 30, 0.55)';
-      ctx.lineWidth = (r.width || 6) * SCALE;
+      ctx.lineWidth = (r.width || 6) * camZoom;
       ctx.lineCap = 'round';
       ctx.beginPath();
       const [sx, sy] = toCanvas(r.points[0].x, r.points[0].y);
@@ -657,9 +781,8 @@ function drawHazards() {
       }
       ctx.stroke();
 
-      // Fond plus sombre
       ctx.strokeStyle = 'rgba(30, 20, 15, 0.5)';
-      ctx.lineWidth = (r.width || 6) * 0.4 * SCALE;
+      ctx.lineWidth = (r.width || 6) * 0.4 * camZoom;
       ctx.beginPath();
       ctx.moveTo(sx, sy);
       for (let i = 1; i < r.points.length; i++) {
@@ -674,7 +797,7 @@ function drawHazards() {
 function drawVegetation() {
   const veg = courseData.vegetation;
 
-  // Forêts denses
+  // Forets denses
   if (veg.dense_forests) {
     let seed = 1337;
     function sR() {
@@ -686,7 +809,7 @@ function drawVegetation() {
       for (let i = 0; i < cl.count; i++) {
         const tx = cl.x + (sR() - 0.5) * cl.spread * 2;
         const ty = cl.y + (sR() - 0.5) * cl.spread * 2;
-        const r = (3.5 + sR() * 4) * SCALE;
+        const r = (3.5 + sR() * 4) * camZoom;
         const [cx, cy] = toCanvas(tx, ty);
 
         ctx.fillStyle = 'rgba(0, 20, 0, 0.4)';
@@ -720,7 +843,7 @@ function drawVegetation() {
       for (let i = 0; i < cl.count; i++) {
         const tx = cl.x + (sRand() - 0.5) * cl.spread * 2;
         const ty = cl.y + (sRand() - 0.5) * cl.spread * 2;
-        const r = (3 + sRand() * 3.5) * SCALE;
+        const r = (3 + sRand() * 3.5) * camZoom;
         const [cx, cy] = toCanvas(tx, ty);
 
         ctx.fillStyle = 'rgba(0, 25, 0, 0.3)';
@@ -753,7 +876,7 @@ function drawFeatures() {
       const [bex, bey] = toCanvas(br.end.x, br.end.y);
 
       ctx.strokeStyle = '#8b7355';
-      ctx.lineWidth = 5 * SCALE;
+      ctx.lineWidth = 5 * camZoom;
       ctx.lineCap = 'round';
       ctx.beginPath();
       ctx.moveTo(bsx, bsy);
@@ -763,8 +886,8 @@ function drawFeatures() {
       ctx.strokeStyle = '#6b5540';
       ctx.lineWidth = 1;
       const angle = Math.atan2(bey - bsy, bex - bsx);
-      const perpX = Math.sin(angle) * 3 * SCALE;
-      const perpY = -Math.cos(angle) * 3 * SCALE;
+      const perpX = Math.sin(angle) * 3 * camZoom;
+      const perpY = -Math.cos(angle) * 3 * camZoom;
 
       ctx.beginPath();
       ctx.moveTo(bsx + perpX, bsy + perpY);
@@ -782,7 +905,7 @@ function drawFeatures() {
     feat.streams.forEach(s => {
       if (!s.points || s.points.length < 2) return;
       ctx.strokeStyle = 'rgba(60, 140, 190, 0.45)';
-      ctx.lineWidth = 2.5;
+      ctx.lineWidth = 2.5 * camZoom;
       ctx.lineCap = 'round';
       ctx.beginPath();
       const [sx, sy] = toCanvas(s.points[0].x, s.points[0].y);
@@ -795,12 +918,12 @@ function drawFeatures() {
     });
   }
 
-  // Practice range
+  // Practice range (from features)
   if (feat.practice_range) {
     const pr = feat.practice_range;
     const [px, py] = toCanvas(pr.x, pr.y);
-    const pw = pr.width * SCALE;
-    const ph = pr.height * SCALE;
+    const pw = pr.width * camZoom;
+    const ph = pr.height * camZoom;
 
     ctx.fillStyle = 'rgba(85, 140, 55, 0.4)';
     ctx.fillRect(px, py, pw, ph);
@@ -815,49 +938,77 @@ function drawFeatures() {
   }
 }
 
-function drawGrid(w, h) {
+function drawGrid() {
+  if (!courseData) return;
+  const w = courseData.metadata.config.width || 600;
+  const h = courseData.metadata.config.height || 600;
+
+  // Adaptive grid spacing
+  const steps = [10, 25, 50, 100, 200, 500];
+  let step = 50;
+  for (const s of steps) {
+    if (s * camZoom >= 50) { step = s; break; }
+  }
+
   ctx.strokeStyle = 'rgba(255,255,255,0.05)';
   ctx.lineWidth = 0.5;
-  for (let x = 0; x <= w; x += 50) {
+
+  const [gridX0, gridY0] = toCanvas(0, 0);
+  const [gridX1, gridY1] = toCanvas(w, h);
+
+  // Vertical lines
+  for (let x = 0; x <= w; x += step) {
     const [cx] = toCanvas(x, 0);
+    if (cx < -1 || cx > canvas.width + 1) continue;
     ctx.beginPath();
-    ctx.moveTo(cx, PAD);
-    ctx.lineTo(cx, PAD + h * SCALE);
+    ctx.moveTo(cx, gridY0);
+    ctx.lineTo(cx, gridY1);
     ctx.stroke();
   }
-  for (let y = 0; y <= h; y += 50) {
+
+  // Horizontal lines
+  for (let y = 0; y <= h; y += step) {
     const [, cy] = toCanvas(0, y);
+    if (cy < -1 || cy > canvas.height + 1) continue;
     ctx.beginPath();
-    ctx.moveTo(PAD, cy);
-    ctx.lineTo(PAD + w * SCALE, cy);
+    ctx.moveTo(gridX0, cy);
+    ctx.lineTo(gridX1, cy);
     ctx.stroke();
   }
 
   // Labels
+  const labelSize = Math.max(6, Math.min(10, 7 * camZoom / 1.5));
   ctx.fillStyle = 'rgba(255,255,255,0.12)';
-  ctx.font = '7px IBM Plex Mono';
+  ctx.font = `${Math.round(labelSize)}px IBM Plex Mono`;
+
+  // X labels (top)
   ctx.textAlign = 'center';
-  for (let x = 0; x <= w; x += 100) {
-    ctx.fillText(x, ...toCanvas(x, -8));
+  const labelStep = step < 50 ? step * 2 : step;
+  for (let x = 0; x <= w; x += labelStep) {
+    const [cx, cy] = toCanvas(x, 0);
+    if (cx < 20 || cx > canvas.width - 20) continue;
+    ctx.fillText(x, cx, cy - 6);
   }
+
+  // Y labels (left)
   ctx.textAlign = 'right';
-  for (let y = 0; y <= h; y += 100) {
-    const [, cy] = toCanvas(0, y);
-    ctx.fillText(y, PAD - 6, cy + 3);
+  for (let y = 0; y <= h; y += labelStep) {
+    const [cx, cy] = toCanvas(0, y);
+    if (cy < 10 || cy > canvas.height - 10) continue;
+    ctx.fillText(y, cx - 6, cy + 3);
   }
 
   // Nord
-  ctx.fillStyle = 'rgba(255,255,255,0.25)';
-  ctx.font = 'bold 12px Silkscreen';
-  ctx.textAlign = 'center';
-  ctx.fillText('N', ...toCanvas(w - 20, 15));
+  const [nfx, nfy] = toCanvas(w - 20, 15);
+  if (nfx > 0 && nfx < canvas.width && nfy > 0 && nfy < canvas.height) {
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+    ctx.font = 'bold 12px Silkscreen';
+    ctx.textAlign = 'center';
+    ctx.fillText('N', nfx, nfy);
+  }
 }
 
 function showNoData() {
-  const w = 600, h = 600;
-  canvas.width = w * SCALE + PAD * 2;
-  canvas.height = h * SCALE + PAD * 2;
-
   ctx.fillStyle = '#1a2410';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -871,71 +1022,78 @@ function showNoData() {
   ctx.fillText('python pipeline.py --stage terrain', canvas.width / 2, canvas.height / 2 + 30);
 }
 
-// === Tooltip ===
-canvas.addEventListener('mousemove', (e) => {
+// === Tooltip / Coords ===
+function updateCoords(mx, my) {
   if (!courseData) return;
-
-  const rect = canvas.getBoundingClientRect();
-  const mx = e.clientX - rect.left;
-  const my = e.clientY - rect.top;
-  const bx = Math.round((mx - PAD) / SCALE);
-  const by = Math.round((my - PAD) / SCALE);
-
+  const [bx, by] = toWorld(mx, my);
   const w = courseData.metadata.config.width || 600;
   const h = courseData.metadata.config.height || 600;
+  const ix = Math.round(bx);
+  const iy = Math.round(by);
 
-  if (bx >= 0 && bx < w && by >= 0 && by < h) {
-    let info = `Bloc (${bx}, ${by})`;
-
-    // Élévation
+  if (ix >= 0 && ix < w && iy >= 0 && iy < h) {
+    let info = `Bloc (${ix}, ${iy})`;
     if (heightmapPixels) {
-      const idx = by * w + bx;
+      const idx = iy * w + ix;
       const val = heightmapPixels[idx];
       const elev = courseData.terrain.elevation;
       const realElev = elev.min_elevation + (val / 255) * (elev.max_elevation - elev.min_elevation);
       info += ` — Y=${realElev.toFixed(1)}`;
     }
-
-    coordsEl.textContent = info;
-
-    // Hit test trou
-    if (courseData.routing) {
-      const hit = getHoleAt(bx, by);
-      if (hit) {
-        tooltip.style.display = 'block';
-        tooltip.style.left = (e.clientX + 12) + 'px';
-        tooltip.style.top = (e.clientY + 12) + 'px';
-        const meters = Math.round(hit.hole.blocks * (courseData.metadata.config.scale_ratio || 3));
-        tooltip.innerHTML = `<div class="tt-title">Trou ${hit.hole.id} — Par ${hit.hole.par}</div>${hit.hole.blocks} blocs (${meters}m)<br><span style="color:rgba(255,255,255,0.4)">${hit.zone}</span>`;
-        setHighlight(hit.hole.id);
-        return;
+    if (ownerCache && courseData.paving) {
+      const ts = courseData.paving.tile_size;
+      const gw = courseData.paving.grid_width;
+      const ttx = Math.floor(ix / ts);
+      const tty = Math.floor(iy / ts);
+      if (ttx >= 0 && ttx < gw && tty >= 0 && tty < courseData.paving.grid_height) {
+        const cellId = ownerCache[tty * gw + ttx];
+        info += ` — Cell ${cellId}`;
       }
     }
-
-    tooltip.style.display = 'none';
-    if (highlightedHole !== null) setHighlight(null);
+    coordsEl.textContent = info;
   } else {
-    tooltip.style.display = 'none';
     coordsEl.textContent = 'Survole la carte pour voir les coordonnees bloc';
-    if (highlightedHole !== null) setHighlight(null);
   }
-});
+}
 
-canvas.addEventListener('mouseleave', () => {
+function updateTooltip(clientX, clientY, mx, my) {
+  if (!courseData) {
+    tooltip.style.display = 'none';
+    return;
+  }
+
+  const [bx, by] = toWorld(mx, my);
+  const w = courseData.metadata.config.width || 600;
+  const h = courseData.metadata.config.height || 600;
+  const ix = Math.round(bx);
+  const iy = Math.round(by);
+
+  updateCoords(mx, my);
+
+  if (ix >= 0 && ix < w && iy >= 0 && iy < h && courseData.routing) {
+    const hit = getHoleAt(bx, by);
+    if (hit) {
+      tooltip.style.display = 'block';
+      tooltip.style.left = (clientX + 12) + 'px';
+      tooltip.style.top = (clientY + 12) + 'px';
+      const meters = Math.round(hit.hole.blocks * (courseData.metadata.config.scale_ratio || 3));
+      tooltip.innerHTML = `<div class="tt-title">Trou ${hit.hole.id} — Par ${hit.hole.par}</div>${hit.hole.blocks} blocs (${meters}m)<br><span style="color:rgba(255,255,255,0.4)">${hit.zone}</span>`;
+      setHighlight(hit.hole.id);
+      return;
+    }
+  }
+
   tooltip.style.display = 'none';
   if (highlightedHole !== null) setHighlight(null);
-});
+}
 
 function getHoleAt(bx, by) {
   if (!courseData.routing) return null;
   for (const h of courseData.routing.holes) {
-    // Green
     if (Math.hypot(bx - h.green.x, by - h.green.y) < (h.green.radius || 8) + 2)
       return { hole: h, zone: 'green' };
-    // Tee
     if (Math.hypot(bx - h.tee.x, by - h.tee.y) < 6)
       return { hole: h, zone: 'tee' };
-    // Fairway
     const wps = h.waypoints;
     for (let i = 0; i < wps.length - 1; i++) {
       if (pointToSegDist(bx, by, wps[i].x, wps[i].y, wps[i + 1].x, wps[i + 1].y)
