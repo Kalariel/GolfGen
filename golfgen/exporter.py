@@ -5,7 +5,7 @@ from __future__ import annotations
 import base64
 import json
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 
@@ -19,7 +19,7 @@ class JSONExporter:
         self.config = config
         self.data: dict[str, Any] = {
             "metadata": {
-                "version": "1.0",
+                "version": "2.0",
                 "seed": config.seed,
                 "config": {
                     "width": config.width,
@@ -40,7 +40,6 @@ class JSONExporter:
         elev_min = float(heightmap.min())
         elev_max = float(heightmap.max())
 
-        # Normaliser en uint8 [0, 255]
         if elev_max - elev_min < 1e-10:
             uint8_data = np.zeros((h, w), dtype=np.uint8)
         else:
@@ -60,83 +59,19 @@ class JSONExporter:
             }
         }
 
-    def add_paving(self, owner: np.ndarray, seeds: list[tuple[int, int]],
-                    pars: list[int]) -> None:
-        """Ajoute les données de paving (cellules Voronoi)."""
-        self.data["metadata"]["pipeline_stages"].append("paving")
-        tile_size = self.config.paving.tile_size
-        th, tw = owner.shape
-
-        # Encoder owner en base64 int16
-        owner_int16 = owner.astype(np.int16)
-        encoded = base64.b64encode(owner_int16.tobytes()).decode('ascii')
-
-        cells = []
-        for i, ((sx, sy), par) in enumerate(zip(seeds, pars)):
-            tile_count = int((owner == i).sum())
-            cells.append({
-                "id": i,
-                "par": par,
-                "seed_tx": sx,
-                "seed_ty": sy,
-                "tile_count": tile_count,
-            })
-
-        # Zone 18 = complexe clubhouse (si presente)
-        ch_tiles = int((owner == 18).sum())
-        if ch_tiles > 0:
-            cells.append({
-                "id": 18,
-                "type": "clubhouse",
-                "tile_count": ch_tiles,
-            })
-
-        self.data["paving"] = {
-            "tile_size": tile_size,
-            "grid_width": tw,
-            "grid_height": th,
-            "owner": {
-                "encoding": "base64_int16",
-                "data": encoded,
-            },
-            "cells": cells,
-        }
-
-    def add_clubhouse(self, clubhouse_data: dict) -> None:
-        """Ajoute les données du clubhouse."""
-        self.data["metadata"]["pipeline_stages"].append("clubhouse")
-        self.data["clubhouse"] = clubhouse_data
-
-    def add_routing(self, holes: list[dict]) -> None:
-        """Ajoute les données de routing."""
-        self.data["metadata"]["pipeline_stages"].append("routing")
+    def add_routing(self, holes: list[dict],
+                    clubhouse_pos: tuple[float, float] | None = None) -> None:
+        """Ajoute les données de routing (18 trous)."""
+        if "routing" not in self.data["metadata"]["pipeline_stages"]:
+            self.data["metadata"]["pipeline_stages"].append("routing")
         self.data["routing"] = {
             "holes": holes,
         }
-
-    def add_hazards(self, bunkers: list[dict], water_bodies: list[dict],
-                     ravines: list[dict]) -> None:
-        """Ajoute les obstacles."""
-        self.data["metadata"]["pipeline_stages"].append("hazards")
-        self.data["hazards"] = {
-            "bunkers": bunkers,
-            "water_bodies": water_bodies,
-            "ravines": ravines,
-        }
-
-    def add_vegetation(self, tree_clusters: list[dict],
-                        dense_forests: list[dict]) -> None:
-        """Ajoute la végétation."""
-        self.data["metadata"]["pipeline_stages"].append("vegetation")
-        self.data["vegetation"] = {
-            "tree_clusters": tree_clusters,
-            "dense_forests": dense_forests,
-        }
-
-    def add_features(self, features: dict) -> None:
-        """Ajoute les structures (ponts, ruisseaux, etc.)."""
-        self.data["metadata"]["pipeline_stages"].append("features")
-        self.data["features"] = features
+        if clubhouse_pos is not None:
+            self.data["routing"]["clubhouse"] = {
+                "x": round(clubhouse_pos[0], 1),
+                "y": round(clubhouse_pos[1], 1),
+            }
 
     def export(self, path: str | Path) -> None:
         """Écrit le JSON sur disque."""

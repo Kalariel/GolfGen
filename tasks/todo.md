@@ -1,55 +1,39 @@
-# Todo - Générateur procédural de parcours de golf
+# Todo - Generateur procedural de parcours de golf
 
-## Phase 1 : Fondation + Terrain [TERMINEE]
+## Phase 1 : Terrain [TERMINEE]
 - [x] Arborescence (`golfgen/`, `viewer/`, `output/`)
-- [x] `requirements.txt` (numpy, opensimplex)
 - [x] `golfgen/config.py` — dataclasses
-- [x] `golfgen/terrain.py` — génération heightmap (vectorisé ~7s)
+- [x] `golfgen/terrain.py` — generation heightmap (vectorise ~7s)
 - [x] `golfgen/exporter.py` — export JSON terrain
 - [x] `pipeline.py` — CLI minimal `--stage terrain`
 - [x] `viewer/` — HTML+CSS+JS affiche la heightmap
-- [x] `tests/test_terrain.py` — tests de régression (50 tests)
+- [x] `tests/test_terrain.py` — tests de regression (18 tests)
 
-## Phase 2 : Paving Voronoi [TERMINEE]
-- [x] `golfgen/paver.py` — Dijkstra isotrope 8-dir, 18 cellules organiques
-- [x] `golfgen/config.py` — PavingConfig (tile_size=5, water_level=61, weights)
-- [x] `pipeline.py` — étape paving insérée
-- [x] `golfgen/exporter.py` — add_paving() (owner base64 int16 + cells)
-- [x] `viewer/viewer.js` — layer debug paving (HSL + contours + labels)
-- [x] `tests/test_paving.py` — tests de régression
+## Phase 2 : Placement des 18 trous [TERMINEE]
+- [x] `golfgen/hole_gen.py` — HoleGenerator + HoleShape (formes parametriques)
+- [x] `golfgen/placer.py` — CoursePlacer (placement greedy avec scoring)
+- [x] `pipeline.py` — etape `holes` (terrain + placement)
+- [x] `golfgen/exporter.py` — add_routing avec clubhouse_pos
+- [x] Clubhouse dans un coin (determine par seed)
+- [x] Separation territoriale front/back nine (secteurs angulaires)
+- [x] Retour au clubhouse (G9/G18 a ~20 blocs du CH)
+- [x] Convergence pre-retour (H7-8/H16-17 a ~110 blocs du CH)
+- [x] Anti-croisement (+1M, exempt trous retour)
+- [x] Protection clubhouse (rayon 25 blocs, exempt retour)
+- [x] Multi-shape candidats (4 formes × 72 angles × 8 tee offsets)
+- [x] Anti-chevauchement tee/green sur fairways existants
 
-## Phase 3 : Clubhouse [TERMINEE]
-- [x] `golfgen/config.py` — ClubhouseConfig, clubhouse_x/y Optional
-- [x] `golfgen/terrain.py` — retiré _apply_central_flat() de generate()
-- [x] `golfgen/clubhouse.py` — ClubhousePlacer (quad junctions, scoring, aplatissement, practice, putting)
-- [x] `golfgen/exporter.py` — add_clubhouse(), add_routing() sans clubhouse param
-- [x] `pipeline.py` — 7 étapes, clubhouse entre paving et routing
-- [x] `default_config.json` — section clubhouse, retiré clubhouse_x/y hardcodés
-- [x] `viewer/viewer.js` — rendu practice range + putting green depuis courseData.clubhouse
-- [x] `tests/test_clubhouse.py` — 11 tests (position, adjacence, aplatissement, practice, putting, déterminisme, régression)
-- [x] Tests de régression terrain et paving mis à jour (50 tests passent)
+## Phase 3 : Raffinement du parcours (PROCHAINE)
+- [ ] Verification visuelle multi-seeds
+- [ ] Lissage terrain sous les fairways
+- [ ] Bunkers, eau, iles, ravins
+- [ ] Rendu obstacles dans viewer.js
 
-## Phase 4 : Routing (PROCHAINE — a refaire de zero)
-- [ ] `golfgen/router.py` — a ecrire de zero (l'ancien a ete supprime)
-- [ ] Enchainement optimal des 18 cellules (2 boucles de 9)
-- [ ] Placement tee/green dans chaque cellule assignee
-- [ ] Waypoints + doglegs terrain-aware
-- [ ] Boucles : trous 1-9 et 10-18 partant/revenant au clubhouse
-- [ ] `tests/test_routing.py` — a ecrire de zero
-- [ ] Integration dans `pipeline.py` (bloc routing actuellement desactive)
-
-## Phase 5 : Raffinement + Obstacles
-- [ ] `golfgen/refiner.py` — lissage terrain sous les fairways
-- [ ] `golfgen/hazards.py` — bunkers, eau, ravins
-- [ ] Rendu bunkers et eau dans viewer.js
-
-## Phase 6 : Végétation + Features
-- [ ] `golfgen/vegetation.py` — forêts, arbres entre les trous
-- [ ] `golfgen/features.py` — ponts, ruisseaux
+## Phase 4 : Vegetation + Features
+- [ ] Forets, arbres entre les trous
+- [ ] Ponts, ruisseaux
 - [ ] Rendu complet dans viewer.js
 
-## Phase 7 : Polish
-- [ ] Config JSON complète
-- [ ] Mode vue détaillée par trou
-- [ ] Test multi-seeds (1, 42, 100, 999, 12345)
-- [ ] Mise à jour CLAUDE.md finale
+## Phase 5 : Polish
+- [ ] Mode vue detaillee par trou
+- [ ] Test multi-seeds automatise

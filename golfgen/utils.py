@@ -82,6 +82,22 @@ def direction_label(tee: tuple[float, float],
     return dirs[idx]
 
 
+def segments_intersect(a1: tuple, a2: tuple, b1: tuple, b2: tuple) -> bool:
+    """True si les segments a1-a2 et b1-b2 se croisent (test CCW)."""
+    def ccw(p, q, r):
+        return (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0])
+
+    d1 = ccw(b1, b2, a1)
+    d2 = ccw(b1, b2, a2)
+    d3 = ccw(a1, a2, b1)
+    d4 = ccw(a1, a2, b2)
+
+    if ((d1 > 0 and d2 < 0) or (d1 < 0 and d2 > 0)) and \
+       ((d3 > 0 and d4 < 0) or (d3 < 0 and d4 > 0)):
+        return True
+    return False
+
+
 def convex_hull_2d(points: list[tuple[float, float]]) -> list[tuple[float, float]]:
     """Enveloppe convexe 2D (Andrew's monotone chain). O(n log n)."""
     pts = sorted(set(points))

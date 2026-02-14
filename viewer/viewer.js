@@ -639,8 +639,8 @@ function drawRouting() {
   // Clubhouse (ch.x, ch.y = centre)
   if (ch) {
     const [chCx, chCy] = toCanvas(ch.x, ch.y);
-    const chw = ch.width * camZoom;
-    const chh = ch.height * camZoom;
+    const chw = (ch.width || 30) * camZoom;
+    const chh = (ch.height || 20) * camZoom;
     const chx = chCx - chw / 2;
     const chy = chCy - chh / 2;
 
