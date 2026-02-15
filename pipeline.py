@@ -23,11 +23,22 @@ def run_pipeline(config: CourseConfig, stage: str, output: Path) -> None:
     print(f"Pipeline: {' -> '.join(STAGES[:stage_idx + 1])}")
     print()
 
-    # --- Terrain ---
+    # --- Terrain (cached by seed) ---
     t0 = time.time()
-    print("1/2  Terrain (Perlin noise)...")
-    terrain_gen = TerrainGenerator(config)
-    heightmap = terrain_gen.generate()
+    cache_dir = Path("output/.cache")
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    terrain_cache = cache_dir / f"terrain_s{config.seed}_{config.width}x{config.height}.npy"
+    
+    import numpy as np
+    if terrain_cache.exists():
+        print("1/2  Terrain (cached)...")
+        heightmap = np.load(terrain_cache)
+    else:
+        print("1/2  Terrain (Perlin noise)...")
+        terrain_gen = TerrainGenerator(config)
+        heightmap = terrain_gen.generate()
+        np.save(terrain_cache, heightmap)
+    
     exporter.add_terrain(heightmap)
     print(f"     Heightmap {heightmap.shape[1]}x{heightmap.shape[0]}, "
           f"elev [{heightmap.min():.1f}, {heightmap.max():.1f}]  "
@@ -41,15 +52,16 @@ def run_pipeline(config: CourseConfig, stage: str, output: Path) -> None:
     t0 = time.time()
     print("2/2  Holes (generation + placement)...")
     from golfgen.hole_gen import HoleGenerator
-    from golfgen.placer import CoursePlacer
+    if config.method == "greedy":
+        print("WARN: Greedy method removed. Using Genetic Algorithm.")
 
-    gen = HoleGenerator(config)
-    pars = config.routing.par_distribution[:config.num_holes]
-    print(f"     Pars: {pars}")
+    print("     Using Genetic Algorithm...")
+    from golfgen.ga import GeneticOptimizer
+    optimizer = GeneticOptimizer(config, heightmap)
+    holes = optimizer.run()
+    clubhouse_pos = optimizer.clubhouse_pos
 
-    placer = CoursePlacer(config, heightmap)
-    holes = placer.place(gen)
-    exporter.add_routing(holes, clubhouse_pos=placer.clubhouse_pos)
+    exporter.add_routing(holes, clubhouse_pos=clubhouse_pos)
     print(f"     {len(holes)} trous places  ({time.time() - t0:.1f}s)")
 
     for h in holes:
@@ -77,6 +89,8 @@ def main():
                         help="Largeur du terrain en blocs")
     parser.add_argument("--height", type=int, default=None,
                         help="Hauteur du terrain en blocs")
+    parser.add_argument("--method", choices=["greedy", "ga"], default=None,
+                        help="Methode de generation (greedy ou ga)")
 
     args = parser.parse_args()
 
@@ -97,6 +111,8 @@ def main():
         config.width = args.width
     if args.height is not None:
         config.height = args.height
+    if args.method is not None:
+        config.method = args.method
 
     output = Path(args.output)
 

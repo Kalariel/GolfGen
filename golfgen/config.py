@@ -58,6 +58,7 @@ class CourseConfig:
 
     terrain: TerrainConfig = field(default_factory=TerrainConfig)
     routing: RoutingConfig = field(default_factory=RoutingConfig)
+    method: str = "ga"
 
     def to_dict(self) -> dict:
         return asdict(self)

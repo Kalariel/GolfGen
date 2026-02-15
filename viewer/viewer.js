@@ -173,7 +173,9 @@ function onMouseMove(e) {
   }
 
   // Tooltip / highlight
-  updateTooltip(e.clientX, e.clientY, mx, my);
+  if (mx >= 0 && mx <= rect.width && my >= 0 && my <= rect.height) {
+    updateTooltip(e.clientX, e.clientY, mx, my);
+  }
 }
 
 function onMouseUp() {
@@ -1097,7 +1099,7 @@ function getHoleAt(bx, by) {
     const wps = h.waypoints;
     for (let i = 0; i < wps.length - 1; i++) {
       if (pointToSegDist(bx, by, wps[i].x, wps[i].y, wps[i + 1].x, wps[i + 1].y)
-          < (h.fairway_width || 12))
+        < (h.fairway_width || 12))
         return { hole: h, zone: 'fairway' };
     }
   }
