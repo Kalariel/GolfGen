@@ -15,6 +15,7 @@
     <span>Taille: <strong id="stat-size">—</strong></span>
     <span>Trous: <strong id="stat-holes">—</strong></span>
     <span>Pipeline: <strong id="stat-stages">—</strong></span>
+    <span>Positions: <strong id="position-mode">Optimisées</strong></span>
   </div>
 </div>
 
@@ -40,6 +41,11 @@
     <div class="layer-toggles">
       <button id="btn-grid" class="active" onclick="toggle('grid')">Grille</button>
       <button id="btn-nums" class="active" onclick="toggle('nums')">Numeros</button>
+    </div>
+    
+    <h2>POSITIONS</h2>
+    <div class="layer-toggles">
+      <button id="btn-positions" onclick="toggleOriginalPositions()" disabled>Originales</button>
     </div>
 
     <h2>ZOOM</h2>

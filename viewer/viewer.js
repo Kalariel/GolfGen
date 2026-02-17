@@ -29,6 +29,49 @@ let show = {
   nums: true,
 };
 
+// Display mode
+let showOriginalPositions = false; // False = optimized (default), True = original
+
+// Fonction globale pour basculer entre les positions (définie tôt pour être disponible)
+window.toggleOriginalPositions = function() {
+  if (!courseData || !courseData.routing || !courseData.routing.original_positions) {
+    console.log("⚠️  Cannot toggle: No original positions available");
+    return;
+  }
+  
+  showOriginalPositions = !showOriginalPositions;
+  const btn = document.getElementById('btn-positions');
+  if (showOriginalPositions) {
+    btn.classList.add('active');
+    btn.textContent = 'Optimisées';
+    console.log("🔄 Switched to original positions");
+  } else {
+    btn.classList.remove('active');
+    btn.textContent = 'Originales';
+    console.log("🔄 Switched to optimized positions");
+  }
+  
+  // Appeler les fonctions de mise à jour si elles existent
+  if (typeof updateHeader === 'function') {
+    updateHeader(); // Mettre à jour l'indication
+  }
+  if (typeof updateSidebar === 'function') {
+    updateSidebar(); // Mettre à jour le tableau
+  }
+  if (typeof draw === 'function') {
+    draw(); // Redessiner avec les nouvelles positions
+  }
+};
+
+// Initialiser le bouton de positions au chargement
+document.addEventListener('DOMContentLoaded', function() {
+  const btn = document.getElementById('btn-positions');
+  if (btn) {
+    btn.disabled = true;
+    btn.style.opacity = '0.3';
+  }
+});
+
 let highlightedHole = null;
 
 // Pan state
@@ -225,6 +268,19 @@ function loadCourseData(json) {
   heightmapPixels = null;
   terrainCache = null;
   ownerCache = null;
+  
+  // Vérifier si les positions originales sont disponibles
+  if (json.routing && json.routing.original_positions) {
+    console.log(`📊 Viewer: Found ${json.routing.original_positions.length} original positions`);
+    // Activer le bouton de basculement
+    const btn = document.getElementById('btn-positions');
+    if (btn) {
+      btn.disabled = false;
+      btn.style.opacity = '1';
+    }
+  } else {
+    console.log("⚠️  Viewer: No original positions found in JSON");
+  }
 
   // Decode heightmap
   if (json.terrain && json.terrain.elevation) {
@@ -295,6 +351,14 @@ function updateHeader() {
   document.getElementById('stat-seed').textContent = meta.seed;
   document.getElementById('stat-size').textContent =
     `${meta.config.width}x${meta.config.height}`;
+  
+  // Mettre à jour l'indication des positions
+  const positionMode = document.getElementById('position-mode');
+  if (positionMode) {
+    positionMode.textContent = showOriginalPositions ? 'Originales' : 'Optimisées';
+  }
+
+
   document.getElementById('stat-stages').textContent =
     meta.pipeline_stages.join(', ');
 
@@ -333,7 +397,54 @@ function updateSidebar() {
     return;
   }
 
-  const holes = courseData.routing.holes;
+  let holes = courseData.routing.holes;
+  
+  // Utiliser les positions originales si l'option est activée
+  if (showOriginalPositions && courseData.routing.original_positions) {
+    console.log("📋 Sidebar: Switching to original positions");
+    
+    // Debug: afficher les positions originales du premier trou
+    if (courseData.routing.original_positions.length > 0) {
+      const orig1 = courseData.routing.original_positions[0];
+      const opt1 = courseData.routing.holes[0];
+      console.log("   Original hole 1:", orig1.tee, orig1.green);
+      console.log("   Optimized hole 1:", opt1.tee, opt1.green);
+    }
+    
+    // Créer une copie des trous avec les positions originales
+    holes = courseData.routing.holes.map((hole, index) => {
+      const original = courseData.routing.original_positions[index];
+      
+      // Créer une copie profonde pour éviter les références
+      const newHole = JSON.parse(JSON.stringify(hole));
+      newHole.tee = original.tee;
+      newHole.green = original.green;
+      
+      // Mettre à jour les waypoints si nécessaire
+      if (newHole.waypoints && newHole.waypoints.length > 0) {
+        // Mettre à jour le premier waypoint (près du tee)
+        if (typeof newHole.waypoints[0] === 'object') {
+          newHole.waypoints[0].x = original.tee.x;
+          newHole.waypoints[0].y = original.tee.y;
+        }
+        
+        // Mettre à jour le dernier waypoint (près du green)
+        const lastIndex = newHole.waypoints.length - 1;
+        if (typeof newHole.waypoints[lastIndex] === 'object') {
+          newHole.waypoints[lastIndex].x = original.green.x;
+          newHole.waypoints[lastIndex].y = original.green.y;
+        }
+      }
+      
+      return newHole;
+    });
+    
+    // Debug: afficher les positions après mapping
+    if (holes.length > 0) {
+      console.log("   Mapped hole 1:", holes[0].tee, holes[0].green);
+    }
+  }
+
   const frontHoles = holes.filter(h => h.id <= 9);
   const backHoles = holes.filter(h => h.id > 9);
 
@@ -529,8 +640,64 @@ function drawPaving() {
 
 function drawRouting() {
   const routing = courseData.routing;
-  const holes = routing.holes;
+  let holes = routing.holes;
+  
+  // Utiliser les positions originales si l'option est activée
+  if (showOriginalPositions && routing.original_positions) {
+    console.log("🎯 Switching to original positions");
+    
+    // Debug: afficher les positions originales du premier trou
+    if (routing.original_positions.length > 0) {
+      const orig1 = routing.original_positions[0];
+      const opt1 = routing.holes[0];
+      console.log("   Original hole 1:", orig1.tee, orig1.green);
+      console.log("   Optimized hole 1:", opt1.tee, opt1.green);
+    }
+    
+    // Créer une copie des trous avec les positions originales
+    holes = routing.holes.map((hole, index) => {
+      const original = routing.original_positions[index];
+      
+      // Créer une copie profonde pour éviter les références
+      const newHole = JSON.parse(JSON.stringify(hole));
+      newHole.tee = original.tee;
+      newHole.green = original.green;
+      
+      // Mettre à jour les waypoints si nécessaire
+      if (newHole.waypoints && newHole.waypoints.length > 0) {
+        // Mettre à jour le premier waypoint (près du tee)
+        if (typeof newHole.waypoints[0] === 'object') {
+          newHole.waypoints[0].x = original.tee.x;
+          newHole.waypoints[0].y = original.tee.y;
+        }
+        
+        // Mettre à jour le dernier waypoint (près du green)
+        const lastIndex = newHole.waypoints.length - 1;
+        if (typeof newHole.waypoints[lastIndex] === 'object') {
+          newHole.waypoints[lastIndex].x = original.green.x;
+          newHole.waypoints[lastIndex].y = original.green.y;
+        }
+      }
+      
+      return newHole;
+    });
+    
+    // Debug: afficher les positions après mapping
+    if (holes.length > 0) {
+      console.log("   Mapped hole 1:", holes[0].tee, holes[0].green);
+    }
+    console.log("🎯 Drawing with original positions");
+  } else {
+    console.log("🎯 Drawing with optimized positions");
+  }
+  
   const ch = courseData.clubhouse || routing.clubhouse;
+
+  // Debug: afficher les positions du premier trou avant dessin
+  if (holes.length > 0) {
+    const firstHole = holes[0];
+    console.log("🖌️  Drawing hole 1 - Tee:", firstHole.tee, "Green:", firstHole.green);
+  }
 
   holes.forEach(h => {
     const hl = highlightedHole === h.id;

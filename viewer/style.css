@@ -130,6 +130,11 @@ body {
   background: rgba(255,255,255,0.05);
 }
 
+.layer-toggles button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
 /* Zoom controls */
 .zoom-controls {
   display: flex;

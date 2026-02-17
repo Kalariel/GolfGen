@@ -58,10 +58,36 @@ def run_pipeline(config: CourseConfig, stage: str, output: Path) -> None:
     print("     Using Genetic Algorithm...")
     from golfgen.ga import GeneticOptimizer
     optimizer = GeneticOptimizer(config, heightmap)
-    holes = optimizer.run()
+    holes_data = optimizer.run()
     clubhouse_pos = optimizer.clubhouse_pos
 
-    exporter.add_routing(holes, clubhouse_pos=clubhouse_pos)
+    # Debug: vérifier la structure des données retournées
+    print(f"📊 Pipeline received data type: {type(holes_data)}")
+    if isinstance(holes_data, dict):
+        print(f"   Keys: {list(holes_data.keys())}")
+        if "original" in holes_data and "optimized" in holes_data:
+            print(f"   Original holes count: {len(holes_data['original'])}")
+            print(f"   Optimized holes count: {len(holes_data['optimized'])}")
+            # Comparer un exemple
+            if len(holes_data['original']) > 0:
+                orig = holes_data['original'][0]
+                opt = holes_data['optimized'][0]
+                orig_tee = orig['tee']
+                opt_tee = opt['tee']
+                if isinstance(orig_tee, dict):
+                    print(f"   Example hole 1 - Original tee: ({orig_tee['x']:.1f}, {orig_tee['y']:.1f})")
+                    print(f"   Example hole 1 - Optimized tee: ({opt_tee['x']:.1f}, {opt_tee['y']:.1f})")
+                else:
+                    print(f"   Example hole 1 - Original tee: ({orig_tee[0]:.1f}, {orig_tee[1]:.1f})")
+                    print(f"   Example hole 1 - Optimized tee: ({opt_tee[0]:.1f}, {opt_tee[1]:.1f})")
+    
+    # Extraire les trous optimisés pour l'affichage
+    if isinstance(holes_data, dict) and "optimized" in holes_data:
+        holes = holes_data["optimized"]
+    else:
+        holes = holes_data
+
+    exporter.add_routing(holes_data, clubhouse_pos=clubhouse_pos)
     print(f"     {len(holes)} trous places  ({time.time() - t0:.1f}s)")
 
     for h in holes:

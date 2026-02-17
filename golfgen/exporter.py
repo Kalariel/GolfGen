@@ -59,14 +59,39 @@ class JSONExporter:
             }
         }
 
-    def add_routing(self, holes: list[dict],
+    def add_routing(self, holes_data: dict | list[dict],
                     clubhouse_pos: tuple[float, float] | None = None) -> None:
         """Ajoute les données de routing (18 trous)."""
         if "routing" not in self.data["metadata"]["pipeline_stages"]:
             self.data["metadata"]["pipeline_stages"].append("routing")
-        self.data["routing"] = {
-            "holes": holes,
-        }
+        
+        if isinstance(holes_data, dict) and "original" in holes_data and "optimized" in holes_data:
+            # Nouveau format avec positions originales et optimisées
+            self.data["routing"] = {
+                "holes": holes_data["optimized"],
+                "original_positions": holes_data["original"],
+            }
+            print(f"📊 JSON Export: Included {len(holes_data['original'])} original positions")
+            
+            # Debug: afficher un exemple de différences
+            if len(holes_data['original']) > 0:
+                orig = holes_data['original'][0]
+                opt = holes_data['optimized'][0]
+                orig_tee = orig['tee']
+                opt_tee = opt['tee']
+                
+                if isinstance(orig_tee, dict):
+                    print(f"   JSON Example hole 1 - Original tee: ({orig_tee['x']:.1f}, {orig_tee['y']:.1f})")
+                    print(f"   JSON Example hole 1 - Optimized tee: ({opt_tee['x']:.1f}, {opt_tee['y']:.1f})")
+                else:
+                    print(f"   JSON Example hole 1 - Original tee: ({orig_tee[0]:.1f}, {orig_tee[1]:.1f})")
+                    print(f"   JSON Example hole 1 - Optimized tee: ({opt_tee[0]:.1f}, {opt_tee[1]:.1f})")
+        else:
+            # Ancien format pour compatibilité
+            self.data["routing"] = {
+                "holes": holes_data,
+            }
+        
         if clubhouse_pos is not None:
             self.data["routing"]["clubhouse"] = {
                 "x": round(clubhouse_pos[0], 1),
