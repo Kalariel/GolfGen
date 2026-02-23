@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GolfGen — Editeur de parcours</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="header">
+  <h1>GOLFGEN</h1>
+  <div class="stats">
+    <span>Seed: <strong id="stat-seed">42</strong></span>
+    <span>Taille: <strong id="stat-size">350x350</strong></span>
+    <span>Trous: <strong id="stat-holes">0</strong></span>
+  </div>
+</div>
+
+<div class="main-container">
+  <div class="sidebar">
+    <h2>TERRAIN</h2>
+    <div class="seed-controls">
+      <label for="seed-input">Seed</label>
+      <input type="number" id="seed-input" value="42" min="0">
+      <button id="btn-generate" onclick="generateAndDisplay()">Generer</button>
+    </div>
+
+    <h2>EDITEUR</h2>
+    <div class="editor-controls">
+      <button id="btn-draw" onclick="toggleDrawMode()">Dessiner</button>
+      <button id="btn-finish" onclick="finishHole()" disabled>Finir trou</button>
+      <button id="btn-undo" onclick="undoPoint()" disabled>Annuler</button>
+      <button id="btn-delete-last" onclick="deleteLastHole()">Defaire</button>
+      <button id="btn-reset" onclick="resetAllHoles()">Reset</button>
+    </div>
+    <div id="draw-info" class="draw-info" style="display:none">
+      <span id="draw-points">0 pts</span> —
+      <span id="draw-dist">0 blocs</span> (<span id="draw-meters">0 m</span>) —
+      <span id="draw-par">par ?</span>
+    </div>
+    <div id="hole-selected-controls" style="display:none">
+      <div class="hole-selected-info">Trou <strong id="sel-hole-id">–</strong> — <span id="sel-hole-par">–</span> — <span id="sel-hole-dist">–</span></div>
+      <div class="editor-controls">
+        <button onclick="editSelectedHole()">Modifier tracé</button>
+        <button onclick="removeLastWaypoint()">- Waypoint</button>
+        <button onclick="openHoleEditor(getSelectedHoleId())">Éditer features</button>
+        <button onclick="deleteSelected()" class="danger">Supprimer</button>
+      </div>
+    </div>
+
+    <h2>INSTALLATIONS</h2>
+    <div class="facility-controls">
+      <button id="btn-facility-clubhouse" onclick="setFacilityMode('clubhouse')">Clubhouse</button>
+      <button id="btn-facility-putting_green" onclick="setFacilityMode('putting_green')">Putting Green</button>
+      <button id="btn-facility-practice" onclick="setFacilityMode('practice')">Practice</button>
+    </div>
+
+    <h2>COUCHES</h2>
+    <div class="layer-toggles">
+      <button id="btn-terrain" class="active" onclick="toggle('terrain')">Terrain</button>
+      <button id="btn-water" class="active" onclick="toggle('water')">Eau</button>
+      <button id="btn-routing" class="active" onclick="toggle('routing')">Trous</button>
+      <button id="btn-grid" class="active" onclick="toggle('grid')">Grille</button>
+      <button id="btn-nums" class="active" onclick="toggle('nums')">Numeros</button>
+      <button id="btn-pixel" onclick="toggle('pixel')">Vue pixel</button>
+    </div>
+
+    <h2>ZOOM</h2>
+    <div class="zoom-controls">
+      <button onclick="zoomOut()" title="Dezoom">&minus;</button>
+      <span id="zoom-level">200%</span>
+      <button onclick="zoomIn()" title="Zoom">+</button>
+      <button onclick="resetView()" title="Recentrer" class="reset-btn">Reset</button>
+    </div>
+    <div class="zoom-hint">Molette = zoom &middot; Clic droit = deplacer<br>Glisser = courbe &middot; Clic = point par point</div>
+
+    <h2>FICHIER</h2>
+    <div class="file-controls">
+      <label for="course-name-input">Nom du parcours</label>
+      <input type="text" id="course-name-input" placeholder="Mon parcours" maxlength="64">
+      <label>Origine Minecraft</label>
+      <div class="origin-inputs">
+        <input type="number" id="origin-x-input" placeholder="X" title="Coordonnée X Minecraft de l'origine">
+        <input type="number" id="origin-z-input" placeholder="Z" title="Coordonnée Z Minecraft de l'origine">
+      </div>
+      <button onclick="exportJSON()">Exporter JSON</button>
+      <button onclick="document.getElementById('file-input').click()">Importer JSON</button>
+      <input type="file" id="file-input" accept=".json" style="display:none">
+    </div>
+
+    <div id="hole-tables">
+      <div class="info-box">
+        Generer un terrain puis dessiner des trous.
+      </div>
+    </div>
+  </div>
+
+  <div class="map-area">
+    <div class="canvas-wrapper">
+      <canvas id="map"></canvas>
+    </div>
+    <div class="coord-display" id="coords">Generer un terrain pour commencer</div>
+  </div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<div id="hole-editor-overlay" style="display:none">
+  <div class="he-header">
+    <button class="he-back-btn" onclick="closeHoleEditor()">← Retour</button>
+    <div class="he-nav">
+      <button id="he-btn-prev" onclick="holeEditorNav(-1)">◀</button>
+      <span id="he-title">Trou 1 — Par 4</span>
+      <button id="he-btn-next" onclick="holeEditorNav(1)">▶</button>
+    </div>
+    <div></div>
+  </div>
+  <div class="he-body">
+    <div class="he-sidebar">
+      <h2>DESSINER</h2>
+      <div class="he-draw-controls">
+        <button id="he-btn-bunker"       onclick="setHeFeatureType('bunker')">Bunker</button>
+        <button id="he-btn-water_hazard" onclick="setHeFeatureType('water_hazard')">Eau</button>
+        <button id="he-btn-tree"         onclick="setHeFeatureType('tree')">Arbre</button>
+        <button id="he-btn-cart_path"    onclick="setHeFeatureType('cart_path')">Cart Path</button>
+        <button id="he-btn-none"         onclick="setHeFeatureType(null)" class="active">Vue seule</button>
+      </div>
+      <div id="he-draw-info" style="display:none"></div>
+      <h2>FEATURES</h2>
+      <div id="he-feature-list"></div>
+    </div>
+    <div class="he-canvas-area">
+      <canvas id="hole-canvas"></canvas>
+    </div>
+  </div>
+</div>
+
+<script src="utils.js"></script>
+<script src="terrain.js"></script>
+<script src="editor.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

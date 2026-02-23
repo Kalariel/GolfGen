@@ -1,100 +1,130 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 ## Projet
 
-Generateur procedural et visualiseur interactif d'un parcours de golf 18 trous pour Minecraft. Deux composants :
-1. **Pipeline Python** (`golfgen/`) — genere un parcours proceduralement (terrain Perlin, placement 18 trous, obstacles, vegetation)
-2. **Viewer HTML/JS** (`viewer/`) — affiche le JSON produit par le pipeline sur un canvas interactif
+**GolfGen** — Editeur interactif de parcours de golf pour Minecraft. Application web pure (HTML/JS/CSS), deployable sur GitHub Pages. L'utilisateur genere un terrain procedural puis dessine les trous directement sur le canvas.
 
 ## Lancer le projet
 
-```bash
-# Installer les dependances Python
-pip install -r requirements.txt
-
-# Generer terrain seul
-python pipeline.py --stage terrain
-
-# Generer terrain + placement 18 trous (pipeline complet actuel)
-python pipeline.py --stage holes
-
-# Options
-python pipeline.py --seed 123 --stage holes --output output/v2.json
-
-# Tests
-python -m pytest tests/ -v
-```
-
-Le viewer se lance en ouvrant `viewer/index.html` dans un navigateur. Il charge automatiquement `output/course.json` ou permet de charger un JSON manuellement.
+Ouvrir `index.html` dans un navigateur. Aucune dependance locale — simplex-noise est integre inline dans `terrain.js`. Google Fonts charge via CDN.
 
 ## Architecture
 
 ```
-golfgen/                    # Bibliotheque Python
-├── config.py               # Dataclasses CourseConfig, TerrainConfig, RoutingConfig
-├── terrain.py              # TerrainGenerator — OpenSimplex multi-octave (vectorise)
-├── hole_gen.py             # HoleGenerator — formes parametriques en coords locales
-├── placer.py               # CoursePlacer — placement 18 trous avec scoring multi-critere
-├── exporter.py             # JSONExporter — serialisation JSON, heightmap base64
-└── utils.py                # Math, gradient, geometrie (distance, segments_intersect, etc.)
-
-pipeline.py                 # CLI principal (orchestre les 2 etapes)
-default_config.json         # Config par defaut (surchargeable)
-
-viewer/
-├── index.html              # Page unique
-├── style.css               # CSS (theme sombre, Silkscreen/IBM Plex Mono)
-└── viewer.js               # Moteur de rendu Canvas (consomme le JSON)
-
-tests/
-├── conftest.py             # Fixtures partagees (config, heightmap)
-└── test_terrain.py         # Tests de regression terrain (seed 42, 18 tests)
-
-output/
-└── course.json             # Fichier genere par le pipeline
+index.html      # Page unique, scripts classiques (pas ES modules)
+style.css       # Theme sombre (Silkscreen + IBM Plex Mono)
+app.js          # Rendu canvas principal + Hole Editor overlay (rendering/events)
+terrain.js      # Generation terrain OpenSimplex multi-octave (inline, pas de CDN)
+editor.js       # Tout l'etat : trous, facilities, hole editor (he*), zones globales
+utils.js        # Utilitaires math/geometrie
+CLAUDE.md
+.claude/commands/   # Skills personnalises : sync-docs, check-globals
 ```
 
-## Contrat JSON (Python → Viewer)
+Ordre de chargement : `utils.js` → `terrain.js` → `editor.js` → `app.js`
 
-Le JSON contient des couches optionnelles : `terrain`, `routing`. Le viewer affiche ce qui est present.
+## Fonctionnalites
 
-- **Heightmap** : encodee en base64 uint8 normalise [0-255] → reconverti en elevation [min, max]
-- **Routing** : `holes[]` avec `tee`, `green`, `waypoints` (objets `{x, y}`), `fairway_width`, `par`, `blocks`
-- **Routing.clubhouse** : `{x, y}` — position du clubhouse (coin determine par la seed)
-- **Blocks** : distance reelle calculee depuis les waypoints (polyline_length)
+1. **Generation terrain** : OpenSimplex 6 octaves, gradient N-S, seed configurable, grille 350x350
+2. **Dessin de trous** : clic gauche = waypoints, double-clic = finir, freehand (glisser)
+3. **Calculs auto** : par (longueur), largeur fairway, direction
+4. **Rendu vectoriel** : terrain colore, fairways, greens, tees, drapeaux, numeros, grille
+5. **Vue pixel** : toggle "Vue pixel" → rendu bloc-par-bloc 350x350 avec zones inter-trous resolues par priorite
+6. **Facilities** : clubhouse, putting green, practice (drag pour rectangle)
+7. **Hole Editor** : overlay plein ecran — bunkers, eau, arbres, cart path par trou
+   - Dessin point-par-point ou freehand → lissage Chaikin automatique a la validation
+   - Rendu bloc-par-bloc par trou (cache offscreen, 1px = 1 bloc Minecraft)
+8. **Block map globale** : 350x350 Uint8Array, zones resolues tous trous confondus, debounce 300ms
+9. **Export JSON** : inclut `block_map` (base64_uint8, zones indexees)
+10. **Import JSON** : facilities importees AVANT les trous (bug fix ordre critique)
+11. **Autosave** : localStorage (seed + trous + features + facilities)
+12. **Escape** : annule l'action locale la plus proche (poly en cours → feature type → ferme HE → annule dessin → deselectionne)
 
-## Concepts cles
+## Modele de donnees
 
-- **Systeme de coordonnees** : blocs Minecraft. 1 bloc = 3 metres.
-- **Terrain** : OpenSimplex 6 octaves, grille 350×350, elevation [58, 82], gradient N-S
-- **Clubhouse** : place automatiquement dans un coin (determine par seed), avec separation angulaire front/back nine
-- **Hole generation** : formes parametriques en coords locales (tee=(0,0), axe Y+), avec waypoints, fairway_width, green_radius
-- **Placement** : greedy sequentiel, 72 angles × 8 tee offsets × 4 formes = ~2304 candidats/trou, scoring multi-critere
-- **Scoring** : overlap, return_penalty (G9/G18 → ~20 blocs du CH), territory (secteurs angulaires), convergence (H7-8/H16-17), clubhouse protection, anti-crossing (+1M)
-- **Palette** : constante `C` dans viewer.js (rough=#2e5420, fairway=#6aad45, green=#3dbd4e, tee=#4ecf5f, sand=#e8d68a, water=#3b8bba)
+### Trou
+```js
+h = {
+  id, par, blocks, direction, fairwayWidth, greenRadius,
+  points: [{x, y}],   // waypoints
+  features: {
+    bunkers:       [{ id, points: [{x,y}] }],  // polygone lisse Chaikin (min 3 pts)
+    water_hazards: [{ id, points: [{x,y}] }],  // polygone lisse Chaikin (min 3 pts)
+    trees:         [{ id, x, y }],             // points individuels
+    cart_path:     { points: [{x,y}] } | null, // polyligne lisse Chaikin (min 2 pts)
+  }
+}
+```
+
+### Block map exportee
+```json
+"block_map": {
+  "width": 350, "height": 350,
+  "zones": ["rough","semi_rough","fairway","cart_path","tree","water","bunker","green_fringe","green","tee"],
+  "encoding": "base64_uint8",
+  "data": "..."
+}
+```
+
+## Deux systemes de camera
+
+| | Canvas principal | Hole Editor |
+|---|---|---|
+| Zoom | `camZoom` | `heCamZoom` |
+| Pan | `camPanX/Y` | `heCamPanX/Y` |
+| World→Screen | `toCanvas(wx,wy)` | `toHeCanvas(wx,wy)` |
+| Screen→World | `toWorld(sx,sy)` | `fromHeCanvas(sx,sy)` |
+
+## Fonctions cles utils.js
+
+- `polylineLength`, `autoPar`, `autoFairwayWidth`, `directionLabel`
+- `pointToSegDist`, `pointInPolygon` (ray casting)
+- `simplifyRDP` (Ramer-Douglas-Peucker)
+- `smoothChaikin(points, iterations, closed)` — lissage coin-coupant
+
+## Fonctions cles editor.js
+
+- `getHoles()`, `getSelectedHoleId()`, `getEditorMode()`
+- `getHoleZoneAt(h, bx, by)` — zone d'un bloc pour un trou (priorite tee→green→bunker→eau→arbre→cart_path→fairway→semi_rough→rough)
+- `getHoleBBox(h)` — bounding box etendue pour culling
+- `getGlobalZoneAt(bx, by, holes, bboxes)` — zone globale tous trous confondus (merge par priorite)
+- `ZONE_PRIORITY` — objet de priorite par zone
+- Callbacks : `editorSetOnChange`, `editorSetDrawCallback`, `heSetDrawCallback`
+
+## Fonctions cles app.js
+
+- `draw()` — canvas principal : mode pixel ou vectoriel selon `show.pixel`
+- `drawRouting(overlayOnly=false)` — si overlayOnly : skip fairway/green/tee/features, garde glow+flag+numero+handles
+- `drawPixelMap()` — affiche `mainPixelCache` (350x350) mise a l'echelle
+- `buildCourseBlockMap()` — construit `courseBlockMap` (Uint8Array) + `mainPixelCache` (canvas colore)
+- `scheduleBlockMapRebuild()` — debounce 300ms, appele par `onEditorChange`
+- `buildHoleBlockCache(h)` — cache offscreen pour le Hole Editor (1px=1bloc, bounding box du trou)
+- `drawHoleEditor()` — fond pixel + trous adjacents vecteur + overlay waypoints/flag + poly/freehand en cours + grille
+- `openHoleEditor(holeId)` / `closeHoleEditor()` — gestion overlay + camera + events
+- `onKeyDown` — gestion Escape avec priorites contextuelles
+
+## Pattern callbacks (editor.js → app.js)
+
+- `editorSetOnChange(fn)` → `onEditorChange()` : sync routing + autosave + scheduleBlockMapRebuild + invalidation heBlockCache si HE ouvert
+- `editorSetDrawCallback(fn)` → `draw()` canvas principal
+- `heSetDrawCallback(fn)` → `drawHoleEditor()` canvas overlay
+
+## Invalidation des caches
+
+- `heBlockCache` (Hole Editor) : null dans `openHoleEditor`, `heDeleteFeature`, `onEditorChange` (si HE ouvert)
+- `mainPixelCache` / `courseBlockMap` : null dans `buildCourseBlockMap` si 0 trous ; reconstruit via debounce
+
+## Pieges connus
+
+- **Import JSON** : toujours importer `facilities` AVANT `holes` dans `loadCourseData`. `importHoles` appelle `_onChangeCallback` → `syncRouting` → ecrase `courseData.routing` (meme reference que le JSON parse). Les facilities du JSON sont alors perdues.
+- **Scripts non-ES modules** : pas de `import/export`, pas besoin de `window.fn = fn`. Toutes les fonctions definies avec `function` sont globales.
+- **Simplex noise** : integre inline dans `terrain.js`, pas de CDN.
+- **addEventListener dedup** : utiliser des fonctions nommees pour pouvoir appeler `removeEventListener`. Le flag `alreadyOpen` evite de re-enregistrer les listeners du HE quand on navigue entre trous.
 
 ## Conventions
 
-- Python : dataclasses, type hints, numpy vectorise quand possible
-- JS : vanilla, pas de framework, canvas 2D
-- Polices : Google Fonts `Silkscreen` (titres) et `IBM Plex Mono` (contenu)
+- JS : scripts classiques vanilla, fonctions globales, pas de framework
+- CSS : variables CSS, theme sombre
 - Interface : francais
-- Config : JSON (pas de YAML/TOML)
-
-## Pipeline (2 etapes actives + futures)
-
-| # | Etape | Module | Description | Status |
-|---|-------|--------|-------------|--------|
-| 1 | terrain | `terrain.py` | OpenSimplex heightmap 350×350 (~7s) | OK |
-| 2 | holes | `hole_gen.py` + `placer.py` | Generation + placement 18 trous | OK |
-| 3 | hazards | (a creer) | Bunkers, eau, iles, ravins | TODO |
-| 4 | vegetation | (a creer) | Forets, arbres entre les trous | TODO |
-| 5 | features | (a creer) | Ponts, ruisseaux | TODO |
-
-## Config (dataclasses)
-
-- `CourseConfig` : width=350, height=350, seed=42, num_holes=18
-- `TerrainConfig` : octaves, persistence, scale, elevation_min/max, base_elevation, ns_gradient
-- `RoutingConfig` : par_distribution, ranges par3/4/5, fairway widths, green radius, tee_link_distance, grid_margin
+- Palette : objet `C` dans app.js (rough, fairway, green, tee, sand, water, etc.)
+- Separation etat/rendu : `editor.js` = etat pur, `app.js` = rendu + events

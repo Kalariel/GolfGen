@@ -6,7 +6,12 @@
       "Bash(ls:*)",
       "Bash(python -c:*)",
       "Bash(python -m pytest:*)",
-      "Bash(python pipeline.py:*)"
+      "Bash(python pipeline.py:*)",
+      "Bash(git checkout:*)",
+      "Bash(git -C \"F:/GolfGen\" show HEAD:hole1_map.html)",
+      "Bash(git -C \"F:/GolfGen\" log --all --oneline -- hole1_map.html)",
+      "Bash(git -C \"F:/GolfGen\" stash list)",
+      "Bash(git -C \"F:/GolfGen\" show 2e301cb:hole1_map.html)"
     ]
   }
 }
