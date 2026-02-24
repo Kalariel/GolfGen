@@ -64,6 +64,20 @@
       <button id="btn-grid" class="active" onclick="toggle('grid')">Grille</button>
       <button id="btn-nums" class="active" onclick="toggle('nums')">Numeros</button>
       <button id="btn-pixel" onclick="toggle('pixel')">Vue pixel</button>
+      <button id="btn-loupe" onclick="openLoupe()">Vue loupe</button>
+    </div>
+    <div id="pixel-legend" style="display:none;margin-top:8px"></div>
+
+    <h2>ARBRES</h2>
+    <div class="file-controls">
+      <div class="tree-density-row" style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+        <label for="tree-density-input" style="font-size:12px;color:rgba(255,255,255,0.5);white-space:nowrap">Densité</label>
+        <input type="range" id="tree-density-input" min="0" max="100" value="40" step="5"
+               style="flex:1" oninput="document.getElementById('tree-density-display').textContent=this.value+'%'">
+        <span id="tree-density-display" style="font-size:12px;color:var(--accent);min-width:34px">40%</span>
+      </div>
+      <button onclick="generateDecorTrees()">Générer arbres</button>
+      <button onclick="clearDecorTrees()">Effacer arbres</button>
     </div>
 
     <h2>ZOOM</h2>
@@ -132,6 +146,35 @@
     </div>
     <div class="he-canvas-area">
       <canvas id="hole-canvas"></canvas>
+    </div>
+  </div>
+</div>
+
+<div id="loupe-overlay" style="display:none">
+  <div class="he-header">
+    <button class="he-back-btn" onclick="closeLoupe()">← Fermer</button>
+    <span id="loupe-title" style="font-family:'Silkscreen',cursive;font-size:15px;color:var(--accent);letter-spacing:1px">VUE MINECRAFT — 50×50 blocs</span>
+    <div></div>
+  </div>
+  <div class="he-body">
+    <div class="he-sidebar">
+      <h2>ORIGINE MINECRAFT</h2>
+      <div class="origin-inputs">
+        <input type="number" id="loupe-origin-x" placeholder="X">
+        <input type="number" id="loupe-origin-z" placeholder="Z">
+      </div>
+
+      <h2>POSITION</h2>
+      <div id="loupe-coords-display" class="loupe-coords">—</div>
+
+      <h2>LEGENDE</h2>
+      <div id="loupe-legend"></div>
+
+      <h2>NAVIGATION</h2>
+      <div class="zoom-hint">Fleches / WASD = deplacer<br>Clic + glisser = naviguer<br>Shift = x10</div>
+    </div>
+    <div class="he-canvas-area">
+      <canvas id="loupe-canvas"></canvas>
     </div>
   </div>
 </div>

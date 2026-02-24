@@ -483,6 +483,7 @@ function tryAutoLoad() {
           })));
           draw();
         }
+        if (state.decorTrees) globalDecorTrees = state.decorTrees;
         return;
       }
     } catch (e) {
@@ -540,6 +541,7 @@ function loadCourseData(json) {
   if (json.routing && json.routing.holes) {
     importHoles(json.routing.holes);
   }
+  globalDecorTrees = json.decor_trees || [];
 
   updateHeader();
   syncRouting();
@@ -1462,6 +1464,7 @@ function exportJSON() {
     terrain: terrainData,
     routing: courseData.routing || null,
     block_map: blockMapData,
+    decor_trees: globalDecorTrees.length > 0 ? globalDecorTrees : undefined,
   };
 
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -1485,6 +1488,7 @@ function autoSave() {
     origin: courseData.metadata.origin || null,
     holes: getHoles(),
     facilities: getFacilities(),
+    decorTrees: globalDecorTrees,
   };
   localStorage.setItem('golfgen_autosave', JSON.stringify(state));
 }
@@ -1493,6 +1497,13 @@ function autoSave() {
 function toggle(key) {
   show[key] = !show[key];
   if (key === 'water' && heightmapPixels) buildTerrainCache();
+  if (key === 'pixel') {
+    const leg = document.getElementById('pixel-legend');
+    if (leg) {
+      leg.style.display = show.pixel ? 'block' : 'none';
+      if (show.pixel) buildPixelLegend();
+    }
+  }
   const btn = document.getElementById('btn-' + key);
   if (btn) btn.classList.toggle('active');
   draw();
@@ -1524,6 +1535,18 @@ function buildCourseBlockMap() {
       imgData[idx] = r; imgData[idx + 1] = g; imgData[idx + 2] = b; imgData[idx + 3] = 255;
     }
   }
+  // Intégrer les arbres de décor global (rough/semi_rough uniquement)
+  for (const t of globalDecorTrees) {
+    if (t.x < 0 || t.x >= 350 || t.y < 0 || t.y >= 350) continue;
+    const tidx = t.y * 350 + t.x;
+    const zone = ZONE_INDEX[data[tidx]];
+    if (zone !== 'rough' && zone !== 'semi_rough') continue;
+    data[tidx] = ZONE_TO_IDX['tree'];
+    const [tr, tg, tb] = hexToRgb('#6b3a1f');
+    const tpidx = tidx * 4;
+    imgData[tpidx] = tr; imgData[tpidx + 1] = tg; imgData[tpidx + 2] = tb; imgData[tpidx + 3] = 255;
+  }
+
   octx.putImageData(imageData, 0, 0);
   courseBlockMap = data;
   mainPixelCache = offscreen;
@@ -1536,6 +1559,64 @@ function scheduleBlockMapRebuild() {
     buildCourseBlockMap();
     _blockMapTimer = null;
   }, 300);
+}
+
+function generateDecorTrees() {
+  if (!courseBlockMap || !courseData) return;
+  const density = (parseInt(document.getElementById('tree-density-input').value) || 40) / 100;
+  const seed = courseData.metadata.seed || 42;
+  const rng = mulberry32(seed + 7919);
+
+  const CELL = 4;
+  const CLUSTER_SCALE = 40;
+  const MIN_DIST = 3;
+
+  const nC = Math.ceil(350 / CLUSTER_SCALE);
+  const clusterProb = new Float32Array(nC * nC);
+  for (let i = 0; i < clusterProb.length; i++) clusterProb[i] = rng();
+
+  const occupied = new Uint8Array(350 * 350);
+  const trees = [];
+
+  for (let cy = 0; cy * CELL < 350; cy++) {
+    for (let cx = 0; cx * CELL < 350; cx++) {
+      const wx = cx * CELL, wy = cy * CELL;
+      const factor = clusterProb[Math.floor(wy / CLUSTER_SCALE) * nC + Math.floor(wx / CLUSTER_SCALE)];
+      if (rng() > density * factor * 3.0) continue;
+
+      const bx = wx + Math.floor(rng() * CELL);
+      const by = wy + Math.floor(rng() * CELL);
+      if (bx >= 350 || by >= 350) continue;
+
+      const zone = ZONE_INDEX[courseBlockMap[by * 350 + bx]];
+      if (zone !== 'rough' && zone !== 'semi_rough') continue;
+
+      let tooClose = false;
+      for (let dy = -MIN_DIST; dy <= MIN_DIST && !tooClose; dy++)
+        for (let dx = -MIN_DIST; dx <= MIN_DIST && !tooClose; dx++) {
+          const nx = bx + dx, ny = by + dy;
+          if (nx >= 0 && nx < 350 && ny >= 0 && ny < 350 && occupied[ny * 350 + nx]) tooClose = true;
+        }
+      if (tooClose) continue;
+
+      for (let dy = -MIN_DIST; dy <= MIN_DIST; dy++)
+        for (let dx = -MIN_DIST; dx <= MIN_DIST; dx++) {
+          const nx = bx + dx, ny = by + dy;
+          if (nx >= 0 && nx < 350 && ny >= 0 && ny < 350) occupied[ny * 350 + nx] = 1;
+        }
+      trees.push({ x: bx, y: by });
+    }
+  }
+
+  globalDecorTrees = trees;
+  buildCourseBlockMap();
+  autoSave();
+}
+
+function clearDecorTrees() {
+  globalDecorTrees = [];
+  buildCourseBlockMap();
+  autoSave();
 }
 
 // === Hole Editor ===
@@ -1551,6 +1632,9 @@ let heDrawMouseStartX = 0, heDrawMouseStartY = 0;
 let heMouseWorldX = 0, heMouseWorldY = 0;
 let heBlockCache = null;
 let heBlockCacheBounds = null;
+
+// Arbres de décor global (zones rough/semi_rough)
+let globalDecorTrees = []; // [{x, y}]
 
 // Course block map (350×350, 1 octet par bloc)
 let courseBlockMap = null;
@@ -1728,7 +1812,7 @@ const HE_ZONE_COLORS = {
   rough_alt:    '#263f1a',
   bunker:       '#e8d68a',
   water:        '#3b8bba',
-  tree:         '#2d5e1e',
+  tree:         '#6b3a1f',
   cart_path:    '#a08b6e',
 };
 
@@ -2144,6 +2228,287 @@ function heOnDblClick(e) {
   }
 }
 
+// === Vue Loupe ===
+let loupeCanvas = null;
+let loupeCtx = null;
+let loupeOffsetX = 0;
+let loupeOffsetY = 0;
+let loupeIsDragging = false;
+let loupeDragStartX = 0;
+let loupeDragStartY = 0;
+let loupeDragStartOX = 0;
+let loupeDragStartOY = 0;
+const LOUPE_SIZE = 50;
+
+const LOUPE_ZONE_LABELS = {
+  tee:          'Tee',
+  green:        'Green',
+  green_fringe: 'Frange green',
+  fairway:      'Fairway',
+  semi_rough:   'Semi-rough',
+  rough:        'Rough',
+  bunker:       'Bunker',
+  water:        'Eau',
+  tree:         'Arbre',
+  cart_path:    'Cart path',
+};
+
+function openLoupe() {
+  const overlay = document.getElementById('loupe-overlay');
+  overlay.style.display = 'flex';
+
+  loupeCanvas = document.getElementById('loupe-canvas');
+  loupeCtx = loupeCanvas.getContext('2d');
+  loupeOnResize();
+
+  // Synchroniser l'origine depuis les inputs principaux
+  const ox = document.getElementById('origin-x-input').value;
+  const oz = document.getElementById('origin-z-input').value;
+  document.getElementById('loupe-origin-x').value = ox;
+  document.getElementById('loupe-origin-z').value = oz;
+
+  // Centrer sur l'origine (offset 0,0 = coin haut-gauche de la block map)
+  loupeOffsetX = 0;
+  loupeOffsetY = 0;
+
+  buildLoupeLegend();
+
+  loupeCanvas.addEventListener('mousedown',   loupeOnMouseDown);
+  loupeCanvas.addEventListener('mousemove',   loupeOnMouseMove);
+  loupeCanvas.addEventListener('mouseup',     loupeOnMouseUp);
+  loupeCanvas.addEventListener('mouseleave',  loupeOnMouseLeave);
+  loupeCanvas.addEventListener('contextmenu', loupePreventContext);
+  window.addEventListener('keydown',  loupeOnKeyDown);
+  window.addEventListener('resize',   loupeOnResize);
+  document.getElementById('loupe-origin-x').addEventListener('input', loupeOnOriginChange);
+  document.getElementById('loupe-origin-z').addEventListener('input', loupeOnOriginChange);
+
+  drawLoupe();
+}
+
+function closeLoupe() {
+  const overlay = document.getElementById('loupe-overlay');
+  overlay.style.display = 'none';
+
+  if (loupeCanvas) {
+    loupeCanvas.removeEventListener('mousedown',   loupeOnMouseDown);
+    loupeCanvas.removeEventListener('mousemove',   loupeOnMouseMove);
+    loupeCanvas.removeEventListener('mouseup',     loupeOnMouseUp);
+    loupeCanvas.removeEventListener('mouseleave',  loupeOnMouseLeave);
+    loupeCanvas.removeEventListener('contextmenu', loupePreventContext);
+  }
+  window.removeEventListener('keydown',  loupeOnKeyDown);
+  window.removeEventListener('resize',   loupeOnResize);
+  const lox = document.getElementById('loupe-origin-x');
+  const loz = document.getElementById('loupe-origin-z');
+  if (lox) lox.removeEventListener('input', loupeOnOriginChange);
+  if (loz) loz.removeEventListener('input', loupeOnOriginChange);
+
+  loupeCanvas = null;
+  loupeCtx = null;
+}
+
+function loupeIsOpen() {
+  const overlay = document.getElementById('loupe-overlay');
+  return overlay && overlay.style.display !== 'none';
+}
+
+function loupePreventContext(e) { e.preventDefault(); }
+
+function loupeOnOriginChange() {
+  // Synchroniser vers les inputs principaux
+  const x = document.getElementById('loupe-origin-x').value;
+  const z = document.getElementById('loupe-origin-z').value;
+  document.getElementById('origin-x-input').value = x;
+  document.getElementById('origin-z-input').value = z;
+  drawLoupe();
+}
+
+function drawLoupe() {
+  if (!loupeCanvas || !loupeCtx) return;
+  const W = loupeCanvas.width;
+  const H = loupeCanvas.height;
+  const ctx2 = loupeCtx;
+
+  // Taille d'un bloc en pixels écran
+  const bs = Math.floor(Math.min(W, H) / LOUPE_SIZE);
+  if (bs < 1) return;
+
+  // Fond
+  ctx2.fillStyle = HE_ZONE_COLORS.rough;
+  ctx2.fillRect(0, 0, W, H);
+
+  if (!mainPixelCache) {
+    ctx2.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx2.font = '14px IBM Plex Mono, monospace';
+    ctx2.textAlign = 'center';
+    ctx2.fillText('Dessiner des trous pour afficher la block map', W / 2, H / 2);
+    ctx2.textAlign = 'left';
+    return;
+  }
+
+  // Afficher la portion 50×50 de mainPixelCache
+  ctx2.imageSmoothingEnabled = false;
+  ctx2.drawImage(
+    mainPixelCache,
+    loupeOffsetX, loupeOffsetY, LOUPE_SIZE, LOUPE_SIZE,
+    0, 0, bs * LOUPE_SIZE, bs * LOUPE_SIZE
+  );
+
+  // Grille
+  ctx2.strokeStyle = 'rgba(0,0,0,0.25)';
+  ctx2.lineWidth = 0.5;
+  for (let i = 0; i <= LOUPE_SIZE; i++) {
+    ctx2.beginPath();
+    ctx2.moveTo(i * bs, 0);
+    ctx2.lineTo(i * bs, bs * LOUPE_SIZE);
+    ctx2.stroke();
+    ctx2.beginPath();
+    ctx2.moveTo(0, i * bs);
+    ctx2.lineTo(bs * LOUPE_SIZE, i * bs);
+    ctx2.stroke();
+  }
+
+  // Etiquettes coordonnées Minecraft tous les 10 blocs
+  const origin = getOrigin();
+  ctx2.fillStyle = 'rgba(255,255,255,0.85)';
+  ctx2.font = `${Math.max(9, Math.min(bs - 2, 11))}px IBM Plex Mono, monospace`;
+  ctx2.textAlign = 'left';
+
+  for (let i = 0; i <= LOUPE_SIZE; i += 10) {
+    const mcX = origin.x + loupeOffsetX + i;
+    const px = i * bs + 2;
+    if (px < bs * LOUPE_SIZE) {
+      ctx2.fillText('X' + mcX, px, 11);
+    }
+  }
+  for (let j = 0; j <= LOUPE_SIZE; j += 10) {
+    const mcZ = origin.z + loupeOffsetY + j;
+    const py = j * bs + 11;
+    if (py < bs * LOUPE_SIZE) {
+      ctx2.fillText('Z' + mcZ, 2, py);
+    }
+  }
+}
+
+function loupeOnMouseDown(e) {
+  if (e.button === 0) {
+    loupeIsDragging = true;
+    loupeDragStartX = e.clientX;
+    loupeDragStartY = e.clientY;
+    loupeDragStartOX = loupeOffsetX;
+    loupeDragStartOY = loupeOffsetY;
+    loupeCanvas.style.cursor = 'grabbing';
+  }
+}
+
+function loupeOnMouseMove(e) {
+  const W = loupeCanvas ? loupeCanvas.width : 0;
+  const H = loupeCanvas ? loupeCanvas.height : 0;
+  const bs = Math.floor(Math.min(W, H) / LOUPE_SIZE);
+
+  if (loupeIsDragging && bs > 0) {
+    // Déplacer d'un bloc pour chaque bs pixels glissés
+    const dxPx = e.clientX - loupeDragStartX;
+    const dyPx = e.clientY - loupeDragStartY;
+    const dxBlocs = Math.round(-dxPx / bs);
+    const dyBlocs = Math.round(-dyPx / bs);
+    loupeOffsetX = Math.max(0, Math.min(300, loupeDragStartOX + dxBlocs));
+    loupeOffsetY = Math.max(0, Math.min(300, loupeDragStartOY + dyBlocs));
+    drawLoupe();
+  }
+
+  // Coordonnées du bloc sous le curseur
+  if (bs > 0 && loupeCanvas) {
+    const rect = loupeCanvas.getBoundingClientRect();
+    const lx = e.clientX - rect.left;
+    const ly = e.clientY - rect.top;
+    const bx = Math.floor(lx / bs) + loupeOffsetX;
+    const by = Math.floor(ly / bs) + loupeOffsetY;
+
+    if (bx >= 0 && bx < 350 && by >= 0 && by < 350) {
+      const origin = getOrigin();
+      const mcX = origin.x + bx;
+      const mcZ = origin.z + by;
+      let zoneName = '—';
+      if (courseBlockMap) {
+        const zoneIdx = courseBlockMap[by * 350 + bx];
+        const zone = ZONE_INDEX[zoneIdx] || 'rough';
+        zoneName = LOUPE_ZONE_LABELS[zone] || zone;
+      }
+      const coordsEl2 = document.getElementById('loupe-coords-display');
+      if (coordsEl2) coordsEl2.textContent = `X: ${mcX}  Z: ${mcZ}\nZone: ${zoneName}`;
+    }
+  }
+}
+
+function loupeOnMouseUp(e) {
+  if (e.button === 0) {
+    loupeIsDragging = false;
+    if (loupeCanvas) loupeCanvas.style.cursor = 'crosshair';
+  }
+}
+
+function loupeOnMouseLeave() {
+  loupeIsDragging = false;
+  if (loupeCanvas) loupeCanvas.style.cursor = 'crosshair';
+}
+
+function loupeOnKeyDown(e) {
+  if (!loupeIsOpen()) return;
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    closeLoupe();
+    return;
+  }
+
+  const step = e.shiftKey ? 10 : 1;
+  let moved = false;
+
+  if (e.key === 'ArrowLeft'  || e.key === 'a' || e.key === 'A') { loupeOffsetX = Math.max(0, loupeOffsetX - step); moved = true; }
+  if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') { loupeOffsetX = Math.min(300, loupeOffsetX + step); moved = true; }
+  if (e.key === 'ArrowUp'    || e.key === 'w' || e.key === 'W') { loupeOffsetY = Math.max(0, loupeOffsetY - step); moved = true; }
+  if (e.key === 'ArrowDown'  || e.key === 's' || e.key === 'S') { loupeOffsetY = Math.min(300, loupeOffsetY + step); moved = true; }
+
+  if (moved) {
+    e.preventDefault();
+    drawLoupe();
+  }
+}
+
+function loupeOnResize() {
+  if (!loupeCanvas) return;
+  const wrapper = loupeCanvas.parentElement;
+  const rect = wrapper.getBoundingClientRect();
+  loupeCanvas.width = Math.floor(rect.width);
+  loupeCanvas.height = Math.floor(rect.height);
+  drawLoupe();
+}
+
+function buildZoneLegend(container) {
+  if (!container) return;
+  container.innerHTML = '';
+  const zones = ['tee', 'green', 'green_fringe', 'fairway', 'semi_rough', 'rough', 'bunker', 'water', 'tree', 'cart_path'];
+  zones.forEach(zone => {
+    const color = HE_ZONE_COLORS[zone] || '#888';
+    const label = LOUPE_ZONE_LABELS[zone] || zone;
+    const item = document.createElement('div');
+    item.className = 'loupe-legend-item';
+    item.innerHTML = `<div class="loupe-legend-swatch" style="background:${color}"></div><span>${label}</span>`;
+    container.appendChild(item);
+  });
+}
+
+function buildLoupeLegend() {
+  buildZoneLegend(document.getElementById('loupe-legend'));
+}
+
+function buildPixelLegend() {
+  buildZoneLegend(document.getElementById('pixel-legend'));
+}
+
 // === Keyboard ===
 function onKeyDown(e) {
   // Ne pas interférer avec les inputs texte
@@ -2151,6 +2516,12 @@ function onKeyDown(e) {
 
   if (e.key === 'Escape') {
     e.preventDefault();
+
+    // Loupe ouverte → fermer en priorité
+    if (loupeIsOpen()) {
+      closeLoupe();
+      return;
+    }
 
     // Hole Editor ouvert
     if (getHeEditingHoleId() !== null) {
