@@ -776,6 +776,7 @@ function draw() {
   } else {
     if (show.terrain) drawTerrain();
     if (show.routing && courseData.routing) drawRouting(false);
+    drawDecorTrees();
   }
   drawFacilities();
   if (getEditorMode() === 'draw') drawPreview();
@@ -1028,6 +1029,22 @@ function drawHoleFeatures(h) {
     ctx.setLineDash([4, 4]);
     ctx.stroke();
     ctx.setLineDash([]);
+  }
+}
+
+function drawDecorTrees() {
+  if (!globalDecorTrees || globalDecorTrees.length === 0) return;
+  const r = Math.max(1, 2.5 * camZoom);
+  ctx.fillStyle = C.tree;
+  ctx.strokeStyle = C.treeDark;
+  ctx.lineWidth = 0.5;
+  ctx.setLineDash([]);
+  for (const t of globalDecorTrees) {
+    const [tx, ty] = toCanvas(t.x, t.y);
+    ctx.beginPath();
+    ctx.arc(tx, ty, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
   }
 }
 
@@ -1510,47 +1527,152 @@ function toggle(key) {
 }
 
 // === Course Block Map ===
-function buildCourseBlockMap() {
-  const holes = getHoles();
-  if (holes.length === 0) { courseBlockMap = null; mainPixelCache = null; return; }
-  const bboxes = holes.map(getHoleBBox);
-  const data = new Uint8Array(350 * 350);
 
-  const offscreen = document.createElement('canvas');
-  offscreen.width = 350;
-  offscreen.height = 350;
-  const octx = offscreen.getContext('2d');
-  const imageData = octx.createImageData(350, 350);
-  const imgData = imageData.data;
+function _setBlockMapProgress(fraction) {
+  const wrap = document.getElementById('blockmap-progress-wrap');
+  const fill = document.getElementById('blockmap-progress-fill');
+  if (!wrap || !fill) return;
+  if (fraction < 0) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  fill.style.width = Math.round(fraction * 100) + '%';
+}
 
-  for (let by = 0; by < 350; by++) {
-    for (let bx = 0; bx < 350; bx++) {
-      const zone = getGlobalZoneAt(bx, by, holes, bboxes);
-      data[by * 350 + bx] = ZONE_TO_IDX[zone] ?? 0;
-      const hex = zone === 'rough'
-        ? ((bx + by) % 2 === 0 ? HE_ZONE_COLORS.rough : HE_ZONE_COLORS.rough_alt)
-        : (HE_ZONE_COLORS[zone] || HE_ZONE_COLORS.rough);
-      const [r, g, b] = hexToRgb(hex);
-      const idx = (by * 350 + bx) * 4;
-      imgData[idx] = r; imgData[idx + 1] = g; imgData[idx + 2] = b; imgData[idx + 3] = 255;
-    }
-  }
-  // Intégrer les arbres de décor global (rough/semi_rough uniquement)
+// Overlay rapide : applique globalDecorTrees sur la base cachée → courseBlockMap + mainPixelCache
+function _applyDecorTrees() {
+  if (!baseBlockMap || !basePixelBytes) return;
+  const data = new Uint8Array(baseBlockMap);
+  const imgBytes = new Uint8ClampedArray(basePixelBytes);
   for (const t of globalDecorTrees) {
     if (t.x < 0 || t.x >= 350 || t.y < 0 || t.y >= 350) continue;
     const tidx = t.y * 350 + t.x;
-    const zone = ZONE_INDEX[data[tidx]];
-    if (zone !== 'rough' && zone !== 'semi_rough') continue;
+    if (ZONE_INDEX[data[tidx]] !== 'rough' && ZONE_INDEX[data[tidx]] !== 'semi_rough') continue;
     data[tidx] = ZONE_TO_IDX['tree'];
     const [tr, tg, tb] = hexToRgb('#6b3a1f');
-    const tpidx = tidx * 4;
-    imgData[tpidx] = tr; imgData[tpidx + 1] = tg; imgData[tpidx + 2] = tb; imgData[tpidx + 3] = 255;
+    const pidx = tidx * 4;
+    imgBytes[pidx] = tr; imgBytes[pidx + 1] = tg; imgBytes[pidx + 2] = tb; imgBytes[pidx + 3] = 255;
   }
-
-  octx.putImageData(imageData, 0, 0);
+  const offscreen = document.createElement('canvas');
+  offscreen.width = 350; offscreen.height = 350;
+  offscreen.getContext('2d').putImageData(new ImageData(imgBytes, 350, 350), 0, 0);
   courseBlockMap = data;
   mainPixelCache = offscreen;
   if (show.pixel) draw();
+  _setBlockMapProgress(-1);
+}
+
+// Bbox d'un polygone (arrondi au bloc)
+function _polyBBox(points) {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const p of points) {
+    if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x;
+    if (p.y < minY) minY = p.y; if (p.y > maxY) maxY = p.y;
+  }
+  return { minX: Math.floor(minX), minY: Math.floor(minY), maxX: Math.ceil(maxX), maxY: Math.ceil(maxY) };
+}
+
+// Version de getHoleZoneAt avec bboxes pré-calculées par feature (évite pointInPolygon inutiles)
+function _getHoleZoneFast(h, bx, by, bunkerBboxes, waterBboxes) {
+  const wps = h.points;
+  const tee = wps[0];
+  const green = wps[wps.length - 1];
+  const gr = h.greenRadius || 8;
+  const fw = h.fairwayWidth || 12;
+  const features = h.features || {};
+
+  if (Math.abs(bx - tee.x) <= 4 && Math.abs(by - tee.y) <= 2.5) return 'tee';
+
+  const dgr = Math.hypot(bx - green.x, by - green.y);
+  if (dgr <= gr) return 'green';
+  if (dgr <= gr + 3) return 'green_fringe';
+
+  const bunkers = features.bunkers || [];
+  for (let i = 0; i < bunkers.length; i++) {
+    const bb = bunkerBboxes[i];
+    if (bx < bb.minX || bx > bb.maxX || by < bb.minY || by > bb.maxY) continue;
+    if (bunkers[i].points.length >= 3 && pointInPolygon(bx, by, bunkers[i].points)) return 'bunker';
+  }
+
+  const waters = features.water_hazards || [];
+  for (let i = 0; i < waters.length; i++) {
+    const bb = waterBboxes[i];
+    if (bx < bb.minX || bx > bb.maxX || by < bb.minY || by > bb.maxY) continue;
+    if (waters[i].points.length >= 3 && pointInPolygon(bx, by, waters[i].points)) return 'water';
+  }
+
+  for (const tree of (features.trees || [])) {
+    if (Math.hypot(bx - tree.x, by - tree.y) <= 2) return 'tree';
+  }
+
+  if (features.cart_path?.points?.length >= 2) {
+    const cp = features.cart_path.points;
+    for (let i = 1; i < cp.length; i++) {
+      if (pointToSegDist(bx, by, cp[i - 1].x, cp[i - 1].y, cp[i].x, cp[i].y) <= 1.5) return 'cart_path';
+    }
+  }
+
+  let minDist = Infinity;
+  for (let i = 1; i < wps.length; i++) {
+    const d = pointToSegDist(bx, by, wps[i - 1].x, wps[i - 1].y, wps[i].x, wps[i].y);
+    if (d < minDist) minDist = d;
+  }
+  if (minDist <= fw / 2) return 'fairway';
+  if (minDist <= fw / 2 + 5) return 'semi_rough';
+  return 'rough';
+}
+
+function buildCourseBlockMap() {
+  const holes = getHoles();
+  if (holes.length === 0) {
+    courseBlockMap = null; mainPixelCache = null;
+    baseBlockMap = null; basePixelBytes = null;
+    _setBlockMapProgress(-1);
+    return;
+  }
+
+  _setBlockMapProgress(0);
+
+  // Pré-calcul des bboxes : hole + features (évite pointInPolygon sur tous les blocs)
+  const holeMeta = holes.map(h => {
+    const features = h.features || {};
+    return {
+      hole: h,
+      bb: getHoleBBox(h),
+      bunkerBboxes: (features.bunkers || []).map(b => _polyBBox(b.points)),
+      waterBboxes:  (features.water_hazards || []).map(w => _polyBBox(w.points)),
+    };
+  });
+
+  const data = new Uint8Array(350 * 350);
+  const imgBytes = new Uint8ClampedArray(350 * 350 * 4);
+
+  for (let by = 0; by < 350; by++) {
+    for (let bx = 0; bx < 350; bx++) {
+      let bestPriority = -1;
+      let bestZone = 'rough';
+      for (const hd of holeMeta) {
+        const bb = hd.bb;
+        if (bx < bb.minX || bx > bb.maxX || by < bb.minY || by > bb.maxY) continue;
+        const zone = _getHoleZoneFast(hd.hole, bx, by, hd.bunkerBboxes, hd.waterBboxes);
+        const priority = ZONE_PRIORITY[zone] ?? 0;
+        if (priority > bestPriority) {
+          bestPriority = priority;
+          bestZone = zone;
+          if (priority === 9) break;
+        }
+      }
+      data[by * 350 + bx] = ZONE_TO_IDX[bestZone] ?? 0;
+      const hex = bestZone === 'rough'
+        ? ((bx + by) % 2 === 0 ? HE_ZONE_COLORS.rough : HE_ZONE_COLORS.rough_alt)
+        : (HE_ZONE_COLORS[bestZone] || HE_ZONE_COLORS.rough);
+      const [r, g, b] = hexToRgb(hex);
+      const idx = (by * 350 + bx) * 4;
+      imgBytes[idx] = r; imgBytes[idx + 1] = g; imgBytes[idx + 2] = b; imgBytes[idx + 3] = 255;
+    }
+  }
+
+  baseBlockMap = data;
+  basePixelBytes = imgBytes;
+  _applyDecorTrees();
 }
 
 function scheduleBlockMapRebuild() {
@@ -1562,60 +1684,78 @@ function scheduleBlockMapRebuild() {
 }
 
 function generateDecorTrees() {
-  if (!courseBlockMap || !courseData) return;
-  const density = (parseInt(document.getElementById('tree-density-input').value) || 40) / 100;
-  const seed = courseData.metadata.seed || 42;
-  const rng = mulberry32(seed + 7919);
+  if (!baseBlockMap || !courseData) return;
 
-  const CELL = 4;
-  const CLUSTER_SCALE = 40;
-  const MIN_DIST = 3;
+  const btn = document.getElementById('btn-generate-trees');
+  if (btn) { btn.disabled = true; btn.textContent = 'Génération...'; }
 
-  const nC = Math.ceil(350 / CLUSTER_SCALE);
-  const clusterProb = new Float32Array(nC * nC);
-  for (let i = 0; i < clusterProb.length; i++) clusterProb[i] = rng();
+  // double-rAF pour s'assurer qu'un frame est peint avant le calcul bloquant
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    const density = (parseInt(document.getElementById('tree-density-input').value) || 40) / 100;
+    const seed = courseData.metadata.seed || 42;
+    const rng = mulberry32(seed + 7919);
 
-  const occupied = new Uint8Array(350 * 350);
-  const trees = [];
+    const CELL = 4;
+    const CLUSTER_SCALE = 40;
+    const MIN_DIST = 3;
 
-  for (let cy = 0; cy * CELL < 350; cy++) {
-    for (let cx = 0; cx * CELL < 350; cx++) {
-      const wx = cx * CELL, wy = cy * CELL;
-      const factor = clusterProb[Math.floor(wy / CLUSTER_SCALE) * nC + Math.floor(wx / CLUSTER_SCALE)];
-      if (rng() > density * factor * 3.0) continue;
+    const nC = Math.ceil(350 / CLUSTER_SCALE);
+    const clusterProb = new Float32Array(nC * nC);
+    for (let i = 0; i < clusterProb.length; i++) clusterProb[i] = rng();
 
-      const bx = wx + Math.floor(rng() * CELL);
-      const by = wy + Math.floor(rng() * CELL);
-      if (bx >= 350 || by >= 350) continue;
+    const occupied = new Uint8Array(350 * 350);
+    const trees = [];
+    const facilities = getFacilities();
 
-      const zone = ZONE_INDEX[courseBlockMap[by * 350 + bx]];
-      if (zone !== 'rough' && zone !== 'semi_rough') continue;
+    for (let cy = 0; cy * CELL < 350; cy++) {
+      for (let cx = 0; cx * CELL < 350; cx++) {
+        const wx = cx * CELL, wy = cy * CELL;
+        const factor = clusterProb[Math.floor(wy / CLUSTER_SCALE) * nC + Math.floor(wx / CLUSTER_SCALE)];
+        if (rng() > density * factor * 3.0) continue;
 
-      let tooClose = false;
-      for (let dy = -MIN_DIST; dy <= MIN_DIST && !tooClose; dy++)
-        for (let dx = -MIN_DIST; dx <= MIN_DIST && !tooClose; dx++) {
-          const nx = bx + dx, ny = by + dy;
-          if (nx >= 0 && nx < 350 && ny >= 0 && ny < 350 && occupied[ny * 350 + nx]) tooClose = true;
-        }
-      if (tooClose) continue;
+        const bx = wx + Math.floor(rng() * CELL);
+        const by = wy + Math.floor(rng() * CELL);
+        if (bx >= 350 || by >= 350) continue;
 
-      for (let dy = -MIN_DIST; dy <= MIN_DIST; dy++)
-        for (let dx = -MIN_DIST; dx <= MIN_DIST; dx++) {
-          const nx = bx + dx, ny = by + dy;
-          if (nx >= 0 && nx < 350 && ny >= 0 && ny < 350) occupied[ny * 350 + nx] = 1;
-        }
-      trees.push({ x: bx, y: by });
+        // Lecture depuis baseBlockMap (sans arbres) → zones propres, jamais de bunker/water/green
+        const zone = ZONE_INDEX[baseBlockMap[by * 350 + bx]];
+        if (zone !== 'rough' && zone !== 'semi_rough') continue;
+
+        const onFacility = facilities.some(f => bx >= f.x && bx < f.x + f.w && by >= f.y && by < f.y + f.h);
+        if (onFacility) continue;
+
+        let tooClose = false;
+        for (let dy = -MIN_DIST; dy <= MIN_DIST && !tooClose; dy++)
+          for (let dx = -MIN_DIST; dx <= MIN_DIST && !tooClose; dx++) {
+            const nx = bx + dx, ny = by + dy;
+            if (nx >= 0 && nx < 350 && ny >= 0 && ny < 350 && occupied[ny * 350 + nx]) tooClose = true;
+          }
+        if (tooClose) continue;
+
+        for (let dy = -MIN_DIST; dy <= MIN_DIST; dy++)
+          for (let dx = -MIN_DIST; dx <= MIN_DIST; dx++) {
+            const nx = bx + dx, ny = by + dy;
+            if (nx >= 0 && nx < 350 && ny >= 0 && ny < 350) occupied[ny * 350 + nx] = 1;
+          }
+        trees.push({ x: bx, y: by });
+      }
     }
-  }
 
-  globalDecorTrees = trees;
-  buildCourseBlockMap();
-  autoSave();
+    globalDecorTrees = trees;
+    _applyDecorTrees(); // fast overlay sur la base cachée, pas de rebuild complet
+    autoSave();
+
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = `${trees.length} arbres placés`;
+      setTimeout(() => { btn.textContent = 'Générer arbres'; }, 2000);
+    }
+  }));
 }
 
 function clearDecorTrees() {
   globalDecorTrees = [];
-  buildCourseBlockMap();
+  _applyDecorTrees();
   autoSave();
 }
 
@@ -1639,6 +1779,8 @@ let globalDecorTrees = []; // [{x, y}]
 // Course block map (350×350, 1 octet par bloc)
 let courseBlockMap = null;
 let mainPixelCache = null; // canvas coloré pour la vue pixel
+let baseBlockMap = null;    // zones sans decor trees (source de vérité pour generateDecorTrees)
+let basePixelBytes = null;  // Uint8ClampedArray pixel correspondant à baseBlockMap
 let _blockMapTimer = null;
 const ZONE_INDEX = ['rough', 'semi_rough', 'fairway', 'cart_path', 'tree', 'water', 'bunker', 'green_fringe', 'green', 'tee'];
 const ZONE_TO_IDX = Object.fromEntries(ZONE_INDEX.map((z, i) => [z, i]));
@@ -2253,6 +2395,19 @@ const LOUPE_ZONE_LABELS = {
   cart_path:    'Cart path',
 };
 
+const ZONE_MC_BLOCKS = {
+  tee:          'lime_wool',
+  green:        'lime_carpet / grass_block',
+  green_fringe: 'green_carpet / grass_block',
+  fairway:      'green_wool / moss_block',
+  semi_rough:   'grass_block + short_grass',
+  rough:        'grass_block + tall_grass',
+  bunker:       'sand (−1 bloc)',
+  water:        'water (−2 blocs)',
+  tree:         'oak_log + oak_leaves',
+  cart_path:    'dirt_path / gravel',
+};
+
 function openLoupe() {
   const overlay = document.getElementById('loupe-overlay');
   overlay.style.display = 'flex';
@@ -2389,6 +2544,43 @@ function drawLoupe() {
       ctx2.fillText('Z' + mcZ, 2, py);
     }
   }
+
+  // Minimap : carré en haut à droite montrant la position dans la grille 350×350
+  const MM = 120;
+  const MM_MARGIN = 10;
+  const mmX = W - MM - MM_MARGIN;
+  const mmY = MM_MARGIN;
+
+  // Fond sombre (grille complète)
+  ctx2.fillStyle = 'rgba(30,30,30,0.85)';
+  ctx2.fillRect(mmX, mmY, MM, MM);
+
+  // Terrain miniaturisé si disponible
+  if (mainPixelCache) {
+    ctx2.imageSmoothingEnabled = true;
+    ctx2.globalAlpha = 0.6;
+    ctx2.drawImage(mainPixelCache, 0, 0, 350, 350, mmX, mmY, MM, MM);
+    ctx2.globalAlpha = 1;
+    ctx2.imageSmoothingEnabled = false;
+  }
+
+  // Rectangle viewport (position actuelle)
+  const scale = MM / 350;
+  const vpX = mmX + loupeOffsetX * scale;
+  const vpY = mmY + loupeOffsetY * scale;
+  const vpW = LOUPE_SIZE * scale;
+  const vpH = LOUPE_SIZE * scale;
+
+  ctx2.strokeStyle = 'rgba(220,220,220,0.95)';
+  ctx2.lineWidth = 1.5;
+  ctx2.strokeRect(vpX, vpY, vpW, vpH);
+  ctx2.fillStyle = 'rgba(200,200,200,0.15)';
+  ctx2.fillRect(vpX, vpY, vpW, vpH);
+
+  // Bordure extérieure de la minimap
+  ctx2.strokeStyle = 'rgba(120,120,120,0.7)';
+  ctx2.lineWidth = 1;
+  ctx2.strokeRect(mmX, mmY, MM, MM);
 }
 
 function loupeOnMouseDown(e) {
@@ -2436,8 +2628,15 @@ function loupeOnMouseMove(e) {
         const zone = ZONE_INDEX[zoneIdx] || 'rough';
         zoneName = LOUPE_ZONE_LABELS[zone] || zone;
       }
+      let elevStr = '';
+      if (heightmapPixels && courseData && courseData.terrain && courseData.terrain.elevation) {
+        const elev = courseData.terrain.elevation;
+        const val = heightmapPixels[by * 350 + bx];
+        const realElev = Math.round(elev.min_elevation + (val / 255) * (elev.max_elevation - elev.min_elevation));
+        elevStr = `  Y: ${realElev}`;
+      }
       const coordsEl2 = document.getElementById('loupe-coords-display');
-      if (coordsEl2) coordsEl2.textContent = `X: ${mcX}  Z: ${mcZ}\nZone: ${zoneName}`;
+      if (coordsEl2) coordsEl2.textContent = `X: ${mcX}  Z: ${mcZ}${elevStr}\nZone: ${zoneName}`;
     }
   }
 }
@@ -2494,9 +2693,10 @@ function buildZoneLegend(container) {
   zones.forEach(zone => {
     const color = HE_ZONE_COLORS[zone] || '#888';
     const label = LOUPE_ZONE_LABELS[zone] || zone;
+    const mcBlock = ZONE_MC_BLOCKS[zone] || '';
     const item = document.createElement('div');
     item.className = 'loupe-legend-item';
-    item.innerHTML = `<div class="loupe-legend-swatch" style="background:${color}"></div><span>${label}</span>`;
+    item.innerHTML = `<div class="loupe-legend-swatch" style="background:${color}"></div><div><span>${label}</span>${mcBlock ? `<br><span class="loupe-legend-mc">${mcBlock}</span>` : ''}</div>`;
     container.appendChild(item);
   });
 }

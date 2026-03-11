@@ -36,7 +36,7 @@ Ordre de chargement : `utils.js` → `terrain.js` → `editor.js` → `app.js`
    - Rendu bloc-par-bloc par trou (cache offscreen, 1px = 1 bloc Minecraft)
 8. **Block map globale** : 350x350 Uint8Array, zones resolues tous trous confondus, debounce 300ms
 9. **Arbres de decor global** : generation clusterisee (biomes 40x40, grille 4x4, distance min 3 blocs) dans rough/semi_rough uniquement ; pixel central marron `#6b3a1f` ; slider de densite ; persistance autosave + export JSON (`decor_trees`)
-10. **Vue loupe** : affiche 50x50 blocs du courseBlockMap, navigation fleches/WASD/drag, etiquettes coords Minecraft, legende
+10. **Vue loupe** : affiche 50x50 blocs du courseBlockMap, navigation fleches/WASD/drag, etiquettes coords Minecraft, legende ; **minimap** en haut a droite (120x120px) : fond sombre = grille 350x350, rectangle blanc = viewport actuel
 11. **Export JSON** : inclut `block_map` (base64_uint8, zones indexees) + `decor_trees` [{x,y}]
 12. **Import JSON** : facilities importees AVANT les trous (bug fix ordre critique)
 13. **Autosave** : localStorage (seed + trous + features + facilities + decorTrees)
@@ -113,10 +113,13 @@ f = { id, type: 'clubhouse'|'putting_green'|'practice', x, y, w, h }
 - `draw()` — canvas principal : mode pixel ou vectoriel selon `show.pixel`
 - `drawRouting(overlayOnly=false)` — si overlayOnly : skip fairway/green/tee/features, garde glow+flag+numero+handles
 - `drawPixelMap()` — affiche `mainPixelCache` (350x350) mise a l'echelle
-- `buildCourseBlockMap()` — construit `courseBlockMap` (Uint8Array) + `mainPixelCache` + integre `globalDecorTrees`
+- `buildCourseBlockMap()` — construit `baseBlockMap` + `basePixelBytes` (sans arbres), puis appelle `_applyDecorTrees()` ; utilise `_getHoleZoneFast` avec bboxes par feature pour eviter `pointInPolygon` inutiles
+- `_applyDecorTrees()` — overlay rapide : copie `baseBlockMap`/`basePixelBytes`, pose les decor trees, produit `courseBlockMap` + `mainPixelCache`
+- `_getHoleZoneFast(h, bx, by, bunkerBboxes, waterBboxes)` — variante de `getHoleZoneAt` avec garde bbox par feature (evite pointInPolygon si bloc hors bbox du bunker/water)
+- `_polyBBox(points)` — bbox d'un polygone arrondie au bloc
 - `scheduleBlockMapRebuild()` — debounce 300ms, appele par `onEditorChange`
-- `generateDecorTrees()` — algo clusterise, lit slider `#tree-density-input`, necessite `courseBlockMap` existant
-- `clearDecorTrees()` — vide `globalDecorTrees` + rebuild
+- `generateDecorTrees()` — algo clusterise, lit `baseBlockMap` (pas courseBlockMap) pour eviter arbres dans bunkers ; necessite `baseBlockMap` existant
+- `clearDecorTrees()` — vide `globalDecorTrees` + `_applyDecorTrees()`
 - `buildHoleBlockCache(h)` — cache offscreen pour le Hole Editor (1px=1bloc, bounding box du trou)
 - `drawHoleEditor()` — fond pixel + trous adjacents vecteur + overlay waypoints/flag + poly/freehand en cours + grille
 - `openHoleEditor(holeId)` / `closeHoleEditor()` — gestion overlay + camera + events
@@ -148,13 +151,14 @@ HE_ZONE_COLORS = {
 ## Invalidation des caches
 
 - `heBlockCache` (Hole Editor) : null dans `openHoleEditor`, `heDeleteFeature`, `onEditorChange` (si HE ouvert)
-- `mainPixelCache` / `courseBlockMap` : null dans `buildCourseBlockMap` si 0 trous ; reconstruit via debounce
+- `mainPixelCache` / `courseBlockMap` / `baseBlockMap` : null dans `buildCourseBlockMap` si 0 trous ; reconstruit via debounce
+- `baseBlockMap` : cache des zones sans decor trees — source de verite pour `generateDecorTrees` et `_applyDecorTrees`
 - `terrainCache` : reconstruit dans `buildTerrainCache()` (appele si toggle water ou nouveau terrain)
 
 ## Pieges connus
 
 - **Import JSON** : toujours importer `facilities` AVANT `holes` dans `loadCourseData`. `importHoles` appelle `_onChangeCallback` → `syncRouting` → ecrase `courseData.routing` (meme reference que le JSON parse). Les facilities du JSON sont alors perdues.
-- **Arbres decor** : `generateDecorTrees()` necessite `courseBlockMap` deja construit (au moins 1 trou dessiné). Retour early sinon.
+- **Arbres decor** : `generateDecorTrees()` necessite `baseBlockMap` deja construit (au moins 1 trou dessiné). Retour early sinon. Lire `baseBlockMap` (pas `courseBlockMap`) pour les verifications de zone — evite les faux positifs si des arbres precedents ont ecrase des zones bunker/water.
 - **Scripts non-ES modules** : pas de `import/export`, pas besoin de `window.fn = fn`. Toutes les fonctions definies avec `function` sont globales.
 - **Simplex noise** : integre inline dans `terrain.js`, pas de CDN.
 - **addEventListener dedup** : fonctions nommees obligatoires pour `removeEventListener`. Flag `alreadyOpen` evite de re-enregistrer les listeners du HE quand on navigue entre trous.

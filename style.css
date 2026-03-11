@@ -774,11 +774,16 @@ body {
 
 .loupe-legend-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   font-size: 12px;
   color: rgba(255,255,255,0.7);
   margin-bottom: 5px;
+}
+
+.loupe-legend-mc {
+  font-size: 10px;
+  color: rgba(255,255,255,0.35);
 }
 
 .loupe-legend-swatch {
@@ -786,6 +791,7 @@ body {
   height: 14px;
   border-radius: 2px;
   flex-shrink: 0;
+  margin-top: 1px;
 }
 
 #loupe-canvas {
