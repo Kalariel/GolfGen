@@ -180,6 +180,20 @@ class GeneticOptimizer:
         centroid_y = sum(p[1] for p in all_points) / len(all_points)
         return centroid_x, centroid_y
 
+    def _is_valid_individual(self, individual) -> bool:
+        """Check if an individual produces a valid course (no out-of-bounds, no collisions)."""
+        holes, penalties = self._build_course(individual)
+        if holes is None:
+            return False
+        # Check if all waypoints are within bounds (hard check)
+        margin = self.config.routing.grid_margin
+        w, h = self.config.width, self.config.height
+        for hole in holes:
+            for wp in hole["waypoints"]:
+                if wp[0] < margin or wp[0] > w - margin or wp[1] < margin or wp[1] > h - margin:
+                    return False
+        return True
+
     def run(self) -> List[Dict]:
         """Runs the evolutionary algorithm and returns the best course layout."""
         pop_size = 300
@@ -191,6 +205,18 @@ class GeneticOptimizer:
             noise = (i / pop_size) * 0.5  # Gradually increasing noise
             ind = self._create_seeded_individual(noise)
             pop.append(ind)
+        
+        # Ensure at least one valid individual in the population
+        valid_found = False
+        for ind in pop:
+            if self._is_valid_individual(ind):
+                valid_found = True
+                break
+        
+        if not valid_found:
+            print("⚠️  No valid individual found in initial population. Regenerating first individual...")
+            # Regenerate the first individual with minimal noise to ensure validity
+            pop[0] = self._create_seeded_individual(noise=0.0)
         
         stats = tools.Statistics(lambda ind: ind.fitness.values)
         stats.register("min", np.min)
@@ -223,8 +249,8 @@ class GeneticOptimizer:
                 f"Avg={avg_score:.1f}"
             )
 
-            # Toutes les 10 générations, exporte le meilleur individu pour ton viewer
-            if gen % 10 == 0:
+            # Export debug files less frequently to avoid clutter (every 50 generations instead of 10)
+            if gen % 50 == 0:
                 best_holes = self._genome_to_course(best_ind)
                 output_path = f"debug_gen_{gen}.json"  # Fichier JSON pour ton viewer
                 with open(output_path, "w") as f:
@@ -593,9 +619,9 @@ class GeneticOptimizer:
                 hole_direction = continuity_direction * 0.95 + radial_direction * 0.05  # Presque toute continuité
 
             # Génération de la forme du trou
-            shape_rng = random.Random(int(g_seed * 10000))
+            # Utiliser self.rng pour garantir la reproductibilité
             temp_gen = HoleGenerator(self.config)
-            temp_gen.rng = shape_rng
+            temp_gen.rng = self.rng
             shape = temp_gen.generate_one(pars[hole_id - 1])
 
             # Rotation des waypoints
@@ -607,7 +633,20 @@ class GeneticOptimizer:
             # Utiliser la direction radiale plutôt que l'angle depuis le green précédent
             abs_wps = self._transform(shape.waypoints, tee_pos, hole_direction)
 
-            # Vérification des limites
+            # Clamp tee_pos and abs_wps to stay within bounds (soft clamping to avoid hard failures)
+            tee_pos = (
+                max(margin, min(tee_pos[0], w - margin)),
+                max(margin, min(tee_pos[1], h - margin))
+            )
+            clamped_wps = []
+            for wp in abs_wps:
+                clamped_wps.append((
+                    max(margin, min(wp[0], w - margin)),
+                    max(margin, min(wp[1], h - margin))
+                ))
+            abs_wps = clamped_wps
+
+            # Vérification des limites (pénalité résiduelle si trop proche des bords)
             bounds_pen = self._calc_bounds_penalty(abs_wps, margin)
             construction_penalty += bounds_pen
 
@@ -720,7 +759,7 @@ class GeneticOptimizer:
         """Converts the optimized genome to the final list of dicts."""
         holes, _ = self._build_course(individual)
         
-            # Final formatting similar to placer.py export
+        # Final formatting similar to placer.py export
         export_holes = []
         w, height = self.config.width, self.config.height
         margin = self.config.routing.grid_margin
@@ -734,28 +773,30 @@ class GeneticOptimizer:
                 cy = max(margin, min(y, height - margin))
                 clamped_wps.append((cx, cy))
             
-            # Update Tee/Green based on clamped values
-            hole["tee"] = clamped_wps[0]
-            hole["green"] = clamped_wps[-1]
+            # Convert tee and green to dicts if they are tuples
             tee = hole["tee"]
             green = hole["green"]
+            if isinstance(tee, (tuple, list)):
+                tee = {"x": tee[0], "y": tee[1]}
+            if isinstance(green, (tuple, list)):
+                green = {"x": green[0], "y": green[1]}
             
             shape = hole["shape"]
             
             # Get elevations (mocking or real if map provided)
-            tee_elev = self._elevation_at(tee)
-            green_elev = self._elevation_at(green)
+            tee_elev = self._elevation_at((tee["x"], tee["y"]))
+            green_elev = self._elevation_at((green["x"], green["y"]))
             
             export_holes.append({
                 "id": hole["id"],
                 "par": hole["par"],
                 "blocks": int(polyline_length(clamped_wps)),
-                "tee": {"x": round(tee[0], 1), "y": round(tee[1], 1), "elevation": tee_elev},
-                "green": {"x": round(green[0], 1), "y": round(green[1], 1), 
+                "tee": {"x": round(tee["x"], 1), "y": round(tee["y"], 1), "elevation": tee_elev},
+                "green": {"x": round(green["x"], 1), "y": round(green["y"], 1), 
                           "radius": shape.green_radius, "elevation": green_elev},
                 "waypoints": [{"x": round(p[0], 1), "y": round(p[1], 1)} for p in clamped_wps],
                 "fairway_width": shape.fairway_width,
-                "direction": direction_label(tee, green),
+                "direction": direction_label((tee["x"], tee["y"]), (green["x"], green["y"])),
             })
             
         return export_holes
