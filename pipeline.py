@@ -87,7 +87,7 @@ def run_pipeline(config: CourseConfig, stage: str, output: Path) -> None:
     else:
         holes = holes_data
 
-    exporter.add_routing(holes_data, clubhouse_pos=clubhouse_pos)
+    exporter.add_routing(holes, clubhouse_pos=clubhouse_pos)
     print(f"     {len(holes)} trous places  ({time.time() - t0:.1f}s)")
 
     for h in holes:
