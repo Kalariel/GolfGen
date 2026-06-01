@@ -73,40 +73,43 @@ class GeneticOptimizer:
         self.toolbox.register("select", tools.selTournament, tournsize=3)
 
     def _create_seeded_individual(self, noise: float = 0.0) -> creator.Individual:
-        """Crée un individu avec une boucle de 9 trous compacte, en forçant le premier trou à être proche du clubhouse."""
+        """Crée un individu pour un parcours de num_holes trous en deux nines distincts."""
         genes = []
-        n = 9  # 9 trous seulement
+        n = self.config.num_holes
+        half = n // 2  # front nine / back nine
 
         for i in range(n):
-            if i == 0:  # Premier trou : proche du clubhouse
-                # Angle presque nul (le trou 1 part droit depuis le clubhouse)
-                angle_gene = 0.0 + self.rng.gauss(0, 0.001)  # Très peu de variation
-                angle_gene = angle_gene % 1.0
+            in_back_nine = i >= half
 
-                # Distance très courte (10-15 blocs)
-                dist_gene = 0.1 + self.rng.gauss(0, 0.001)  # 0.1 = ~10% de la grille (ex: 35 blocs si grille=350)
-                dist_gene = max(0.08, min(0.12, dist_gene))  # Limite stricte [0.08, 0.12]
-
-                # Rotation minimale pour éviter les alignements parfaits
+            if i == 0:
+                # H1 : part depuis le clubhouse, angle presque nul
+                angle_gene = 0.0 + self.rng.gauss(0, 0.001)
+                dist_gene = 0.1 + self.rng.gauss(0, 0.001)
+                dist_gene = max(0.08, min(0.12, dist_gene))
                 rotation_gene = self.rng.gauss(0, 0.01)
                 rotation_gene = max(-0.05, min(0.05, rotation_gene))
 
-            else:  # Autres trous : approche avec proximité G(N)-T(N+1) renforcée
-                # Angles avec une progression naturelle pour la continuité
-                angle_gene = (i / n) + self.rng.gauss(0, 0.03 + noise * 0.02)
+            elif i == half:
+                # H(half+1) : début du back nine — secteur opposé au front nine
+                angle_gene = 0.5 + self.rng.gauss(0, 0.02 + noise * 0.01)
                 angle_gene = angle_gene % 1.0
+                dist_gene = 0.15 + self.rng.gauss(0, 0.03)
+                dist_gene = max(0.1, min(0.25, dist_gene))
+                rotation_gene = self.rng.gauss(0, 0.02)
+                rotation_gene = max(-0.1, min(0.1, rotation_gene))
 
-                # Distances adaptées pour rapprocher les trous consécutifs
-                # Valeurs plus courtes pour une meilleure continuité
+            else:
+                # Progression angulaire dans chaque nine (0..0.5 pour le front, 0.5..1 pour le back)
+                progress = (i % half) / half
+                base = (0.5 + progress * 0.5) if in_back_nine else (progress * 0.5)
+                angle_gene = base + self.rng.gauss(0, 0.03 + noise * 0.02)
+                angle_gene = angle_gene % 1.0
                 dist_gene = 0.25 + self.rng.gauss(0, 0.04)
-                dist_gene = max(0.15, min(0.35, dist_gene))  # Plage réduite pour plus de proximité
-
-                rotation_gene = self.rng.gauss(0, 0.03)  # Variation latérale réduite
+                dist_gene = max(0.15, min(0.35, dist_gene))
+                rotation_gene = self.rng.gauss(0, 0.03)
                 rotation_gene = max(-0.15, min(0.15, rotation_gene))
 
-            # Shape seed (inchangé)
             shape_gene = self.rng.random()
-
             genes.extend([angle_gene, dist_gene, shape_gene, rotation_gene])
 
         return creator.Individual(array.array('d', genes))
@@ -196,8 +199,8 @@ class GeneticOptimizer:
 
     def run(self) -> List[Dict]:
         """Runs the evolutionary algorithm and returns the best course layout."""
-        pop_size = 300
-        n_gen = 120
+        pop_size = 400
+        n_gen = 250
         
         # Create population: half seeded, half with noise
         pop = []
@@ -305,19 +308,30 @@ class GeneticOptimizer:
         # --- Calcul des pénalités individuelles ---
         fairway_concentration = self.fairway_concentration_score(holes)
 
+        par_dist = self._par_distribution_score(holes)
+        hole_length = self._hole_length_score(holes)
+        direction_variety = self._direction_variety_score(holes)
+        return_ch = self._return_to_clubhouse_score(holes)
+        ch_excl = self._clubhouse_exclusion_penalty(holes)
+
         # --- Score total ---
         total_score = (
                 penalties +
                 overlap * 1.0 +
-                compacity * 2.0 +  # Augmenté pour renforcer la compacité
+                compacity * 2.0 +
                 tee_green * 1.5 +
-                consecutive * 0.5 +  # Réduit pour permettre des transitions plus naturelles
-                natural_layout * 1.2 +  # Réduit pour permettre plus de compacité
-                fairway_concentration * 3.0  # Poids augmenté pour la concentration des fairways
+                consecutive * 0.5 +
+                natural_layout * 1.2 +
+                fairway_concentration * 3.0 +
+                par_dist * 2.0 +
+                hole_length * 1.5 +
+                direction_variety * 1.0 +
+                return_ch * 2.0 +
+                ch_excl * 1.0
         )
 
         # --- DEBUG: Affichage des composantes (1% des évaluations) ---
-        if random.random() < 0.01:  # Affiche 1% des évaluations pour éviter le spam
+        if random.random() < 0.01:
             print(
                 f"[DEBUG] Score breakdown: "
                 f"Total={total_score:.1f}, "
@@ -326,7 +340,12 @@ class GeneticOptimizer:
                 f"TeeGreen={tee_green:.1f}, "
                 f"Consecutive={consecutive:.1f}, "
                 f"Natural={natural_layout:.1f}, "
-                f"Concentration={fairway_concentration:.1f}"
+                f"Conc={fairway_concentration:.1f}, "
+                f"Par={par_dist:.1f}, "
+                f"Len={hole_length:.1f}, "
+                f"Dir={direction_variety:.1f}, "
+                f"RetCH={return_ch:.1f}, "
+                f"ChExcl={ch_excl:.1f}"
             )
 
         return (total_score,)
@@ -500,6 +519,190 @@ class GeneticOptimizer:
         
         return score
 
+    def _par_distribution_score(self, holes: List[Dict]) -> float:
+        """Pénalise si la distribution des pars s'écarte de la cible (4/10/4 pour 18 trous, scalé)."""
+        n = len(holes)
+        target = {3: round(n * 4 / 18), 4: round(n * 10 / 18), 5: round(n * 4 / 18)}
+        counts = {3: 0, 4: 0, 5: 0}
+        for hole in holes:
+            par = hole["par"]
+            if par in counts:
+                counts[par] += 1
+        penalty = 0.0
+        for par, t in target.items():
+            diff = counts[par] - t
+            if diff < 0:
+                penalty += (-diff) * 1000.0
+            else:
+                penalty += diff * 500.0
+        return penalty
+
+    def _hole_length_score(self, holes: List[Dict]) -> float:
+        """Pénalise si la longueur des trous ne correspond pas à leur par."""
+        target_ranges = {3: (25, 75), 4: (83, 133), 5: (150, 200)}
+        penalty = 0.0
+        for hole in holes:
+            par = hole["par"]
+            length = polyline_length(hole["waypoints"])
+            lo, hi = target_ranges.get(par, (0, float("inf")))
+            if length < lo:
+                penalty += (lo - length) ** 2 * 10.0
+            elif length > hi:
+                penalty += (length - hi) ** 2 * 5.0
+        return penalty
+
+    def _direction_variety_score(self, holes: List[Dict]) -> float:
+        """Pénalise si les trous pointent tous dans la même direction (variance circulaire faible)."""
+        if len(holes) < 3:
+            return 0.0
+        angles = []
+        for hole in holes:
+            tee = hole["tee"]
+            green = hole["green"]
+            tx, ty = (tee[0], tee[1]) if isinstance(tee, (tuple, list)) else (tee["x"], tee["y"])
+            gx, gy = (green[0], green[1]) if isinstance(green, (tuple, list)) else (green["x"], green["y"])
+            angles.append(math.atan2(gy - ty, gx - tx))
+        n = len(angles)
+        R = abs(sum(complex(math.cos(a), math.sin(a)) for a in angles)) / n
+        circular_variance = 1.0 - R  # 0 = tous identiques, 1 = max diversité
+        threshold = 0.5
+        if circular_variance < threshold:
+            return (threshold - circular_variance) * 2000.0
+        return 0.0
+
+    def _return_to_clubhouse_score(self, holes: List[Dict]) -> float:
+        """Pénalise si le green du dernier trou (et du 9e pour 18 trous) est trop loin/près du clubhouse."""
+        if not holes:
+            return 0.0
+
+        def penalty_for_green(green):
+            pos = (green[0], green[1]) if isinstance(green, (tuple, list)) else (green["x"], green["y"])
+            dist = distance(pos, self.clubhouse_pos)
+            if dist < 15.0:
+                return (15.0 - dist) ** 2 * 200.0
+            if dist > 50.0:
+                return (dist - 50.0) ** 2 * 100.0
+            return 0.0
+
+        penalty = penalty_for_green(holes[-1]["green"])
+
+        # Pour 18 trous : le green du trou 9 doit aussi retourner près du clubhouse
+        if len(holes) >= 18:
+            h9 = next((h for h in holes if h["id"] == 9), None)
+            if h9:
+                penalty += penalty_for_green(h9["green"])
+
+        return penalty
+
+    def _clubhouse_exclusion_penalty(self, holes: List[Dict]) -> float:
+        """
+        Zone d'exclusion autour du clubhouse : rectangle 30×20 blocs (hard) + buffer 5 blocs (soft).
+        - Fairway segments : aucun ne doit traverser ni s'approcher de la zone.
+        - Tees/greens : idem, sauf trou 1 (tee) et dernier trou (green) qui doivent rester proches.
+        """
+        cx, cy = self.clubhouse_pos
+        hw, hh = 15.0, 10.0  # demi-extents du rectangle 30×20
+        buffer = 5.0
+
+        def dist_to_box(px, py) -> float:
+            dx = max(abs(px - cx) - hw, 0.0)
+            dy = max(abs(py - cy) - hh, 0.0)
+            return math.sqrt(dx * dx + dy * dy)
+
+        def segment_crosses_box(p1, p2) -> bool:
+            if dist_to_box(p1[0], p1[1]) < 0.5 or dist_to_box(p2[0], p2[1]) < 0.5:
+                return True
+            bx1, by1, bx2, by2 = cx - hw, cy - hh, cx + hw, cy + hh
+            edges = [
+                ((bx1, by1), (bx2, by1)),
+                ((bx2, by1), (bx2, by2)),
+                ((bx2, by2), (bx1, by2)),
+                ((bx1, by2), (bx1, by1)),
+            ]
+            return any(segments_intersect(p1, p2, ea, eb) for ea, eb in edges)
+
+        def pos_xy(p):
+            return (p[0], p[1]) if isinstance(p, (tuple, list)) else (p["x"], p["y"])
+
+        penalty = 0.0
+        n = len(holes)
+        last_id = max(h["id"] for h in holes)
+        # Greens exemptés : dernier trou + trou 9 (retour mi-parcours pour 18 trous)
+        exempt_greens = {last_id}
+        if n >= 18:
+            exempt_greens.add(9)
+
+        for hole in holes:
+            hid = hole["id"]
+            tx, ty = pos_xy(hole["tee"])
+            gx, gy = pos_xy(hole["green"])
+
+            # Tee : exempt trou 1
+            if hid != 1:
+                d = dist_to_box(tx, ty)
+                if d < 0.5:
+                    penalty += 500_000.0
+                elif d < buffer:
+                    penalty += (buffer - d) ** 2 * 500.0
+
+            # Green : exempt dernier trou et trou 9 (mi-parcours)
+            if hid not in exempt_greens:
+                d = dist_to_box(gx, gy)
+                if d < 0.5:
+                    penalty += 500_000.0
+                elif d < buffer:
+                    penalty += (buffer - d) ** 2 * 500.0
+
+            # Segments de fairway : tous les trous
+            wps = hole["waypoints"]
+            for i in range(len(wps) - 1):
+                if segment_crosses_box(wps[i], wps[i + 1]):
+                    penalty += 500_000.0
+
+        return penalty
+
+    def evaluate_holes(self, holes: List[Dict]) -> dict:
+        """Évalue directement une liste de trous sans passer par le génome. Retourne un breakdown."""
+        overlap = self._calc_collision_penalties(holes)
+        compacity = self.compacity_score(holes)
+        tee_green = self.tee_green_distance_score(holes)
+        consecutive = self.consecutive_holes_score(holes)
+        natural_layout = self.natural_layout_score(holes)
+        fairway_concentration = self.fairway_concentration_score(holes)
+        par_dist = self._par_distribution_score(holes)
+        hole_length = self._hole_length_score(holes)
+        direction_variety = self._direction_variety_score(holes)
+        return_ch = self._return_to_clubhouse_score(holes)
+        ch_excl = self._clubhouse_exclusion_penalty(holes)
+
+        total = (
+            overlap * 1.0
+            + compacity * 2.0
+            + tee_green * 1.5
+            + consecutive * 0.5
+            + natural_layout * 1.2
+            + fairway_concentration * 3.0
+            + par_dist * 2.0
+            + hole_length * 1.5
+            + direction_variety * 1.0
+            + return_ch * 2.0
+            + ch_excl * 1.0
+        )
+        return {
+            "overlap": overlap,
+            "compacity": compacity,
+            "tee_green": tee_green,
+            "consecutive": consecutive,
+            "natural_layout": natural_layout,
+            "fairway_concentration": fairway_concentration,
+            "par_distribution": par_dist,
+            "hole_length": hole_length,
+            "direction_variety": direction_variety,
+            "return_to_clubhouse": return_ch,
+            "clubhouse_exclusion": ch_excl,
+            "total": total,
+        }
+
     def _calculate_dynamic_centroid(self, holes):
         """Calcule un centroïde dynamique basé sur les trous déjà placés."""
         if not holes:
@@ -533,10 +736,11 @@ class GeneticOptimizer:
         construction_penalty = 0.0
         w, h = self.config.width, self.config.height
         margin = self.config.routing.grid_margin
-        pars = self.config.routing.par_distribution[:9]  # On prend seulement les 9 premiers pars
+        n = self.config.num_holes
+        pars = self.config.routing.par_distribution[:n]
 
         idx = 0
-        for hole_id in range(1, 10):  # 1 à 9
+        for hole_id in range(1, n + 1):
             if idx + 3 >= len(individual): break  # Sécurité
 
             # Extraction des gènes
@@ -650,23 +854,6 @@ class GeneticOptimizer:
             bounds_pen = self._calc_bounds_penalty(abs_wps, margin)
             construction_penalty += bounds_pen
 
-            # Retour vers le clubhouse pour le 9ème trou (version améliorée)
-            if return_to_start:
-                dist_to_ch = distance(abs_wps[-1], self.clubhouse_pos)
-                # Zone cible : entre 15 et 40 unités du clubhouse (pas trop près, pas trop loin)
-                min_target = 15.0
-                max_target = 40.0
-                
-                if dist_to_ch < min_target:
-                    # Trop près du clubhouse - pénalité modérée
-                    construction_penalty += (min_target - dist_to_ch) ** 2 * 200.0
-                elif dist_to_ch > max_target:
-                    # Trop loin du clubhouse - pénalité plus forte
-                    construction_penalty += (dist_to_ch - max_target) ** 2 * 300.0
-                
-                # Bonus si dans la zone idéale (20-30 unités)
-                # Cela encourage sans être trop strict
-
             # Ajout du trou à la liste
             hole_data = {
                 "id": hole_id,
@@ -749,7 +936,8 @@ class GeneticOptimizer:
                     
                 # Check Green
                 d_green = point_to_segment_dist(green[0], green[1], p1[0], p1[1], p2[0], p2[1])
-                safe_radius_green = h["shape"].green_radius + 2.0
+                shape = h.get("shape")
+                safe_radius_green = (shape.green_radius if shape else self.config.routing.green_radius_max) + 2.0
                 if d_green < (width / 2 + safe_radius_green):
                     penalty += 50_000.0 # High penalty for Green on Fairway
             
