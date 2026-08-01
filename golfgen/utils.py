@@ -48,6 +48,20 @@ def point_on_circle(center: tuple[float, float], radius: float,
             center[1] + radius * math.sin(angle))
 
 
+def rotate_translate(local_points: list[tuple[float, float]],
+                      origin: tuple[float, float],
+                      angle: float) -> list[tuple[float, float]]:
+    """Applique une rotation puis une translation à des points locaux."""
+    cos_a = math.cos(angle)
+    sin_a = math.sin(angle)
+    result = []
+    for lx, ly in local_points:
+        rx = lx * cos_a - ly * sin_a
+        ry = lx * sin_a + ly * cos_a
+        result.append((origin[0] + rx, origin[1] + ry))
+    return result
+
+
 def point_to_segment_dist(px: float, py: float,
                            ax: float, ay: float,
                            bx: float, by: float) -> float:

@@ -85,6 +85,16 @@ class TerrainGenerator:
         """Retourne un masque booleen : True = eau (elevation < water_level)."""
         return heightmap < water_level
 
+    @staticmethod
+    def sample_elevation(heightmap: np.ndarray | None, x: float, y: float,
+                          default: float = 64.0) -> float:
+        """Élévation du terrain à une position (clampée aux bords de la heightmap)."""
+        if heightmap is None:
+            return default
+        ix = max(0, min(int(x), heightmap.shape[1] - 1))
+        iy = max(0, min(int(y), heightmap.shape[0] - 1))
+        return float(heightmap[iy, ix])
+
     def _normalize(self, raw: np.ndarray) -> np.ndarray:
         """Normalise dans [elevation_min, elevation_max]."""
         lo, hi = raw.min(), raw.max()

@@ -4,7 +4,7 @@ setup(
     name="golfgen",
     version="0.1.0",
     author="You",
-    description="Golf course generation using genetic algorithms",
+    description="Procedural golf course generator for Minecraft",
     packages=find_packages(),
     python_requires=">=3.7",
 )

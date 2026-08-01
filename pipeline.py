@@ -48,44 +48,11 @@ def run_pipeline(config: CourseConfig, stage: str, output: Path) -> None:
         exporter.export(output)
         return
 
-    # --- Holes (génération + placement) ---
+    # --- Holes (génération + placement + séquençage) ---
     t0 = time.time()
-    print("2/2  Holes (generation + placement)...")
-    from golfgen.hole_gen import HoleGenerator
-    if config.method == "greedy":
-        print("WARN: Greedy method removed. Using Genetic Algorithm.")
-
-    print("     Using Genetic Algorithm...")
-    from golfgen.ga import GeneticOptimizer
-    optimizer = GeneticOptimizer(config, heightmap)
-    holes_data = optimizer.run()
-    clubhouse_pos = optimizer.clubhouse_pos
-
-    # Debug: vérifier la structure des données retournées
-    print(f"📊 Pipeline received data type: {type(holes_data)}")
-    if isinstance(holes_data, dict):
-        print(f"   Keys: {list(holes_data.keys())}")
-        if "original" in holes_data and "optimized" in holes_data:
-            print(f"   Original holes count: {len(holes_data['original'])}")
-            print(f"   Optimized holes count: {len(holes_data['optimized'])}")
-            # Comparer un exemple
-            if len(holes_data['original']) > 0:
-                orig = holes_data['original'][0]
-                opt = holes_data['optimized'][0]
-                orig_tee = orig['tee']
-                opt_tee = opt['tee']
-                if isinstance(orig_tee, dict):
-                    print(f"   Example hole 1 - Original tee: ({orig_tee['x']:.1f}, {orig_tee['y']:.1f})")
-                    print(f"   Example hole 1 - Optimized tee: ({opt_tee['x']:.1f}, {opt_tee['y']:.1f})")
-                else:
-                    print(f"   Example hole 1 - Original tee: ({orig_tee[0]:.1f}, {orig_tee[1]:.1f})")
-                    print(f"   Example hole 1 - Optimized tee: ({opt_tee[0]:.1f}, {opt_tee[1]:.1f})")
-    
-    # Extraire les trous optimisés pour l'affichage
-    if isinstance(holes_data, dict) and "optimized" in holes_data:
-        holes = holes_data["optimized"]
-    else:
-        holes = holes_data
+    print("2/2  Holes (skeletons + packing + sequencing)...")
+    from golfgen.course_builder import build_course
+    holes, clubhouse_pos = build_course(config, heightmap)
 
     exporter.add_routing(holes, clubhouse_pos=clubhouse_pos)
     print(f"     {len(holes)} trous places  ({time.time() - t0:.1f}s)")
@@ -115,8 +82,6 @@ def main():
                         help="Largeur du terrain en blocs")
     parser.add_argument("--height", type=int, default=None,
                         help="Hauteur du terrain en blocs")
-    parser.add_argument("--method", choices=["greedy", "ga"], default=None,
-                        help="Methode de generation (greedy ou ga)")
 
     args = parser.parse_args()
 
@@ -137,8 +102,6 @@ def main():
         config.width = args.width
     if args.height is not None:
         config.height = args.height
-    if args.method is not None:
-        config.method = args.method
 
     output = Path(args.output)
 

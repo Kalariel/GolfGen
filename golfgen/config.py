@@ -41,9 +41,11 @@ class RoutingConfig:
     green_radius_min: int = 6
     green_radius_max: int = 10
     # Placement
-    tee_link_distance: int = 20  # distance max green→tee suivant
+    tee_link_min: float = 12.0   # distance min green→tee suivant
+    tee_link_max: float = 28.0   # distance max green→tee suivant
     grid_margin: int = 15        # marge min des bords de la carte
     segment_length: int = 35     # longueur des segments waypoints
+    clubhouse_margin: int = 45   # distance du clubhouse au coin choisi
 
 
 @dataclass
@@ -58,7 +60,6 @@ class CourseConfig:
 
     terrain: TerrainConfig = field(default_factory=TerrainConfig)
     routing: RoutingConfig = field(default_factory=RoutingConfig)
-    method: str = "ga"
 
     def to_dict(self) -> dict:
         return asdict(self)

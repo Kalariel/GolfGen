@@ -35,8 +35,11 @@ Le viewer se lance en ouvrant `viewer/index.html` dans un navigateur. Il charge 
 golfgen/                    # Bibliotheque Python
 ├── config.py               # Dataclasses CourseConfig, TerrainConfig, RoutingConfig
 ├── terrain.py              # TerrainGenerator — OpenSimplex multi-octave (vectorise)
-├── hole_gen.py             # HoleGenerator — formes parametriques en coords locales
-├── placer.py               # CoursePlacer — placement 18 trous avec scoring multi-critere
+├── clubhouse.py            # pick_clubhouse — position du clubhouse (coin determine par seed)
+├── hole_gen.py             # HoleGenerator — squelettes de trous parametriques (etape 1)
+├── packing.py              # Packer — placement des squelettes sans ordre de jeu (etape 2)
+├── sequencing.py           # sequence — ordre de jeu + sens tee/green (etape 3, TSP+2-opt)
+├── course_builder.py       # build_course — orchestre les etapes 1-4, assemblage final
 ├── exporter.py             # JSONExporter — serialisation JSON, heightmap base64
 └── utils.py                # Math, gradient, geometrie (distance, segments_intersect, etc.)
 
@@ -50,7 +53,11 @@ viewer/
 
 tests/
 ├── conftest.py             # Fixtures partagees (config, heightmap)
-└── test_terrain.py         # Tests de regression terrain (seed 42, 18 tests)
+├── test_terrain.py         # Tests de regression terrain (seed 42)
+├── test_hole_gen.py        # Tests squelettes de trous (etape 1)
+├── test_packing.py         # Tests placement/packing (etape 2)
+├── test_sequencing.py      # Tests sequencage ordre+sens (etape 3)
+└── test_course_builder.py  # Tests bout-en-bout assemblage (etape 4)
 
 output/
 └── course.json             # Fichier genere par le pipeline
@@ -69,10 +76,12 @@ Le JSON contient des couches optionnelles : `terrain`, `routing`. Le viewer affi
 
 - **Systeme de coordonnees** : blocs Minecraft. 1 bloc = 3 metres.
 - **Terrain** : OpenSimplex 6 octaves, grille 350×350, elevation [58, 82], gradient N-S
-- **Clubhouse** : place automatiquement dans un coin (determine par seed), avec separation angulaire front/back nine
-- **Hole generation** : formes parametriques en coords locales (tee=(0,0), axe Y+), avec waypoints, fairway_width, green_radius
-- **Placement** : greedy sequentiel, 72 angles × 8 tee offsets × 4 formes = ~2304 candidats/trou, scoring multi-critere
-- **Scoring** : overlap, return_penalty (G9/G18 → ~20 blocs du CH), territory (secteurs angulaires), convergence (H7-8/H16-17), clubhouse protection, anti-crossing (+1M)
+- **Clubhouse** : place automatiquement dans un coin (determine par seed, `clubhouse.py`), pas force au centre
+- **Pipeline en 4 etapes** (remplace l'ancien GA monolithique `ga.py`, retire) :
+  1. **Squelettes** (`hole_gen.py`) : formes parametriques independantes en coords locales (tee=(0,0), axe Y+), waypoints, fairway_width, green_radius — pas de position ni de sens fixe
+  2. **Placement/packing** (`packing.py`) : ancre (x, y) + rotation par squelette, gloutonne randomisee (pas de GA, pas d'ordre de jeu) ; hard=collisions/hors-limites/exclusion clubhouse, soft=buffer/territoire/rayonnement
+  3. **Sequencage** (`sequencing.py`) : ordre de jeu 1..n + sens (tee/green) par trou, nearest-neighbor + 2-opt/Or-opt ; un retournement de trou est gratuit (pas de recalcul geometrique, juste inversion de la liste de waypoints)
+  4. **Assemblage** (`course_builder.py`) : ids sequentiels, elevations, direction — format final pour l'exporter
 - **Palette** : constante `C` dans viewer.js (rough=#2e5420, fairway=#6aad45, green=#3dbd4e, tee=#4ecf5f, sand=#e8d68a, water=#3b8bba)
 
 ## Conventions
@@ -88,8 +97,8 @@ Le JSON contient des couches optionnelles : `terrain`, `routing`. Le viewer affi
 | # | Etape | Module | Description | Status |
 |---|-------|--------|-------------|--------|
 | 1 | terrain | `terrain.py` | OpenSimplex heightmap 350×350 (~7s) | OK |
-| 2 | holes | `hole_gen.py` + `placer.py` | Generation + placement 18 trous | OK |
-| 3 | hazards | (a creer) | Bunkers, eau, iles, ravins | TODO |
+| 2 | holes | `hole_gen.py` + `packing.py` + `sequencing.py` + `course_builder.py` | Squelettes + placement + sequencage + assemblage (18 trous) | OK |
+| 3 | hazards | (a creer) | Bunkers, eau, iles, ravins — peut consommer les trous deja positionnes/orientes par `course_builder.py` | TODO |
 | 4 | vegetation | (a creer) | Forets, arbres entre les trous | TODO |
 | 5 | features | (a creer) | Ponts, ruisseaux | TODO |
 
@@ -97,4 +106,4 @@ Le JSON contient des couches optionnelles : `terrain`, `routing`. Le viewer affi
 
 - `CourseConfig` : width=350, height=350, seed=42, num_holes=18
 - `TerrainConfig` : octaves, persistence, scale, elevation_min/max, base_elevation, ns_gradient
-- `RoutingConfig` : par_distribution, ranges par3/4/5, fairway widths, green radius, tee_link_distance, grid_margin
+- `RoutingConfig` : par_distribution, ranges par3/4/5, fairway widths, green radius, tee_link_min/max, grid_margin, clubhouse_margin

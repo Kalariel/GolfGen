@@ -26,8 +26,10 @@
     "fairway_width_par5": 13,
     "green_radius_min": 6,
     "green_radius_max": 10,
-    "tee_link_distance": 20,
+    "tee_link_min": 12.0,
+    "tee_link_max": 28.0,
     "grid_margin": 15,
-    "segment_length": 35
+    "segment_length": 35,
+    "clubhouse_margin": 45
   }
 }
