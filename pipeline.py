@@ -48,11 +48,11 @@ def run_pipeline(config: CourseConfig, stage: str, output: Path) -> None:
         exporter.export(output)
         return
 
-    # --- Holes (génération + placement + séquençage) ---
+    # --- Holes (boucles serpentines découpées en trous) ---
     t0 = time.time()
-    print("2/2  Holes (skeletons + packing + sequencing)...")
-    from golfgen.course_builder import build_course
-    holes, clubhouse_pos = build_course(config, heightmap)
+    print("2/2  Holes (boucles serpentines + decoupage)...")
+    from golfgen.loop_router import build_course_loop
+    holes, clubhouse_pos = build_course_loop(config, heightmap)
 
     exporter.add_routing(holes, clubhouse_pos=clubhouse_pos)
     print(f"     {len(holes)} trous places  ({time.time() - t0:.1f}s)")

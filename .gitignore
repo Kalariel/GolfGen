@@ -1,7 +1,18 @@
-﻿.idea/
+.idea/
 .vscode/
 golfgen.egg-info/
 .DS_Store
-.venv/
 __pycache__/
 .pytest_cache/
+
+# venv (cree a la racine du repo)
+.venv/
+bin/
+lib/
+lib64
+include/
+pyvenv.cfg
+
+# artefacts de generation
+output/.cache/
+output/steps/

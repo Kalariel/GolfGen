@@ -6,7 +6,10 @@
       "Bash(ls:*)",
       "Bash(python -c:*)",
       "Bash(python -m pytest:*)",
-      "Bash(python pipeline.py:*)"
+      "Bash(python pipeline.py:*)",
+      "Bash(git -C /home/kalariel/Documents/Git/GolfGen diff --stat)",
+      "Bash(git -C /home/kalariel/Documents/Git/GolfGen diff -- golfgen/)",
+      "Bash(git -C /home/kalariel/Documents/Git/GolfGen diff -- golfgen/sequencing.py)"
     ]
   }
 }

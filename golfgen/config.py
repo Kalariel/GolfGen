@@ -26,7 +26,7 @@ class TerrainConfig:
 class RoutingConfig:
     """Paramètres de génération et placement des trous."""
     par_distribution: list[int] = field(
-        default_factory=lambda: [4, 3, 5, 4, 3, 4, 5, 3, 4,
+        default_factory=lambda: [4, 3, 5, 4, 3, 4, 5, 4, 4,
                                   4, 5, 3, 4, 4, 5, 3, 4, 4]
     )
     # Distances cible (en blocs, 1 bloc = 3m)

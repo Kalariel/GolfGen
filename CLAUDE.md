@@ -36,10 +36,8 @@ golfgen/                    # Bibliotheque Python
 ├── config.py               # Dataclasses CourseConfig, TerrainConfig, RoutingConfig
 ├── terrain.py              # TerrainGenerator — OpenSimplex multi-octave (vectorise)
 ├── clubhouse.py            # pick_clubhouse — position du clubhouse (coin determine par seed)
-├── hole_gen.py             # HoleGenerator — squelettes de trous parametriques (etape 1)
-├── packing.py              # Packer — placement des squelettes sans ordre de jeu (etape 2)
-├── sequencing.py           # sequence — ordre de jeu + sens tee/green (etape 3, TSP+2-opt)
-├── course_builder.py       # build_course — orchestre les etapes 1-4, assemblage final
+├── hole_gen.py             # resolve_par_distribution — pars du parcours (patron corrige)
+├── loop_router.py          # build_course_loop — routing par ruban serpentin + decoupage DP
 ├── exporter.py             # JSONExporter — serialisation JSON, heightmap base64
 └── utils.py                # Math, gradient, geometrie (distance, segments_intersect, etc.)
 
@@ -54,10 +52,8 @@ viewer/
 tests/
 ├── conftest.py             # Fixtures partagees (config, heightmap)
 ├── test_terrain.py         # Tests de regression terrain (seed 42)
-├── test_hole_gen.py        # Tests squelettes de trous (etape 1)
-├── test_packing.py         # Tests placement/packing (etape 2)
-├── test_sequencing.py      # Tests sequencage ordre+sens (etape 3)
-└── test_course_builder.py  # Tests bout-en-bout assemblage (etape 4)
+├── test_hole_gen.py        # Tests distribution des pars
+└── test_loop_router.py     # Tests d'invariants du routing (croisements, liaisons, angles)
 
 output/
 └── course.json             # Fichier genere par le pipeline
@@ -77,11 +73,11 @@ Le JSON contient des couches optionnelles : `terrain`, `routing`. Le viewer affi
 - **Systeme de coordonnees** : blocs Minecraft. 1 bloc = 3 metres.
 - **Terrain** : OpenSimplex 6 octaves, grille 350×350, elevation [58, 82], gradient N-S
 - **Clubhouse** : place automatiquement dans un coin (determine par seed, `clubhouse.py`), pas force au centre
-- **Pipeline en 4 etapes** (remplace l'ancien GA monolithique `ga.py`, retire) :
-  1. **Squelettes** (`hole_gen.py`) : formes parametriques independantes en coords locales (tee=(0,0), axe Y+), waypoints, fairway_width, green_radius — pas de position ni de sens fixe
-  2. **Placement/packing** (`packing.py`) : ancre (x, y) + rotation par squelette, gloutonne randomisee (pas de GA, pas d'ordre de jeu) ; hard=collisions/hors-limites/exclusion clubhouse, soft=buffer/territoire/rayonnement
-  3. **Sequencage** (`sequencing.py`) : ordre de jeu 1..n + sens (tee/green) par trou, nearest-neighbor + 2-opt/Or-opt ; un retournement de trou est gratuit (pas de recalcul geometrique, juste inversion de la liste de waypoints)
-  4. **Assemblage** (`course_builder.py`) : ids sequentiels, elevations, direction — format final pour l'exporter
+- **Routing par ruban** (`loop_router.py`, remplace les anciens solveurs GA puis beam+rotules, retires) — « la courbe d'abord, les trous ensuite » :
+  1. **Spine** : boustrophedon dans chaque triangle de la diagonale du coin clubhouse (repere (u, v) le long des deux murs), virages remplaces par des conges en arc (pas <= 22 deg)
+  2. **Ruban** : contour offset (±SPINE_OFFSET) de la spine, cap en demi-cercle au bout — courbe simple par construction, donc zero croisement ; clairance, exclusion clubhouse et fenetre de longueur verifiees numeriquement, on retire le tirage sinon (quelques ms)
+  3. **Decoupage** (programmation dynamique) : le ruban est tranche en stub clubhouse → trou 1 → liaison → ... → trou 9 → stub. Les regles d'angles sont appliquees ici : les epingles tombent sur les liaisons, jamais dans un trou
+  4. **Assemblage** : ids, elevations, direction — format final pour l'exporter (dans `build_course_loop`)
 - **Palette** : constante `C` dans viewer.js (rough=#2e5420, fairway=#6aad45, green=#3dbd4e, tee=#4ecf5f, sand=#e8d68a, water=#3b8bba)
 
 ## Conventions
@@ -97,8 +93,8 @@ Le JSON contient des couches optionnelles : `terrain`, `routing`. Le viewer affi
 | # | Etape | Module | Description | Status |
 |---|-------|--------|-------------|--------|
 | 1 | terrain | `terrain.py` | OpenSimplex heightmap 350×350 (~7s) | OK |
-| 2 | holes | `hole_gen.py` + `packing.py` + `sequencing.py` + `course_builder.py` | Squelettes + placement + sequencage + assemblage (18 trous) | OK |
-| 3 | hazards | (a creer) | Bunkers, eau, iles, ravins — peut consommer les trous deja positionnes/orientes par `course_builder.py` | TODO |
+| 2 | holes | `loop_router.py` (+ `hole_gen.py` pour les pars) | Rubans serpentins + decoupage DP (18 trous, ~0.2s) | OK |
+| 3 | hazards | (a creer) | Bunkers, eau, iles, ravins — peut consommer les trous deja positionnes/orientes par `loop_router.py` | TODO |
 | 4 | vegetation | (a creer) | Forets, arbres entre les trous | TODO |
 | 5 | features | (a creer) | Ponts, ruisseaux | TODO |
 
@@ -106,4 +102,14 @@ Le JSON contient des couches optionnelles : `terrain`, `routing`. Le viewer affi
 
 - `CourseConfig` : width=350, height=350, seed=42, num_holes=18
 - `TerrainConfig` : octaves, persistence, scale, elevation_min/max, base_elevation, ns_gradient
-- `RoutingConfig` : par_distribution, ranges par3/4/5, fairway widths, green radius, tee_link_min/max, grid_margin, clubhouse_margin
+- `RoutingConfig` : par_distribution (patron corrige automatiquement pour respecter total_par), ranges par3/4/5, fairway widths, green radius, tee_link_min/max, grid_margin, clubhouse_margin
+
+## Invariants du routing actuel
+
+- zero croisement et zero chevauchement de fairways : garantis par construction (courbe simple + clairance), pas par penalites
+- `total_par` respecte exactement, sommes 36+36 par nine ; l'ORDRE des pars d'un nine est un patron prefere, permutable par le decoupage si le patron ne s'aligne pas sur le ruban
+- toutes les liaisons jouables green→tee ont une corde euclidienne dans `[tee_link_min, tee_link_max]` ; 9→10 est exclue car le joueur repasse par le clubhouse ; l'ARC d'une liaison le long du ruban peut enjamber une epingle (jusqu'a LINK_ARC_MAX)
+- regles d'angles dans un trou : aucun virage > MAX_CORNER_DEG (~100 deg), courbure nette cumulee (somme signee) <= MAX_NET_DEG — un trou ne se replie jamais sur lui-meme, les epingles vont aux liaisons
+- marge de carte = demi-fairway (EDGE_MARGIN) : les fairways touchent la bordure, seule contrainte = rester dans le perimetre
+- la fenetre de comptage des virages du decoupage est alignee EXACTEMENT sur le seuil de nettoyage des sommets (0.75) de `_sub_polyline` — les desaligner fait diverger la courbure nette exportee
+- exports en 2 decimales : les segments d'arc font ~3 blocs, arrondir a 0.1 fausse les angles

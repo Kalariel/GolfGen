@@ -1,60 +1,34 @@
-"""Tests pour la génération de squelettes de trous (étape 1 du pipeline)."""
+"""Tests de la distribution des pars (patron corrigé automatiquement)."""
 
 import pytest
 
 from golfgen.config import CourseConfig
-from golfgen.hole_gen import HoleGenerator
+from golfgen.hole_gen import resolve_par_distribution
 
 
-class TestHoleGenDeterminism:
-    """Même seed -> mêmes formes."""
+class TestResolveParDistribution:
 
-    def test_same_seed_same_shapes(self):
-        config = CourseConfig(seed=42)
-        shapes_a = HoleGenerator(config).generate_all()
-        shapes_b = HoleGenerator(config).generate_all()
-        assert [s.waypoints for s in shapes_a] == [s.waypoints for s in shapes_b]
+    def test_configured_pattern_kept_when_valid(self, config):
+        pars = resolve_par_distribution(config)
+        assert pars == config.routing.par_distribution[:config.num_holes]
 
-    def test_different_seed_different_shapes(self):
-        shapes_a = HoleGenerator(CourseConfig(seed=42)).generate_all()
-        shapes_b = HoleGenerator(CourseConfig(seed=43)).generate_all()
-        assert [s.waypoints for s in shapes_a] != [s.waypoints for s in shapes_b]
+    def test_total_par_is_enforced(self):
+        config = CourseConfig(seed=42, total_par=72)
+        # Ancien patron fautif (par 71) : le resolveur doit le corriger.
+        config.routing.par_distribution = [
+            4, 3, 5, 4, 3, 4, 5, 3, 4,
+            4, 5, 3, 4, 4, 5, 3, 4, 4,
+        ]
+        pars = resolve_par_distribution(config)
+        assert len(pars) == 18
+        assert sum(pars) == 72
+        assert sum(pars[:9]) == sum(pars[9:]) == 36
 
+    def test_impossible_total_par_fails_fast(self):
+        config = CourseConfig(num_holes=18, total_par=100)
+        with pytest.raises(ValueError, match="impossible"):
+            resolve_par_distribution(config)
 
-class TestHoleGenShape:
-    """Vérifie la cohérence géométrique de chaque squelette généré."""
-
-    def test_count_matches_par_distribution(self, config):
-        shapes = HoleGenerator(config).generate_all()
-        assert len(shapes) == config.num_holes
-        assert [s.par for s in shapes] == config.routing.par_distribution[:config.num_holes]
-
-    def test_tee_at_origin(self, config):
-        for shape in HoleGenerator(config).generate_all():
-            assert shape.waypoints[0] == (0.0, 0.0)
-
-    def test_length_within_configured_range(self, config):
-        rc = config.routing
-        ranges = {3: rc.par3_range, 4: rc.par4_range, 5: rc.par5_range}
-        # La reconstruction/mise à l'échelle des waypoints peut légèrement
-        # dépasser la cible (segments jitterés) — on tolère une petite marge.
-        tolerance = 5
-        for shape in HoleGenerator(config).generate_all():
-            lo, hi = ranges[shape.par]
-            assert lo - tolerance <= shape.length <= hi + tolerance
-
-    def test_fairway_width_matches_par(self, config):
-        rc = config.routing
-        fw_map = {3: rc.fairway_width_par3, 4: rc.fairway_width_par4, 5: rc.fairway_width_par5}
-        for shape in HoleGenerator(config).generate_all():
-            assert shape.fairway_width == fw_map[shape.par]
-
-    def test_green_radius_within_bounds(self, config):
-        rc = config.routing
-        for shape in HoleGenerator(config).generate_all():
-            assert rc.green_radius_min <= shape.green_radius <= rc.green_radius_max
-
-    def test_generate_one_standalone(self, config):
-        shape = HoleGenerator(config).generate_one(par=4)
-        assert shape.par == 4
-        assert shape.waypoints[0] == (0.0, 0.0)
+    def test_deterministic(self):
+        assert resolve_par_distribution(CourseConfig(seed=1)) \
+            == resolve_par_distribution(CourseConfig(seed=1))
