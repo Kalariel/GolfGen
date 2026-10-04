@@ -98,6 +98,12 @@ def _normal(a: Point, b: Point) -> Point:
     return -dy / length, dx / length
 
 
+def _unit(a: Point, b: Point) -> Point:
+    dx, dy = b[0] - a[0], b[1] - a[1]
+    length = math.hypot(dx, dy)
+    return dx / length, dy / length
+
+
 def _footprint(axis: tuple[Point, ...], radius: float) -> tuple[Point, ...]:
     """Contour simple à joints biseautés autour d'un axe peu courbé."""
     normals = [_normal(a, b) for a, b in zip(axis, axis[1:])]
@@ -120,6 +126,13 @@ def _footprint(axis: tuple[Point, ...], radius: float) -> tuple[Point, ...]:
     offsets = [vertex_offset(i) for i in range(len(axis))]
     left = [(p[0] + radius * n[0], p[1] + radius * n[1]) for p, n in zip(axis, offsets)]
     right = [(p[0] - radius * n[0], p[1] - radius * n[1]) for p, n in zip(axis, offsets)]
+    start_tangent = _unit(axis[0], axis[1])
+    end_tangent = _unit(axis[-2], axis[-1])
+    for side in (left, right):
+        side[0] = (side[0][0] - radius * start_tangent[0],
+                   side[0][1] - radius * start_tangent[1])
+        side[-1] = (side[-1][0] + radius * end_tangent[0],
+                    side[-1][1] + radius * end_tangent[1])
     return tuple(left + list(reversed(right)))
 
 
