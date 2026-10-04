@@ -186,10 +186,14 @@ def _with_freespace_penalty(state: JointState, clubhouse: tuple[float, float],
     return JointState(state.front, state.back, state.score + penalty)
 
 
-def _has_closing_moves(front: SearchState, back: SearchState, rules: ValidationRules,
-                       clubhouse_max: float) -> bool:
+def _has_closing_moves(front: SearchState, back: SearchState) -> bool:
+    """``front.remaining``/``back.remaining`` sont des instantanés figés au
+    dernier moment où CE côté a été étendu (voir ``_side_view``) ; quand
+    l'autre côté termine en dernier, ils sont périmés. Le quota réellement
+    consommé ne peut se lire qu'en recomptant les haricots posés des DEUX
+    côtés à cet instant, jamais via un ``.remaining`` stocké."""
     return (front.depth == 9 and back.depth == 9
-            and front.remaining == (0, 0, 0))  # garanti si les deux côtés valent 9 (18 = 4+10+4)
+            and _global_remaining(front, back) == (0, 0, 0))
 
 
 def _joint_violations(front: tuple[PlacedBean, ...], back: tuple[PlacedBean, ...],
@@ -290,7 +294,7 @@ def search_joint(seed: int, params: SolverParams | None = None,
             SideDiagnostics(back_parents, back_trials, back_accepted, dict(back_rejected)),
             len(beam), dead_ends))
 
-    complete = _has_closing_moves(best.front, best.back, rules, params.clubhouse_max)
+    complete = _has_closing_moves(best.front, best.back)
     violations = _joint_violations(best.front.placed, best.back.placed, rules, clubhouse,
                                    params.clubhouse_max)
     complete = complete and not violations
