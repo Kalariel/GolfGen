@@ -287,7 +287,7 @@ spatiales et produit un parcours visualisable dans le viewer.
 
 | Étape | État | Résultat / reprise |
 |---|---|---|
-| 1. Contrats et banque de 18 | À faire | Commencer par `BeanTemplate` et le JSON |
+| 1. Contrats et banque de 18 | Terminé | Seed témoin 42, 4 tests, JSON et planche SVG reproductibles |
 | 2. Transformations et validateur | À faire | — |
 | 3. Placement local | À faire | — |
 | 4. Paveur d'un nine | À faire | — |
