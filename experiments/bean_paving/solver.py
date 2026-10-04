@@ -32,10 +32,23 @@ class SolverParams:
     bbox_weight: float = 0.00018
     closure_lookahead: bool = True
     # Pénalité d'espace libre (``freespace.py``) : seule la recherche conjointe
-    # (``joint_solver.py``) l'utilise pour l'instant, sur les survivants du
-    # beam. Défauts alignés sur ceux de ``freespace.freespace_penalty``.
+    # (``joint_solver.py``) l'utilise, sur un pool borné de candidats évalué
+    # AVANT la sélection du beam (voir ``joint_solver._select_penalized_beam``
+    # et EXPERIMENT_18_JOINT.md, incrément B' — avant B' elle n'influençait
+    # que le score rapporté du meilleur état, jamais la survie au beam).
+    # Défauts alignés sur ceux de ``freespace.freespace_penalty``.
     freespace_weight: float = 1.0
     freespace_min_corridor: float = 15.0
+    # Taille du pool de candidats bruts (triés par score non pénalisé) sur
+    # lequel la pénalité d'espace libre et la pression de quota sont
+    # évaluées avant sélection — borne le coût de ``freespace.analyze``
+    # (recherche conjointe uniquement).
+    freespace_pool_width: int = 240
+    # Pénalité de pression de quota (recherche conjointe uniquement) :
+    # hypothèse testée, pas un fait acquis (EXPERIMENT_18_JOINT.md, B').
+    # Désactivée par défaut pour ne rien changer tant qu'elle n'est pas
+    # explicitement activée.
+    quota_pressure_weight: float = 0.0
 
 
 @dataclass(frozen=True)

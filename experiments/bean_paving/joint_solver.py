@@ -176,15 +176,64 @@ def _select_joint_beam(states: list[JointState], width: int) -> list[JointState]
     return selected
 
 
-def _with_freespace_penalty(state: JointState, clubhouse: tuple[float, float],
-                            rules: ValidationRules, params: SolverParams) -> JointState:
-    """N'évalue l'espace libre que sur les survivants du beam (lazy), car
-    c'est une heuristique de score, pas une règle dure."""
+def _quota_pressure_penalty(front: SearchState, back: SearchState, weight: float) -> float:
+    """Pénalise un état qui a déjà consommé plus de par3/par5 que leur part
+    attendue du quota global `4/10/4` à cette profondeur totale — hypothèse
+    testée (EXPERIMENT_18_JOINT.md, B', point 3), pas un fait acquis : le
+    round-robin de ``_select_joint_beam`` bucket par (front.depth,
+    back.depth), pas par profil de quota restant, donc ce terme est la seule
+    pression anti-épuisement explicite tant que ce bucketing n'est pas
+    changé. Désactivé par ``weight == 0.0`` (défaut), auquel cas le résultat
+    est toujours 0.0 sans même inspecter les haricots posés.
+    """
+    if weight == 0.0:
+        return 0.0
+    total_depth = front.depth + back.depth
+    if total_depth == 0:
+        return 0.0
+    total_quota = sum(GLOBAL_PAR_QUOTA.values())
+    used = Counter(bean.template.par for bean in (*front.placed, *back.placed))
+    penalty = 0.0
+    for par in (3, 5):
+        expected_at_depth = GLOBAL_PAR_QUOTA[par] / total_quota * total_depth
+        overshoot = used[par] - expected_at_depth
+        if overshoot > 0.0:
+            penalty += overshoot * weight
+    return penalty
+
+
+def _with_score_penalties(state: JointState, clubhouse: tuple[float, float],
+                          rules: ValidationRules, params: SolverParams) -> JointState:
+    """N'évalue l'espace libre/la pression de quota que sur un pool borné de
+    candidats (lazy, voir ``_select_penalized_beam``), car ce sont des
+    heuristiques de score, jamais des règles dures."""
     nines = {"front": state.front.placed, "back": state.back.placed}
     report = freespace.analyze(nines, clubhouse, rules)
     penalty = freespace.freespace_penalty(report, min_corridor=params.freespace_min_corridor,
                                           weight=params.freespace_weight)
+    penalty += _quota_pressure_penalty(state.front, state.back, params.quota_pressure_weight)
     return JointState(state.front, state.back, state.score + penalty)
+
+
+def _select_penalized_beam(next_states: list[JointState], clubhouse: tuple[float, float],
+                           rules: ValidationRules, params: SolverParams) -> list[JointState]:
+    """Évalue les pénalités de score sur le pool de candidats bruts AVANT la
+    sélection du beam, pour que la pénalité influence réellement quel état
+    survit au tour suivant (corrige le bug de câblage décrit dans
+    EXPERIMENT_18_JOINT.md : avant B', la pénalité n'était appliquée
+    qu'APRÈS ``_select_joint_beam``, donc invisible pour la reconstruction de
+    ``next_states`` au tour suivant, qui ne lit que les scores par-côté non
+    pénalisés).
+
+    Le pool est borné par score brut (``params.freespace_pool_width``) avant
+    l'évaluation coûteuse de ``freespace.analyze``, pour rester bon marché —
+    même principe « lazy » que l'ancien code, mais appliqué avant plutôt
+    qu'après la sélection.
+    """
+    pool_width = max(params.freespace_pool_width, params.beam_width)
+    pool = sorted(next_states, key=lambda item: item.score)[:pool_width]
+    penalized = [_with_score_penalties(state, clubhouse, rules, params) for state in pool]
+    return _select_joint_beam(penalized, params.beam_width)
 
 
 def _has_closing_moves(front: SearchState, back: SearchState) -> bool:
@@ -285,8 +334,7 @@ def search_joint(seed: int, params: SolverParams | None = None,
                 0, dead_ends))
             break
 
-        beam = _select_joint_beam(next_states, params.beam_width)
-        beam = [_with_freespace_penalty(state, clubhouse, rules, params) for state in beam]
+        beam = _select_penalized_beam(next_states, clubhouse, rules, params)
         beam.sort(key=lambda item: item.score)
         best = beam[0]
         diagnostics.append(JointDepthDiagnostics(
