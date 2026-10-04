@@ -313,7 +313,7 @@ Trois incréments indépendants (B : beam élargi, câblage buggé ; B' :
 câblage réel, pression de quota) n'ont déplacé le mur que de ± 1 trou
 autour de 8-9/18, jamais au-delà — mais aucun n'a encore testé un signal
 d'espace libre réellement discriminant. Pour contexte (pas comme preuve) :
-un haricot occupe 26 à 31 % de la carte 350×350 en empreinte
+un nine (9 trous) occupe 26 à 31 % de la carte 350×350 en empreinte
 (`output/benchmark_1_10/REPORT.md`), donc dix-huit trous représentent
 environ 60 % d'occupation de surface sous les règles dures actuelles
 (aucune superposition, aucun croisement d'axes, antiparallélisme, liaisons
