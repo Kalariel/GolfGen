@@ -64,7 +64,11 @@ def build_grid(placed: Iterable[PlacedBean], rules: ValidationRules | None = Non
     rows = max(1, math.ceil(rules.height / cell_size))
     occupied: set[Cell] = set()
     for bean in placed:
-        footprint = bean.footprint
+        # En mode ``shared_rough``, le rough peut se chevaucher entre trous :
+        # seul le fairway (cœur) doit marquer la grille comme occupée, sinon
+        # l'heuristique traiterait un chevauchement de rough légal comme de
+        # l'espace perdu.
+        footprint = bean.core if rules.shared_rough else bean.footprint
         min_x = max(0, int(min(p[0] for p in footprint) // cell_size))
         max_x = min(cols - 1, int(max(p[0] for p in footprint) // cell_size))
         min_y = max(0, int(min(p[1] for p in footprint) // cell_size))

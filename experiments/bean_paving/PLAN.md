@@ -292,5 +292,5 @@ spatiales et produit un parcours visualisable dans le viewer.
 | 3. Placement local | Terminé | Chaînes 4/4 valides sur seeds 1, 7, 42, 123 ; seed 42 en 340 essais |
 | 4. Paveur d'un nine | Terminé | Seed 42 valide, beam 48, 68 850 essais, 5 fermetures ; échec intermédiaire conservé |
 | 5. Benchmark 1..10 | Terminé | 10/10, 0 violation dure, 0 doublon exact ; biais pourtour et départ par 3 consignés |
-| 6. Banque de 36 et 18 trous | Partiel | 350 : séquentiel 9+1, conjoint ≤9/18 (freespace non discriminant, quotas réfutés) ; 500 : 18/18. Décision en attente : taille de carte (`EXPERIMENT_18_JOINT.md`) |
+| 6. Banque de 36 et 18 trous | Partiel | 350 (règles d'origine) : séquentiel 9+1, conjoint ≤9/18 ; 500 : 18/18. Variante `shared_rough` testée en 350 seulement (fairway isolé du rough, bord assoupli, antiparallèle remplacé par une pile côte-à-côte bornée) : séquentiel 16/18 (front 9+back 7), conjoint 11/18 (front 6+back 5) — mieux qu'avant mais toujours pas 18/18 à 350. Décision en attente : 400/450 non lancés (`EXPERIMENT_18_ROUGH.md`) |
 | 7. Substitution par vrais trous | À faire | — |

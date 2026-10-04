@@ -66,6 +66,17 @@ class BeanTemplate:
     tee_heading_deg: float
     green_heading_deg: float
     allow_mirror: bool = True
+    # Empreinte du fairway seul (axe bufferisé à ``width / 2``, sans la marge
+    # de rough) : calculée une fois dans ``__post_init__`` si omise, comme
+    # ``footprint``, pour rester bon marché à chaque accès pendant la
+    # recherche (voir ``geometry.PlacedBean.core``, règles ``shared_rough``).
+    # Jamais sérialisée : ``to_dict`` la retire, le contrat JSON de la banque
+    # ne change pas.
+    core_footprint: tuple[Point, ...] | None = None
+
+    def __post_init__(self) -> None:
+        if self.core_footprint is None:
+            object.__setattr__(self, "core_footprint", _footprint(self.axis, self.width / 2.0))
 
     @property
     def clearance_radius(self) -> float:
@@ -73,6 +84,7 @@ class BeanTemplate:
 
     def to_dict(self) -> dict:
         data = asdict(self)
+        del data["core_footprint"]
         for key in ("axis", "footprint"):
             data[key] = _round_points(data[key])
         for key in ("tee", "green"):

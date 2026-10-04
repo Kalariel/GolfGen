@@ -49,7 +49,60 @@ def render_gallery() -> str:
     return "\n".join(out) + "\n"
 
 
+def render_shared_rough_gallery() -> str:
+    """Galerie équivalente pour les règles ``shared_rough`` (voir
+    EXPERIMENT_18_ROUGH.md) : mêmes principes que ``render_gallery``, un cas
+    par règle nouvelle ou changée."""
+    thin = lambda name, axis=((0, 0), (100, 0)): _bean(name, axis, width=4.0, margin=0.0)
+    wide = lambda name, axis=((0, 0), (60, 0)): _bean(name, axis, width=10.0, margin=5.0)
+
+    def stack(n, gap=16.0):
+        beans = []
+        y = 10.0
+        for i in range(n):
+            beans.append(PlacedBean(wide(f"s{i}"), Transform(20, y, 0), i + 1))
+            y += gap
+        return beans
+
+    cases = [
+        ("rough partagé (ok)", [PlacedBean(wide("a"), Transform(20, 10), 1),
+                                PlacedBean(wide("b"), Transform(20, 26), 2)], True),
+        ("écart fairway < 5", [PlacedBean(wide("a"), Transform(20, 10), 1),
+                               PlacedBean(wide("b"), Transform(20, 23), 2)], True),
+        ("bord : cœur ok", [PlacedBean(wide("a"), Transform(6, 40), 1)], True),
+        ("bord : cœur trop près", [PlacedBean(wide("a"), Transform(5.5, 40), 1)], True),
+        ("côte à côte antiparallèle (ok)",
+         [PlacedBean(thin("a"), Transform(20, 50), 1),
+          PlacedBean(thin("b"), Transform(120, 72, 180), 2)], True),
+        ("pile de 4 > max_parallel_stack", stack(4), True),
+    ]
+    panel_w, panel_h = 230, 145
+    out = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{3 * panel_w}" height="{2 * panel_h}">',
+           '<rect width="100%" height="100%" fill="#0d1117"/>',
+           '<style>text{font-family:monospace;fill:#c9d1d9}.bad{fill:#ff7b72}</style>']
+    rules = ValidationRules(width=200, height=110, shared_rough=True)
+    for i, (title, beans, check_links) in enumerate(cases):
+        ox, oy = (i % 3) * panel_w, (i // 3) * panel_h
+        problems = validate(beans, rules, check_links=check_links)
+        kinds = ", ".join(sorted({item.kind for item in problems})) or "aucune violation"
+        out.extend([f'<text x="{ox + 12}" y="{oy + 20}" font-size="13">{title}</text>',
+                    f'<text class="bad" x="{ox + 12}" y="{oy + 36}" font-size="9">{kinds}</text>',
+                    f'<rect x="{ox + 12}" y="{oy + 45}" width="200" height="88" fill="#161b22" stroke="#30363d"/>'])
+        for bean in beans:
+            rough = " ".join(f"{ox + 12 + x:.1f},{oy + 45 + y * .35:.1f}" for x, y in bean.footprint)
+            core = " ".join(f"{ox + 12 + x:.1f},{oy + 45 + y * .35:.1f}" for x, y in bean.core)
+            axis = " ".join(f"{ox + 12 + x:.1f},{oy + 45 + y * .35:.1f}" for x, y in bean.axis)
+            out.append(f'<polygon points="{rough}" fill="#238636" fill-opacity=".15" stroke="#3fb950" stroke-opacity=".5"/>')
+            out.append(f'<polygon points="{core}" fill="#238636" fill-opacity=".4" stroke="#3fb950"/>')
+            out.append(f'<polyline points="{axis}" fill="none" stroke="#f0f6fc" stroke-width="1.5"/>')
+    out.append("</svg>")
+    return "\n".join(out) + "\n"
+
+
 if __name__ == "__main__":
     output = Path("experiments/bean_paving/output/geometry_violations.svg")
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(render_gallery(), encoding="utf-8")
+
+    shared_output = Path("experiments/bean_paving/output/geometry_violations_shared_rough.svg")
+    shared_output.write_text(render_shared_rough_gallery(), encoding="utf-8")
