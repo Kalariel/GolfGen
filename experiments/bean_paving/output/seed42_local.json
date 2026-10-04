@@ -1,0 +1,62 @@
+{
+  "attempts": 340,
+  "clubhouse": [
+    175.0,
+    175.0
+  ],
+  "complete": true,
+  "placed": [
+    {
+      "id": "s42-p5-01",
+      "order": 1,
+      "par": 5,
+      "transform": {
+        "mirrored": true,
+        "rotation_deg": 300,
+        "x": 175.0,
+        "y": 175.0
+      }
+    },
+    {
+      "id": "s42-p3-04",
+      "order": 2,
+      "par": 3,
+      "transform": {
+        "mirrored": false,
+        "rotation_deg": 120,
+        "x": 310.0317,
+        "y": 95.7943
+      }
+    },
+    {
+      "id": "s42-p4-07",
+      "order": 3,
+      "par": 4,
+      "transform": {
+        "mirrored": false,
+        "rotation_deg": 120,
+        "x": 242.1981,
+        "y": 144.0035
+      }
+    },
+    {
+      "id": "s42-p4-08",
+      "order": 4,
+      "par": 4,
+      "transform": {
+        "mirrored": false,
+        "rotation_deg": 60,
+        "x": 108.4148,
+        "y": 244.6594
+      }
+    }
+  ],
+  "rejection_counts": {
+    "antiparallel": 21,
+    "axis_crossing": 98,
+    "bounds": 118,
+    "footprint_collision": 304
+  },
+  "requested": 4,
+  "seed": 42
+}

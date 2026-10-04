@@ -289,7 +289,7 @@ spatiales et produit un parcours visualisable dans le viewer.
 |---|---|---|
 | 1. Contrats et banque de 18 | Terminé | Seed témoin 42, 4 tests, JSON et planche SVG reproductibles |
 | 2. Transformations et validateur | Terminé | 13 cas géométriques, galerie SVG ; oracle sans dépendance au solveur |
-| 3. Placement local | À faire | — |
+| 3. Placement local | Terminé | Chaînes 4/4 valides sur seeds 1, 7, 42, 123 ; seed 42 en 340 essais |
 | 4. Paveur d'un nine | À faire | — |
 | 5. Benchmark 1..10 | À faire | — |
 | 6. Banque de 36 et 18 trous | À faire | — |
