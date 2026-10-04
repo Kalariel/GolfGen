@@ -30,6 +30,7 @@ class SolverParams:
     start_transforms_per_candidate: int = 60
     target_radius_scale: float = 1.0
     bbox_weight: float = 0.00018
+    closure_lookahead: bool = True
 
 
 @dataclass(frozen=True)
@@ -86,6 +87,7 @@ class SolveResult:
                 "start_transforms_per_candidate": self.params.start_transforms_per_candidate,
                 "target_radius_scale": self.params.target_radius_scale,
                 "bbox_weight": self.params.bbox_weight,
+                "closure_lookahead": self.params.closure_lookahead,
             },
             "diagnostics": [{
                 "depth": item.depth,
@@ -148,6 +150,15 @@ def _target_radius(depth: int) -> float:
     return (0.0, 110.0, 150.0, 175.0, 185.0, 180.0, 160.0, 140.0, 110.0, 35.0)[depth]
 
 
+def _scaled_target_radius(depth: int, params: SolverParams, rules: ValidationRules) -> float:
+    # Le retour reste lié à clubhouse_max ; les phases d'expansion utilisent
+    # réellement l'espace supplémentaire d'une carte plus grande.
+    if depth == 9:
+        return min(_target_radius(depth), params.clubhouse_max * 0.75)
+    map_scale = min(rules.width, rules.height) / 350.0
+    return _target_radius(depth) * params.target_radius_scale * map_scale
+
+
 def _raw_transforms(template: BeanTemplate, state: SearchState,
                     clubhouse: tuple[float, float], params: SolverParams):
     rotations = range(0, 360, params.rotation_step_deg)
@@ -176,10 +187,11 @@ def _raw_transforms(template: BeanTemplate, state: SearchState,
 
 
 def _transform_rank(template: BeanTemplate, transform: Transform, depth: int,
-                    clubhouse: tuple[float, float], params: SolverParams) -> float:
+                    clubhouse: tuple[float, float], params: SolverParams,
+                    rules: ValidationRules) -> float:
     trial = PlacedBean(template, transform, depth)
     radius = math.dist(trial.green, clubhouse)
-    rank = abs(radius - _target_radius(depth) * params.target_radius_scale)
+    rank = abs(radius - _scaled_target_radius(depth, params, rules))
     # Les derniers trous privilégient franchement une direction de retour.
     if depth >= 7:
         rank += radius * (depth - 6) * 0.35
@@ -187,25 +199,26 @@ def _transform_rank(template: BeanTemplate, transform: Transform, depth: int,
 
 
 def _transforms(template: BeanTemplate, state: SearchState,
-                clubhouse: tuple[float, float], params: SolverParams, seed: int):
+                clubhouse: tuple[float, float], params: SolverParams, seed: int,
+                rules: ValidationRules):
     depth = state.depth + 1
     transforms = list(_raw_transforms(template, state, clubhouse, params))
     rng = _rng_for(seed, state, f"transforms-{template.id}")
     rng.shuffle(transforms)  # départage déterministe des rangs égaux
-    transforms.sort(key=lambda item: _transform_rank(template, item, depth, clubhouse, params))
+    transforms.sort(key=lambda item: _transform_rank(template, item, depth, clubhouse, params, rules))
     limit = params.start_transforms_per_candidate if not state.placed else params.transforms_per_candidate
     return transforms[:limit]
 
 
 def _state_score(placed: tuple[PlacedBean, ...], clubhouse: tuple[float, float],
-                 params: SolverParams) -> float:
+                 params: SolverParams, rules: ValidationRules) -> float:
     depth = len(placed)
     points = [point for bean in placed for point in bean.footprint]
     min_x, max_x = min(p[0] for p in points), max(p[0] for p in points)
     min_y, max_y = min(p[1] for p in points), max(p[1] for p in points)
     bbox_area = (max_x - min_x) * (max_y - min_y)
     radius = math.dist(placed[-1].green, clubhouse)
-    score = (abs(radius - _target_radius(depth) * params.target_radius_scale) * 0.11
+    score = (abs(radius - _scaled_target_radius(depth, params, rules)) * 0.11
              + bbox_area * params.bbox_weight)
 
     # Diversité de caps globaux, sans forcer neuf directions toutes différentes.
@@ -216,7 +229,7 @@ def _state_score(placed: tuple[PlacedBean, ...], clubhouse: tuple[float, float],
     score += (len(bins) - len(set(bins))) * 1.7
 
     # Évite de coller durablement les bordures : réserve utile aux trous suivants.
-    edge_clearance = min(min_x, min_y, 350.0 - max_x, 350.0 - max_y)
+    edge_clearance = min(min_x, min_y, rules.width - max_x, rules.height - max_y)
     if edge_clearance < 16.0:
         score += (16.0 - edge_clearance) * 0.35
     score += FIRST_PAR_PENALTY[placed[0].template.par]
@@ -272,7 +285,7 @@ def _has_closing_move(state: SearchState, bank: BeanBank, clubhouse: tuple[float
     pars = [par for par in (4, 3, 5) if remaining[par] > 0]
     for par in pars:
         for template in _candidate_templates(bank, state, par, params, seed, blocked_ids):
-            for transform in _transforms(template, state, clubhouse, params, seed):
+            for transform in _transforms(template, state, clubhouse, params, seed, rules):
                 placed = PlacedBean(template, transform, order_offset + 9)
                 if math.dist(placed.green, clubhouse) > params.clubhouse_max:
                     continue
@@ -312,7 +325,7 @@ def solve_nine(seed: int, params: SolverParams | None = None,
             pars = [par for par in (4, 3, 5) if remaining[par] > 0]
             for par in pars:
                 for template in _candidate_templates(bank, state, par, params, seed, blocked_ids):
-                    for transform in _transforms(template, state, clubhouse, params, seed):
+                    for transform in _transforms(template, state, clubhouse, params, seed, rules):
                         trials += 1
                         placed = PlacedBean(template, transform, order_offset + target_depth)
                         candidate = (*state.placed, placed)
@@ -329,8 +342,8 @@ def solve_nine(seed: int, params: SolverParams | None = None,
                             continue
                         remaining_after = _consume(state.remaining, par)
                         child = SearchState(candidate, remaining_after,
-                                            _state_score(candidate, clubhouse, params))
-                        if target_depth == 8:
+                                            _state_score(candidate, clubhouse, params, rules))
+                        if target_depth == 8 and params.closure_lookahead:
                             closure = _has_closing_move(child, bank, clubhouse, params, rules, seed,
                                                         obstacles, blocked_ids, order_offset)
                             child = SearchState(candidate, remaining_after,

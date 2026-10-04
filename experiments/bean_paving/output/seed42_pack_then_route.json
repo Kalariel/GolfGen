@@ -1,0 +1,277 @@
+{
+  "accepted_by_depth": [
+    162,
+    2923,
+    1567,
+    916,
+    911,
+    537,
+    357,
+    257,
+    137,
+    56,
+    16,
+    1,
+    0
+  ],
+  "back": [],
+  "edge_count": 0,
+  "front": [],
+  "longest_path": [],
+  "packed_count": 12,
+  "packing_complete": false,
+  "placed": [
+    {
+      "green": [
+        127.09,
+        66.385
+      ],
+      "id": "s42-p5-05",
+      "index": 0,
+      "par": 5,
+      "tee": [
+        155.029,
+        266.007
+      ],
+      "transform": {
+        "mirrored": false,
+        "rotation_deg": 270,
+        "x": 155.029,
+        "y": 266.007
+      }
+    },
+    {
+      "green": [
+        213.371,
+        83.179
+      ],
+      "id": "s42-p5-01",
+      "index": 1,
+      "par": 5,
+      "tee": [
+        180.747,
+        286.852
+      ],
+      "transform": {
+        "mirrored": true,
+        "rotation_deg": 270,
+        "x": 180.747,
+        "y": 286.852
+      }
+    },
+    {
+      "green": [
+        90.332,
+        125.909
+      ],
+      "id": "s42-p5-08",
+      "index": 2,
+      "par": 5,
+      "tee": [
+        89.941,
+        301.992
+      ],
+      "transform": {
+        "mirrored": false,
+        "rotation_deg": 270,
+        "x": 89.941,
+        "y": 301.992
+      }
+    },
+    {
+      "green": [
+        219.219,
+        267.406
+      ],
+      "id": "s42-p5-03",
+      "index": 3,
+      "par": 5,
+      "tee": [
+        265.154,
+        53.759
+      ],
+      "transform": {
+        "mirrored": true,
+        "rotation_deg": 90,
+        "x": 265.154,
+        "y": 53.759
+      }
+    },
+    {
+      "green": [
+        211.459,
+        196.048
+      ],
+      "id": "s42-p4-18",
+      "index": 4,
+      "par": 4,
+      "tee": [
+        241.498,
+        76.176
+      ],
+      "transform": {
+        "mirrored": false,
+        "rotation_deg": 90,
+        "x": 241.498,
+        "y": 76.176
+      }
+    },
+    {
+      "green": [
+        100.072,
+        72.76
+      ],
+      "id": "s42-p4-03",
+      "index": 5,
+      "par": 4,
+      "tee": [
+        22.434,
+        164.972
+      ],
+      "transform": {
+        "mirrored": false,
+        "rotation_deg": 300,
+        "x": 22.434,
+        "y": 164.972
+      }
+    },
+    {
+      "green": [
+        13.632,
+        300.304
+      ],
+      "id": "s42-p4-11",
+      "index": 6,
+      "par": 4,
+      "tee": [
+        59.061,
+        149.017
+      ],
+      "transform": {
+        "mirrored": true,
+        "rotation_deg": 120,
+        "x": 59.061,
+        "y": 149.017
+      }
+    },
+    {
+      "green": [
+        69.51,
+        208.05
+      ],
+      "id": "s42-p4-01",
+      "index": 7,
+      "par": 4,
+      "tee": [
+        46.752,
+        329.209
+      ],
+      "transform": {
+        "mirrored": true,
+        "rotation_deg": 270,
+        "x": 46.752,
+        "y": 329.209
+      }
+    },
+    {
+      "green": [
+        27.655,
+        45.342
+      ],
+      "id": "s42-p4-04",
+      "index": 8,
+      "par": 4,
+      "tee": [
+        190.577,
+        23.275
+      ],
+      "transform": {
+        "mirrored": true,
+        "rotation_deg": 180,
+        "x": 190.577,
+        "y": 23.275
+      }
+    },
+    {
+      "green": [
+        274.057,
+        284.608
+      ],
+      "id": "s42-p4-20",
+      "index": 9,
+      "par": 4,
+      "tee": [
+        315.872,
+        128.051
+      ],
+      "transform": {
+        "mirrored": true,
+        "rotation_deg": 90,
+        "x": 315.872,
+        "y": 128.051
+      }
+    },
+    {
+      "green": [
+        218.616,
+        335.099
+      ],
+      "id": "s42-p4-06",
+      "index": 10,
+      "par": 4,
+      "tee": [
+        332.699,
+        298.922
+      ],
+      "transform": {
+        "mirrored": true,
+        "rotation_deg": 150,
+        "x": 332.699,
+        "y": 298.922
+      }
+    },
+    {
+      "green": [
+        263.029,
+        246.858
+      ],
+      "id": "s42-p4-07",
+      "index": 11,
+      "par": 4,
+      "tee": [
+        291.96,
+        83.339
+      ],
+      "transform": {
+        "mirrored": false,
+        "rotation_deg": 90,
+        "x": 291.96,
+        "y": 83.339
+      }
+    }
+  ],
+  "rejection_counts": {
+    "antiparallel": 7935,
+    "axis_crossing": 50393,
+    "footprint_collision": 63005
+  },
+  "return_nodes": [],
+  "routing_complete": false,
+  "seed": 42,
+  "start_nodes": [],
+  "trials_by_depth": [
+    162,
+    6804,
+    6804,
+    6804,
+    6804,
+    6804,
+    6804,
+    6804,
+    6804,
+    6804,
+    6804,
+    2592,
+    162
+  ]
+}

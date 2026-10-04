@@ -1,0 +1,406 @@
+{
+  "accepted_by_depth": [
+    162,
+    4673,
+    3595,
+    2763,
+    2970,
+    2795,
+    2303,
+    2025,
+    1677,
+    1359,
+    1129,
+    947,
+    714,
+    651,
+    1060,
+    929,
+    796,
+    709
+  ],
+  "back": [],
+  "edge_count": 3,
+  "front": [],
+  "longest_path": [
+    0,
+    2
+  ],
+  "packed_count": 18,
+  "packing_complete": true,
+  "placed": [
+    {
+      "green": [
+        170.658,
+        137.917
+      ],
+      "id": "s42-p5-05",
+      "index": 0,
+      "par": 5,
+      "tee": [
+        198.597,
+        337.54
+      ],
+      "transform": {
+        "mirrored": false,
+        "rotation_deg": 270,
+        "x": 198.597,
+        "y": 337.54
+      }
+    },
+    {
+      "green": [
+        122.737,
+        345.146
+      ],
+      "id": "s42-p5-01",
+      "index": 1,
+      "par": 5,
+      "tee": [
+        90.113,
+        141.473
+      ],
+      "transform": {
+        "mirrored": false,
+        "rotation_deg": 90,
+        "x": 90.113,
+        "y": 141.473
+      }
+    },
+    {
+      "green": [
+        156.141,
+        317.715
+      ],
+      "id": "s42-p5-04",
+      "index": 2,
+      "par": 5,
+      "tee": [
+        156.065,
+        104.247
+      ],
+      "transform": {
+        "mirrored": false,
+        "rotation_deg": 120,
+        "x": 156.065,
+        "y": 104.247
+      }
+    },
+    {
+      "green": [
+        198.528,
+        67.519
+      ],
+      "id": "s42-p5-06",
+      "index": 3,
+      "par": 5,
+      "tee": [
+        235.101,
+        283.404
+      ],
+      "transform": {
+        "mirrored": false,
+        "rotation_deg": 270,
+        "x": 235.101,
+        "y": 283.404
+      }
+    },
+    {
+      "green": [
+        243.466,
+        36.286
+      ],
+      "id": "s42-p4-19",
+      "index": 4,
+      "par": 4,
+      "tee": [
+        120.228,
+        36.286
+      ],
+      "transform": {
+        "mirrored": false,
+        "rotation_deg": 0,
+        "x": 120.228,
+        "y": 36.286
+      }
+    },
+    {
+      "green": [
+        240.379,
+        380.512
+      ],
+      "id": "s42-p4-05",
+      "index": 5,
+      "par": 4,
+      "tee": [
+        88.285,
+        392.431
+      ],
+      "transform": {
+        "mirrored": true,
+        "rotation_deg": 330,
+        "x": 88.285,
+        "y": 392.431
+      }
+    },
+    {
+      "green": [
+        251.727,
+        334.18
+      ],
+      "id": "s42-p4-17",
+      "index": 6,
+      "par": 4,
+      "tee": [
+        276.894,
+        195.762
+      ],
+      "transform": {
+        "mirrored": true,
+        "rotation_deg": 90,
+        "x": 276.894,
+        "y": 195.762
+      }
+    },
+    {
+      "green": [
+        304.782,
+        45.103
+      ],
+      "id": "s42-p4-18",
+      "index": 7,
+      "par": 4,
+      "tee": [
+        274.744,
+        164.975
+      ],
+      "transform": {
+        "mirrored": false,
+        "rotation_deg": 270,
+        "x": 274.744,
+        "y": 164.975
+      }
+    },
+    {
+      "green": [
+        147.843,
+        418.248
+      ],
+      "id": "s42-p4-10",
+      "index": 8,
+      "par": 4,
+      "tee": [
+        280.543,
+        391.834
+      ],
+      "transform": {
+        "mirrored": true,
+        "rotation_deg": 150,
+        "x": 280.543,
+        "y": 391.834
+      }
+    },
+    {
+      "green": [
+        344.568,
+        47.494
+      ],
+      "id": "s42-p4-20",
+      "index": 9,
+      "par": 4,
+      "tee": [
+        302.753,
+        204.051
+      ],
+      "transform": {
+        "mirrored": true,
+        "rotation_deg": 270,
+        "x": 302.753,
+        "y": 204.051
+      }
+    },
+    {
+      "green": [
+        354.482,
+        162.321
+      ],
+      "id": "s42-p4-02",
+      "index": 10,
+      "par": 4,
+      "tee": [
+        318.592,
+        327.759
+      ],
+      "transform": {
+        "mirrored": true,
+        "rotation_deg": 270,
+        "x": 318.592,
+        "y": 327.759
+      }
+    },
+    {
+      "green": [
+        373.159,
+        253.779
+      ],
+      "id": "s42-p4-03",
+      "index": 11,
+      "par": 4,
+      "tee": [
+        332.12,
+        367.122
+      ],
+      "transform": {
+        "mirrored": true,
+        "rotation_deg": 300,
+        "x": 332.12,
+        "y": 367.122
+      }
+    },
+    {
+      "green": [
+        404.895,
+        69.824
+      ],
+      "id": "s42-p4-12",
+      "index": 12,
+      "par": 4,
+      "tee": [
+        361.547,
+        207.146
+      ],
+      "transform": {
+        "mirrored": true,
+        "rotation_deg": 300,
+        "x": 361.547,
+        "y": 207.146
+      }
+    },
+    {
+      "green": [
+        418.407,
+        273.818
+      ],
+      "id": "s42-p4-09",
+      "index": 13,
+      "par": 4,
+      "tee": [
+        354.008,
+        385.361
+      ],
+      "transform": {
+        "mirrored": true,
+        "rotation_deg": 300,
+        "x": 354.008,
+        "y": 385.361
+      }
+    },
+    {
+      "green": [
+        159.271,
+        67.218
+      ],
+      "id": "s42-p3-05",
+      "index": 14,
+      "par": 3,
+      "tee": [
+        87.692,
+        108.544
+      ],
+      "transform": {
+        "mirrored": false,
+        "rotation_deg": 330,
+        "x": 87.692,
+        "y": 108.544
+      }
+    },
+    {
+      "green": [
+        433.75,
+        316.994
+      ],
+      "id": "s42-p3-02",
+      "index": 15,
+      "par": 3,
+      "tee": [
+        433.75,
+        400.565
+      ],
+      "transform": {
+        "mirrored": false,
+        "rotation_deg": 270,
+        "x": 433.75,
+        "y": 400.565
+      }
+    },
+    {
+      "green": [
+        388.918,
+        40.466
+      ],
+      "id": "s42-p3-08",
+      "index": 16,
+      "par": 3,
+      "tee": [
+        346.555,
+        113.84
+      ],
+      "transform": {
+        "mirrored": false,
+        "rotation_deg": 300,
+        "x": 346.555,
+        "y": 113.84
+      }
+    },
+    {
+      "green": [
+        390.189,
+        423.287
+      ],
+      "id": "s42-p3-04",
+      "index": 17,
+      "par": 3,
+      "tee": [
+        294.522,
+        423.287
+      ],
+      "transform": {
+        "mirrored": false,
+        "rotation_deg": 0,
+        "x": 294.522,
+        "y": 423.287
+      }
+    }
+  ],
+  "rejection_counts": {
+    "antiparallel": 8059,
+    "axis_crossing": 57053,
+    "footprint_collision": 84391
+  },
+  "return_nodes": [],
+  "routing_complete": false,
+  "seed": 42,
+  "start_nodes": [
+    3
+  ],
+  "trials_by_depth": [
+    162,
+    6804,
+    6804,
+    6804,
+    6804,
+    6804,
+    6804,
+    6804,
+    6804,
+    6804,
+    6804,
+    6804,
+    6804,
+    6804,
+    6804,
+    6804,
+    6804,
+    6804
+  ]
+}

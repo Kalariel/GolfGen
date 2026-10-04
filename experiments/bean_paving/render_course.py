@@ -6,17 +6,21 @@ import argparse
 from pathlib import Path
 
 from experiments.bean_paving.course_solver import CourseSolveResult, solve_course
+from experiments.bean_paving.geometry import ValidationRules
+from experiments.bean_paving.solver import SolverParams
 
 PAR_COLORS = {3: "#58a6ff", 4: "#56d364", 5: "#f2cc60"}
 
 
 def render_course_svg(result: CourseSolveResult) -> str:
     size, pad = 800, 24
-    scale = (size - 2 * pad) / 350.0
+    map_width = result.front.clubhouse[0] * 2.0
+    map_height = result.front.clubhouse[1] * 2.0
+    scale = (size - 2 * pad) / max(map_width, map_height)
     point = lambda p: (pad + p[0] * scale, pad + p[1] * scale)
     out = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{size}" height="{size + 80}">',
            '<rect width="100%" height="100%" fill="#0d1117"/>',
-           f'<rect x="{pad}" y="{pad}" width="{350 * scale}" height="{350 * scale}" fill="#161b22" stroke="#8b949e"/>',
+           f'<rect x="{pad}" y="{pad}" width="{map_width * scale}" height="{map_height * scale}" fill="#161b22" stroke="#8b949e"/>',
            '<style>text{font-family:monospace;fill:#c9d1d9}</style>']
     clubhouse = point(result.front.clubhouse)
     out.append(f'<circle cx="{clubhouse[0]:.1f}" cy="{clubhouse[1]:.1f}" r="10" fill="#f0f6fc"/>')
@@ -50,10 +54,25 @@ def render_course_svg(result: CourseSolveResult) -> str:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--size", type=float, default=350.0)
+    parser.add_argument("--quick", action="store_true")
     parser.add_argument("--output", type=Path, default=Path("experiments/bean_paving/output"))
     args = parser.parse_args()
-    result = solve_course(args.seed)
-    suffix = "course18" if result.complete else "course18_failed"
+    front_params = back_params = None
+    if args.quick:
+        front_params = SolverParams(
+            beam_width=48, departure_angles=(300, 330, 0, 30, 60),
+            target_radius_scale=0.9, bbox_weight=0.0004, closure_lookahead=False,
+        )
+        back_params = SolverParams(
+            beam_width=36, candidates_per_par=3, transforms_per_candidate=24,
+            departure_angles=tuple(range(0, 360, 30)), start_radii=(44.0, 48.0),
+            start_transforms_per_candidate=96, closure_lookahead=False,
+        )
+    result = solve_course(args.seed, front_params, back_params,
+                          ValidationRules(width=args.size, height=args.size))
+    size_label = int(args.size)
+    suffix = f"course18_{size_label}" if result.complete else f"course18_{size_label}_failed"
     args.output.mkdir(parents=True, exist_ok=True)
     (args.output / f"seed{args.seed}_{suffix}.json").write_text(result.to_json(), encoding="utf-8")
     (args.output / f"seed{args.seed}_{suffix}.svg").write_text(render_course_svg(result), encoding="utf-8")
