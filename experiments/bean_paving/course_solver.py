@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import json
 import math
 
+from experiments.bean_paving import halfplane
 from experiments.bean_paving.bean_bank import GenerationParams, generate_bank
 from experiments.bean_paving.geometry import PlacedBean, ValidationRules, validate
 from experiments.bean_paving.joint_solver import JointSolveResult, search_joint
@@ -19,6 +20,11 @@ class CourseSolveResult:
     back: SolveResult | None
     complete: bool
     violations: tuple[str, ...]
+    # Diagnostic de démarcation (rapport uniquement, EXPERIMENT_18_HALFPLANE.md
+    # point D) : jamais utilisé par la recherche. Calculé avec le
+    # ``theta``/``band`` effectifs de ``front.params`` même si le poids de
+    # pénalité est à 0 (le partage géométrique existe indépendamment du biais).
+    demarcation: dict | None = None
 
     @property
     def placed(self) -> tuple[PlacedBean, ...]:
@@ -31,6 +37,7 @@ class CourseSolveResult:
             "violations": list(self.violations),
             "front": self.front.to_dict(),
             "back": None if self.back is None else self.back.to_dict(),
+            "demarcation": self.demarcation,
         }
 
     def to_json(self) -> str:
@@ -66,7 +73,15 @@ def _course_violations(front: tuple[PlacedBean, ...], back: tuple[PlacedBean, ..
 
 def solve_course(seed: int, front_params: SolverParams | None = None,
                  back_params: SolverParams | None = None,
-                 rules: ValidationRules | None = None) -> CourseSolveResult:
+                 rules: ValidationRules | None = None, *,
+                 halfplane_weight: float | None = None,
+                 halfplane_theta_deg: float | None = None,
+                 halfplane_band: float | None = None) -> CourseSolveResult:
+    """``halfplane_*`` : surcharge le biais souple de demi-plan
+    (``halfplane.py``, EXPERIMENT_18_HALFPLANE.md) côté front uniquement, sans
+    toucher au reste de ``front_params`` — ``None`` (défaut) ne change rien,
+    comportement identique à avant ce paramètre. Le back reste libre
+    (``back_params`` n'est jamais modifié ici)."""
     rules = rules or ValidationRules()
     front_params = front_params or SolverParams(
         beam_width=72,
@@ -74,6 +89,14 @@ def solve_course(seed: int, front_params: SolverParams | None = None,
         target_radius_scale=0.9,
         bbox_weight=0.0004,
     )
+    if halfplane_weight is not None or halfplane_theta_deg is not None or halfplane_band is not None:
+        front_params = replace(
+            front_params,
+            halfplane_weight=front_params.halfplane_weight if halfplane_weight is None else halfplane_weight,
+            halfplane_theta_deg=(front_params.halfplane_theta_deg if halfplane_theta_deg is None
+                                 else halfplane_theta_deg),
+            halfplane_band=front_params.halfplane_band if halfplane_band is None else halfplane_band,
+        )
     back_params = back_params or SolverParams(
         beam_width=72,
         candidates_per_par=4,
@@ -96,7 +119,15 @@ def solve_course(seed: int, front_params: SolverParams | None = None,
     if not back.complete:
         violations.append("back_incomplete")
     complete = front.complete and back.complete and not violations
-    return CourseSolveResult(seed, front, back, complete, tuple(violations))
+    demarcation = {
+        "theta_deg": front_params.halfplane_theta_deg,
+        "band": front_params.halfplane_band,
+        "wrong_side_holes": halfplane.wrong_side_count(
+            front.state.placed, back.state.placed, clubhouse,
+            front_params.halfplane_theta_deg, front_params.halfplane_band),
+        "interleave_pairs": halfplane.interleave_pairs(front.state.placed, back.state.placed),
+    }
+    return CourseSolveResult(seed, front, back, complete, tuple(violations), demarcation)
 
 
 def solve_course_joint(seed: int, params: SolverParams | None = None,

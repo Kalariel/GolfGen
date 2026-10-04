@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import math
 from pathlib import Path
 
 from experiments.bean_paving.course_solver import CourseSolveResult, solve_course
@@ -12,22 +13,53 @@ from experiments.bean_paving.solver import SolverParams
 PAR_COLORS = {3: "#58a6ff", 4: "#56d364", 5: "#f2cc60"}
 
 
-def render_course_svg(result: CourseSolveResult, rules: ValidationRules | None = None) -> str:
+def render_course_svg(result: CourseSolveResult, rules: ValidationRules | None = None, *,
+                      theta_deg: float | None = None, band: float | None = None) -> str:
     """``rules`` ne sert qu'au rendu (mode ``shared_rough`` : distinction
     cœur/rough, surlignage des piles ``parallel_stack``) ; la recherche a
-    déjà utilisé ses propres règles passées à ``solve_course``."""
+    déjà utilisé ses propres règles passées à ``solve_course``.
+
+    ``theta_deg``/``band`` (facultatifs, repris de ``result.demarcation`` si
+    omis) dessinent faiblement la droite de démarcation et sa bande de
+    transition (EXPERIMENT_18_HALFPLANE.md, point B) — purement visuel,
+    aucun effet sur la recherche déjà effectuée."""
     rules = rules or ValidationRules()
+    if theta_deg is None and result.demarcation is not None:
+        theta_deg = result.demarcation.get("theta_deg")
+    if band is None and result.demarcation is not None:
+        band = result.demarcation.get("band")
     size, pad = 800, 24
     map_width = result.front.clubhouse[0] * 2.0
     map_height = result.front.clubhouse[1] * 2.0
     scale = (size - 2 * pad) / max(map_width, map_height)
     point = lambda p: (pad + p[0] * scale, pad + p[1] * scale)
-    out = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{size}" height="{size + 80}">',
+    footer_height = 100 if result.demarcation is not None else 80
+    out = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{size}" height="{size + footer_height}">',
            '<rect width="100%" height="100%" fill="#0d1117"/>',
            f'<rect x="{pad}" y="{pad}" width="{map_width * scale}" height="{map_height * scale}" fill="#161b22" stroke="#8b949e"/>',
            '<style>text{font-family:monospace;fill:#c9d1d9}</style>']
-    clubhouse = point(result.front.clubhouse)
-    out.append(f'<circle cx="{clubhouse[0]:.1f}" cy="{clubhouse[1]:.1f}" r="10" fill="#f0f6fc"/>')
+    clubhouse_center = result.front.clubhouse
+    clubhouse = point(clubhouse_center)
+    if theta_deg is not None and band is not None:
+        # Droite de démarcation (plein, faible opacité) + bande de transition
+        # (pointillé, plus faible encore) : assez longues pour traverser la
+        # carte dans tous les cas, le rectangle de fond les coupe au bord.
+        rad = math.radians(theta_deg)
+        ux, uy = math.cos(rad), math.sin(rad)
+        reach = (map_width + map_height)
+        half_band = (band / 2.0)
+        nx, ny = -uy, ux  # normale (direction perpendiculaire à la droite)
+        for offset, opacity, dash in ((0.0, 0.22, "0"), (half_band, 0.12, "4 6"), (-half_band, 0.12, "4 6")):
+            cx, cy = clubhouse_center[0] + nx * offset, clubhouse_center[1] + ny * offset
+            a = point((cx - ux * reach, cy - uy * reach))
+            b = point((cx + ux * reach, cy + uy * reach))
+            out.append(f'<line x1="{a[0]:.1f}" y1="{a[1]:.1f}" x2="{b[0]:.1f}" y2="{b[1]:.1f}" '
+                       f'stroke="#f778ba" stroke-opacity="{opacity}" stroke-width="1.6" stroke-dasharray="{dash}"/>')
+    out.append(f'<circle cx="{clubhouse[0]:.1f}" cy="{clubhouse[1]:.1f}" r="4" fill="#f0f6fc"/>')
+    if rules.shared_rough and rules.clubhouse_clear_radius:
+        radius_px = rules.clubhouse_clear_radius * scale
+        out.append(f'<circle cx="{clubhouse[0]:.1f}" cy="{clubhouse[1]:.1f}" r="{radius_px:.1f}" '
+                   f'fill="none" stroke="#f0f6fc" stroke-opacity="0.45" stroke-width="1.2" stroke-dasharray="3 3"/>')
     nines = [("F", result.front.state.placed, 1.0, "0")]
     if result.back is not None:
         nines.append(("B", result.back.state.placed, 0.72, "6 3"))
@@ -66,6 +98,11 @@ def render_course_svg(result: CourseSolveResult, rules: ValidationRules | None =
     status = "SUCCÈS" if result.complete else "ÉCHEC"
     out.append(f'<text x="{pad}" y="{size + 30}" font-size="14">{status} · seed {result.seed} · front {result.front.state.depth}/9 · back {back_depth}/9</text>')
     out.append(f'<text x="{pad}" y="{size + 52}" font-size="11">violations {list(result.violations)}</text>')
+    if result.demarcation is not None:
+        d = result.demarcation
+        out.append(f'<text x="{pad}" y="{size + 90}" font-size="11">demi-plan theta={d["theta_deg"]:.0f}° '
+                   f'bande={d["band"]:.0f} · hors-camp={d["wrong_side_holes"]} · '
+                   f'paires front-back collées={d["interleave_pairs"]}</text>')
     if rules.shared_rough:
         out.append(f'<text x="{pad}" y="{size + 70}" font-size="11">rough partagé : cœur plein, rough translucide, pile &gt; {rules.max_parallel_stack} en rose · F=plein, B=tirets</text>')
     out.append("</svg>")
@@ -82,6 +119,10 @@ if __name__ == "__main__":
     parser.add_argument("--edge-min", type=float, default=1.0)
     parser.add_argument("--max-parallel-stack", type=int, default=3)
     parser.add_argument("--no-stack-limit", action="store_true")
+    parser.add_argument("--clubhouse-clear-radius", type=float, default=10.0)
+    parser.add_argument("--halfplane-weight", type=float, default=0.0)
+    parser.add_argument("--halfplane-theta-deg", type=float, default=0.0)
+    parser.add_argument("--halfplane-band", type=float, default=40.0)
     parser.add_argument("--label", type=str, default="")
     parser.add_argument("--output", type=Path, default=Path("experiments/bean_paving/output"))
     args = parser.parse_args()
@@ -100,8 +141,12 @@ if __name__ == "__main__":
         width=args.size, height=args.size, shared_rough=args.shared_rough,
         fairway_gap=args.fairway_gap, edge_min=args.edge_min,
         max_parallel_stack=None if args.no_stack_limit else args.max_parallel_stack,
+        clubhouse_clear_radius=args.clubhouse_clear_radius,
     )
-    result = solve_course(args.seed, front_params, back_params, rules)
+    result = solve_course(args.seed, front_params, back_params, rules,
+                          halfplane_weight=args.halfplane_weight,
+                          halfplane_theta_deg=args.halfplane_theta_deg,
+                          halfplane_band=args.halfplane_band)
     size_label = int(args.size)
     suffix = f"course18_{size_label}"
     if args.label:

@@ -10,6 +10,7 @@ import math
 import random
 from typing import Iterable
 
+from experiments.bean_paving import halfplane
 from experiments.bean_paving.bean_bank import BeanBank, BeanTemplate, generate_bank
 from experiments.bean_paving.geometry import PlacedBean, Transform, ValidationRules, validate
 
@@ -49,6 +50,15 @@ class SolverParams:
     # Désactivée par défaut pour ne rien changer tant qu'elle n'est pas
     # explicitement activée.
     quota_pressure_weight: float = 0.0
+    # Biais souple de demi-plan (score uniquement, EXPERIMENT_18_HALFPLANE.md,
+    # ``halfplane.py``) : désactivé par défaut (poids 0) pour ne rien changer
+    # au comportement existant. Côté front, pénalise l'intrusion dans le camp
+    # "back" (direction ``halfplane_theta_deg``) au-delà de la bande de
+    # transition ``halfplane_band`` ; le back reste libre tant que son propre
+    # ``halfplane_weight`` reste à 0.
+    halfplane_weight: float = 0.0
+    halfplane_theta_deg: float = 0.0
+    halfplane_band: float = 40.0
 
 
 @dataclass(frozen=True)
@@ -106,6 +116,9 @@ class SolveResult:
                 "target_radius_scale": self.params.target_radius_scale,
                 "bbox_weight": self.params.bbox_weight,
                 "closure_lookahead": self.params.closure_lookahead,
+                "halfplane_weight": self.params.halfplane_weight,
+                "halfplane_theta_deg": self.params.halfplane_theta_deg,
+                "halfplane_band": self.params.halfplane_band,
             },
             "diagnostics": [{
                 "depth": item.depth,
@@ -261,6 +274,11 @@ def _state_score(placed: tuple[PlacedBean, ...], clubhouse: tuple[float, float],
     if edge_clearance < 16.0:
         score += (16.0 - edge_clearance) * 0.35
     score += FIRST_PAR_PENALTY[placed[0].template.par]
+
+    if params.halfplane_weight > 0.0:
+        score += sum(halfplane.front_penalty(bean, clubhouse, params.halfplane_theta_deg,
+                                              params.halfplane_band, params.halfplane_weight)
+                     for bean in placed)
     return score
 
 

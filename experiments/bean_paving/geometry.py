@@ -90,6 +90,18 @@ class ValidationRules:
     # calculée sur TOUS les trous posés, indépendamment de l'ordre de jeu.
     # ``None`` désactive entièrement la règle.
     max_parallel_stack: int | None = 3
+    # Exclusion clubhouse (mode ``shared_rough`` uniquement, EXPERIMENT_18_HALFPLANE.md) :
+    # aucun cœur de fairway ne peut entrer dans le disque de ce rayon autour
+    # du clubhouse ; le rough y est autorisé. ``None`` désactive la règle.
+    clubhouse_clear_radius: float | None = 10.0
+
+    @property
+    def clubhouse(self) -> Point:
+        """Position du clubhouse — toujours le centre de la carte dans ce
+        spike (``solver.py`` et ``course_solver.py`` recalculent la même
+        formule ; exposée ici pour que ``validate`` reste l'oracle unique,
+        sans dépendre d'un paramètre supplémentaire à faire circuler)."""
+        return (self.width / 2.0, self.height / 2.0)
 
 
 @dataclass(frozen=True)
@@ -179,6 +191,14 @@ def polygon_gap(first: tuple[Point, ...], second: tuple[Point, ...]) -> float:
     if best > EPSILON and (_point_in_polygon(first[0], second) or _point_in_polygon(second[0], first)):
         return 0.0
     return best
+
+
+def _point_polygon_distance(point: Point, polygon: tuple[Point, ...]) -> float:
+    """Distance d'un point au polygone : 0.0 s'il est dedans (ou sur un
+    bord), sinon distance au bord le plus proche."""
+    if _point_in_polygon(point, polygon):
+        return 0.0
+    return min(_point_segment_distance(point, a, b) for a, b in _segments(polygon, closed=True))
 
 
 def _axis_distance(first: tuple[Point, ...], second: tuple[Point, ...]) -> float:
@@ -293,6 +313,12 @@ def validate(beans: Iterable[PlacedBean], rules: ValidationRules | None = None,
                 violations.append(Violation(
                     "bounds", (bean.id,),
                     f"{len(outside)} sommet(s) du cœur à moins de {rules.edge_min:.2f} bloc du bord"))
+            if rules.clubhouse_clear_radius is not None:
+                gap = _point_polygon_distance(rules.clubhouse, bean.core)
+                if gap < rules.clubhouse_clear_radius - EPSILON:
+                    violations.append(Violation(
+                        "clubhouse_clear", (bean.id,),
+                        f"cœur à {gap:.2f} bloc(s) du clubhouse < {rules.clubhouse_clear_radius:.2f}"))
         else:
             outside = [p for p in bean.footprint
                        if p[0] < -EPSILON or p[0] > rules.width + EPSILON

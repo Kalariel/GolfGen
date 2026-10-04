@@ -116,3 +116,40 @@ def test_parallel_stack_threshold_is_exclusive_on_size(n, expect_rejected):
     rules = ValidationRules(shared_rough=True)
     placed = _stack(n, list(range(1, n + 1)))
     assert ("parallel_stack" in kinds(placed, rules)) is expect_rejected
+
+
+# -- Exclusion clubhouse (EXPERIMENT_18_HALFPLANE.md, point A) --------------
+# Carte 100x100 : clubhouse = (50, 50) (``ValidationRules.clubhouse``).
+
+def test_clubhouse_exclusion_rejects_core_intrusion():
+    rules = ValidationRules(width=100, height=100, shared_rough=True)
+    # Axe horizontal passant exactement par le clubhouse : le cœur (demi-
+    # largeur 5) couvre largement le disque d'exclusion (rayon 10 par défaut).
+    placed = [PlacedBean(bean("a", axis=((20.0, 50.0), (80.0, 50.0)), width=10.0, margin=5.0),
+                         Transform(0, 0), 1)]
+    assert "clubhouse_clear" in kinds(placed, rules)
+
+
+def test_clubhouse_exclusion_accepts_rough_only_intrusion():
+    rules = ValidationRules(width=100, height=100, shared_rough=True)
+    # Axe à 17 blocs du clubhouse : écart cœur = 17 - 5 = 12 >= 10 (accepté),
+    # écart rough = 17 - 10 = 7 < 10 (le rough, lui, intrude le disque).
+    placed = [PlacedBean(bean("a", axis=((20.0, 67.0), (80.0, 67.0)), width=10.0, margin=5.0),
+                         Transform(0, 0), 1)]
+    assert "clubhouse_clear" not in kinds(placed, rules)
+
+
+def test_clubhouse_exclusion_disabled_in_legacy_mode():
+    """Mode historique (``shared_rough=False``) : comportement inchangé,
+    aucune nouvelle violation même quand le cœur couvre le clubhouse."""
+    rules = ValidationRules(width=100, height=100, shared_rough=False)
+    placed = [PlacedBean(bean("a", axis=((20.0, 50.0), (80.0, 50.0)), width=10.0, margin=5.0),
+                         Transform(0, 0), 1)]
+    assert "clubhouse_clear" not in kinds(placed, rules)
+
+
+def test_clubhouse_exclusion_disabled_when_radius_is_none():
+    rules = ValidationRules(width=100, height=100, shared_rough=True, clubhouse_clear_radius=None)
+    placed = [PlacedBean(bean("a", axis=((20.0, 50.0), (80.0, 50.0)), width=10.0, margin=5.0),
+                         Transform(0, 0), 1)]
+    assert "clubhouse_clear" not in kinds(placed, rules)
