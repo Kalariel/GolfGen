@@ -8,6 +8,7 @@ import math
 
 from experiments.bean_paving.bean_bank import GenerationParams, generate_bank
 from experiments.bean_paving.geometry import PlacedBean, ValidationRules, validate
+from experiments.bean_paving.joint_solver import JointSolveResult, search_joint
 from experiments.bean_paving.solver import SolveResult, SolverParams, solve_nine
 
 
@@ -96,3 +97,17 @@ def solve_course(seed: int, front_params: SolverParams | None = None,
         violations.append("back_incomplete")
     complete = front.complete and back.complete and not violations
     return CourseSolveResult(seed, front, back, complete, tuple(violations))
+
+
+def solve_course_joint(seed: int, params: SolverParams | None = None,
+                       rules: ValidationRules | None = None) -> JointSolveResult:
+    """Variante conjointe : les deux nines avancent en alternance sur la même
+    carte au lieu de l'enchaînement front-puis-back de ``solve_course``.
+    Motivation détaillée dans ``EXPERIMENT_18.md`` (le front, résolu seul,
+    monopolise trop d'espace topologique pour le back). Ne remplace pas
+    ``solve_course`` : les deux restent disponibles.
+    """
+    rules = rules or ValidationRules()
+    params = params or SolverParams(beam_width=56)
+    bank = generate_bank(seed, GenerationParams.eighteen())
+    return search_joint(seed, params, rules, bank=bank)

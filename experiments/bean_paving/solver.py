@@ -129,6 +129,16 @@ def _remaining_dict(values: tuple[int, int, int]) -> dict[int, int]:
     return dict(zip((3, 4, 5), values))
 
 
+def _par_order(par_quota: dict[int, int]) -> tuple[int, int, int]:
+    """Classe le plus demandé d'abord ; égalité tranchée par la valeur du par.
+
+    Reproduit l'ordre historiquement câblé ``(4, 3, 5)`` pour le quota par
+    défaut ``PAR_QUOTAS``, mais dérive de ``par_quota`` pour qu'un compteur
+    partagé (recherche conjointe) réordonne correctement les classes.
+    """
+    return tuple(sorted((3, 4, 5), key=lambda par: (-par_quota.get(par, 0), par)))
+
+
 def _consume(values: tuple[int, int, int], par: int) -> tuple[int, int, int]:
     result = list(values)
     result[(3, 4, 5).index(par)] -= 1
@@ -279,10 +289,16 @@ def _starts_outward(bean: PlacedBean, clubhouse: tuple[float, float]) -> bool:
 def _has_closing_move(state: SearchState, bank: BeanBank, clubhouse: tuple[float, float],
                       params: SolverParams, rules: ValidationRules, seed: int,
                       obstacles: tuple[PlacedBean, ...] = (),
-                      blocked_ids: frozenset[str] = frozenset(), order_offset: int = 0) -> bool:
-    """Regard exact d'un coup : un état à 8 doit avoir une fermeture réelle."""
+                      blocked_ids: frozenset[str] = frozenset(), order_offset: int = 0,
+                      par_quota: dict[int, int] = PAR_QUOTAS) -> bool:
+    """Regard exact d'un coup : un état à 8 doit avoir une fermeture réelle.
+
+    ``obstacles`` porte déjà les haricots de l'autre nine (même motif que
+    ``course_solver.py``) : la fermeture est donc consciente de l'occupation
+    conjointe, pas seulement de son propre nine.
+    """
     remaining = _remaining_dict(state.remaining)
-    pars = [par for par in (4, 3, 5) if remaining[par] > 0]
+    pars = [par for par in _par_order(par_quota) if remaining[par] > 0]
     for par in pars:
         for template in _candidate_templates(bank, state, par, params, seed, blocked_ids):
             for transform in _transforms(template, state, clubhouse, params, seed, rules):
@@ -302,15 +318,78 @@ def _placement_problems(candidate: tuple[PlacedBean, ...], obstacles: tuple[Plac
     return problems
 
 
+@dataclass(frozen=True)
+class ExpansionResult:
+    """Sortie pure de ``expand_state`` : les enfants d'un seul parent."""
+    children: tuple[SearchState, ...]
+    trials: int
+    accepted: int
+    rejected: Counter
+
+
+def expand_state(state: SearchState, target_depth: int, bank: BeanBank,
+                 clubhouse: tuple[float, float], params: SolverParams,
+                 rules: ValidationRules, seed: int, *,
+                 obstacles: tuple[PlacedBean, ...] = (),
+                 blocked_ids: frozenset[str] = frozenset(), order_offset: int = 0,
+                 par_quota: dict[int, int] = PAR_QUOTAS) -> ExpansionResult:
+    """Développe un seul état d'une profondeur : candidats, transformations,
+    validation, score. Corps extrait de la boucle de ``solve_nine`` pour être
+    réutilisé par le paveur conjoint (``joint_solver.py``), qui développe les
+    deux nines côte à côte sur la même carte.
+
+    ``obstacles`` et ``blocked_ids`` portent l'autre nine déjà posé (même
+    motif que ``course_solver.py``). ``par_quota`` ne fait qu'ordonner les
+    classes essayées en premier (l'éligibilité reste pilotée par
+    ``state.remaining``) : un compteur partagé peut ainsi remplacer le
+    module-level ``PAR_QUOTAS`` sans toucher à cette fonction.
+    """
+    children: list[SearchState] = []
+    rejected: Counter = Counter()
+    trials = accepted = 0
+    remaining = _remaining_dict(state.remaining)
+    pars = [par for par in _par_order(par_quota) if remaining[par] > 0]
+    for par in pars:
+        for template in _candidate_templates(bank, state, par, params, seed, blocked_ids):
+            for transform in _transforms(template, state, clubhouse, params, seed, rules):
+                trials += 1
+                placed = PlacedBean(template, transform, order_offset + target_depth)
+                candidate = (*state.placed, placed)
+                if target_depth == 1 and not _starts_outward(placed, clubhouse):
+                    rejected["clubhouse_departure"] += 1
+                    continue
+                problems = _placement_problems(candidate, obstacles, rules)
+                if target_depth == 9 and math.dist(placed.green, clubhouse) > params.clubhouse_max:
+                    rejected["clubhouse_return"] += 1
+                    continue
+                if problems:
+                    for kind in {problem.kind for problem in problems}:
+                        rejected[kind] += 1
+                    continue
+                remaining_after = _consume(state.remaining, par)
+                child = SearchState(candidate, remaining_after,
+                                    _state_score(candidate, clubhouse, params, rules))
+                if target_depth == 8 and params.closure_lookahead:
+                    closure = _has_closing_move(child, bank, clubhouse, params, rules, seed,
+                                                obstacles, blocked_ids, order_offset, par_quota)
+                    child = SearchState(candidate, remaining_after,
+                                        child.score - 80.0 if closure else child.score + 80.0)
+                children.append(child)
+                accepted += 1
+    return ExpansionResult(tuple(children), trials, accepted, rejected)
+
+
 def solve_nine(seed: int, params: SolverParams | None = None,
                rules: ValidationRules | None = None, *, bank: BeanBank | None = None,
                obstacles: tuple[PlacedBean, ...] = (),
-               blocked_ids: frozenset[str] = frozenset(), order_offset: int = 0) -> SolveResult:
+               blocked_ids: frozenset[str] = frozenset(), order_offset: int = 0,
+               par_quota: dict[int, int] | None = None) -> SolveResult:
     params = params or SolverParams()
     rules = rules or ValidationRules()
     clubhouse = (rules.width / 2.0, rules.height / 2.0)
     bank = bank or generate_bank(seed)
-    beam = [SearchState((), (PAR_QUOTAS[3], PAR_QUOTAS[4], PAR_QUOTAS[5]), 0.0)]
+    quota = dict(par_quota) if par_quota is not None else dict(PAR_QUOTAS)
+    beam = [SearchState((), (quota[3], quota[4], quota[5]), 0.0)]
     diagnostics: list[DepthDiagnostics] = []
     best = beam[0]
 
@@ -320,38 +399,14 @@ def solve_nine(seed: int, params: SolverParams | None = None,
         trials = accepted = dead_ends = 0
         parent_count = len(beam)
         for state in beam:
-            parent_children = 0
-            remaining = _remaining_dict(state.remaining)
-            pars = [par for par in (4, 3, 5) if remaining[par] > 0]
-            for par in pars:
-                for template in _candidate_templates(bank, state, par, params, seed, blocked_ids):
-                    for transform in _transforms(template, state, clubhouse, params, seed, rules):
-                        trials += 1
-                        placed = PlacedBean(template, transform, order_offset + target_depth)
-                        candidate = (*state.placed, placed)
-                        if target_depth == 1 and not _starts_outward(placed, clubhouse):
-                            rejected["clubhouse_departure"] += 1
-                            continue
-                        problems = _placement_problems(candidate, obstacles, rules)
-                        if target_depth == 9 and math.dist(placed.green, clubhouse) > params.clubhouse_max:
-                            rejected["clubhouse_return"] += 1
-                            continue
-                        if problems:
-                            for kind in {problem.kind for problem in problems}:
-                                rejected[kind] += 1
-                            continue
-                        remaining_after = _consume(state.remaining, par)
-                        child = SearchState(candidate, remaining_after,
-                                            _state_score(candidate, clubhouse, params, rules))
-                        if target_depth == 8 and params.closure_lookahead:
-                            closure = _has_closing_move(child, bank, clubhouse, params, rules, seed,
-                                                        obstacles, blocked_ids, order_offset)
-                            child = SearchState(candidate, remaining_after,
-                                                child.score - 80.0 if closure else child.score + 80.0)
-                        next_states.append(child)
-                        accepted += 1
-                        parent_children += 1
-            if parent_children == 0:
+            result = expand_state(state, target_depth, bank, clubhouse, params, rules, seed,
+                                  obstacles=obstacles, blocked_ids=blocked_ids,
+                                  order_offset=order_offset, par_quota=quota)
+            trials += result.trials
+            accepted += result.accepted
+            rejected.update(result.rejected)
+            next_states.extend(result.children)
+            if result.accepted == 0:
                 dead_ends += 1
 
         if not next_states:
