@@ -1,0 +1,368 @@
+{
+  "decision": "paving abstrait valid\u00e9",
+  "exact_duplicates": [],
+  "hard_violation_count": 0,
+  "near_duplicates": [
+    {
+      "seeds": [
+        4,
+        8
+      ],
+      "similarity": 0.8571
+    },
+    {
+      "seeds": [
+        5,
+        8
+      ],
+      "similarity": 0.8857
+    }
+  ],
+  "observations": [
+    "Les contraintes dures et le retour clubhouse sont respectés sur les dix seeds.",
+    "Les parcours occupent surtout le pourtour de la carte (biais visuel du score actuel).",
+    "Les dix séquences commencent par un par 3 : la préférence de départ par 4 est dominée par la facilité géométrique.",
+    "Le temps moyen est d'environ 53 secondes par seed avec ce prototype Python non optimisé."
+  ],
+  "rejection_counts": {
+    "antiparallel": 95859,
+    "axis_crossing": 283265,
+    "bounds": 308505,
+    "clubhouse_departure": 1888,
+    "clubhouse_return": 16156,
+    "footprint_collision": 532671
+  },
+  "seeds": [
+    {
+      "bbox_ratio": 0.8064,
+      "dead_ends": 97,
+      "final_clubhouse_distance": 31.948,
+      "footprint_ratio": 0.309,
+      "hard_valid": true,
+      "max_depth": 9,
+      "orientation_bins": 8,
+      "par_order": [
+        3,
+        4,
+        3,
+        4,
+        5,
+        4,
+        4,
+        5,
+        4
+      ],
+      "rejection_counts": {
+        "antiparallel": 10025,
+        "axis_crossing": 27873,
+        "bounds": 28432,
+        "clubhouse_departure": 180,
+        "clubhouse_return": 1991,
+        "footprint_collision": 50297
+      },
+      "seconds": 38.008,
+      "seed": 1,
+      "success": true,
+      "trials": 63990,
+      "violations": []
+    },
+    {
+      "bbox_ratio": 0.8017,
+      "dead_ends": 75,
+      "final_clubhouse_distance": 31.393,
+      "footprint_ratio": 0.285,
+      "hard_valid": true,
+      "max_depth": 9,
+      "orientation_bins": 7,
+      "par_order": [
+        3,
+        3,
+        4,
+        5,
+        5,
+        4,
+        4,
+        4,
+        4
+      ],
+      "rejection_counts": {
+        "antiparallel": 8980,
+        "axis_crossing": 23330,
+        "bounds": 29785,
+        "clubhouse_departure": 206,
+        "clubhouse_return": 40,
+        "footprint_collision": 44838
+      },
+      "seconds": 24.502,
+      "seed": 2,
+      "success": true,
+      "trials": 55890,
+      "violations": []
+    },
+    {
+      "bbox_ratio": 0.8717,
+      "dead_ends": 107,
+      "final_clubhouse_distance": 33.439,
+      "footprint_ratio": 0.3112,
+      "hard_valid": true,
+      "max_depth": 9,
+      "orientation_bins": 8,
+      "par_order": [
+        3,
+        4,
+        4,
+        4,
+        5,
+        3,
+        4,
+        5,
+        4
+      ],
+      "rejection_counts": {
+        "antiparallel": 11584,
+        "axis_crossing": 31182,
+        "bounds": 32194,
+        "clubhouse_departure": 214,
+        "clubhouse_return": 1453,
+        "footprint_collision": 58119
+      },
+      "seconds": 63.432,
+      "seed": 3,
+      "success": true,
+      "trials": 71190,
+      "violations": []
+    },
+    {
+      "bbox_ratio": 0.8733,
+      "dead_ends": 106,
+      "final_clubhouse_distance": 36.194,
+      "footprint_ratio": 0.2983,
+      "hard_valid": true,
+      "max_depth": 9,
+      "orientation_bins": 9,
+      "par_order": [
+        3,
+        4,
+        3,
+        5,
+        4,
+        4,
+        4,
+        5,
+        4
+      ],
+      "rejection_counts": {
+        "antiparallel": 9991,
+        "axis_crossing": 30326,
+        "bounds": 31616,
+        "clubhouse_departure": 180,
+        "clubhouse_return": 1733,
+        "footprint_collision": 55681
+      },
+      "seconds": 51.42,
+      "seed": 4,
+      "success": true,
+      "trials": 70380,
+      "violations": []
+    },
+    {
+      "bbox_ratio": 0.8471,
+      "dead_ends": 91,
+      "final_clubhouse_distance": 36.361,
+      "footprint_ratio": 0.2969,
+      "hard_valid": true,
+      "max_depth": 9,
+      "orientation_bins": 9,
+      "par_order": [
+        3,
+        4,
+        3,
+        4,
+        5,
+        4,
+        4,
+        5,
+        4
+      ],
+      "rejection_counts": {
+        "antiparallel": 9513,
+        "axis_crossing": 29123,
+        "bounds": 31317,
+        "clubhouse_departure": 180,
+        "clubhouse_return": 1819,
+        "footprint_collision": 54592
+      },
+      "seconds": 66.79,
+      "seed": 5,
+      "success": true,
+      "trials": 69030,
+      "violations": []
+    },
+    {
+      "bbox_ratio": 0.8105,
+      "dead_ends": 109,
+      "final_clubhouse_distance": 36.417,
+      "footprint_ratio": 0.2948,
+      "hard_valid": true,
+      "max_depth": 9,
+      "orientation_bins": 8,
+      "par_order": [
+        3,
+        4,
+        5,
+        5,
+        4,
+        4,
+        3,
+        4,
+        4
+      ],
+      "rejection_counts": {
+        "antiparallel": 7646,
+        "axis_crossing": 26525,
+        "bounds": 30356,
+        "clubhouse_departure": 208,
+        "clubhouse_return": 1763,
+        "footprint_collision": 51416
+      },
+      "seconds": 55.931,
+      "seed": 6,
+      "success": true,
+      "trials": 64350,
+      "violations": []
+    },
+    {
+      "bbox_ratio": 0.7462,
+      "dead_ends": 92,
+      "final_clubhouse_distance": 35.793,
+      "footprint_ratio": 0.2818,
+      "hard_valid": true,
+      "max_depth": 9,
+      "orientation_bins": 7,
+      "par_order": [
+        3,
+        4,
+        4,
+        4,
+        3,
+        5,
+        4,
+        5,
+        4
+      ],
+      "rejection_counts": {
+        "antiparallel": 9677,
+        "axis_crossing": 29888,
+        "bounds": 31548,
+        "clubhouse_departure": 180,
+        "clubhouse_return": 1840,
+        "footprint_collision": 56185
+      },
+      "seconds": 58.156,
+      "seed": 7,
+      "success": true,
+      "trials": 71100,
+      "violations": []
+    },
+    {
+      "bbox_ratio": 0.8448,
+      "dead_ends": 80,
+      "final_clubhouse_distance": 33.108,
+      "footprint_ratio": 0.2965,
+      "hard_valid": true,
+      "max_depth": 9,
+      "orientation_bins": 9,
+      "par_order": [
+        3,
+        4,
+        3,
+        5,
+        5,
+        4,
+        4,
+        4,
+        4
+      ],
+      "rejection_counts": {
+        "antiparallel": 9915,
+        "axis_crossing": 28589,
+        "bounds": 31657,
+        "clubhouse_departure": 180,
+        "clubhouse_return": 1859,
+        "footprint_collision": 54270
+      },
+      "seconds": 67.099,
+      "seed": 8,
+      "success": true,
+      "trials": 68940,
+      "violations": []
+    },
+    {
+      "bbox_ratio": 0.8331,
+      "dead_ends": 87,
+      "final_clubhouse_distance": 28.971,
+      "footprint_ratio": 0.3054,
+      "hard_valid": true,
+      "max_depth": 9,
+      "orientation_bins": 8,
+      "par_order": [
+        3,
+        4,
+        3,
+        5,
+        4,
+        5,
+        4,
+        4,
+        4
+      ],
+      "rejection_counts": {
+        "antiparallel": 12030,
+        "axis_crossing": 28884,
+        "bounds": 31232,
+        "clubhouse_departure": 180,
+        "clubhouse_return": 2273,
+        "footprint_collision": 54582
+      },
+      "seconds": 50.748,
+      "seed": 9,
+      "success": true,
+      "trials": 68490,
+      "violations": []
+    },
+    {
+      "bbox_ratio": 0.8134,
+      "dead_ends": 97,
+      "final_clubhouse_distance": 31.015,
+      "footprint_ratio": 0.2648,
+      "hard_valid": true,
+      "max_depth": 9,
+      "orientation_bins": 8,
+      "par_order": [
+        3,
+        4,
+        4,
+        5,
+        3,
+        4,
+        4,
+        5,
+        4
+      ],
+      "rejection_counts": {
+        "antiparallel": 6498,
+        "axis_crossing": 27545,
+        "bounds": 30368,
+        "clubhouse_departure": 180,
+        "clubhouse_return": 1385,
+        "footprint_collision": 52691
+      },
+      "seconds": 54.901,
+      "seed": 10,
+      "success": true,
+      "trials": 66420,
+      "violations": []
+    }
+  ],
+  "success_count": 10
+}
