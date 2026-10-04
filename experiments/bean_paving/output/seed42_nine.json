@@ -1,0 +1,319 @@
+{
+  "clubhouse": [
+    175.0,
+    175.0
+  ],
+  "complete": true,
+  "diagnostics": [
+    {
+      "accepted": 90,
+      "dead_ends": 0,
+      "depth": 1,
+      "kept": 48,
+      "parents": 1,
+      "rejection_counts": {
+        "clubhouse_departure": 180
+      },
+      "trials": 270
+    },
+    {
+      "accepted": 3780,
+      "dead_ends": 0,
+      "depth": 2,
+      "kept": 48,
+      "parents": 48,
+      "rejection_counts": {
+        "antiparallel": 486,
+        "axis_crossing": 5467,
+        "footprint_collision": 9160
+      },
+      "trials": 12960
+    },
+    {
+      "accepted": 953,
+      "dead_ends": 0,
+      "depth": 3,
+      "kept": 48,
+      "parents": 48,
+      "rejection_counts": {
+        "antiparallel": 1009,
+        "axis_crossing": 4147,
+        "bounds": 7547,
+        "footprint_collision": 8790
+      },
+      "trials": 11520
+    },
+    {
+      "accepted": 205,
+      "dead_ends": 15,
+      "depth": 4,
+      "kept": 48,
+      "parents": 48,
+      "rejection_counts": {
+        "antiparallel": 1996,
+        "axis_crossing": 4119,
+        "bounds": 9259,
+        "footprint_collision": 8021
+      },
+      "trials": 10350
+    },
+    {
+      "accepted": 115,
+      "dead_ends": 19,
+      "depth": 5,
+      "kept": 48,
+      "parents": 48,
+      "rejection_counts": {
+        "antiparallel": 1787,
+        "axis_crossing": 3659,
+        "bounds": 7826,
+        "footprint_collision": 6765
+      },
+      "trials": 8640
+    },
+    {
+      "accepted": 605,
+      "dead_ends": 0,
+      "depth": 6,
+      "kept": 48,
+      "parents": 48,
+      "rejection_counts": {
+        "antiparallel": 2326,
+        "axis_crossing": 2849,
+        "bounds": 2582,
+        "footprint_collision": 5733
+      },
+      "trials": 6750
+    },
+    {
+      "accepted": 76,
+      "dead_ends": 31,
+      "depth": 7,
+      "kept": 48,
+      "parents": 48,
+      "rejection_counts": {
+        "antiparallel": 2064,
+        "axis_crossing": 4717,
+        "bounds": 2331,
+        "footprint_collision": 7493
+      },
+      "trials": 7650
+    },
+    {
+      "accepted": 69,
+      "dead_ends": 37,
+      "depth": 8,
+      "kept": 46,
+      "parents": 48,
+      "rejection_counts": {
+        "antiparallel": 1664,
+        "axis_crossing": 4663,
+        "bounds": 407,
+        "footprint_collision": 6490
+      },
+      "trials": 6570
+    },
+    {
+      "accepted": 5,
+      "dead_ends": 43,
+      "depth": 9,
+      "kept": 5,
+      "parents": 46,
+      "rejection_counts": {
+        "antiparallel": 379,
+        "axis_crossing": 1352,
+        "clubhouse_return": 2226,
+        "footprint_collision": 1909
+      },
+      "trials": 4140
+    }
+  ],
+  "params": {
+    "beam_width": 48,
+    "candidates_per_par": 3,
+    "clubhouse_max": 50.0,
+    "link_lengths": [
+      24.0,
+      32.0,
+      40.0
+    ],
+    "rotation_step_deg": 30,
+    "transforms_per_candidate": 30
+  },
+  "placed": [
+    {
+      "green": [
+        282.6672,
+        154.2154
+      ],
+      "id": "s42-p3-04",
+      "order": 1,
+      "par": 3,
+      "tee": [
+        187.0,
+        154.2154
+      ],
+      "transform": {
+        "mirrored": true,
+        "rotation_deg": 0,
+        "x": 187.0,
+        "y": 154.2154
+      }
+    },
+    {
+      "green": [
+        253.0105,
+        303.2196
+      ],
+      "id": "s42-p4-04",
+      "order": 2,
+      "par": 4,
+      "tee": [
+        282.6672,
+        186.2154
+      ],
+      "transform": {
+        "mirrored": false,
+        "rotation_deg": 120,
+        "x": 282.6672,
+        "y": 186.2154
+      }
+    },
+    {
+      "green": [
+        58.3305,
+        303.2196
+      ],
+      "id": "s42-p4-09",
+      "order": 3,
+      "par": 4,
+      "tee": [
+        221.0105,
+        303.2196
+      ],
+      "transform": {
+        "mirrored": false,
+        "rotation_deg": 180,
+        "x": 221.0105,
+        "y": 303.2196
+      }
+    },
+    {
+      "green": [
+        52.5786,
+        47.6025
+      ],
+      "id": "s42-p5-02",
+      "order": 4,
+      "par": 5,
+      "tee": [
+        58.3305,
+        263.2196
+      ],
+      "transform": {
+        "mirrored": true,
+        "rotation_deg": 270,
+        "x": 58.3305,
+        "y": 263.2196
+      }
+    },
+    {
+      "green": [
+        236.8561,
+        12.9615
+      ],
+      "id": "s42-p4-10",
+      "order": 5,
+      "par": 4,
+      "tee": [
+        72.5786,
+        12.9615
+      ],
+      "transform": {
+        "mirrored": false,
+        "rotation_deg": 0,
+        "x": 72.5786,
+        "y": 12.9615
+      }
+    },
+    {
+      "green": [
+        309.2309,
+        94.7471
+      ],
+      "id": "s42-p3-02",
+      "order": 6,
+      "par": 3,
+      "tee": [
+        236.8561,
+        52.9615
+      ],
+      "transform": {
+        "mirrored": true,
+        "rotation_deg": 30,
+        "x": 236.8561,
+        "y": 52.9615
+      }
+    },
+    {
+      "green": [
+        123.9501,
+        55.7046
+      ],
+      "id": "s42-p5-03",
+      "order": 7,
+      "par": 5,
+      "tee": [
+        325.2309,
+        122.4599
+      ],
+      "transform": {
+        "mirrored": true,
+        "rotation_deg": 180,
+        "x": 325.2309,
+        "y": 122.4599
+      }
+    },
+    {
+      "green": [
+        91.6373,
+        228.8593
+      ],
+      "id": "s42-p4-05",
+      "order": 8,
+      "par": 4,
+      "tee": [
+        123.9501,
+        95.7046
+      ],
+      "transform": {
+        "mirrored": true,
+        "rotation_deg": 90,
+        "x": 123.9501,
+        "y": 95.7046
+      }
+    },
+    {
+      "green": [
+        215.1827,
+        184.6968
+      ],
+      "id": "s42-p4-02",
+      "order": 9,
+      "par": 4,
+      "tee": [
+        91.6373,
+        268.8593
+      ],
+      "transform": {
+        "mirrored": false,
+        "rotation_deg": 330,
+        "x": 91.6373,
+        "y": 268.8593
+      }
+    }
+  ],
+  "score": 28.55545,
+  "seed": 42,
+  "total_trials": 68850
+}

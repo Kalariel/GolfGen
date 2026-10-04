@@ -1,0 +1,234 @@
+{
+  "clubhouse": [
+    175.0,
+    175.0
+  ],
+  "complete": false,
+  "diagnostics": [
+    {
+      "accepted": 90,
+      "dead_ends": 0,
+      "depth": 1,
+      "kept": 48,
+      "parents": 1,
+      "rejection_counts": {
+        "clubhouse_departure": 180
+      },
+      "trials": 270
+    },
+    {
+      "accepted": 3780,
+      "dead_ends": 0,
+      "depth": 2,
+      "kept": 48,
+      "parents": 48,
+      "rejection_counts": {
+        "antiparallel": 486,
+        "axis_crossing": 5467,
+        "footprint_collision": 9160
+      },
+      "trials": 12960
+    },
+    {
+      "accepted": 615,
+      "dead_ends": 0,
+      "depth": 3,
+      "kept": 48,
+      "parents": 48,
+      "rejection_counts": {
+        "antiparallel": 1656,
+        "axis_crossing": 3411,
+        "bounds": 5497,
+        "footprint_collision": 6558
+      },
+      "trials": 8640
+    },
+    {
+      "accepted": 227,
+      "dead_ends": 6,
+      "depth": 4,
+      "kept": 48,
+      "parents": 48,
+      "rejection_counts": {
+        "antiparallel": 2224,
+        "axis_crossing": 3816,
+        "bounds": 7474,
+        "footprint_collision": 6859
+      },
+      "trials": 8640
+    },
+    {
+      "accepted": 96,
+      "dead_ends": 18,
+      "depth": 5,
+      "kept": 48,
+      "parents": 48,
+      "rejection_counts": {
+        "antiparallel": 1272,
+        "axis_crossing": 2434,
+        "bounds": 5320,
+        "footprint_collision": 4551
+      },
+      "trials": 5850
+    },
+    {
+      "accepted": 452,
+      "dead_ends": 2,
+      "depth": 6,
+      "kept": 48,
+      "parents": 48,
+      "rejection_counts": {
+        "antiparallel": 1410,
+        "axis_crossing": 1795,
+        "bounds": 1709,
+        "footprint_collision": 3575
+      },
+      "trials": 4320
+    },
+    {
+      "accepted": 0,
+      "dead_ends": 48,
+      "depth": 7,
+      "kept": 0,
+      "parents": 48,
+      "rejection_counts": {
+        "antiparallel": 990,
+        "axis_crossing": 3365,
+        "bounds": 1573,
+        "footprint_collision": 4320
+      },
+      "trials": 4320
+    }
+  ],
+  "params": {
+    "beam_width": 48,
+    "candidates_per_par": 3,
+    "clubhouse_max": 50.0,
+    "link_lengths": [
+      24.0,
+      32.0,
+      40.0
+    ],
+    "rotation_step_deg": 30,
+    "transforms_per_candidate": 30
+  },
+  "placed": [
+    {
+      "green": [
+        282.5712,
+        175.0
+      ],
+      "id": "s42-p3-02",
+      "order": 1,
+      "par": 3,
+      "tee": [
+        199.0,
+        175.0
+      ],
+      "transform": {
+        "mirrored": true,
+        "rotation_deg": 0,
+        "x": 199.0,
+        "y": 175.0
+      }
+    },
+    {
+      "green": [
+        270.5712,
+        291.4518
+      ],
+      "id": "s42-p3-04",
+      "order": 2,
+      "par": 3,
+      "tee": [
+        270.5712,
+        195.7846
+      ],
+      "transform": {
+        "mirrored": false,
+        "rotation_deg": 90,
+        "x": 270.5712,
+        "y": 195.7846
+      }
+    },
+    {
+      "green": [
+        68.6712,
+        307.4518
+      ],
+      "id": "s42-p4-06",
+      "order": 3,
+      "par": 4,
+      "tee": [
+        242.8584,
+        307.4518
+      ],
+      "transform": {
+        "mirrored": false,
+        "rotation_deg": 180,
+        "x": 242.8584,
+        "y": 307.4518
+      }
+    },
+    {
+      "green": [
+        42.9193,
+        57.1937
+      ],
+      "id": "s42-p5-02",
+      "order": 4,
+      "par": 5,
+      "tee": [
+        48.6712,
+        272.8108
+      ],
+      "transform": {
+        "mirrored": true,
+        "rotation_deg": 270,
+        "x": 48.6712,
+        "y": 272.8108
+      }
+    },
+    {
+      "green": [
+        296.0044,
+        51.8115
+      ],
+      "id": "s42-p5-04",
+      "order": 5,
+      "par": 5,
+      "tee": [
+        77.5604,
+        37.1937
+      ],
+      "transform": {
+        "mirrored": true,
+        "rotation_deg": 0,
+        "x": 77.5604,
+        "y": 37.1937
+      }
+    },
+    {
+      "green": [
+        316.0044,
+        250.73
+      ],
+      "id": "s42-p4-10",
+      "order": 6,
+      "par": 4,
+      "tee": [
+        316.0044,
+        86.4525
+      ],
+      "transform": {
+        "mirrored": false,
+        "rotation_deg": 90,
+        "x": 316.0044,
+        "y": 86.4525
+      }
+    }
+  ],
+  "score": 21.68379,
+  "seed": 42,
+  "total_trials": 45000
+}
