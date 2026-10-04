@@ -35,3 +35,9 @@ def test_same_seed_has_byte_identical_json():
 
 def test_different_seeds_produce_different_banks():
     assert generate_bank(7).to_json() != generate_bank(8).to_json()
+
+
+def test_eighteen_hole_bank_has_double_inventory():
+    bank = generate_bank(42, GenerationParams.eighteen())
+    assert len(bank.templates) == 36
+    assert {par: sum(bean.par == par for bean in bank.templates) for par in (3, 4, 5)} == {3: 8, 4: 20, 5: 8}

@@ -37,6 +37,20 @@ class GenerationParams:
     def for_par(self, par: int) -> ClassParams:
         return {3: self.par3, 4: self.par4, 5: self.par5}[par]
 
+    @classmethod
+    def eighteen(cls) -> "GenerationParams":
+        """Banque double pour sélectionner un parcours complet de 18 trous."""
+        base = cls()
+        return cls(
+            margin=base.margin,
+            par3=ClassParams(8, base.par3.length_range, base.par3.width_range,
+                             base.par3.turn_choices, base.par3.max_turn_deg),
+            par4=ClassParams(20, base.par4.length_range, base.par4.width_range,
+                             base.par4.turn_choices, base.par4.max_turn_deg),
+            par5=ClassParams(8, base.par5.length_range, base.par5.width_range,
+                             base.par5.turn_choices, base.par5.max_turn_deg),
+        )
+
 
 @dataclass(frozen=True)
 class BeanTemplate:

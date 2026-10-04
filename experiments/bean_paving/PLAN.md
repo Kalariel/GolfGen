@@ -292,5 +292,5 @@ spatiales et produit un parcours visualisable dans le viewer.
 | 3. Placement local | Terminé | Chaînes 4/4 valides sur seeds 1, 7, 42, 123 ; seed 42 en 340 essais |
 | 4. Paveur d'un nine | Terminé | Seed 42 valide, beam 48, 68 850 essais, 5 fermetures ; échec intermédiaire conservé |
 | 5. Benchmark 1..10 | Terminé | 10/10, 0 violation dure, 0 doublon exact ; biais pourtour et départ par 3 consignés |
-| 6. Banque de 36 et 18 trous | À faire | — |
+| 6. Banque de 36 et 18 trous | Suspendu | Banque 8/20/8 OK ; front 9/9, back 1/9. Reprendre par coordination alternée (`EXPERIMENT_18.md`) |
 | 7. Substitution par vrais trous | À faire | — |
