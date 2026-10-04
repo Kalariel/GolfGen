@@ -242,10 +242,26 @@ la trajectoire ne change pas : au poids par défaut, le signal d'espace libre
 ne suffit pas à déplacer le classement parmi les survivants retenus — les
 causes dominantes de rejet restent `bounds`/`footprint_collision`/
 `axis_crossing` (contraintes dures, invisibles à toute pénalité de score).
-Le câblage est maintenant réel et vérifié (test ci-dessus), mais ce run
-confirme — sans l'avoir présumé — que la saturation géométrique
-(conclusion 2 de B) domine largement le signal de score à ce niveau de
-poids.
+Le câblage est maintenant réel et vérifié (test ci-dessus) — mais pas
+suffisant : une vérification instrumentée menée en relecture de code (run
+complet seed 42/350, ~80 s) montre que la pénalité est non nulle sur
+~100 % des candidats du pool à chaque tour (valeurs 15–44), mais que son
+**étalement** à une profondeur donnée est quasi nul (0,0000–0,0062), contre
+0,05–12 pour l'étalement du score brut à la même profondeur. La pénalité
+se comporte donc comme un **décalage quasi constant** ajouté à tous les
+candidats du pool, qui ne change jamais leur classement relatif — ce n'est
+pas que « la saturation géométrique domine le signal de score » (affirmation
+non étayée par ces chiffres, retirée ici), c'est que le signal lui-même ne
+discrimine pas les candidats de même profondeur. Cause probable : la grille
+`CELL_SIZE=5` de `freespace.py` est trop grossière pour distinguer des
+frères de même profondeur qui diffèrent de quelques blocs. Un seul poids de
+pénalité a été testé avec le câblage réel (`freespace_weight=1.0`, R4/R6) ;
+relancer avec un poids plus fort n'a aucune raison de changer ce diagnostic,
+puisque multiplier un décalage quasi constant par un facteur reste un
+décalage quasi constant — **le solveur conjoint guidé par freespace n'a
+donc pas encore été testé de façon significative** : le levier à actionner
+est la résolution/sensibilité de la métrique (grille plus fine, ou une
+mesure de capacité de poche plutôt qu'une distance au bord), pas le poids.
 
 **R5 (pression de quota seule) et R6 (les deux) : pire que R4,
 pas mieux.** Les deux s'arrêtent un tour plus tôt (step 9 au lieu de 10),
@@ -280,23 +296,39 @@ Aucun des trois runs n'atteint 18/18, ni même le meilleur résultat conjoint
 déjà connu (9 trous, B run1/3) — R5/R6 sont strictement en dessous (8).
 Le câblage de la pénalité d'espace libre est désormais réel (prouvé par
 test unitaire), mais à son poids par défaut il ne change pas l'issue sur
-cette seed : la saturation géométrique à partir de la profondeur 5
-(`bounds`, `footprint_collision`, `axis_crossing`) domine largement tout
-signal de score, pénalisé ou non. L'hypothèse de pression de quota est
-testée et réfutée sur ce cas : forcer le par4 plus tôt en pénalisant
-par3/par5 ne fait qu'épuiser plus vite le pool de survivants valides, sans
-produire de par4 supplémentaire.
+cette seed. Ce n'est pas la preuve que « la saturation géométrique domine
+le signal de score » (affirmation retirée, voir R4 ci-dessus) : la mesure
+instrumentée montre que la pénalité freespace n'a quasiment aucun pouvoir
+discriminant entre candidats de même profondeur (grille `CELL_SIZE=5` trop
+grossière), donc elle ne pouvait pas déplacer le classement — qu'il y ait
+ou non saturation géométrique par ailleurs. Un seul poids a été essayé avec
+le câblage réel ; le solveur conjoint guidé par freespace reste donc
+**effectivement non testé**, et le restera tant que la métrique ne
+discrimine pas. L'hypothèse de pression de quota, elle, est bien testée et
+réfutée sur ce cas : forcer le par4 plus tôt en pénalisant par3/par5 ne
+fait qu'épuiser plus vite le pool de survivants valides, sans produire de
+par4 supplémentaire.
 
 Trois incréments indépendants (B : beam élargi, câblage buggé ; B' :
 câblage réel, pression de quota) n'ont déplacé le mur que de ± 1 trou
-autour de 8-9/18, jamais au-delà. Au vu de ce plafond répété et de la cause
-structurelle déjà identifiée (surface 350×350 insuffisante pour dix-huit
-empreintes sous les règles dures actuelles, confirmé indépendamment par
-500×500 = 18/18), **le paving conjoint ordonné en 350×350 doit être
-abandonné** au profit de la piste déjà proposée dans
-`REPORT_SURFACE_AND_PACKING.md` : un packing connecté sans ordre de jeu
-fixé (poser les 18 empreintes sans contrainte de séquence tee→green
-immédiate, puis chercher le routage après coup), qui n'a pas encore été
-testé avec un graphe de liaisons enrichi par rapport à l'essai bloqué à
-12/18 déjà documenté. Conformément à la discipline (§7), aucun benchmark
-multi-seeds n'est lancé sur ce solveur conjoint ordonné.
+autour de 8-9/18, jamais au-delà — mais aucun n'a encore testé un signal
+d'espace libre réellement discriminant. Pour contexte (pas comme preuve) :
+un haricot occupe 26 à 31 % de la carte 350×350 en empreinte
+(`output/benchmark_1_10/REPORT.md`), donc dix-huit trous représentent
+environ 60 % d'occupation de surface sous les règles dures actuelles
+(aucune superposition, aucun croisement d'axes, antiparallélisme, liaisons
+12–45) ; les 350 tentatives plafonnent toutes autour de 8-9/18 alors que
+500×500 en séquentiel a réussi 18/18 (`REPORT_SURFACE_AND_PACKING.md`).
+Ceci rend plausible une contrainte de densité réelle, sans la démontrer
+tant que la métrique freespace reste non discriminante.
+
+**Point de reprise.** La décision suivante porte sur la taille de carte :
+si 350×350 est une exigence réelle du spike, les leviers restants sont une
+métrique freespace plus fine (grille plus petite que `CELL_SIZE=5`, ou une
+mesure de capacité de poche plutôt qu'une distance au bord) ou le packing
+connecté sans ordre de jeu fixé déjà proposé dans
+`REPORT_SURFACE_AND_PACKING.md`. Si 500×500 (ou une taille intermédiaire)
+est acceptable, l'étape 6 est déjà satisfaite par le run 500×500 (18/18) et
+la prochaine étape est le benchmark seeds 1..10 à cette taille. Conformément
+à la discipline (§7), aucun benchmark multi-seeds n'est lancé sur le
+solveur conjoint ordonné en 350×350 avant cette décision.
