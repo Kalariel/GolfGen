@@ -157,3 +157,146 @@ Ne pas relancer de benchmark multi-seeds sur ce solveur avant 18/18 (discipline
 
 Conserver la seed témoin 42, la carte 350×350, la banque `8/20/8` et le
 validateur indépendant. `golfgen/loop_router.py` reste inchangé.
+
+## Incrément B' — câblage réel de la pénalité + hypothèse de pression de quota
+
+### Ce qui a été corrigé (vérifié, pas supposé)
+
+`_select_joint_beam` est maintenant appelé sur un pool borné (`next_states`
+triés par score brut, tronqués à `SolverParams.freespace_pool_width`,
+défaut 240) **avant** que la pénalité d'espace libre soit calculée et
+ajoutée au score de chaque candidat du pool (`joint_solver._select_penalized_beam`,
+qui remplace l'appel direct à `_select_joint_beam` dans `search_joint`).
+Comme `freespace.analyze` est recalculé à chaque tour à partir des
+empreintes réellement posées (`state.front.placed`/`state.back.placed`),
+il n'est plus nécessaire de propager un score pénalisé dans
+`front.score`/`back.score` pour que l'effet survive au tour suivant : la
+pénalité est simplement réévaluée depuis zéro à chaque tour, sur le pool
+de CE tour.
+
+Preuve directe, pas seulement un rerun global : `tests/test_bean_joint_solver.py::
+test_freespace_penalty_changes_which_joint_state_survives_the_beam`
+construit deux `JointState` de même profondeur (même case du round-robin),
+l'un avec un meilleur score brut mais un corridor pincé à 8 blocs jusqu'à
+son green, l'autre avec un score brut moins bon mais un corridor ouvert.
+Avec `freespace_weight=0.0`, `_select_penalized_beam` retient le meilleur
+score brut ; avec `freespace_weight=4.0`, il retient l'autre — la pénalité
+change bien le survivant du beam, pas seulement le score affiché.
+
+### Hypothèse de pression de quota (point de reprise n°2, testée — pas confirmée)
+
+Un terme optionnel `_quota_pressure_penalty(front, back, weight)` pénalise
+le dépassement (jamais le retard) de la part attendue de par3/par5 à la
+profondeur totale courante, par rapport au quota global `4/10/4`.
+Désactivé par défaut (`quota_pressure_weight=0.0`, résultat toujours 0.0
+sans même inspecter les haricots posés — voir
+`test_quota_pressure_penalty_is_zero_when_disabled`). Testé isolément
+(`test_quota_pressure_penalty_increases_when_par3_outpaces_its_expected_share`)
+et en intégration dans `_select_penalized_beam`.
+
+**Correction au diagnostic du point 3 de l'incrément B** : la relecture
+affirmait que `_select_joint_beam` « fait un round-robin par profil de
+quota restant ». C'est inexact — il bucket par `(front.depth, back.depth)`,
+jamais par quota. Et en pratique, les diagnostics ci-dessous (comme ceux de
+B) montrent qu'à CHAQUE `global_step`, la totalité du beam choisit le même
+côté (`front` ou `back` a toujours `parents=0` sur l'autre ligne) : tous les
+survivants partagent systématiquement la même paire de profondeurs, donc il
+n'existe qu'un seul bucket actif par tour. Le round-robin de
+`_select_joint_beam` ne fait donc, en l'état actuel, strictement rien de
+plus qu'un tri par score — il ne protège aucun profil de quota rare. Le
+biais par3/par5 observé n'est donc pas un artefact du round-robin, mais une
+conséquence du score (`_state_score`, `_transform_rank`) qui favorise des
+formes correspondant mieux à l'espace restant, pas de la sélection de beam
+elle-même.
+
+**Les chiffres, pour trancher « est-ce que par3/par5 s'épuisent vraiment
+tôt » :** au moment de la mort du beam de R4 (profondeur totale 9, comme
+B run1/3) : par3 4/4 (**100 %** du quota global), par5 4/4 (**100 %**),
+par4 1/10 (**10 %**) — alors que par4 représente 55,6 % du quota final.
+Pour R5/R6 (mort à profondeur totale 8) : par3 4/4 (100 %), par5 3/4
+(75 %), par4 1/10 (10 %). Le déséquilibre est réel et mesuré, pas supposé.
+
+### Runs (seed 42, 350×350, beam 56)
+
+| Run | freespace (weight / min_corridor / pool) | quota_pressure | front | back | total | trials | temps | mort à |
+|---|---|---|---|---|---|---|---|---|
+| 4 | 1.0 / 15.0 / 240 (câblé pour de vrai) | 0.0 (off) | 5/9 | 4/9 | 9 | 103 770 | 77,2 s | step 10 |
+| 5 | 0.0 (off) | 3.0 | 4/9 | 4/9 | 8 | 98 910 | 63,8 s | step 9 |
+| 6 | 1.0 / 15.0 / 240 | 3.0 | 4/9 | 4/9 | 8 | 98 910 | 65,3 s | step 9 |
+
+Choix des poids : `freespace_weight=1.0`/`min_corridor=15.0` = défauts déjà
+en place avant B' (aucune raison de les changer pour isoler l'effet du
+câblage). `freespace_pool_width=240` ≈ 4× le beam, pour rester nettement
+au-dessus des quelques centaines d'acceptés typiques par tour (voir trials
+B) sans évaluer `freespace.analyze` sur des milliers de candidats à chaque
+profondeur. `quota_pressure_weight=3.0` : même ordre de grandeur que
+`FIRST_PAR_PENALTY` (2.4–3.8, `solver.py`), le seul autre terme de score
+connu à cette échelle ; à profondeur 9 un dépassement de 2 trous (4 posés
+contre ~2 attendus) donne une pénalité de 6.0, comparable aux autres termes
+sans les dominer outrageusement.
+
+**R4 (câblage seul) : même résultat que B run1/3** (front 5/9, back 4/9,
+9 trous, mêmes pars `3-3-5-5-4` / `3-3-5-5`). Le temps monte de 54,5 s à
+77,2 s (coût de `freespace.analyze` sur le pool de 240, à chaque tour), mais
+la trajectoire ne change pas : au poids par défaut, le signal d'espace libre
+ne suffit pas à déplacer le classement parmi les survivants retenus — les
+causes dominantes de rejet restent `bounds`/`footprint_collision`/
+`axis_crossing` (contraintes dures, invisibles à toute pénalité de score).
+Le câblage est maintenant réel et vérifié (test ci-dessus), mais ce run
+confirme — sans l'avoir présumé — que la saturation géométrique
+(conclusion 2 de B) domine largement le signal de score à ce niveau de
+poids.
+
+**R5 (pression de quota seule) et R6 (les deux) : pire que R4,
+pas mieux.** Les deux s'arrêtent un tour plus tôt (step 9 au lieu de 10),
+avec un total de 8 trous au lieu de 9. Le détail : `par5` chute de 4/4 à
+3/4 (la pénalité décourage bien un par5 de plus en fin de partie), mais
+ceci ne libère **aucune** place supplémentaire pour par4 (toujours 1/10
+dans les trois runs) — le nombre d'acceptés au step 7/8/9 s'effondre plus
+vite (step8 : 3 acceptés contre 49 en R4 ; step9 : 0 parent survivant vs 49
+parents en R4). L'hypothèse du point 3 de B (« les par3/par5 volent de la
+diversité de recherche aux par4 ») est donc **réfutée** par ce test : à
+poids 3.0, pénaliser l'usage précoce de par3/par5 ne fait pas émerger de
+par4 supplémentaire, parce que le facteur limitant n'est pas la part du
+beam allouée aux profils de quota (il n'y a qu'un seul bucket actif par
+tour, voir plus haut) mais la difficulté géométrique réelle de caser un
+par4 dans l'espace restant — moins de bonnes solutions par3/par5
+conservées ne compense pas par davantage de bonnes solutions par4, elle
+réduit juste le pool de survivants valides.
+
+R6 reproduit exactement les mêmes haricots que R5 (le score affiché diffère
+seulement de la contribution freespace, qui ne change donc rien à la
+décision une fois la pression de quota active) — cohérent avec R4 montrant
+déjà que le poids freespace par défaut ne suffit pas à déplacer un
+classement dominé par d'autres facteurs.
+
+JSON + SVG : `output/seed42_joint_350_run4_failed.{json,svg}`,
+`output/seed42_joint_350_run5_failed.{json,svg}`,
+`output/seed42_joint_350_run6_failed.{json,svg}`.
+
+### Verdict
+
+Aucun des trois runs n'atteint 18/18, ni même le meilleur résultat conjoint
+déjà connu (9 trous, B run1/3) — R5/R6 sont strictement en dessous (8).
+Le câblage de la pénalité d'espace libre est désormais réel (prouvé par
+test unitaire), mais à son poids par défaut il ne change pas l'issue sur
+cette seed : la saturation géométrique à partir de la profondeur 5
+(`bounds`, `footprint_collision`, `axis_crossing`) domine largement tout
+signal de score, pénalisé ou non. L'hypothèse de pression de quota est
+testée et réfutée sur ce cas : forcer le par4 plus tôt en pénalisant
+par3/par5 ne fait qu'épuiser plus vite le pool de survivants valides, sans
+produire de par4 supplémentaire.
+
+Trois incréments indépendants (B : beam élargi, câblage buggé ; B' :
+câblage réel, pression de quota) n'ont déplacé le mur que de ± 1 trou
+autour de 8-9/18, jamais au-delà. Au vu de ce plafond répété et de la cause
+structurelle déjà identifiée (surface 350×350 insuffisante pour dix-huit
+empreintes sous les règles dures actuelles, confirmé indépendamment par
+500×500 = 18/18), **le paving conjoint ordonné en 350×350 doit être
+abandonné** au profit de la piste déjà proposée dans
+`REPORT_SURFACE_AND_PACKING.md` : un packing connecté sans ordre de jeu
+fixé (poser les 18 empreintes sans contrainte de séquence tee→green
+immédiate, puis chercher le routage après coup), qui n'a pas encore été
+testé avec un graphe de liaisons enrichi par rapport à l'essai bloqué à
+12/18 déjà documenté. Conformément à la discipline (§7), aucun benchmark
+multi-seeds n'est lancé sur ce solveur conjoint ordonné.

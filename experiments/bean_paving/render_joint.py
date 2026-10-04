@@ -89,6 +89,8 @@ if __name__ == "__main__":
     parser.add_argument("--beam-width", type=int, default=56)
     parser.add_argument("--freespace-weight", type=float, default=1.0)
     parser.add_argument("--freespace-min-corridor", type=float, default=15.0)
+    parser.add_argument("--freespace-pool-width", type=int, default=240)
+    parser.add_argument("--quota-pressure-weight", type=float, default=0.0)
     parser.add_argument("--label", type=str, default="")
     parser.add_argument("--output", type=Path, default=Path("experiments/bean_paving/output"))
     args = parser.parse_args()
@@ -97,6 +99,8 @@ if __name__ == "__main__":
         beam_width=args.beam_width,
         freespace_weight=args.freespace_weight,
         freespace_min_corridor=args.freespace_min_corridor,
+        freespace_pool_width=args.freespace_pool_width,
+        quota_pressure_weight=args.quota_pressure_weight,
     )
     rules = ValidationRules(width=args.size, height=args.size)
 

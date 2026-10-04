@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="880">
+<rect width="100%" height="100%" fill="#0d1117"/>
+<rect x="24" y="24" width="752.0" height="752.0" fill="#161b22" stroke="#8b949e"/>
+<style>text{font-family:monospace;fill:#c9d1d9}</style>
+<circle cx="400.0" cy="400.0" r="10" fill="#f0f6fc"/>
+<line x1="631.1" y1="400.0" x2="631.1" y2="348.4" stroke="#8b949e" stroke-dasharray="5 4"/>
+<line x1="631.1" y1="170.8" x2="556.7" y2="213.8" stroke="#8b949e" stroke-dasharray="5 4"/>
+<line x1="127.8" y1="153.8" x2="127.8" y2="222.5" stroke="#8b949e" stroke-dasharray="5 4"/>
+<polygon points="429.3,377.8 653.4,377.8 653.4,422.2 429.3,422.2" fill="#58a6ff" fill-opacity="0.18" stroke="#58a6ff" stroke-opacity="1.0"/>
+<polyline points="451.6,400.0 631.1,400.0" fill="none" stroke="#58a6ff" stroke-opacity="1.0" stroke-width="2.7"/>
+<circle cx="451.6" cy="400.0" r="3" fill="#f0f6fc"/>
+<circle cx="631.1" cy="400.0" r="4" fill="#58a6ff" stroke="#f0f6fc"/>
+<text x="455.6" y="396.0" font-size="10">F1/p3</text>
+<polygon points="655.3,372.6 655.3,146.6 606.9,146.6 606.9,372.6" fill="#58a6ff" fill-opacity="0.18" stroke="#58a6ff" stroke-opacity="1.0"/>
+<polyline points="631.1,348.4 631.1,170.8" fill="none" stroke="#58a6ff" stroke-opacity="1.0" stroke-width="2.7"/>
+<circle cx="631.1" cy="348.4" r="3" fill="#f0f6fc"/>
+<circle cx="631.1" cy="170.8" r="4" fill="#58a6ff" stroke="#f0f6fc"/>
+<text x="635.1" y="344.4" font-size="10">F2/p3</text>
+<polygon points="581.7,238.8 304.6,238.8 96.2,169.7 111.9,122.2 312.7,188.8 581.7,188.8" fill="#f2cc60" fill-opacity="0.18" stroke="#f2cc60" stroke-opacity="1.0"/>
+<polyline points="556.7,213.8 308.6,213.8 127.8,153.8" fill="none" stroke="#f2cc60" stroke-opacity="1.0" stroke-width="2.7"/>
+<circle cx="556.7" cy="213.8" r="3" fill="#f0f6fc"/>
+<circle cx="127.8" cy="153.8" r="4" fill="#f2cc60" stroke="#f0f6fc"/>
+<text x="560.7" y="209.8" font-size="10">F3/p5</text>
+<polygon points="119.0,189.6 31.7,340.7 45.5,527.3 113.7,712.2 158.9,695.5 93.1,516.9 80.9,351.9 160.7,213.7" fill="#f2cc60" fill-opacity="0.18" stroke="#f2cc60" stroke-opacity="1.0"/>
+<polyline points="127.8,222.5 56.3,346.3 69.3,522.1 128.0,681.2" fill="none" stroke="#f2cc60" stroke-opacity="1.0" stroke-width="2.7"/>
+<circle cx="127.8" cy="222.5" r="3" fill="#f0f6fc"/>
+<circle cx="128.0" cy="681.2" r="4" fill="#f2cc60" stroke="#f0f6fc"/>
+<text x="131.8" y="218.5" font-size="10">F4/p5</text>
+<line x1="166.4" y1="400.0" x2="192.2" y2="444.7" stroke="#8b949e" stroke-dasharray="5 4"/>
+<line x1="192.2" y1="650.2" x2="278.1" y2="650.2" stroke="#8b949e" stroke-dasharray="5 4"/>
+<line x1="580.2" y1="717.1" x2="639.7" y2="682.7" stroke="#8b949e" stroke-dasharray="5 4"/>
+<polygon points="371.1,377.4 143.8,377.4 143.8,422.6 371.1,422.6" fill="#58a6ff" fill-opacity="0.13" stroke="#58a6ff" stroke-opacity="0.72"/>
+<polyline points="348.4,400.0 166.4,400.0" fill="none" stroke="#58a6ff" stroke-opacity="0.72" stroke-width="2.7"/>
+<circle cx="348.4" cy="400.0" r="3" fill="#f0f6fc"/>
+<circle cx="166.4" cy="400.0" r="4" fill="#58a6ff" stroke="#f0f6fc"/>
+<text x="352.4" y="396.0" font-size="10">B10/p3</text>
+<polygon points="213.8,423.0 213.8,671.9 170.5,671.9 170.5,423.0" fill="#58a6ff" fill-opacity="0.13" stroke="#58a6ff" stroke-opacity="0.72"/>
+<polyline points="192.2,444.7 192.2,650.2" fill="none" stroke="#58a6ff" stroke-opacity="0.72" stroke-width="2.7"/>
+<circle cx="192.2" cy="444.7" r="3" fill="#f0f6fc"/>
+<circle cx="192.2" cy="650.2" r="4" fill="#58a6ff" stroke="#f0f6fc"/>
+<text x="196.2" y="440.7" font-size="10">B11/p3</text>
+<polygon points="254.9,673.5 440.5,673.5 590.6,748.2 611.4,706.6 451.5,627.0 254.9,627.0" fill="#56d364" fill-opacity="0.13" stroke="#56d364" stroke-opacity="0.72"/>
+<polyline points="278.1,650.2 446.0,650.2 580.2,717.1" fill="none" stroke="#56d364" stroke-opacity="0.72" stroke-width="2.7"/>
+<circle cx="278.1" cy="650.2" r="3" fill="#f0f6fc"/>
+<circle cx="580.2" cy="717.1" r="4" fill="#56d364" stroke="#f0f6fc"/>
+<text x="282.1" y="646.2" font-size="10">B12/p4</text>
+<polygon points="612.4,710.1 612.4,513.3 708.0,363.0 699.9,183.8 754.6,181.3 763.5,377.8 667.1,529.3 667.1,710.1" fill="#f2cc60" fill-opacity="0.13" stroke="#f2cc60" stroke-opacity="0.72"/>
+<polyline points="639.7,682.7 639.7,521.3 735.7,370.4 728.5,209.9" fill="none" stroke="#f2cc60" stroke-opacity="0.72" stroke-width="2.7"/>
+<circle cx="639.7" cy="682.7" r="3" fill="#f0f6fc"/>
+<circle cx="728.5" cy="209.9" r="4" fill="#f2cc60" stroke="#f0f6fc"/>
+<text x="643.7" y="678.7" font-size="10">B13/p5</text>
+<text x="24" y="830" font-size="14">ÉCHEC · seed 42 · front 4/9 · back 4/9</text>
+<text x="24" y="852" font-size="11">violations ['front_return', 'back_return']</text>
+</svg>

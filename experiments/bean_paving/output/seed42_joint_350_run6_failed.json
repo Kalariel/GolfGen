@@ -1,0 +1,316 @@
+{
+  "back": [
+    {
+      "green": [
+        66.2745,
+        175.0
+      ],
+      "id": "s42-p3-08",
+      "order": 10,
+      "par": 3,
+      "tee": [
+        151.0,
+        175.0
+      ]
+    },
+    {
+      "green": [
+        78.2745,
+        291.4518
+      ],
+      "id": "s42-p3-04",
+      "order": 11,
+      "par": 3,
+      "tee": [
+        78.2745,
+        195.7846
+      ]
+    },
+    {
+      "green": [
+        258.8724,
+        322.5731
+      ],
+      "id": "s42-p4-12",
+      "order": 12,
+      "par": 4,
+      "tee": [
+        118.2745,
+        291.4518
+      ]
+    },
+    {
+      "green": [
+        327.8806,
+        86.5351
+      ],
+      "id": "s42-p5-07",
+      "order": 13,
+      "par": 5,
+      "tee": [
+        286.5853,
+        306.5731
+      ]
+    }
+  ],
+  "clubhouse": [
+    175.0,
+    175.0
+  ],
+  "complete": false,
+  "diagnostics": [
+    {
+      "back": {
+        "accepted": 0,
+        "parents": 0,
+        "rejection_counts": {},
+        "trials": 0
+      },
+      "dead_ends": 0,
+      "front": {
+        "accepted": 172,
+        "parents": 1,
+        "rejection_counts": {
+          "clubhouse_departure": 368
+        },
+        "trials": 540
+      },
+      "global_step": 1,
+      "kept": 56
+    },
+    {
+      "back": {
+        "accepted": 6215,
+        "parents": 56,
+        "rejection_counts": {
+          "axis_crossing": 1568,
+          "clubhouse_departure": 20160,
+          "footprint_collision": 3865
+        },
+        "trials": 30240
+      },
+      "dead_ends": 0,
+      "front": {
+        "accepted": 0,
+        "parents": 0,
+        "rejection_counts": {},
+        "trials": 0
+      },
+      "global_step": 2,
+      "kept": 56
+    },
+    {
+      "back": {
+        "accepted": 0,
+        "parents": 0,
+        "rejection_counts": {},
+        "trials": 0
+      },
+      "dead_ends": 0,
+      "front": {
+        "accepted": 3626,
+        "parents": 56,
+        "rejection_counts": {
+          "antiparallel": 604,
+          "axis_crossing": 6939,
+          "footprint_collision": 11456
+        },
+        "trials": 15120
+      },
+      "global_step": 3,
+      "kept": 56
+    },
+    {
+      "back": {
+        "accepted": 2780,
+        "parents": 56,
+        "rejection_counts": {
+          "antiparallel": 599,
+          "axis_crossing": 8202,
+          "footprint_collision": 12222
+        },
+        "trials": 15120
+      },
+      "dead_ends": 0,
+      "front": {
+        "accepted": 0,
+        "parents": 0,
+        "rejection_counts": {},
+        "trials": 0
+      },
+      "global_step": 4,
+      "kept": 56
+    },
+    {
+      "back": {
+        "accepted": 0,
+        "parents": 0,
+        "rejection_counts": {},
+        "trials": 0
+      },
+      "dead_ends": 5,
+      "front": {
+        "accepted": 628,
+        "parents": 56,
+        "rejection_counts": {
+          "antiparallel": 1382,
+          "axis_crossing": 4689,
+          "bounds": 6349,
+          "footprint_collision": 7995
+        },
+        "trials": 10080
+      },
+      "global_step": 5,
+      "kept": 56
+    },
+    {
+      "back": {
+        "accepted": 362,
+        "parents": 56,
+        "rejection_counts": {
+          "antiparallel": 1635,
+          "axis_crossing": 5399,
+          "bounds": 5895,
+          "footprint_collision": 8398
+        },
+        "trials": 10080
+      },
+      "dead_ends": 7,
+      "front": {
+        "accepted": 0,
+        "parents": 0,
+        "rejection_counts": {},
+        "trials": 0
+      },
+      "global_step": 6,
+      "kept": 56
+    },
+    {
+      "back": {
+        "accepted": 0,
+        "parents": 0,
+        "rejection_counts": {},
+        "trials": 0
+      },
+      "dead_ends": 43,
+      "front": {
+        "accepted": 40,
+        "parents": 56,
+        "rejection_counts": {
+          "antiparallel": 2381,
+          "axis_crossing": 5759,
+          "bounds": 8442,
+          "footprint_collision": 9044
+        },
+        "trials": 10080
+      },
+      "global_step": 7,
+      "kept": 40
+    },
+    {
+      "back": {
+        "accepted": 3,
+        "parents": 40,
+        "rejection_counts": {
+          "antiparallel": 1765,
+          "axis_crossing": 4023,
+          "bounds": 6196,
+          "footprint_collision": 6433
+        },
+        "trials": 7200
+      },
+      "dead_ends": 37,
+      "front": {
+        "accepted": 0,
+        "parents": 0,
+        "rejection_counts": {},
+        "trials": 0
+      },
+      "global_step": 8,
+      "kept": 3
+    },
+    {
+      "back": {
+        "accepted": 0,
+        "parents": 0,
+        "rejection_counts": {},
+        "trials": 0
+      },
+      "dead_ends": 3,
+      "front": {
+        "accepted": 0,
+        "parents": 3,
+        "rejection_counts": {
+          "antiparallel": 165,
+          "axis_crossing": 268,
+          "bounds": 395,
+          "footprint_collision": 419
+        },
+        "trials": 450
+      },
+      "global_step": 9,
+      "kept": 0
+    }
+  ],
+  "front": [
+    {
+      "green": [
+        282.5712,
+        175.0
+      ],
+      "id": "s42-p3-02",
+      "order": 1,
+      "par": 3,
+      "tee": [
+        199.0,
+        175.0
+      ]
+    },
+    {
+      "green": [
+        282.5712,
+        68.3477
+      ],
+      "id": "s42-p3-05",
+      "order": 2,
+      "par": 3,
+      "tee": [
+        282.5712,
+        151.0
+      ]
+    },
+    {
+      "green": [
+        48.308,
+        60.4089
+      ],
+      "id": "s42-p5-05",
+      "order": 3,
+      "par": 5,
+      "tee": [
+        247.9302,
+        88.3477
+      ]
+    },
+    {
+      "green": [
+        48.3839,
+        305.8772
+      ],
+      "id": "s42-p5-04",
+      "order": 4,
+      "par": 5,
+      "tee": [
+        48.308,
+        92.4089
+      ]
+    }
+  ],
+  "score": 82.32344,
+  "seed": 42,
+  "total_trials": 98910,
+  "violations": [
+    "front_return",
+    "back_return"
+  ]
+}
