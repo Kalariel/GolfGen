@@ -1,0 +1,316 @@
+{
+  "back": [
+    {
+      "green": [
+        175.0,
+        66.2745
+      ],
+      "id": "s42-p3-08",
+      "order": 10,
+      "par": 3,
+      "tee": [
+        175.0,
+        151.0
+      ]
+    },
+    {
+      "green": [
+        281.6523,
+        66.2745
+      ],
+      "id": "s42-p3-05",
+      "order": 11,
+      "par": 3,
+      "tee": [
+        199.0,
+        66.2745
+      ]
+    },
+    {
+      "green": [
+        265.0793,
+        316.7998
+      ],
+      "id": "s42-p5-06",
+      "order": 12,
+      "par": 5,
+      "tee": [
+        301.6523,
+        100.9155
+      ]
+    },
+    {
+      "green": [
+        56.9965,
+        316.409
+      ],
+      "id": "s42-p5-08",
+      "order": 13,
+      "par": 5,
+      "tee": [
+        233.0793,
+        316.7998
+      ]
+    }
+  ],
+  "clubhouse": [
+    175.0,
+    175.0
+  ],
+  "complete": false,
+  "diagnostics": [
+    {
+      "back": {
+        "accepted": 0,
+        "parents": 0,
+        "rejection_counts": {},
+        "trials": 0
+      },
+      "dead_ends": 0,
+      "front": {
+        "accepted": 172,
+        "parents": 1,
+        "rejection_counts": {
+          "clubhouse_departure": 368
+        },
+        "trials": 540
+      },
+      "global_step": 1,
+      "kept": 100
+    },
+    {
+      "back": {
+        "accepted": 11123,
+        "parents": 100,
+        "rejection_counts": {
+          "axis_crossing": 2812,
+          "clubhouse_departure": 36000,
+          "footprint_collision": 6877
+        },
+        "trials": 54000
+      },
+      "dead_ends": 0,
+      "front": {
+        "accepted": 0,
+        "parents": 0,
+        "rejection_counts": {},
+        "trials": 0
+      },
+      "global_step": 2,
+      "kept": 100
+    },
+    {
+      "back": {
+        "accepted": 0,
+        "parents": 0,
+        "rejection_counts": {},
+        "trials": 0
+      },
+      "dead_ends": 0,
+      "front": {
+        "accepted": 6348,
+        "parents": 100,
+        "rejection_counts": {
+          "antiparallel": 1081,
+          "axis_crossing": 11623,
+          "footprint_collision": 20564
+        },
+        "trials": 27000
+      },
+      "global_step": 3,
+      "kept": 100
+    },
+    {
+      "back": {
+        "accepted": 4665,
+        "parents": 100,
+        "rejection_counts": {
+          "antiparallel": 1074,
+          "axis_crossing": 14805,
+          "footprint_collision": 22151
+        },
+        "trials": 27000
+      },
+      "dead_ends": 0,
+      "front": {
+        "accepted": 0,
+        "parents": 0,
+        "rejection_counts": {},
+        "trials": 0
+      },
+      "global_step": 4,
+      "kept": 100
+    },
+    {
+      "back": {
+        "accepted": 0,
+        "parents": 0,
+        "rejection_counts": {},
+        "trials": 0
+      },
+      "dead_ends": 5,
+      "front": {
+        "accepted": 1043,
+        "parents": 100,
+        "rejection_counts": {
+          "antiparallel": 2382,
+          "axis_crossing": 8604,
+          "bounds": 11449,
+          "footprint_collision": 14336
+        },
+        "trials": 18000
+      },
+      "global_step": 5,
+      "kept": 100
+    },
+    {
+      "back": {
+        "accepted": 658,
+        "parents": 100,
+        "rejection_counts": {
+          "antiparallel": 3621,
+          "axis_crossing": 9276,
+          "bounds": 11141,
+          "footprint_collision": 14891
+        },
+        "trials": 18000
+      },
+      "dead_ends": 18,
+      "front": {
+        "accepted": 0,
+        "parents": 0,
+        "rejection_counts": {},
+        "trials": 0
+      },
+      "global_step": 6,
+      "kept": 100
+    },
+    {
+      "back": {
+        "accepted": 0,
+        "parents": 0,
+        "rejection_counts": {},
+        "trials": 0
+      },
+      "dead_ends": 53,
+      "front": {
+        "accepted": 153,
+        "parents": 100,
+        "rejection_counts": {
+          "antiparallel": 2544,
+          "axis_crossing": 7617,
+          "bounds": 15249,
+          "footprint_collision": 14737
+        },
+        "trials": 18000
+      },
+      "global_step": 7,
+      "kept": 100
+    },
+    {
+      "back": {
+        "accepted": 114,
+        "parents": 100,
+        "rejection_counts": {
+          "antiparallel": 3275,
+          "axis_crossing": 9326,
+          "bounds": 15331,
+          "footprint_collision": 15652
+        },
+        "trials": 18000
+      },
+      "dead_ends": 70,
+      "front": {
+        "accepted": 0,
+        "parents": 0,
+        "rejection_counts": {},
+        "trials": 0
+      },
+      "global_step": 8,
+      "kept": 100
+    },
+    {
+      "back": {
+        "accepted": 0,
+        "parents": 0,
+        "rejection_counts": {},
+        "trials": 0
+      },
+      "dead_ends": 100,
+      "front": {
+        "accepted": 0,
+        "parents": 100,
+        "rejection_counts": {
+          "antiparallel": 5457,
+          "axis_crossing": 9567,
+          "bounds": 14869,
+          "footprint_collision": 16607
+        },
+        "trials": 18000
+      },
+      "global_step": 9,
+      "kept": 0
+    }
+  ],
+  "front": [
+    {
+      "green": [
+        143.8231,
+        276.5712
+      ],
+      "id": "s42-p3-02",
+      "order": 1,
+      "par": 3,
+      "tee": [
+        143.8231,
+        193.0
+      ]
+    },
+    {
+      "green": [
+        31.7768,
+        211.8812
+      ],
+      "id": "s42-p3-01",
+      "order": 2,
+      "par": 3,
+      "tee": [
+        116.1103,
+        260.5712
+      ]
+    },
+    {
+      "green": [
+        32.496,
+        73.0495
+      ],
+      "id": "s42-p4-18",
+      "order": 3,
+      "par": 4,
+      "tee": [
+        66.4178,
+        191.8812
+      ]
+    },
+    {
+      "green": [
+        275.1282,
+        26.0068
+      ],
+      "id": "s42-p5-03",
+      "order": 4,
+      "par": 5,
+      "tee": [
+        67.137,
+        93.0495
+      ]
+    }
+  ],
+  "score": 63.22737,
+  "seed": 42,
+  "total_trials": 198540,
+  "violations": [
+    "front_return",
+    "back_return"
+  ]
+}

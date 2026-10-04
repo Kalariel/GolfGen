@@ -177,12 +177,13 @@ def _select_joint_beam(states: list[JointState], width: int) -> list[JointState]
 
 
 def _with_freespace_penalty(state: JointState, clubhouse: tuple[float, float],
-                            rules: ValidationRules) -> JointState:
+                            rules: ValidationRules, params: SolverParams) -> JointState:
     """N'évalue l'espace libre que sur les survivants du beam (lazy), car
     c'est une heuristique de score, pas une règle dure."""
     nines = {"front": state.front.placed, "back": state.back.placed}
     report = freespace.analyze(nines, clubhouse, rules)
-    penalty = freespace.freespace_penalty(report)
+    penalty = freespace.freespace_penalty(report, min_corridor=params.freespace_min_corridor,
+                                          weight=params.freespace_weight)
     return JointState(state.front, state.back, state.score + penalty)
 
 
@@ -285,7 +286,7 @@ def search_joint(seed: int, params: SolverParams | None = None,
             break
 
         beam = _select_joint_beam(next_states, params.beam_width)
-        beam = [_with_freespace_penalty(state, clubhouse, rules) for state in beam]
+        beam = [_with_freespace_penalty(state, clubhouse, rules, params) for state in beam]
         beam.sort(key=lambda item: item.score)
         best = beam[0]
         diagnostics.append(JointDepthDiagnostics(

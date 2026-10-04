@@ -292,5 +292,5 @@ spatiales et produit un parcours visualisable dans le viewer.
 | 3. Placement local | Terminé | Chaînes 4/4 valides sur seeds 1, 7, 42, 123 ; seed 42 en 340 essais |
 | 4. Paveur d'un nine | Terminé | Seed 42 valide, beam 48, 68 850 essais, 5 fermetures ; échec intermédiaire conservé |
 | 5. Benchmark 1..10 | Terminé | 10/10, 0 violation dure, 0 doublon exact ; biais pourtour et départ par 3 consignés |
-| 6. Banque de 36 et 18 trous | Partiel | 350 : front 9/back 1. 500 : 18/18 valide. Packing aveugle : 12/18 en 350, graphe inutilisable en 500 (`REPORT_SURFACE_AND_PACKING.md`) |
+| 6. Banque de 36 et 18 trous | Partiel | 350 séquentiel : front 9/back 1. 350 conjoint (beam 56, 3 variantes) : meilleur front 5/back 4 = 9 trous, bug de câblage rend la pénalité d'espace libre inerte, quota 3/5 épuisé avant que le beam élargi n'aide (`EXPERIMENT_18_JOINT.md`). 500 : 18/18 valide. Packing aveugle : 12/18 en 350, graphe inutilisable en 500 (`REPORT_SURFACE_AND_PACKING.md`) |
 | 7. Substitution par vrais trous | À faire | — |

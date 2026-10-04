@@ -31,6 +31,11 @@ class SolverParams:
     target_radius_scale: float = 1.0
     bbox_weight: float = 0.00018
     closure_lookahead: bool = True
+    # Pénalité d'espace libre (``freespace.py``) : seule la recherche conjointe
+    # (``joint_solver.py``) l'utilise pour l'instant, sur les survivants du
+    # beam. Défauts alignés sur ceux de ``freespace.freespace_penalty``.
+    freespace_weight: float = 1.0
+    freespace_min_corridor: float = 15.0
 
 
 @dataclass(frozen=True)
