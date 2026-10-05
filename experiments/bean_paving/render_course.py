@@ -60,6 +60,13 @@ def render_course_svg(result: CourseSolveResult, rules: ValidationRules | None =
         radius_px = rules.clubhouse_clear_radius * scale
         out.append(f'<circle cx="{clubhouse[0]:.1f}" cy="{clubhouse[1]:.1f}" r="{radius_px:.1f}" '
                    f'fill="none" stroke="#f0f6fc" stroke-opacity="0.45" stroke-width="1.2" stroke-dasharray="3 3"/>')
+    if rules.clubhouse_block_radius:
+        # Disque d'exclusion TOTAL (expérience "disque 25", PLAN.md ligne 6) :
+        # distinct du cercle ``clubhouse_clear_radius`` ci-dessus (cœur seul),
+        # tracé en rouge pour le différencier visuellement.
+        block_radius_px = rules.clubhouse_block_radius * scale
+        out.append(f'<circle cx="{clubhouse[0]:.1f}" cy="{clubhouse[1]:.1f}" r="{block_radius_px:.1f}" '
+                   f'fill="none" stroke="#ff2d7a" stroke-opacity="0.55" stroke-width="1.6" stroke-dasharray="2 4"/>')
     nines = [("F", result.front.state.placed, 1.0, "0")]
     if result.back is not None:
         nines.append(("B", result.back.state.placed, 0.72, "6 3"))

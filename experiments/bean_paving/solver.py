@@ -110,6 +110,28 @@ class SolverParams:
     # profondeur plus tard). Défaut ``0`` -> désactivé, comportement
     # byte-identique ; sans effet si ``start_radius_groups`` est vide.
     start_radius_depth2_min_survivors: int = 0
+    # Départs aléatoires du tee de profondeur 1 (opt-in, décision utilisateur
+    # PLAN.md ligne 6, expérience "départs aléatoires") : remplace la grille
+    # fixe (``departure_angles`` x ``start_radii``) de ``_raw_transforms`` par
+    # des positions tirées, angle uniforme sur tout le cercle ``[0, 360)`` et
+    # rayon uniforme dans ``random_departure_radius`` -- ``departure_angles``
+    # et ``start_radii`` sont alors ignorés pour le tirage des positions
+    # (mais restent lus ailleurs, ex. valeur par défaut d'autres chemins).
+    # Tirage déterministe par ``(seed, nine)`` via ``_rng_for`` (profondeur 1
+    # -> ``state.placed`` vide, donc seule la paire (seed, salt) détermine le
+    # tirage -- le ``seed`` du back diffère déjà du front, voir
+    # ``course_solver.solve_course``). Défaut ``False`` -> comportement
+    # byte-identique (grille fixe, comme avant ce paramètre).
+    random_departures: bool = False
+    # Nombre de positions de départ tirées à la profondeur 1 quand
+    # ``random_departures`` est actif -- fixé par l'appelant pour garder un
+    # coût comparable à la grille qu'il remplace (ex. 10 = 2 rayons x 5
+    # angles pour le front par défaut, 60 = 5 rayons x 12 angles pour le
+    # back étendu). Ignoré si ``random_departures`` est faux.
+    random_departure_count: int = 0
+    # Intervalle ``(r_min, r_max)`` du rayon de départ tiré uniformément
+    # quand ``random_departures`` est actif. Ignoré sinon.
+    random_departure_radius: tuple[float, float] = (0.0, 0.0)
 
 
 @dataclass(frozen=True)
@@ -186,6 +208,9 @@ class SolveResult:
                 "halfplane_band": self.params.halfplane_band,
                 "start_radius_groups": [list(group) for group in self.params.start_radius_groups],
                 "start_radius_depth2_min_survivors": self.params.start_radius_depth2_min_survivors,
+                "random_departures": self.params.random_departures,
+                "random_departure_count": self.params.random_departure_count,
+                "random_departure_radius": list(self.params.random_departure_radius),
             },
             "diagnostics": [{
                 "depth": item.depth,
@@ -308,25 +333,53 @@ def _scaled_target_radius(depth: int, params: SolverParams, rules: ValidationRul
     # Le retour reste lié à clubhouse_max ; les phases d'expansion utilisent
     # réellement l'espace supplémentaire d'une carte plus grande.
     if depth == 9:
-        return min(_target_radius(depth), params.clubhouse_max * 0.75)
+        target = min(_target_radius(depth), params.clubhouse_max * 0.75)
+        # Disque d'exclusion clubhouse total (opt-in, ``rules.clubhouse_block_radius``
+        # -- décision utilisateur PLAN.md ligne 6, expérience "disque 25") :
+        # la cible de score du dernier trou doit rester nettement hors du
+        # disque (marge de 15 blocs), sinon le score pousserait le retour
+        # DANS une zone que ``geometry.validate`` rejette de toute façon --
+        # ``None`` (défaut) ne change rien.
+        if rules.clubhouse_block_radius is not None:
+            target = max(target, rules.clubhouse_block_radius + 15.0)
+        return target
     map_scale = min(rules.width, rules.height) / 350.0
     return _target_radius(depth) * params.target_radius_scale * map_scale
 
 
 def _raw_transforms(template: BeanTemplate, state: SearchState,
-                    clubhouse: tuple[float, float], params: SolverParams):
+                    clubhouse: tuple[float, float], params: SolverParams, seed: int = 0):
     rotations = range(0, 360, params.rotation_step_deg)
     mirrors = (False, True) if template.allow_mirror else (False,)
     if not state.placed:
-        # Le tee 1 reste proche du clubhouse, mais libère son centre pour le retour.
-        for radius in params.start_radii:
-            for angle in params.departure_angles:
+        if params.random_departures:
+            # Positions tirées (opt-in, ``SolverParams.random_departures``) :
+            # angle uniforme sur tout le cercle, rayon uniforme dans
+            # ``random_departure_radius``, tirage déterministe par
+            # ``(seed, nine)`` -- ``state.placed`` est vide à cette
+            # profondeur, donc ``_rng_for`` ne dépend que de ``seed`` et du
+            # sel ci-dessous (pas d'un lignage déjà posé).
+            rng = _rng_for(seed, state, "random-departures")
+            r_min, r_max = params.random_departure_radius
+            tees = []
+            for _ in range(params.random_departure_count):
+                angle = rng.uniform(0.0, 360.0)
+                radius = rng.uniform(r_min, r_max)
                 rad = math.radians(angle)
-                tee = (clubhouse[0] + radius * math.cos(rad),
-                       clubhouse[1] + radius * math.sin(rad))
-                for rotation in rotations:
-                    for mirrored in mirrors:
-                        yield Transform(tee[0], tee[1], rotation, mirrored)
+                tees.append((clubhouse[0] + radius * math.cos(rad),
+                            clubhouse[1] + radius * math.sin(rad)))
+        else:
+            # Le tee 1 reste proche du clubhouse, mais libère son centre pour le retour.
+            tees = []
+            for radius in params.start_radii:
+                for angle in params.departure_angles:
+                    rad = math.radians(angle)
+                    tees.append((clubhouse[0] + radius * math.cos(rad),
+                                clubhouse[1] + radius * math.sin(rad)))
+        for tee in tees:
+            for rotation in rotations:
+                for mirrored in mirrors:
+                    yield Transform(tee[0], tee[1], rotation, mirrored)
         return
 
     previous = state.placed[-1]
@@ -401,7 +454,7 @@ def _transforms(template: BeanTemplate, state: SearchState,
                 clubhouse: tuple[float, float], params: SolverParams, seed: int,
                 rules: ValidationRules):
     depth = state.depth + 1
-    transforms = list(_raw_transforms(template, state, clubhouse, params))
+    transforms = list(_raw_transforms(template, state, clubhouse, params, seed))
     rng = _rng_for(seed, state, f"transforms-{template.id}")
     rng.shuffle(transforms)  # départage déterministe des rangs égaux
     transforms.sort(key=lambda item: _transform_rank(template, item, depth, clubhouse, params, rules))

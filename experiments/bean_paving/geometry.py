@@ -94,6 +94,20 @@ class ValidationRules:
     # aucun cœur de fairway ne peut entrer dans le disque de ce rayon autour
     # du clubhouse ; le rough y est autorisé. ``None`` désactive la règle.
     clubhouse_clear_radius: float | None = 10.0
+    # Exclusion clubhouse TOTALE (opt-in, décision utilisateur PLAN.md ligne 6,
+    # expérience "disque 25") : contrairement à ``clubhouse_clear_radius``
+    # (cœur seul, mode ``shared_rough`` uniquement), cette règle interdit à
+    # l'EMPREINTE ENTIÈRE (cœur fairway ET rough, ``bean.footprint``) de tout
+    # trou d'intersecter le disque de ce rayon autour du clubhouse -- elle
+    # s'applique inconditionnellement (``shared_rough`` ou non), car elle
+    # porte sur le rough que ``shared_rough`` rend justement partageable.
+    # Appliquée dans ``validate`` (donc automatiquement dans tous les chemins
+    # du solveur qui passent par ``_placement_problems``/``_has_closing_sequence``,
+    # sans changement séparé à faire côté ``solver.py`` pour la détection --
+    # seule la cible de score à la profondeur 9, ``solver._scaled_target_radius``,
+    # en tient compte explicitement pour orienter la recherche hors du disque).
+    # ``None`` (défaut) désactive la règle -- comportement byte-identique.
+    clubhouse_block_radius: float | None = None
 
     @property
     def clubhouse(self) -> Point:
@@ -325,6 +339,18 @@ def validate(beans: Iterable[PlacedBean], rules: ValidationRules | None = None,
                        or p[1] < -EPSILON or p[1] > rules.height + EPSILON]
             if outside:
                 violations.append(Violation("bounds", (bean.id,), f"{len(outside)} sommet(s) hors carte"))
+
+        # Exclusion clubhouse totale (opt-in, ``clubhouse_block_radius`` --
+        # voir sa docstring) : s'applique à l'EMPREINTE ENTIÈRE
+        # (``bean.footprint``, cœur ET rough), inconditionnellement du mode
+        # ``shared_rough`` -- contrairement à ``clubhouse_clear_radius``
+        # ci-dessus qui ne porte que sur le cœur en mode ``shared_rough``.
+        if rules.clubhouse_block_radius is not None:
+            block_gap = _point_polygon_distance(rules.clubhouse, bean.footprint)
+            if block_gap < rules.clubhouse_block_radius - EPSILON:
+                violations.append(Violation(
+                    "clubhouse_block", (bean.id,),
+                    f"empreinte à {block_gap:.2f} bloc(s) du clubhouse < {rules.clubhouse_block_radius:.2f}"))
 
     side_by_side_pairs: list[tuple[str, str]] = []
 
