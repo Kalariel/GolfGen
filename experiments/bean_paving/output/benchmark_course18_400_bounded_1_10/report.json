@@ -1,0 +1,976 @@
+{
+  "exact_duplicates": [],
+  "independent_valid_count": 5,
+  "near_duplicates": [],
+  "observations": [
+    "D\u00e9terminisme (seeds d\u00e9j\u00e0 r\u00e9solues en B \u00e0 4 seeds, output/closure_ab_400/B) : seed 1 : identique (d\u00e9terministe) \u2014 pars front/back ant\u00e9rieurs (3-4-4-3-5-3-4-4-4 / 3-4-4-5-4-4-5-5-4) vs ce run (3-4-4-3-5-3-4-4-4 / 3-4-4-5-4-4-5-5-4).",
+    "D\u00e9terminisme (seeds d\u00e9j\u00e0 r\u00e9solues en B \u00e0 4 seeds, output/closure_ab_400/B) : seed 2 : identique (d\u00e9terministe) \u2014 pars front/back ant\u00e9rieurs (3-4-4-4-3-4-5-4-3 / 4-4-4-4-3-4-5-5-5) vs ce run (3-4-4-4-3-4-5-4-3 / 4-4-4-4-3-4-5-5-5).",
+    "D\u00e9terminisme (seeds d\u00e9j\u00e0 r\u00e9solues en B \u00e0 4 seeds, output/closure_ab_400/B) : seed 8 : identique (d\u00e9terministe) \u2014 pars front/back ant\u00e9rieurs (3-4-4-4-3-4-4-5-3 / 4-5-4-4-5-4-5-4-3) vs ce run (3-4-4-4-3-4-4-5-3 / 4-5-4-4-5-4-5-4-3).",
+    "Comparaison au benchmark s\u00e9quentiel de r\u00e9f\u00e9rence (quota fixe 2/5/2, lookahead 9, 0/10 complet, 0/10 valid\u00e9 ind\u00e9pendamment, 6715.7s cumul\u00e9es) : ce run (quota born\u00e9 + lookahead 7) obtient 5/10 complet, 5/10 valid\u00e9 ind\u00e9pendamment, temps total 2009.0s sur 16 process (cumul\u00e9 des temps par seed 8452.6s)."
+  ],
+  "rejection_counts": {
+    "axis_crossing": 1411425,
+    "bounds": 764543,
+    "clubhouse_clear": 78678,
+    "clubhouse_departure": 15478,
+    "clubhouse_return": 68620,
+    "fairway_gap": 2000250,
+    "parallel_stack": 111553
+  },
+  "rules": {
+    "clubhouse_clear_radius": 10.0,
+    "edge_min": 1.0,
+    "fairway_gap": 5.0,
+    "max_parallel_stack": 3,
+    "shared_rough": true
+  },
+  "seeds": [
+    {
+      "back_holes": 9,
+      "back_last_depths": [
+        {
+          "accepted": 487,
+          "dead_ends": 22,
+          "depth": 7,
+          "kept": 72,
+          "lookahead_calls": 487,
+          "lookahead_pruned": 487,
+          "rejection_counts": {
+            "axis_crossing": 10616,
+            "bounds": 1496,
+            "fairway_gap": 15064,
+            "parallel_stack": 1143
+          },
+          "trials": 15552
+        },
+        {
+          "accepted": 132,
+          "dead_ends": 50,
+          "depth": 8,
+          "kept": 72,
+          "lookahead_calls": 132,
+          "lookahead_pruned": 126,
+          "rejection_counts": {
+            "axis_crossing": 13218,
+            "bounds": 550,
+            "clubhouse_clear": 38,
+            "fairway_gap": 15417,
+            "parallel_stack": 1370
+          },
+          "trials": 15552
+        },
+        {
+          "accepted": 6,
+          "dead_ends": 66,
+          "depth": 9,
+          "kept": 5,
+          "lookahead_calls": 0,
+          "lookahead_pruned": 0,
+          "rejection_counts": {
+            "axis_crossing": 4882,
+            "clubhouse_clear": 3542,
+            "clubhouse_return": 4019,
+            "fairway_gap": 6331,
+            "parallel_stack": 212
+          },
+          "trials": 10368
+        }
+      ],
+      "back_pars": [
+        3,
+        4,
+        4,
+        5,
+        4,
+        4,
+        5,
+        5,
+        4
+      ],
+      "back_trials": 143856,
+      "footprint_ratio": 0.4331,
+      "front_holes": 9,
+      "front_pars": [
+        3,
+        4,
+        4,
+        3,
+        5,
+        3,
+        4,
+        4,
+        4
+      ],
+      "front_trials": 135810,
+      "independent_valid": true,
+      "independent_violations": [],
+      "largest_parallel_stack": 2,
+      "rejection_counts": {
+        "axis_crossing": 141088,
+        "bounds": 71786,
+        "clubhouse_clear": 9204,
+        "clubhouse_departure": 1526,
+        "clubhouse_return": 8410,
+        "fairway_gap": 200697,
+        "parallel_stack": 9255
+      },
+      "seconds": 655.638,
+      "seed": 1,
+      "success": true,
+      "trials": 279666
+    },
+    {
+      "back_holes": 9,
+      "back_last_depths": [
+        {
+          "accepted": 50,
+          "dead_ends": 64,
+          "depth": 7,
+          "kept": 41,
+          "lookahead_calls": 50,
+          "lookahead_pruned": 50,
+          "rejection_counts": {
+            "axis_crossing": 15069,
+            "bounds": 4762,
+            "fairway_gap": 18525,
+            "parallel_stack": 2675
+          },
+          "trials": 18576
+        },
+        {
+          "accepted": 170,
+          "dead_ends": 10,
+          "depth": 8,
+          "kept": 72,
+          "lookahead_calls": 170,
+          "lookahead_pruned": 168,
+          "rejection_counts": {
+            "axis_crossing": 7545,
+            "bounds": 598,
+            "clubhouse_clear": 18,
+            "fairway_gap": 9752,
+            "parallel_stack": 355
+          },
+          "trials": 9936
+        },
+        {
+          "accepted": 2,
+          "dead_ends": 70,
+          "depth": 9,
+          "kept": 2,
+          "lookahead_calls": 0,
+          "lookahead_pruned": 0,
+          "rejection_counts": {
+            "axis_crossing": 5654,
+            "clubhouse_clear": 3368,
+            "clubhouse_return": 4271,
+            "fairway_gap": 6091,
+            "parallel_stack": 364
+          },
+          "trials": 10368
+        }
+      ],
+      "back_pars": [
+        4,
+        4,
+        4,
+        4,
+        3,
+        4,
+        5,
+        5,
+        5
+      ],
+      "back_trials": 159696,
+      "footprint_ratio": 0.424,
+      "front_holes": 9,
+      "front_pars": [
+        3,
+        4,
+        4,
+        4,
+        3,
+        4,
+        5,
+        4,
+        3
+      ],
+      "front_trials": 135810,
+      "independent_valid": true,
+      "independent_violations": [],
+      "largest_parallel_stack": 2,
+      "rejection_counts": {
+        "axis_crossing": 149121,
+        "bounds": 82471,
+        "clubhouse_clear": 9423,
+        "clubhouse_departure": 1558,
+        "clubhouse_return": 7694,
+        "fairway_gap": 209648,
+        "parallel_stack": 11058
+      },
+      "seconds": 614.23,
+      "seed": 2,
+      "success": true,
+      "trials": 295506
+    },
+    {
+      "back_holes": 9,
+      "back_last_depths": [
+        {
+          "accepted": 241,
+          "dead_ends": 36,
+          "depth": 7,
+          "kept": 72,
+          "lookahead_calls": 241,
+          "lookahead_pruned": 238,
+          "rejection_counts": {
+            "axis_crossing": 10877,
+            "bounds": 1359,
+            "fairway_gap": 14303,
+            "parallel_stack": 1468
+          },
+          "trials": 14544
+        },
+        {
+          "accepted": 239,
+          "dead_ends": 38,
+          "depth": 8,
+          "kept": 72,
+          "lookahead_calls": 239,
+          "lookahead_pruned": 200,
+          "rejection_counts": {
+            "axis_crossing": 10913,
+            "bounds": 228,
+            "clubhouse_clear": 201,
+            "fairway_gap": 13576,
+            "parallel_stack": 1484
+          },
+          "trials": 13824
+        },
+        {
+          "accepted": 86,
+          "dead_ends": 36,
+          "depth": 9,
+          "kept": 72,
+          "lookahead_calls": 0,
+          "lookahead_pruned": 0,
+          "rejection_counts": {
+            "axis_crossing": 4234,
+            "clubhouse_clear": 3328,
+            "clubhouse_return": 4258,
+            "fairway_gap": 5849,
+            "parallel_stack": 132
+          },
+          "trials": 10368
+        }
+      ],
+      "back_pars": [
+        3,
+        4,
+        4,
+        4,
+        5,
+        5,
+        4,
+        5,
+        4
+      ],
+      "back_trials": 139536,
+      "footprint_ratio": 0.4441,
+      "front_holes": 9,
+      "front_pars": [
+        3,
+        4,
+        4,
+        3,
+        5,
+        4,
+        4,
+        4,
+        3
+      ],
+      "front_trials": 133200,
+      "independent_valid": true,
+      "independent_violations": [],
+      "largest_parallel_stack": 3,
+      "rejection_counts": {
+        "axis_crossing": 137833,
+        "bounds": 67986,
+        "clubhouse_clear": 9689,
+        "clubhouse_departure": 1700,
+        "clubhouse_return": 8552,
+        "fairway_gap": 196925,
+        "parallel_stack": 16651
+      },
+      "seconds": 682.03,
+      "seed": 3,
+      "success": true,
+      "trials": 272736
+    },
+    {
+      "back_holes": 9,
+      "back_last_depths": [
+        {
+          "accepted": 117,
+          "dead_ends": 55,
+          "depth": 7,
+          "kept": 72,
+          "lookahead_calls": 117,
+          "lookahead_pruned": 116,
+          "rejection_counts": {
+            "axis_crossing": 13733,
+            "bounds": 5157,
+            "fairway_gap": 18842,
+            "parallel_stack": 1521
+          },
+          "trials": 19008
+        },
+        {
+          "accepted": 1876,
+          "dead_ends": 12,
+          "depth": 8,
+          "kept": 72,
+          "lookahead_calls": 1876,
+          "lookahead_pruned": 1846,
+          "rejection_counts": {
+            "axis_crossing": 11292,
+            "bounds": 414,
+            "clubhouse_clear": 1,
+            "fairway_gap": 14673,
+            "parallel_stack": 943
+          },
+          "trials": 16560
+        },
+        {
+          "accepted": 34,
+          "dead_ends": 48,
+          "depth": 9,
+          "kept": 30,
+          "lookahead_calls": 0,
+          "lookahead_pruned": 0,
+          "rejection_counts": {
+            "axis_crossing": 6046,
+            "clubhouse_clear": 3660,
+            "clubhouse_return": 2454,
+            "fairway_gap": 7880,
+            "parallel_stack": 694
+          },
+          "trials": 10368
+        }
+      ],
+      "back_pars": [
+        4,
+        5,
+        5,
+        5,
+        4,
+        4,
+        4,
+        4,
+        3
+      ],
+      "back_trials": 166896,
+      "footprint_ratio": 0.422,
+      "front_holes": 9,
+      "front_pars": [
+        3,
+        4,
+        4,
+        4,
+        4,
+        3,
+        3,
+        5,
+        4
+      ],
+      "front_trials": 135810,
+      "independent_valid": true,
+      "independent_violations": [],
+      "largest_parallel_stack": 3,
+      "rejection_counts": {
+        "axis_crossing": 152356,
+        "bounds": 85149,
+        "clubhouse_clear": 9120,
+        "clubhouse_departure": 1524,
+        "clubhouse_return": 6508,
+        "fairway_gap": 218139,
+        "parallel_stack": 8549
+      },
+      "seconds": 2008.803,
+      "seed": 4,
+      "success": true,
+      "trials": 302706
+    },
+    {
+      "back_holes": 8,
+      "back_last_depths": [
+        {
+          "accepted": 20,
+          "dead_ends": 59,
+          "depth": 7,
+          "kept": 20,
+          "lookahead_calls": 20,
+          "lookahead_pruned": 20,
+          "rejection_counts": {
+            "axis_crossing": 16752,
+            "bounds": 6917,
+            "fairway_gap": 20268,
+            "parallel_stack": 1825
+          },
+          "trials": 20304
+        },
+        {
+          "accepted": 39,
+          "dead_ends": 13,
+          "depth": 8,
+          "kept": 28,
+          "lookahead_calls": 39,
+          "lookahead_pruned": 39,
+          "rejection_counts": {
+            "axis_crossing": 3706,
+            "bounds": 211,
+            "clubhouse_clear": 27,
+            "fairway_gap": 4281,
+            "parallel_stack": 820
+          },
+          "trials": 4320
+        },
+        {
+          "accepted": 0,
+          "dead_ends": 28,
+          "depth": 9,
+          "kept": 0,
+          "lookahead_calls": 0,
+          "lookahead_pruned": 0,
+          "rejection_counts": {
+            "axis_crossing": 1685,
+            "clubhouse_clear": 1081,
+            "clubhouse_return": 2080,
+            "fairway_gap": 1949,
+            "parallel_stack": 134
+          },
+          "trials": 4032
+        }
+      ],
+      "back_pars": [
+        4,
+        4,
+        5,
+        5,
+        3,
+        4,
+        4,
+        4
+      ],
+      "back_trials": 151344,
+      "footprint_ratio": 0.3985,
+      "front_holes": 9,
+      "front_pars": [
+        3,
+        4,
+        4,
+        5,
+        3,
+        3,
+        4,
+        4,
+        4
+      ],
+      "front_trials": 135810,
+      "independent_valid": false,
+      "independent_violations": [
+        "back_return"
+      ],
+      "largest_parallel_stack": 3,
+      "rejection_counts": {
+        "axis_crossing": 143890,
+        "bounds": 84046,
+        "clubhouse_clear": 7189,
+        "clubhouse_departure": 1464,
+        "clubhouse_return": 5655,
+        "fairway_gap": 203933,
+        "parallel_stack": 9019
+      },
+      "seconds": 559.981,
+      "seed": 5,
+      "success": false,
+      "trials": 287154
+    },
+    {
+      "back_holes": 6,
+      "back_last_depths": [
+        {
+          "accepted": 383,
+          "dead_ends": 17,
+          "depth": 5,
+          "kept": 72,
+          "lookahead_calls": 0,
+          "lookahead_pruned": 0,
+          "rejection_counts": {
+            "axis_crossing": 12931,
+            "bounds": 19985,
+            "fairway_gap": 18747,
+            "parallel_stack": 1172
+          },
+          "trials": 23472
+        },
+        {
+          "accepted": 141,
+          "dead_ends": 51,
+          "depth": 6,
+          "kept": 72,
+          "lookahead_calls": 141,
+          "lookahead_pruned": 141,
+          "rejection_counts": {
+            "axis_crossing": 13199,
+            "bounds": 7950,
+            "fairway_gap": 18829,
+            "parallel_stack": 1994
+          },
+          "trials": 19296
+        },
+        {
+          "accepted": 0,
+          "dead_ends": 72,
+          "depth": 7,
+          "kept": 0,
+          "lookahead_calls": 0,
+          "lookahead_pruned": 0,
+          "rejection_counts": {
+            "axis_crossing": 13184,
+            "bounds": 5734,
+            "fairway_gap": 15264,
+            "parallel_stack": 3060
+          },
+          "trials": 15264
+        }
+      ],
+      "back_pars": [
+        4,
+        4,
+        4,
+        4,
+        3,
+        4
+      ],
+      "back_trials": 133344,
+      "footprint_ratio": 0.3578,
+      "front_holes": 9,
+      "front_pars": [
+        3,
+        4,
+        4,
+        4,
+        3,
+        3,
+        5,
+        4,
+        4
+      ],
+      "front_trials": 135810,
+      "independent_valid": false,
+      "independent_violations": [
+        "back_return"
+      ],
+      "largest_parallel_stack": 2,
+      "rejection_counts": {
+        "axis_crossing": 136177,
+        "bounds": 81624,
+        "clubhouse_clear": 6266,
+        "clubhouse_departure": 1564,
+        "clubhouse_return": 3264,
+        "fairway_gap": 194711,
+        "parallel_stack": 9283
+      },
+      "seconds": 525.002,
+      "seed": 6,
+      "success": false,
+      "trials": 269154
+    },
+    {
+      "back_holes": 8,
+      "back_last_depths": [
+        {
+          "accepted": 381,
+          "dead_ends": 33,
+          "depth": 7,
+          "kept": 72,
+          "lookahead_calls": 381,
+          "lookahead_pruned": 381,
+          "rejection_counts": {
+            "axis_crossing": 11436,
+            "bounds": 2149,
+            "fairway_gap": 15315,
+            "parallel_stack": 3363
+          },
+          "trials": 15696
+        },
+        {
+          "accepted": 61,
+          "dead_ends": 58,
+          "depth": 8,
+          "kept": 53,
+          "lookahead_calls": 61,
+          "lookahead_pruned": 61,
+          "rejection_counts": {
+            "axis_crossing": 13656,
+            "bounds": 227,
+            "clubhouse_clear": 106,
+            "fairway_gap": 14771,
+            "parallel_stack": 226
+          },
+          "trials": 14832
+        },
+        {
+          "accepted": 0,
+          "dead_ends": 53,
+          "depth": 9,
+          "kept": 0,
+          "lookahead_calls": 0,
+          "lookahead_pruned": 0,
+          "rejection_counts": {
+            "axis_crossing": 883,
+            "clubhouse_clear": 626,
+            "clubhouse_return": 6567,
+            "fairway_gap": 1065,
+            "parallel_stack": 183
+          },
+          "trials": 7632
+        }
+      ],
+      "back_pars": [
+        3,
+        4,
+        4,
+        4,
+        4,
+        4,
+        5,
+        5
+      ],
+      "back_trials": 139248,
+      "footprint_ratio": 0.4064,
+      "front_holes": 9,
+      "front_pars": [
+        3,
+        4,
+        4,
+        3,
+        5,
+        3,
+        4,
+        4,
+        4
+      ],
+      "front_trials": 135810,
+      "independent_valid": false,
+      "independent_violations": [
+        "back_return"
+      ],
+      "largest_parallel_stack": 3,
+      "rejection_counts": {
+        "axis_crossing": 139707,
+        "bounds": 68572,
+        "clubhouse_clear": 7051,
+        "clubhouse_departure": 1576,
+        "clubhouse_return": 11034,
+        "fairway_gap": 196224,
+        "parallel_stack": 16001
+      },
+      "seconds": 767.265,
+      "seed": 7,
+      "success": false,
+      "trials": 275058
+    },
+    {
+      "back_holes": 9,
+      "back_last_depths": [
+        {
+          "accepted": 1312,
+          "dead_ends": 30,
+          "depth": 7,
+          "kept": 72,
+          "lookahead_calls": 1312,
+          "lookahead_pruned": 1311,
+          "rejection_counts": {
+            "axis_crossing": 14133,
+            "bounds": 6264,
+            "fairway_gap": 18920,
+            "parallel_stack": 1224
+          },
+          "trials": 20304
+        },
+        {
+          "accepted": 598,
+          "dead_ends": 9,
+          "depth": 8,
+          "kept": 72,
+          "lookahead_calls": 598,
+          "lookahead_pruned": 593,
+          "rejection_counts": {
+            "axis_crossing": 11812,
+            "bounds": 1070,
+            "clubhouse_clear": 11,
+            "fairway_gap": 15953,
+            "parallel_stack": 155
+          },
+          "trials": 16560
+        },
+        {
+          "accepted": 20,
+          "dead_ends": 67,
+          "depth": 9,
+          "kept": 10,
+          "lookahead_calls": 0,
+          "lookahead_pruned": 0,
+          "rejection_counts": {
+            "axis_crossing": 6959,
+            "clubhouse_clear": 3683,
+            "clubhouse_return": 2454,
+            "fairway_gap": 7894,
+            "parallel_stack": 184
+          },
+          "trials": 10368
+        }
+      ],
+      "back_pars": [
+        4,
+        5,
+        4,
+        4,
+        5,
+        4,
+        5,
+        4,
+        3
+      ],
+      "back_trials": 135792,
+      "footprint_ratio": 0.4541,
+      "front_holes": 9,
+      "front_pars": [
+        3,
+        4,
+        4,
+        4,
+        3,
+        4,
+        4,
+        5,
+        3
+      ],
+      "front_trials": 135810,
+      "independent_valid": true,
+      "independent_violations": [],
+      "largest_parallel_stack": 3,
+      "rejection_counts": {
+        "axis_crossing": 141654,
+        "bounds": 76276,
+        "clubhouse_clear": 9433,
+        "clubhouse_departure": 1478,
+        "clubhouse_return": 7097,
+        "fairway_gap": 199919,
+        "parallel_stack": 8423
+      },
+      "seconds": 1174.199,
+      "seed": 8,
+      "success": true,
+      "trials": 271602
+    },
+    {
+      "back_holes": 8,
+      "back_last_depths": [
+        {
+          "accepted": 39,
+          "dead_ends": 62,
+          "depth": 7,
+          "kept": 37,
+          "lookahead_calls": 39,
+          "lookahead_pruned": 39,
+          "rejection_counts": {
+            "axis_crossing": 13815,
+            "bounds": 1823,
+            "fairway_gap": 15225,
+            "parallel_stack": 1480
+          },
+          "trials": 15264
+        },
+        {
+          "accepted": 5,
+          "dead_ends": 32,
+          "depth": 8,
+          "kept": 5,
+          "lookahead_calls": 5,
+          "lookahead_pruned": 5,
+          "rejection_counts": {
+            "axis_crossing": 4985,
+            "bounds": 435,
+            "clubhouse_clear": 42,
+            "fairway_gap": 5323,
+            "parallel_stack": 200
+          },
+          "trials": 5328
+        },
+        {
+          "accepted": 0,
+          "dead_ends": 5,
+          "depth": 9,
+          "kept": 0,
+          "lookahead_calls": 0,
+          "lookahead_pruned": 0,
+          "rejection_counts": {
+            "axis_crossing": 57,
+            "clubhouse_clear": 40,
+            "clubhouse_return": 657,
+            "fairway_gap": 63
+          },
+          "trials": 720
+        }
+      ],
+      "back_pars": [
+        3,
+        4,
+        4,
+        4,
+        4,
+        4,
+        5,
+        5
+      ],
+      "back_trials": 121536,
+      "footprint_ratio": 0.3893,
+      "front_holes": 9,
+      "front_pars": [
+        3,
+        4,
+        4,
+        5,
+        4,
+        3,
+        4,
+        4,
+        3
+      ],
+      "front_trials": 135810,
+      "independent_valid": false,
+      "independent_violations": [
+        "back_return"
+      ],
+      "largest_parallel_stack": 3,
+      "rejection_counts": {
+        "axis_crossing": 133443,
+        "bounds": 66251,
+        "clubhouse_clear": 5405,
+        "clubhouse_departure": 1530,
+        "clubhouse_return": 5698,
+        "fairway_gap": 184071,
+        "parallel_stack": 11814
+      },
+      "seconds": 700.153,
+      "seed": 9,
+      "success": false,
+      "trials": 257346
+    },
+    {
+      "back_holes": 6,
+      "back_last_depths": [
+        {
+          "accepted": 763,
+          "dead_ends": 13,
+          "depth": 5,
+          "kept": 72,
+          "lookahead_calls": 0,
+          "lookahead_pruned": 0,
+          "rejection_counts": {
+            "axis_crossing": 11883,
+            "bounds": 18751,
+            "fairway_gap": 18520,
+            "parallel_stack": 914
+          },
+          "trials": 23328
+        },
+        {
+          "accepted": 611,
+          "dead_ends": 31,
+          "depth": 6,
+          "kept": 72,
+          "lookahead_calls": 611,
+          "lookahead_pruned": 611,
+          "rejection_counts": {
+            "axis_crossing": 14820,
+            "bounds": 7686,
+            "fairway_gap": 21037,
+            "parallel_stack": 2448
+          },
+          "trials": 22176
+        },
+        {
+          "accepted": 0,
+          "dead_ends": 72,
+          "depth": 7,
+          "kept": 0,
+          "lookahead_calls": 0,
+          "lookahead_pruned": 0,
+          "rejection_counts": {
+            "axis_crossing": 15737,
+            "bounds": 5991,
+            "fairway_gap": 17856,
+            "parallel_stack": 1671
+          },
+          "trials": 17856
+        }
+      ],
+      "back_pars": [
+        4,
+        4,
+        4,
+        4,
+        4,
+        3
+      ],
+      "back_trials": 137952,
+      "footprint_ratio": 0.3378,
+      "front_holes": 9,
+      "front_pars": [
+        3,
+        4,
+        4,
+        4,
+        3,
+        4,
+        5,
+        4,
+        3
+      ],
+      "front_trials": 135810,
+      "independent_valid": false,
+      "independent_violations": [
+        "back_return"
+      ],
+      "largest_parallel_stack": 2,
+      "rejection_counts": {
+        "axis_crossing": 136156,
+        "bounds": 80382,
+        "clubhouse_clear": 5898,
+        "clubhouse_departure": 1558,
+        "clubhouse_return": 4708,
+        "fairway_gap": 195983,
+        "parallel_stack": 11500
+      },
+      "seconds": 765.259,
+      "seed": 10,
+      "success": false,
+      "trials": 273762
+    }
+  ],
+  "size": 400,
+  "solver_config": {
+    "back_closing_lookahead_from": 7,
+    "bounded_quota": true,
+    "free_quota": false,
+    "par3_bounds": null,
+    "par5_bounds": null
+  },
+  "success_count": 5,
+  "total_seconds": 2009.05,
+  "workers": 16
+}

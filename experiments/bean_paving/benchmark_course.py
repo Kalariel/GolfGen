@@ -65,11 +65,45 @@ def _largest_parallel_stack(beans: tuple[PlacedBean, ...], rules: ValidationRule
     return len(beans)
 
 
+def _last_depths(diagnostics, count: int = 3) -> list[dict]:
+    """Causes de rejet des ``count`` dernières profondeurs explorées, même
+    format que ``run_closure_ab.py._last_depths`` (EXPERIMENT_18_CLOSURE.md)."""
+    out = []
+    for item in diagnostics[-count:]:
+        out.append({
+            "depth": item.depth,
+            "trials": item.trials,
+            "accepted": item.accepted,
+            "kept": item.kept,
+            "dead_ends": item.dead_ends,
+            "rejection_counts": dict(sorted(item.rejection_counts.items(), key=lambda kv: -kv[1])),
+            "lookahead_calls": item.lookahead_calls,
+            "lookahead_pruned": item.lookahead_pruned,
+        })
+    return out
+
+
 def _run_seed(seed: int, rules: ValidationRules, halfplane_weight: float, *,
-             free_quota: bool = False, back_closing_lookahead_from: int | None = None):
+             free_quota: bool = False, bounded_quota: bool = False,
+             par3_bounds: tuple[int, int] | None = None,
+             par5_bounds: tuple[int, int] | None = None,
+             back_closing_lookahead_from: int | None = None):
     start = time.perf_counter()
-    result = solve_course(seed, None, None, rules, halfplane_weight=halfplane_weight,
-                          free_quota=free_quota,
+    front_params = None
+    if bounded_quota and (par3_bounds is not None or par5_bounds is not None):
+        # Mêmes valeurs par défaut que le front construit par ``solve_course``
+        # (course_solver.solve_course), seules les bornes par3/par5 changent --
+        # EXPERIMENT_18_CLOSURE.md, section « Reprise — A/B ».
+        front_params = SolverParams(
+            beam_width=72,
+            departure_angles=(300, 330, 0, 30, 60),
+            target_radius_scale=0.9,
+            bbox_weight=0.0004,
+            par3_bounds=par3_bounds or (1, 3),
+            par5_bounds=par5_bounds or (1, 3),
+        )
+    result = solve_course(seed, front_params, None, rules, halfplane_weight=halfplane_weight,
+                          free_quota=free_quota, bounded_quota=bounded_quota,
                           back_closing_lookahead_from=back_closing_lookahead_from)
     return result, time.perf_counter() - start
 
@@ -114,6 +148,7 @@ def _seed_summary(result: CourseSolveResult, elapsed: float, rules: ValidationRu
         "footprint_ratio": round(footprint_ratio, 4),
         "largest_parallel_stack": _largest_parallel_stack(all_placed, rules),
         "rejection_counts": dict(sorted(rejection_counts.items())),
+        "back_last_depths": () if result.back is None else _last_depths(result.back.diagnostics),
     }
 
 
@@ -126,6 +161,7 @@ def _markdown(report: dict, rules: ValidationRules) -> str:
         f"- Validation indépendante conforme : **{report['independent_valid_count']}/10**",
         f"- Doublons exacts normalisés : **{len(report['exact_duplicates'])}**",
         f"- Quasi-doublons (similarité ≥ 85 %) : **{len(report['near_duplicates'])}**",
+        f"- Temps total ({report.get('workers', 16)} process) : **{report.get('total_seconds', 0):.1f}s**",
         "",
         "| Seed | Résultat | Front | Back | Temps | Essais | Empreinte | Pile max | Indép. |",
         "|---:|:---:|:---:|:---:|---:|---:|---:|---:|:---:|",
@@ -157,6 +193,15 @@ def _markdown(report: dict, rules: ValidationRules) -> str:
             dominant_text = ", ".join(f"{kind} {count}" for kind, count in dominant) or "—"
             lines.append(f"- seed {item['seed']} : front {item['front_holes']}/9, "
                          f"back {item['back_holes']}/9 — causes dominantes : {dominant_text}")
+    lines.extend(["", "## Back — 3 dernières profondeurs explorées (causes de rejet)", ""])
+    for item in report["seeds"]:
+        lines.append(f"- seed {item['seed']} :")
+        for depth_info in item.get("back_last_depths", ()):
+            dominant = list(depth_info["rejection_counts"].items())[:3]
+            dominant_text = ", ".join(f"{kind} {count}" for kind, count in dominant) or "—"
+            lines.append(
+                f"  - profondeur {depth_info['depth']} : {depth_info['trials']} essais, "
+                f"{depth_info['accepted']} acceptés, {depth_info['kept']} gardés — {dominant_text}")
     lines.extend(["", "## Observations", ""])
     for observation in report.get("observations", []):
         lines.append(f"- {observation}")
@@ -166,17 +211,23 @@ def _markdown(report: dict, rules: ValidationRules) -> str:
 
 def run_benchmark_course(output: Path, workers: int = 16, rules: ValidationRules | None = None,
                          halfplane_weight: float = 0.0, seeds: range = range(1, 11), *,
-                         free_quota: bool = False,
-                         back_closing_lookahead_from: int | None = None) -> dict:
+                         free_quota: bool = False, bounded_quota: bool = False,
+                         par3_bounds: tuple[int, int] | None = None,
+                         par5_bounds: tuple[int, int] | None = None,
+                         back_closing_lookahead_from: int | None = None,
+                         observations: list[str] | None = None) -> dict:
     rules = rules or ValidationRules(
         shared_rough=True, fairway_gap=5.0, edge_min=1.0,
         max_parallel_stack=3, clubhouse_clear_radius=10.0,
     )
     output.mkdir(parents=True, exist_ok=True)
+    total_start = time.perf_counter()
     completed: dict[int, tuple[CourseSolveResult, float]] = {}
     if workers <= 1:
         for seed in seeds:
             result, elapsed = _run_seed(seed, rules, halfplane_weight, free_quota=free_quota,
+                                        bounded_quota=bounded_quota, par3_bounds=par3_bounds,
+                                        par5_bounds=par5_bounds,
                                         back_closing_lookahead_from=back_closing_lookahead_from)
             completed[result.seed] = (result, elapsed)
             print(f"seed {result.seed}: {'OK' if result.complete else 'échec'} "
@@ -186,7 +237,8 @@ def run_benchmark_course(output: Path, workers: int = 16, rules: ValidationRules
     else:
         with ProcessPoolExecutor(max_workers=workers) as executor:
             futures = {executor.submit(_run_seed, seed, rules, halfplane_weight,
-                                       free_quota=free_quota,
+                                       free_quota=free_quota, bounded_quota=bounded_quota,
+                                       par3_bounds=par3_bounds, par5_bounds=par5_bounds,
                                        back_closing_lookahead_from=back_closing_lookahead_from): seed
                       for seed in seeds}
             for future in as_completed(futures):
@@ -224,6 +276,7 @@ def run_benchmark_course(output: Path, workers: int = 16, rules: ValidationRules
 
     success_count = sum(item["success"] for item in summaries)
     independent_valid_count = sum(item["independent_valid"] for item in summaries)
+    total_seconds = round(time.perf_counter() - total_start, 3)
     report = {
         "size": size_label,
         "rules": {
@@ -233,13 +286,22 @@ def run_benchmark_course(output: Path, workers: int = 16, rules: ValidationRules
             "max_parallel_stack": rules.max_parallel_stack,
             "clubhouse_clear_radius": rules.clubhouse_clear_radius,
         },
+        "solver_config": {
+            "free_quota": free_quota,
+            "bounded_quota": bounded_quota,
+            "par3_bounds": list(par3_bounds) if par3_bounds else None,
+            "par5_bounds": list(par5_bounds) if par5_bounds else None,
+            "back_closing_lookahead_from": back_closing_lookahead_from,
+        },
+        "workers": workers,
+        "total_seconds": total_seconds,
         "success_count": success_count,
         "independent_valid_count": independent_valid_count,
         "exact_duplicates": exact,
         "near_duplicates": near,
         "rejection_counts": dict(sorted(rejection_counts.items())),
         "seeds": summaries,
-        "observations": [],
+        "observations": observations or [],
     }
     (output / "report.json").write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     (output / "REPORT.md").write_text(_markdown(report, rules), encoding="utf-8")
@@ -255,6 +317,12 @@ def main() -> None:
     parser.add_argument("--max-parallel-stack", type=int, default=3)
     parser.add_argument("--clubhouse-clear-radius", type=float, default=10.0)
     parser.add_argument("--halfplane-weight", type=float, default=0.0)
+    parser.add_argument("--bounded-quota", action="store_true",
+                        help="Quota borné par nine (EXPERIMENT_18_CLOSURE.md, défaut désactivé)")
+    parser.add_argument("--par3-bounds", type=int, nargs=2, default=None, metavar=("MIN", "MAX"))
+    parser.add_argument("--par5-bounds", type=int, nargs=2, default=None, metavar=("MIN", "MAX"))
+    parser.add_argument("--back-closing-lookahead-from", type=int, default=None,
+                        help="Fermeture anticipée du back (défaut: comportement historique, 9)")
     parser.add_argument("--output", type=Path,
                         default=Path("experiments/bean_paving/output/benchmark_course18_400_1_10"))
     args = parser.parse_args()
@@ -264,7 +332,13 @@ def main() -> None:
         max_parallel_stack=args.max_parallel_stack,
         clubhouse_clear_radius=args.clubhouse_clear_radius,
     )
-    report = run_benchmark_course(args.output, args.workers, rules, args.halfplane_weight)
+    report = run_benchmark_course(
+        args.output, args.workers, rules, args.halfplane_weight,
+        bounded_quota=args.bounded_quota,
+        par3_bounds=tuple(args.par3_bounds) if args.par3_bounds else None,
+        par5_bounds=tuple(args.par5_bounds) if args.par5_bounds else None,
+        back_closing_lookahead_from=args.back_closing_lookahead_from,
+    )
     print(f"benchmark course18: {report['success_count']}/10 complet, "
           f"{report['independent_valid_count']}/10 validé indépendamment")
 
