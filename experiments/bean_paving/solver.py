@@ -59,6 +59,21 @@ class SolverParams:
     halfplane_weight: float = 0.0
     halfplane_theta_deg: float = 0.0
     halfplane_band: float = 40.0
+    # Fermeture anticipée (EXPERIMENT_18_CLOSURE.md) : généralise l'ancien
+    # regard d'un coup (toujours déclenché à la profondeur 8, cas particulier
+    # ``closing_lookahead_from=9``) à des profondeurs plus précoces. Le
+    # déclenchement couvre les profondeurs ``[closing_lookahead_from - 1, 8]``
+    # ; ``9`` (défaut) donne exactement l'ancien comportement (profondeur 8
+    # seule). Sans effet si ``closure_lookahead`` est ``False``.
+    closing_lookahead_from: int = 9
+    # Largeur réduite des pas INTERMÉDIAIRES de la fermeture anticipée
+    # (``steps_remaining > 1``) — une sonde de plausibilité bon marché, pas
+    # une énumération exhaustive. Le dernier pas (celui qui referme vraiment
+    # sur le clubhouse) utilise toujours la largeur normale
+    # (``candidates_per_par``/``transforms_per_candidate``), donc ces deux
+    # valeurs ne changent rien quand ``closing_lookahead_from`` reste à 9.
+    lookahead_candidates_per_par: int = 1
+    lookahead_transforms_per_candidate: int = 4
 
 
 @dataclass(frozen=True)
@@ -116,6 +131,9 @@ class SolveResult:
                 "target_radius_scale": self.params.target_radius_scale,
                 "bbox_weight": self.params.bbox_weight,
                 "closure_lookahead": self.params.closure_lookahead,
+                "closing_lookahead_from": self.params.closing_lookahead_from,
+                "lookahead_candidates_per_par": self.params.lookahead_candidates_per_par,
+                "lookahead_transforms_per_candidate": self.params.lookahead_transforms_per_candidate,
                 "halfplane_weight": self.params.halfplane_weight,
                 "halfplane_theta_deg": self.params.halfplane_theta_deg,
                 "halfplane_band": self.params.halfplane_band,
@@ -322,28 +340,71 @@ def _starts_outward(bean: PlacedBean, clubhouse: tuple[float, float]) -> bool:
     return tee_vector[0] * hole_vector[0] + tee_vector[1] * hole_vector[1] > 0.0
 
 
+def _has_closing_sequence(state: SearchState, bank: BeanBank, clubhouse: tuple[float, float],
+                          params: SolverParams, rules: ValidationRules, seed: int,
+                          obstacles: tuple[PlacedBean, ...] = (),
+                          blocked_ids: frozenset[str] = frozenset(), order_offset: int = 0,
+                          par_quota: dict[int, int] = PAR_QUOTAS, *,
+                          steps_remaining: int = 1) -> bool:
+    """Généralise l'ancien regard d'un coup (``steps_remaining=1``, voir
+    ``_has_closing_move``) à plusieurs coups : cherche une séquence valide
+    d'EXACTEMENT ``steps_remaining`` trous qui referme sur le clubhouse,
+    retour vrai dès la première trouvée (pas la meilleure).
+
+    Chaque pas, y compris les intermédiaires, passe par
+    ``_placement_problems`` -> ``geometry.validate`` (même oracle que le
+    reste du solveur, aucun raccourci parallèle). ``obstacles`` porte déjà
+    les haricots de l'autre nine (même motif que ``course_solver.py``) : la
+    fermeture reste consciente de l'occupation conjointe.
+
+    Coût : le dernier pas (celui qui referme réellement, ``steps_remaining
+    == 1``) utilise la largeur normale (``candidates_per_par`` /
+    ``transforms_per_candidate``) — c'est exactement l'ancien comportement.
+    Les pas intermédiaires utilisent une largeur réduite
+    (``lookahead_candidates_per_par`` / ``lookahead_transforms_per_candidate``,
+    1×4 par défaut) : une sonde de plausibilité bon marché (« un chemin
+    existe-t-il », pas « quel est le meilleur »), pas une énumération
+    exhaustive. Le pire cas est donc borné par
+    (3 pars x largeur réduite) ^ (steps_remaining - 1) x
+    (3 pars x largeur normale) au dernier pas, avec retour anticipé dès la
+    première séquence valide trouvée.
+    """
+    target_depth = state.depth + 1
+    final_step = steps_remaining <= 1
+    cand_n, trans_n = ((params.candidates_per_par, params.transforms_per_candidate) if final_step
+                       else (params.lookahead_candidates_per_par, params.lookahead_transforms_per_candidate))
+    remaining = _remaining_dict(state.remaining)
+    pars = [par for par in _par_order(par_quota) if remaining[par] > 0]
+    for par in pars:
+        for template in _candidate_templates(bank, state, par, params, seed, blocked_ids)[:cand_n]:
+            for transform in _transforms(template, state, clubhouse, params, seed, rules)[:trans_n]:
+                placed = PlacedBean(template, transform, order_offset + target_depth)
+                if final_step and math.dist(placed.green, clubhouse) > params.clubhouse_max:
+                    continue
+                candidate = (*state.placed, placed)
+                if _placement_problems(candidate, obstacles, rules):
+                    continue
+                if final_step:
+                    return True
+                child = SearchState(candidate, _consume(state.remaining, par), 0.0)
+                if _has_closing_sequence(child, bank, clubhouse, params, rules, seed,
+                                         obstacles, blocked_ids, order_offset, par_quota,
+                                         steps_remaining=steps_remaining - 1):
+                    return True
+    return False
+
+
 def _has_closing_move(state: SearchState, bank: BeanBank, clubhouse: tuple[float, float],
                       params: SolverParams, rules: ValidationRules, seed: int,
                       obstacles: tuple[PlacedBean, ...] = (),
                       blocked_ids: frozenset[str] = frozenset(), order_offset: int = 0,
                       par_quota: dict[int, int] = PAR_QUOTAS) -> bool:
-    """Regard exact d'un coup : un état à 8 doit avoir une fermeture réelle.
-
-    ``obstacles`` porte déjà les haricots de l'autre nine (même motif que
-    ``course_solver.py``) : la fermeture est donc consciente de l'occupation
-    conjointe, pas seulement de son propre nine.
-    """
-    remaining = _remaining_dict(state.remaining)
-    pars = [par for par in _par_order(par_quota) if remaining[par] > 0]
-    for par in pars:
-        for template in _candidate_templates(bank, state, par, params, seed, blocked_ids):
-            for transform in _transforms(template, state, clubhouse, params, seed, rules):
-                placed = PlacedBean(template, transform, order_offset + 9)
-                if math.dist(placed.green, clubhouse) > params.clubhouse_max:
-                    continue
-                if not _placement_problems((*state.placed, placed), obstacles, rules):
-                    return True
-    return False
+    """Alias conservé pour compatibilité (tests, docs) : regard exact d'un
+    coup, cas particulier de ``_has_closing_sequence`` à ``steps_remaining=1``
+    — comportement et coût strictement inchangés."""
+    return _has_closing_sequence(state, bank, clubhouse, params, rules, seed,
+                                 obstacles, blocked_ids, order_offset, par_quota,
+                                 steps_remaining=1)
 
 
 def _placement_problems(candidate: tuple[PlacedBean, ...], obstacles: tuple[PlacedBean, ...],
@@ -405,9 +466,15 @@ def expand_state(state: SearchState, target_depth: int, bank: BeanBank,
                 remaining_after = _consume(state.remaining, par)
                 child = SearchState(candidate, remaining_after,
                                     _state_score(candidate, clubhouse, params, rules))
-                if target_depth == 8 and params.closure_lookahead:
-                    closure = _has_closing_move(child, bank, clubhouse, params, rules, seed,
-                                                obstacles, blocked_ids, order_offset, par_quota)
+                # Déclenche sur [closing_lookahead_from - 1, 8] : le défaut
+                # (9) borne à {8}, exactement l'ancien comportement (regard
+                # d'un coup uniquement à la profondeur 8).
+                lookahead_start = max(1, min(8, params.closing_lookahead_from - 1))
+                if params.closure_lookahead and lookahead_start <= target_depth <= 8:
+                    steps_remaining = 9 - target_depth
+                    closure = _has_closing_sequence(child, bank, clubhouse, params, rules, seed,
+                                                    obstacles, blocked_ids, order_offset, par_quota,
+                                                    steps_remaining=steps_remaining)
                     child = SearchState(candidate, remaining_after,
                                         child.score - 80.0 if closure else child.score + 80.0)
                 children.append(child)
@@ -419,7 +486,19 @@ def solve_nine(seed: int, params: SolverParams | None = None,
                rules: ValidationRules | None = None, *, bank: BeanBank | None = None,
                obstacles: tuple[PlacedBean, ...] = (),
                blocked_ids: frozenset[str] = frozenset(), order_offset: int = 0,
-               par_quota: dict[int, int] | None = None) -> SolveResult:
+               par_quota: dict[int, int] | None = None,
+               require_full_quota: bool = True) -> SolveResult:
+    """``require_full_quota`` (défaut ``True``, inchangé) : la complétude
+    exige que ``remaining`` tombe exactement à ``(0, 0, 0)`` à la profondeur
+    9 — vrai par construction dès que la somme du quota de départ est 9
+    (``PAR_QUOTAS`` ou tout quota par-nine qui somme à 9), puisqu'aucune
+    classe ne peut descendre sous 0 (``expand_state`` ne propose que les
+    classes dont ``remaining[par] > 0``). Mettre ``False`` (voir
+    ``course_solver.solve_course(free_quota=True)``) quand ``par_quota``
+    porte le budget GLOBAL (18 trous, ex. ``4/10/4``) plutôt que le budget
+    du seul nine : neuf trous n'épuisent alors jamais ce quota, donc exiger
+    ``(0, 0, 0)`` serait toujours faux même pour un nine par ailleurs
+    parfaitement valide."""
     params = params or SolverParams()
     rules = rules or ValidationRules()
     clubhouse = (rules.width / 2.0, rules.height / 2.0)
@@ -456,6 +535,7 @@ def solve_nine(seed: int, params: SolverParams | None = None,
         if target_depth == 9:
             break
 
-    complete = best.depth == 9 and best.remaining == (0, 0, 0) \
+    quota_ok = best.remaining == (0, 0, 0) if require_full_quota else True
+    complete = best.depth == 9 and quota_ok \
         and math.dist(best.placed[-1].green, clubhouse) <= params.clubhouse_max
     return SolveResult(seed, clubhouse, best, complete, tuple(diagnostics), params)

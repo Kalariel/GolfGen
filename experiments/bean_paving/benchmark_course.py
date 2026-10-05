@@ -65,9 +65,12 @@ def _largest_parallel_stack(beans: tuple[PlacedBean, ...], rules: ValidationRule
     return len(beans)
 
 
-def _run_seed(seed: int, rules: ValidationRules, halfplane_weight: float):
+def _run_seed(seed: int, rules: ValidationRules, halfplane_weight: float, *,
+             free_quota: bool = False, back_closing_lookahead_from: int | None = None):
     start = time.perf_counter()
-    result = solve_course(seed, None, None, rules, halfplane_weight=halfplane_weight)
+    result = solve_course(seed, None, None, rules, halfplane_weight=halfplane_weight,
+                          free_quota=free_quota,
+                          back_closing_lookahead_from=back_closing_lookahead_from)
     return result, time.perf_counter() - start
 
 
@@ -162,7 +165,9 @@ def _markdown(report: dict, rules: ValidationRules) -> str:
 
 
 def run_benchmark_course(output: Path, workers: int = 16, rules: ValidationRules | None = None,
-                         halfplane_weight: float = 0.0, seeds: range = range(1, 11)) -> dict:
+                         halfplane_weight: float = 0.0, seeds: range = range(1, 11), *,
+                         free_quota: bool = False,
+                         back_closing_lookahead_from: int | None = None) -> dict:
     rules = rules or ValidationRules(
         shared_rough=True, fairway_gap=5.0, edge_min=1.0,
         max_parallel_stack=3, clubhouse_clear_radius=10.0,
@@ -171,7 +176,8 @@ def run_benchmark_course(output: Path, workers: int = 16, rules: ValidationRules
     completed: dict[int, tuple[CourseSolveResult, float]] = {}
     if workers <= 1:
         for seed in seeds:
-            result, elapsed = _run_seed(seed, rules, halfplane_weight)
+            result, elapsed = _run_seed(seed, rules, halfplane_weight, free_quota=free_quota,
+                                        back_closing_lookahead_from=back_closing_lookahead_from)
             completed[result.seed] = (result, elapsed)
             print(f"seed {result.seed}: {'OK' if result.complete else 'échec'} "
                   f"front={result.front.state.depth}/9 "
@@ -179,7 +185,10 @@ def run_benchmark_course(output: Path, workers: int = 16, rules: ValidationRules
                   f"temps={elapsed:.1f}s", flush=True)
     else:
         with ProcessPoolExecutor(max_workers=workers) as executor:
-            futures = {executor.submit(_run_seed, seed, rules, halfplane_weight): seed for seed in seeds}
+            futures = {executor.submit(_run_seed, seed, rules, halfplane_weight,
+                                       free_quota=free_quota,
+                                       back_closing_lookahead_from=back_closing_lookahead_from): seed
+                      for seed in seeds}
             for future in as_completed(futures):
                 result, elapsed = future.result()
                 completed[result.seed] = (result, elapsed)

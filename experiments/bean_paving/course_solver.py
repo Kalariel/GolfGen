@@ -6,11 +6,13 @@ from dataclasses import dataclass, replace
 import json
 import math
 
+from collections import Counter
+
 from experiments.bean_paving import halfplane
 from experiments.bean_paving.bean_bank import GenerationParams, generate_bank
 from experiments.bean_paving.geometry import PlacedBean, ValidationRules, validate
-from experiments.bean_paving.joint_solver import JointSolveResult, search_joint
-from experiments.bean_paving.solver import SolveResult, SolverParams, solve_nine
+from experiments.bean_paving.joint_solver import GLOBAL_PAR_QUOTA, JointSolveResult, search_joint
+from experiments.bean_paving.solver import PAR_QUOTAS, SolveResult, SolverParams, solve_nine
 
 
 @dataclass(frozen=True)
@@ -71,17 +73,43 @@ def _course_violations(front: tuple[PlacedBean, ...], back: tuple[PlacedBean, ..
     return violations
 
 
+def _global_remaining_from_front(front_placed: tuple[PlacedBean, ...]) -> dict[int, int]:
+    """Quota global restant pour le back, recalculé depuis les haricots
+    RÉELLEMENT posés par le front (jamais un ``.remaining`` stocké —
+    périmé dès que le front a consommé le quota dans un ordre quelconque,
+    même bug que documenté dans ``joint_solver._has_closing_moves``)."""
+    used = Counter(bean.template.par for bean in front_placed)
+    return {par: GLOBAL_PAR_QUOTA[par] - used[par] for par in (3, 4, 5)}
+
+
 def solve_course(seed: int, front_params: SolverParams | None = None,
                  back_params: SolverParams | None = None,
                  rules: ValidationRules | None = None, *,
                  halfplane_weight: float | None = None,
                  halfplane_theta_deg: float | None = None,
-                 halfplane_band: float | None = None) -> CourseSolveResult:
+                 halfplane_band: float | None = None,
+                 free_quota: bool = False,
+                 back_closing_lookahead_from: int | None = None) -> CourseSolveResult:
     """``halfplane_*`` : surcharge le biais souple de demi-plan
     (``halfplane.py``, EXPERIMENT_18_HALFPLANE.md) côté front uniquement, sans
     toucher au reste de ``front_params`` — ``None`` (défaut) ne change rien,
     comportement identique à avant ce paramètre. Le back reste libre
-    (``back_params`` n'est jamais modifié ici)."""
+    (``back_params`` n'est jamais modifié ici).
+
+    ``free_quota`` (défaut ``False``, inchangé, EXPERIMENT_18_CLOSURE.md) :
+    seul le quota GLOBAL 18 trous (``4/10/4``) est imposé. Le front pioche
+    librement dans ce budget (son propre quota par-nine ``2/5/2`` n'est plus
+    vérifié) ; le back reçoit exactement ce qu'il reste, recalculé depuis les
+    haricots RÉELLEMENT posés par le front (``_global_remaining_from_front``,
+    jamais un compteur périmé). La banque ``8/20/8`` (36 candidats) offre
+    toujours au moins ``GLOBAL_PAR_QUOTA[par]`` candidats par classe — plus
+    que ce que front+back peuvent consommer ensemble (``GLOBAL_PAR_QUOTA``
+    lui-même) — donc le back garde toujours au moins un candidat inutilisé
+    disponible par classe qu'il lui reste à poser.
+
+    ``back_closing_lookahead_from`` : surcharge ``back_params.closing_lookahead_from``
+    (fermeture anticipée, ``solver._has_closing_sequence``) sans toucher au
+    reste de ``back_params`` — ``None`` (défaut) ne change rien."""
     rules = rules or ValidationRules()
     front_params = front_params or SolverParams(
         beam_width=72,
@@ -105,14 +133,21 @@ def solve_course(seed: int, front_params: SolverParams | None = None,
         start_radii=(44.0, 48.0),
         start_transforms_per_candidate=144,
     )
+    if back_closing_lookahead_from is not None:
+        back_params = replace(back_params, closing_lookahead_from=back_closing_lookahead_from)
     bank = generate_bank(seed, GenerationParams.eighteen())
-    front = solve_nine(seed, front_params, rules, bank=bank)
+
+    front_quota = dict(GLOBAL_PAR_QUOTA) if free_quota else dict(PAR_QUOTAS)
+    front = solve_nine(seed, front_params, rules, bank=bank, par_quota=front_quota,
+                       require_full_quota=not free_quota)
     if not front.complete:
         return CourseSolveResult(seed, front, None, False, ("front_incomplete",))
 
     used = frozenset(bean.id for bean in front.state.placed)
+    back_quota = _global_remaining_from_front(front.state.placed) if free_quota else dict(PAR_QUOTAS)
     back = solve_nine(seed ^ 0x9E3779B9, back_params, rules, bank=bank,
-                      obstacles=front.state.placed, blocked_ids=used, order_offset=9)
+                      obstacles=front.state.placed, blocked_ids=used, order_offset=9,
+                      par_quota=back_quota)
     clubhouse = (rules.width / 2.0, rules.height / 2.0)
     violations = _course_violations(front.state.placed, back.state.placed, rules, clubhouse,
                                      back_params.clubhouse_max)
