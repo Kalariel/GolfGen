@@ -108,6 +108,19 @@ class ValidationRules:
     # en tient compte explicitement pour orienter la recherche hors du disque).
     # ``None`` (défaut) désactive la règle -- comportement byte-identique.
     clubhouse_block_radius: float | None = None
+    # Liens de marche praticables (opt-in, décision utilisateur PLAN.md
+    # ligne 6, expérience « liens praticables ») : chaque liaison piétonne
+    # (segment droit clubhouse<->tee1, green_k->tee_{k+1} pour k et k+1 du
+    # même nine, green9->clubhouse, clubhouse->tee10, green18->clubhouse --
+    # voir ``_walking_links``, 9->10 exclue car le joueur repasse par le
+    # clubhouse) ne doit NI croiser NI toucher le cœur (fairway) d'AUCUN
+    # AUTRE trou que les deux qui portent cette liaison ; le rough reste
+    # traversable. Vérifiée dans ``validate`` indépendamment de
+    # ``check_links`` (placement, fermeture anticipée, contrôle parcours et
+    # validation indépendante passent tous par ``validate``/
+    # ``_placement_problems``, donc couverts sans changement séparé).
+    # ``False`` (défaut) désactive la règle -- comportement byte-identique.
+    walkable_links: bool = False
 
     @property
     def clubhouse(self) -> Point:
@@ -309,6 +322,44 @@ def _connected_components(ids: Iterable[str], pairs: Iterable[tuple[str, str]]) 
     return list(groups.values())
 
 
+def _segment_crosses_core(a: Point, b: Point, core: tuple[Point, ...]) -> bool:
+    """Vrai si la liaison piétonne ``a``-``b`` croise OU touche ``core`` --
+    même sémantique de contact fermé que ``polygons_intersect`` (un simple
+    effleurement compte comme un blocage)."""
+    for p, q in _segments(core, closed=True):
+        if segments_intersect(a, b, p, q):
+            return True
+    return _point_in_polygon(a, core) or _point_in_polygon(b, core)
+
+
+def _walking_links(ordered: tuple[PlacedBean, ...],
+                   clubhouse: Point) -> list[tuple[Point, Point, tuple[str, ...]]]:
+    """Construit les liaisons piétonnes jouables présentes dans ``ordered``
+    (déjà trié par ``bean.order``) : clubhouse<->tee1, green_k->tee_{k+1}
+    (k et k+1 tous deux présents, SAUF 9->10 qui repasse par le clubhouse),
+    green9->clubhouse, clubhouse->tee10, green18->clubhouse. Chaque entrée :
+    ``(point de départ, point d'arrivée, ids des trous PROPRIÉTAIRES de
+    cette liaison)`` -- seuls ces trous sont exclus du test de croisement
+    (``ValidationRules.walkable_links``)."""
+    by_order = {bean.order: bean for bean in ordered}
+    links: list[tuple[Point, Point, tuple[str, ...]]] = []
+    if 1 in by_order:
+        links.append((clubhouse, by_order[1].tee, (by_order[1].id,)))
+    if 9 in by_order:
+        links.append((by_order[9].green, clubhouse, (by_order[9].id,)))
+    if 10 in by_order:
+        links.append((clubhouse, by_order[10].tee, (by_order[10].id,)))
+    if 18 in by_order:
+        links.append((by_order[18].green, clubhouse, (by_order[18].id,)))
+    for order, bean in by_order.items():
+        if order == 9:
+            continue  # 9->10 repasse par le clubhouse, jamais une liaison directe
+        nxt = by_order.get(order + 1)
+        if nxt is not None:
+            links.append((bean.green, nxt.tee, (bean.id, nxt.id)))
+    return links
+
+
 def validate(beans: Iterable[PlacedBean], rules: ValidationRules | None = None,
              *, check_links: bool = True) -> list[Violation]:
     """Retourne toutes les violations, sans réparer ni assouplir le résultat."""
@@ -401,6 +452,25 @@ def validate(beans: Iterable[PlacedBean], rules: ValidationRules | None = None,
                 violations.append(Violation(
                     "parallel_stack", tuple(sorted(component)),
                     f"pile de {len(component)} trous côte à côte > {rules.max_parallel_stack}"))
+
+    if rules.walkable_links:
+        # Indépendant de ``check_links`` (qui ne porte que sur la LONGUEUR
+        # des liaisons green->tee du même nine) : cette règle porte sur le
+        # TRACÉ (croisement d'un AUTRE cœur fairway) et doit s'appliquer
+        # partout où ``validate`` est appelé, y compris l'appel combiné
+        # ``check_links=False`` de ``_placement_problems``/
+        # ``_course_violations`` -- seul endroit où les liaisons clubhouse
+        # (tee1/tee10/green9/green18) et les trous de l'AUTRE nine sont tous
+        # visibles ensemble.
+        for start, end, owners in _walking_links(ordered, rules.clubhouse):
+            owner_ids = set(owners)
+            for bean in ordered:
+                if bean.id in owner_ids:
+                    continue
+                if _segment_crosses_core(start, end, bean.core):
+                    violations.append(Violation(
+                        "link_blocked", tuple(sorted({*owners, bean.id})),
+                        f"liaison piétonne {owners} traverse le cœur fairway de {bean.id}"))
 
     if check_links:
         for previous, current in zip(ordered, ordered[1:]):

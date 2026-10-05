@@ -82,6 +82,18 @@ def render_course_svg(result: CourseSolveResult, rules: ValidationRules | None =
         for previous, current in zip(beans, beans[1:]):
             a, b = point(previous.green), point(current.tee)
             out.append(f'<line x1="{a[0]:.1f}" y1="{a[1]:.1f}" x2="{b[0]:.1f}" y2="{b[1]:.1f}" stroke="#8b949e" stroke-dasharray="5 4"/>')
+        if beans:
+            # Liaisons piétonnes clubhouse<->tee1/tee10 et green9/green18->clubhouse
+            # (expérience « liens praticables », PLAN.md ligne 6) : mêmes
+            # segments droits que ``geometry._walking_links``, tracés fins et
+            # pointillés pour que l'utilisateur vérifie visuellement les
+            # croisements de fairway sur le trajet piéton complet.
+            a, b = point(clubhouse_center), point(beans[0].tee)
+            out.append(f'<line x1="{a[0]:.1f}" y1="{a[1]:.1f}" x2="{b[0]:.1f}" y2="{b[1]:.1f}" '
+                       f'stroke="#f0f6fc" stroke-opacity="{0.5 * opacity:.2f}" stroke-width="1" stroke-dasharray="2 3"/>')
+            a, b = point(beans[-1].green), point(clubhouse_center)
+            out.append(f'<line x1="{a[0]:.1f}" y1="{a[1]:.1f}" x2="{b[0]:.1f}" y2="{b[1]:.1f}" '
+                       f'stroke="#f0f6fc" stroke-opacity="{0.5 * opacity:.2f}" stroke-width="1" stroke-dasharray="2 3"/>')
         for bean in beans:
             color = PAR_COLORS[bean.template.par]
             rough = " ".join(f"{point(p)[0]:.1f},{point(p)[1]:.1f}" for p in bean.footprint)
