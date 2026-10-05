@@ -23,7 +23,7 @@ from experiments.bean_paving.benchmark import _angle_bin, _similarity
 from experiments.bean_paving.course_solver import CourseSolveResult, _course_violations, solve_course
 from experiments.bean_paving.geometry import PlacedBean, ValidationRules, validate
 from experiments.bean_paving.render_course import render_course_svg
-from experiments.bean_paving.solver import SolverParams, _radius_group_index
+from experiments.bean_paving.solver import SolverParams, _arrival_angle_deg, _radius_group_index
 
 
 def _polygon_area(points) -> float:
@@ -97,7 +97,9 @@ def _run_seed(seed: int, rules: ValidationRules, halfplane_weight: float, *,
              back_clubhouse_max: float | None = None,
              back_start_radii: tuple[float, ...] | None = None,
              back_start_radius_groups: tuple[tuple[float, ...], ...] | None = None,
-             back_start_radius_depth2_min_survivors: int | None = None):
+             back_start_radius_depth2_min_survivors: int | None = None,
+             par5_deadline: int | None = None,
+             arrival_max_angle_deg: float | None = None):
     start = time.perf_counter()
     front_params = None
     if bounded_quota and (par3_bounds is not None or par5_bounds is not None):
@@ -118,7 +120,9 @@ def _run_seed(seed: int, rules: ValidationRules, halfplane_weight: float, *,
                           back_clubhouse_max=back_clubhouse_max,
                           back_start_radii=back_start_radii,
                           back_start_radius_groups=back_start_radius_groups,
-                          back_start_radius_depth2_min_survivors=back_start_radius_depth2_min_survivors)
+                          back_start_radius_depth2_min_survivors=back_start_radius_depth2_min_survivors,
+                          par5_deadline=par5_deadline,
+                          arrival_max_angle_deg=arrival_max_angle_deg)
     return result, time.perf_counter() - start
 
 
@@ -136,14 +140,43 @@ def _seed_summary(result: CourseSolveResult, elapsed: float, rules: ValidationRu
     front_clubhouse_max = result.front.params.clubhouse_max
     back_clubhouse_max = (SolverParams().clubhouse_max if result.back is None
                           else result.back.params.clubhouse_max)
-    independent_violations = _course_violations(front_placed, back_placed, rules, clubhouse,
-                                                front_clubhouse_max, back_clubhouse_max)
+    # Seuils d'arrivée radiale / bornes par3-par5 RÉELLEMENT utilisés par le
+    # front (``None`` si l'expérience correspondante n'est pas active -- voir
+    # ``SolverParams.arrival_max_angle_deg``/``par3_bounds``/``par5_bounds``),
+    # jamais une valeur câblée en dur : la validation indépendante reflète
+    # exactement ce que le solveur a réellement appliqué.
+    arrival_max_angle_deg = result.front.params.arrival_max_angle_deg
+    bounded_quota = result.front.params.bounded_quota
+    independent_violations = _course_violations(
+        front_placed, back_placed, rules, clubhouse, front_clubhouse_max, back_clubhouse_max,
+        arrival_max_angle_deg=arrival_max_angle_deg,
+        par3_bounds=result.front.params.par3_bounds if bounded_quota else None,
+        par5_bounds=result.front.params.par5_bounds if bounded_quota else None,
+    )
     independent_valid = (len(front_placed) == 9 and len(back_placed) == 9
                          and not independent_violations)
     back_start_distance = (round(math.dist(back_placed[0].tee, clubhouse), 3)
                            if back_placed else None)
     back_return_distance = (round(math.dist(back_placed[-1].green, clubhouse), 3)
                             if back_placed else None)
+    front_start_distance = (round(math.dist(front_placed[0].tee, clubhouse), 3)
+                            if front_placed else None)
+    front_return_distance = (round(math.dist(front_placed[-1].green, clubhouse), 3)
+                             if front_placed else None)
+    # Angle d'arrivée (degrés) du trou de clôture de chaque nine -- toujours
+    # calculé pour le rapport (diagnostic), même quand la règle est inactive
+    # (``arrival_max_angle_deg is None``) : ``None`` seulement si l'axe du
+    # dernier haricot est dégénéré (voir ``solver._arrival_angle_deg``) ou si
+    # la nine est vide.
+    front_arrival_angle_deg = (round(_arrival_angle_deg(front_placed[-1], clubhouse), 3)
+                               if front_placed else None)
+    back_arrival_angle_deg = (round(_arrival_angle_deg(back_placed[-1], clubhouse), 3)
+                              if back_placed else None)
+    # Trous (1-indexés, ordre de jeu) où un par5 a été posé -- diagnostic
+    # direct de la deadline par5 (PLAN.md ligne 6) : doit tomber dans
+    # ``[1, par5_deadline]`` quand l'expérience est active.
+    front_par5_holes = [i + 1 for i, bean in enumerate(front_placed) if bean.template.par == 5]
+    back_par5_holes = [i + 1 for i, bean in enumerate(back_placed) if bean.template.par == 5]
     # Groupe de rayon de départ dont est issu le back final (lignage du
     # premier haricot, même regroupement que ``solver.SolverParams.
     # start_radius_groups`` -- diagnostic PLAN.md ligne 6). ``None`` si le
@@ -189,6 +222,14 @@ def _seed_summary(result: CourseSolveResult, elapsed: float, rules: ValidationRu
         "back_start_distance": back_start_distance,
         "back_return_distance": back_return_distance,
         "back_start_group": back_start_group,
+        "front_start_distance": front_start_distance,
+        "front_return_distance": front_return_distance,
+        "front_arrival_angle_deg": front_arrival_angle_deg,
+        "back_arrival_angle_deg": back_arrival_angle_deg,
+        "front_par5_holes": front_par5_holes,
+        "back_par5_holes": back_par5_holes,
+        "par5_deadline": result.front.params.par5_deadline,
+        "arrival_max_angle_deg": arrival_max_angle_deg,
     }
 
 
@@ -240,6 +281,28 @@ def _markdown(report: dict, rules: ValidationRules) -> str:
             dominant_text = ", ".join(f"{kind} {count}" for kind, count in dominant) or "—"
             lines.append(f"- seed {item['seed']} : front {item['front_holes']}/9, "
                          f"back {item['back_holes']}/9 — causes dominantes : {dominant_text}")
+    solver_config = report.get("solver_config", {})
+    if solver_config.get("par5_deadline") is not None:
+        lines.extend(["", f"## Deadline par5 (trou {solver_config['par5_deadline']} max)", ""])
+        for item in report["seeds"]:
+            front_holes = item.get("front_par5_holes") or []
+            back_holes = item.get("back_par5_holes") or []
+            lines.append(
+                f"- seed {item['seed']} : front par5 aux trous {front_holes or '—'} / "
+                f"back par5 aux trous {back_holes or '—'}")
+    if solver_config.get("arrival_max_angle_deg") is not None:
+        max_angle = solver_config["arrival_max_angle_deg"]
+        lines.extend(["", f"## Arrivée radiale (seuil {max_angle:.0f}°)", ""])
+        for item in report["seeds"]:
+            front_angle = item.get("front_arrival_angle_deg")
+            back_angle = item.get("back_arrival_angle_deg")
+            front_text = f"{front_angle:.1f}°" if front_angle is not None else "—"
+            back_text = f"{back_angle:.1f}°" if back_angle is not None else "—"
+            front_par = item["front_pars"][-1] if item["front_pars"] else "—"
+            back_par = item["back_pars"][-1] if item["back_pars"] else "—"
+            lines.append(
+                f"- seed {item['seed']} : trou 9 (par {front_par}) arrive à {front_text} / "
+                f"trou 18 (par {back_par}) arrive à {back_text}")
     lines.extend(["", "## Back — 3 dernières profondeurs explorées (causes de rejet)", ""])
     for item in report["seeds"]:
         lines.append(f"- seed {item['seed']} :")
@@ -256,60 +319,18 @@ def _markdown(report: dict, rules: ValidationRules) -> str:
     return "\n".join(lines)
 
 
-def run_benchmark_course(output: Path, workers: int = 16, rules: ValidationRules | None = None,
-                         halfplane_weight: float = 0.0, seeds: range = range(1, 11), *,
-                         free_quota: bool = False, bounded_quota: bool = False,
-                         par3_bounds: tuple[int, int] | None = None,
-                         par5_bounds: tuple[int, int] | None = None,
-                         back_closing_lookahead_from: int | None = None,
-                         back_clubhouse_max: float | None = None,
-                         back_start_radii: tuple[float, ...] | None = None,
-                         back_start_radius_groups: tuple[tuple[float, ...], ...] | None = None,
-                         back_start_radius_depth2_min_survivors: int | None = None,
-                         observations: list[str] | None = None) -> dict:
-    rules = rules or ValidationRules(
-        shared_rough=True, fairway_gap=5.0, edge_min=1.0,
-        max_parallel_stack=3, clubhouse_clear_radius=10.0,
-    )
+def _finalize_report(output: Path, rules: ValidationRules,
+                     completed: dict[int, tuple[CourseSolveResult, float]],
+                     total_seconds: float, workers: int, solver_config: dict,
+                     observations: list[str] | None = None) -> dict:
+    """Assemble le rapport final (JSON/SVG par seed, doublons, agrégats) à
+    partir d'un ``completed`` déjà résolu -- factorisé hors de
+    ``run_benchmark_course`` pour qu'un appelant qui pilote lui-même le pool
+    de process (ex. deux expériences partageant les mêmes 10 workers,
+    PLAN.md ligne 6) puisse construire ``completed`` à sa façon puis
+    réutiliser EXACTEMENT la même logique d'agrégation et le même format de
+    rapport."""
     output.mkdir(parents=True, exist_ok=True)
-    total_start = time.perf_counter()
-    completed: dict[int, tuple[CourseSolveResult, float]] = {}
-    if workers <= 1:
-        for seed in seeds:
-            result, elapsed = _run_seed(seed, rules, halfplane_weight, free_quota=free_quota,
-                                        bounded_quota=bounded_quota, par3_bounds=par3_bounds,
-                                        par5_bounds=par5_bounds,
-                                        back_closing_lookahead_from=back_closing_lookahead_from,
-                                        back_clubhouse_max=back_clubhouse_max,
-                                        back_start_radii=back_start_radii,
-                                        back_start_radius_groups=back_start_radius_groups,
-                                        back_start_radius_depth2_min_survivors=
-                                        back_start_radius_depth2_min_survivors)
-            completed[result.seed] = (result, elapsed)
-            print(f"seed {result.seed}: {'OK' if result.complete else 'échec'} "
-                  f"front={result.front.state.depth}/9 "
-                  f"back={0 if result.back is None else result.back.state.depth}/9 "
-                  f"temps={elapsed:.1f}s", flush=True)
-    else:
-        with ProcessPoolExecutor(max_workers=workers) as executor:
-            futures = {executor.submit(_run_seed, seed, rules, halfplane_weight,
-                                       free_quota=free_quota, bounded_quota=bounded_quota,
-                                       par3_bounds=par3_bounds, par5_bounds=par5_bounds,
-                                       back_closing_lookahead_from=back_closing_lookahead_from,
-                                       back_clubhouse_max=back_clubhouse_max,
-                                       back_start_radii=back_start_radii,
-                                       back_start_radius_groups=back_start_radius_groups,
-                                       back_start_radius_depth2_min_survivors=
-                                       back_start_radius_depth2_min_survivors): seed
-                      for seed in seeds}
-            for future in as_completed(futures):
-                result, elapsed = future.result()
-                completed[result.seed] = (result, elapsed)
-                print(f"seed {result.seed}: {'OK' if result.complete else 'échec'} "
-                      f"front={result.front.state.depth}/9 "
-                      f"back={0 if result.back is None else result.back.state.depth}/9 "
-                      f"temps={elapsed:.1f}s", flush=True)
-
     summaries = []
     fingerprints = {}
     rejection_counts: Counter = Counter()
@@ -337,7 +358,6 @@ def run_benchmark_course(output: Path, workers: int = 16, rules: ValidationRules
 
     success_count = sum(item["success"] for item in summaries)
     independent_valid_count = sum(item["independent_valid"] for item in summaries)
-    total_seconds = round(time.perf_counter() - total_start, 3)
     report = {
         "size": size_label,
         "rules": {
@@ -347,20 +367,9 @@ def run_benchmark_course(output: Path, workers: int = 16, rules: ValidationRules
             "max_parallel_stack": rules.max_parallel_stack,
             "clubhouse_clear_radius": rules.clubhouse_clear_radius,
         },
-        "solver_config": {
-            "free_quota": free_quota,
-            "bounded_quota": bounded_quota,
-            "par3_bounds": list(par3_bounds) if par3_bounds else None,
-            "par5_bounds": list(par5_bounds) if par5_bounds else None,
-            "back_closing_lookahead_from": back_closing_lookahead_from,
-            "back_clubhouse_max": back_clubhouse_max,
-            "back_start_radii": list(back_start_radii) if back_start_radii else None,
-            "back_start_radius_groups": ([list(group) for group in back_start_radius_groups]
-                                         if back_start_radius_groups else None),
-            "back_start_radius_depth2_min_survivors": back_start_radius_depth2_min_survivors,
-        },
+        "solver_config": solver_config,
         "workers": workers,
-        "total_seconds": total_seconds,
+        "total_seconds": round(total_seconds, 3),
         "success_count": success_count,
         "independent_valid_count": independent_valid_count,
         "exact_duplicates": exact,
@@ -372,6 +381,84 @@ def run_benchmark_course(output: Path, workers: int = 16, rules: ValidationRules
     (output / "report.json").write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     (output / "REPORT.md").write_text(_markdown(report, rules), encoding="utf-8")
     return report
+
+
+def run_benchmark_course(output: Path, workers: int = 16, rules: ValidationRules | None = None,
+                         halfplane_weight: float = 0.0, seeds: range = range(1, 11), *,
+                         free_quota: bool = False, bounded_quota: bool = False,
+                         par3_bounds: tuple[int, int] | None = None,
+                         par5_bounds: tuple[int, int] | None = None,
+                         back_closing_lookahead_from: int | None = None,
+                         back_clubhouse_max: float | None = None,
+                         back_start_radii: tuple[float, ...] | None = None,
+                         back_start_radius_groups: tuple[tuple[float, ...], ...] | None = None,
+                         back_start_radius_depth2_min_survivors: int | None = None,
+                         par5_deadline: int | None = None,
+                         arrival_max_angle_deg: float | None = None,
+                         observations: list[str] | None = None) -> dict:
+    rules = rules or ValidationRules(
+        shared_rough=True, fairway_gap=5.0, edge_min=1.0,
+        max_parallel_stack=3, clubhouse_clear_radius=10.0,
+    )
+    output.mkdir(parents=True, exist_ok=True)
+    total_start = time.perf_counter()
+    completed: dict[int, tuple[CourseSolveResult, float]] = {}
+    if workers <= 1:
+        for seed in seeds:
+            result, elapsed = _run_seed(seed, rules, halfplane_weight, free_quota=free_quota,
+                                        bounded_quota=bounded_quota, par3_bounds=par3_bounds,
+                                        par5_bounds=par5_bounds,
+                                        back_closing_lookahead_from=back_closing_lookahead_from,
+                                        back_clubhouse_max=back_clubhouse_max,
+                                        back_start_radii=back_start_radii,
+                                        back_start_radius_groups=back_start_radius_groups,
+                                        back_start_radius_depth2_min_survivors=
+                                        back_start_radius_depth2_min_survivors,
+                                        par5_deadline=par5_deadline,
+                                        arrival_max_angle_deg=arrival_max_angle_deg)
+            completed[result.seed] = (result, elapsed)
+            print(f"seed {result.seed}: {'OK' if result.complete else 'échec'} "
+                  f"front={result.front.state.depth}/9 "
+                  f"back={0 if result.back is None else result.back.state.depth}/9 "
+                  f"temps={elapsed:.1f}s", flush=True)
+    else:
+        with ProcessPoolExecutor(max_workers=workers) as executor:
+            futures = {executor.submit(_run_seed, seed, rules, halfplane_weight,
+                                       free_quota=free_quota, bounded_quota=bounded_quota,
+                                       par3_bounds=par3_bounds, par5_bounds=par5_bounds,
+                                       back_closing_lookahead_from=back_closing_lookahead_from,
+                                       back_clubhouse_max=back_clubhouse_max,
+                                       back_start_radii=back_start_radii,
+                                       back_start_radius_groups=back_start_radius_groups,
+                                       back_start_radius_depth2_min_survivors=
+                                       back_start_radius_depth2_min_survivors,
+                                       par5_deadline=par5_deadline,
+                                       arrival_max_angle_deg=arrival_max_angle_deg): seed
+                      for seed in seeds}
+            for future in as_completed(futures):
+                result, elapsed = future.result()
+                completed[result.seed] = (result, elapsed)
+                print(f"seed {result.seed}: {'OK' if result.complete else 'échec'} "
+                      f"front={result.front.state.depth}/9 "
+                      f"back={0 if result.back is None else result.back.state.depth}/9 "
+                      f"temps={elapsed:.1f}s", flush=True)
+
+    total_seconds = time.perf_counter() - total_start
+    solver_config = {
+        "free_quota": free_quota,
+        "bounded_quota": bounded_quota,
+        "par3_bounds": list(par3_bounds) if par3_bounds else None,
+        "par5_bounds": list(par5_bounds) if par5_bounds else None,
+        "back_closing_lookahead_from": back_closing_lookahead_from,
+        "back_clubhouse_max": back_clubhouse_max,
+        "back_start_radii": list(back_start_radii) if back_start_radii else None,
+        "back_start_radius_groups": ([list(group) for group in back_start_radius_groups]
+                                     if back_start_radius_groups else None),
+        "back_start_radius_depth2_min_survivors": back_start_radius_depth2_min_survivors,
+        "par5_deadline": par5_deadline,
+        "arrival_max_angle_deg": arrival_max_angle_deg,
+    }
+    return _finalize_report(output, rules, completed, total_seconds, workers, solver_config, observations)
 
 
 def main() -> None:

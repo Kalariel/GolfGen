@@ -16,6 +16,7 @@ from experiments.bean_paving.geometry import PlacedBean, Transform, ValidationRu
 
 PAR_QUOTAS = {3: 2, 4: 5, 5: 2}
 FIRST_PAR_PENALTY = {4: 0.0, 3: 2.4, 5: 3.8}
+_EPSILON = 1e-9
 
 
 @dataclass(frozen=True)
@@ -143,6 +144,40 @@ class SolverParams:
     # ``rules.clubhouse_block_radius`` est renseigné, sinon la cible
     # d'origine) -- comportement byte-identique.
     target_radius_depth9_min: float | None = None
+    # Délai du par5 (opt-in, décision utilisateur PLAN.md ligne 6, expérience
+    # « deadline par5 ») : sans effet si ``bounded_quota`` est faux. Avec
+    # ``bounded_quota=True``, ``_bounded_quota_filter`` force normalement le
+    # par3 ET le par5 sur la fenêtre PARTAGÉE des emplacements restants
+    # (``10 - depth``), ce qui les pousse le plus souvent tout en fin de nine
+    # (observation utilisateur sur les SVG : le par5 obligatoire se retrouve
+    # systématiquement au trou 9/18, qui serpente alors autour du clubhouse).
+    # ``par5_deadline`` donne au par5 sa PROPRE fenêtre de forçage, plus
+    # courte : son minimum doit être atteint au plus tard au trou
+    # ``par5_deadline`` (fenêtre ``par5_deadline - depth + 1``, CE coup
+    # inclus) ; au-delà de ce trou, un par5 qui compléterait encore le
+    # minimum n'est plus éligible du tout (seul un par5 déjà au-dessus du
+    # minimum, donc en excédent, reste permis si le quota le permet) -- les
+    # trous 8-9/17-18 restent donc libres (par3, par4, ou un par5 EXCÉDENTAIRE).
+    # ``None`` (défaut) retombe sur la fenêtre partagée historique
+    # (``10 - depth``, identique pour par3 et par5) -- comportement
+    # byte-identique.
+    par5_deadline: int | None = None
+    # Angle d'arrivée radiale (opt-in, décision utilisateur PLAN.md ligne 6,
+    # expérience « arrivée radiale ») : règle dure sur le trou de clôture de
+    # chaque nine (9 et 18, ``target_depth == 9`` pour CE nine, quel que soit
+    # ``order_offset``) -- mirroir de ``_starts_outward`` (qui impose au trou
+    # 1 de s'éloigner du clubhouse) mais côté arrivée. Le DERNIER segment de
+    # l'axe du trou (celui qui finit sur le green) doit pointer vers le
+    # clubhouse à moins de ``arrival_max_angle_deg`` degrés : angle entre (a)
+    # la direction de ce dernier segment et (b) la direction du DÉBUT de ce
+    # segment vers le clubhouse (``_arrival_angle_deg``) -- un angle proche de
+    # 0 signifie une arrivée « de face » (le joueur continue vers le
+    # clubhouse en jouant son dernier coup), un angle proche de 90-180
+    # signifie que le trou contourne/longe le clubhouse au lieu de s'y
+    # diriger (observation utilisateur : le par5 de clôture qui serpente
+    # autour du clubhouse). ``None`` (défaut) désactive la règle --
+    # comportement byte-identique.
+    arrival_max_angle_deg: float | None = None
 
 
 @dataclass(frozen=True)
@@ -223,6 +258,8 @@ class SolveResult:
                 "random_departure_count": self.params.random_departure_count,
                 "random_departure_radius": list(self.params.random_departure_radius),
                 "target_radius_depth9_min": self.params.target_radius_depth9_min,
+                "par5_deadline": self.params.par5_deadline,
+                "arrival_max_angle_deg": self.params.arrival_max_angle_deg,
             },
             "diagnostics": [{
                 "depth": item.depth,
@@ -299,20 +336,54 @@ def _bounded_quota_filter(pars: list[int], state: SearchState, depth: int,
        l'avoir prise, le quota global restant (``global_quota`` moins ce que
        CE nine a RÉELLEMENT posé, jamais un compteur périmé) laisse encore à
        l'autre nine au moins son propre minimum ``lo``.
+
+    ``params.par5_deadline`` (opt-in, ``None`` -> comportement byte-identique,
+    voir sa docstring) : donne au par5 sa PROPRE fenêtre de forçage
+    (``par5_deadline - depth + 1`` au lieu de la fenêtre partagée
+    ``slots_from_now``), et interdit tout par5 qui compléterait encore le
+    minimum une fois ``par5_deadline`` dépassé (seul un par5 déjà au-dessus
+    du minimum reste éligible à ce stade).
     """
     bounds = {3: params.par3_bounds, 5: params.par5_bounds}
     counts = Counter(bean.template.par for bean in state.placed)
     slots_from_now = 10 - depth  # emplacements restants, CE coup inclus
-
-    # Forçage sur le besoin TOTAL (somme des deux classes bornées), pas
-    # classe par classe isolément : sinon deux besoins qui deviennent
-    # tendus au même moment (ex. profondeur 8, 2 emplacements restants, 1
-    # par3 ET 1 par5 encore nécessaires) ne seraient forcés qu'à la toute
-    # dernière profondeur, trop tard pour satisfaire les deux à la fois.
     needs = {par: max(0, lo - counts[par]) for par, (lo, _hi) in bounds.items()}
-    if sum(needs.values()) >= slots_from_now:
-        forced = [par for par, need in needs.items() if need > 0]
-        return [par for par in pars if par in forced]
+    deadline = params.par5_deadline
+
+    if deadline is None:
+        # Forçage sur le besoin TOTAL (somme des deux classes bornées), pas
+        # classe par classe isolément : sinon deux besoins qui deviennent
+        # tendus au même moment (ex. profondeur 8, 2 emplacements restants, 1
+        # par3 ET 1 par5 encore nécessaires) ne seraient forcés qu'à la toute
+        # dernière profondeur, trop tard pour satisfaire les deux à la fois.
+        if sum(needs.values()) >= slots_from_now:
+            forced = [par for par, need in needs.items() if need > 0]
+            return [par for par in pars if par in forced]
+    else:
+        # Fenêtre propre au par5 : doit être comblé au plus tard au trou
+        # ``deadline`` (fenêtre à 0 une fois ``deadline`` dépassé -- plus
+        # aucun forçage possible, le minimum manqué ne sera jamais rattrapé
+        # par ce filtre).
+        slots_par5 = max(0, deadline - depth + 1) if depth <= deadline else 0
+        need3, need5 = needs[3], needs[5]
+        forced = []
+        if need3 > 0 and need3 >= slots_from_now:
+            forced.append(3)
+        if need5 > 0 and depth <= deadline and need5 >= slots_par5:
+            forced.append(5)
+        # Garde-fou joint historique (point 1 ci-dessus) : si les DEUX
+        # besoins tendent le pool PARTAGÉ restant en même temps, forcer
+        # aussi le par3 -- seulement tant que le par5 reste dans sa fenêtre
+        # (au-delà, le forcer serait sans effet, voir l'éligibilité
+        # ci-dessous).
+        if (need3 > 0 and need5 > 0 and depth <= deadline
+                and (need3 + need5) >= slots_from_now):
+            if 3 not in forced:
+                forced.append(3)
+            if 5 not in forced:
+                forced.append(5)
+        if forced:
+            return [par for par in pars if par in forced]
 
     eligible = []
     for par in pars:
@@ -321,6 +392,11 @@ def _bounded_quota_filter(pars: list[int], state: SearchState, depth: int,
             if counts[par] + 1 > hi:
                 continue
             if global_quota is not None and global_quota[par] - (counts[par] + 1) < lo:
+                continue
+            if par == 5 and deadline is not None and depth > deadline and counts[par] < lo:
+                # Trous 8-9/17-18 (au-delà du délai) : un par5 qui
+                # compléterait encore le minimum n'est plus permis, seul un
+                # par5 déjà excédentaire (``counts[par] >= lo``) le reste.
                 continue
         eligible.append(par)
     return eligible
@@ -604,6 +680,38 @@ def _starts_outward(bean: PlacedBean, clubhouse: tuple[float, float]) -> bool:
     return tee_vector[0] * hole_vector[0] + tee_vector[1] * hole_vector[1] > 0.0
 
 
+def _arrival_angle_deg(bean: PlacedBean, clubhouse: tuple[float, float]) -> float | None:
+    """Angle (degrés, ``[0, 180]``) entre (a) le DERNIER segment de l'axe du
+    trou (celui qui finit sur le green) et (b) la direction du DÉBUT de ce
+    segment vers le clubhouse -- 0° = le dernier segment pointe droit sur le
+    clubhouse (arrivée « de face »), 180° = il s'en éloigne tout droit.
+    Mirroir de ``_starts_outward`` côté arrivée (``SolverParams.
+    arrival_max_angle_deg``). ``None`` si l'axe n'a qu'un point ou si le
+    dernier segment ou le vecteur vers le clubhouse est de longueur nulle
+    (angle indéfini, jamais une violation par défaut)."""
+    axis = bean.axis
+    if len(axis) < 2:
+        return None
+    start, end = axis[-2], axis[-1]
+    segment = (end[0] - start[0], end[1] - start[1])
+    to_clubhouse = (clubhouse[0] - start[0], clubhouse[1] - start[1])
+    seg_norm = math.hypot(*segment)
+    club_norm = math.hypot(*to_clubhouse)
+    if seg_norm <= _EPSILON or club_norm <= _EPSILON:
+        return None
+    cos_angle = (segment[0] * to_clubhouse[0] + segment[1] * to_clubhouse[1]) / (seg_norm * club_norm)
+    return math.degrees(math.acos(max(-1.0, min(1.0, cos_angle))))
+
+
+def _arrives_radially(bean: PlacedBean, clubhouse: tuple[float, float], max_angle_deg: float) -> bool:
+    """Vrai si le trou de clôture (9 ou 18) arrive sur le clubhouse à moins
+    de ``max_angle_deg`` -- voir ``_arrival_angle_deg``. Un angle indéfini
+    (axe/segment dégénéré) est considéré conforme (jamais de faux rejet sur
+    un cas limite non représentatif)."""
+    angle = _arrival_angle_deg(bean, clubhouse)
+    return angle is None or angle <= max_angle_deg
+
+
 def _has_closing_sequence(state: SearchState, bank: BeanBank, clubhouse: tuple[float, float],
                           params: SolverParams, rules: ValidationRules, seed: int,
                           obstacles: tuple[PlacedBean, ...] = (),
@@ -644,6 +752,9 @@ def _has_closing_sequence(state: SearchState, bank: BeanBank, clubhouse: tuple[f
             for transform in _transforms(template, state, clubhouse, params, seed, rules)[:trans_n]:
                 placed = PlacedBean(template, transform, order_offset + target_depth)
                 if final_step and math.dist(placed.green, clubhouse) > params.clubhouse_max:
+                    continue
+                if (final_step and params.arrival_max_angle_deg is not None
+                        and not _arrives_radially(placed, clubhouse, params.arrival_max_angle_deg)):
                     continue
                 candidate = (*state.placed, placed)
                 if _placement_problems(candidate, obstacles, rules):
@@ -733,6 +844,10 @@ def expand_state(state: SearchState, target_depth: int, bank: BeanBank,
                 problems = _placement_problems(candidate, obstacles, rules)
                 if target_depth == 9 and math.dist(placed.green, clubhouse) > params.clubhouse_max:
                     rejected["clubhouse_return"] += 1
+                    continue
+                if (target_depth == 9 and params.arrival_max_angle_deg is not None
+                        and not _arrives_radially(placed, clubhouse, params.arrival_max_angle_deg)):
+                    rejected["radial_arrival"] += 1
                     continue
                 if problems:
                     for kind in {problem.kind for problem in problems}:

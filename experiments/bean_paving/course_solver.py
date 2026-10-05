@@ -12,7 +12,7 @@ from experiments.bean_paving import halfplane
 from experiments.bean_paving.bean_bank import GenerationParams, generate_bank
 from experiments.bean_paving.geometry import PlacedBean, ValidationRules, validate
 from experiments.bean_paving.joint_solver import GLOBAL_PAR_QUOTA, JointSolveResult, search_joint
-from experiments.bean_paving.solver import PAR_QUOTAS, SolveResult, SolverParams, solve_nine
+from experiments.bean_paving.solver import PAR_QUOTAS, SolveResult, SolverParams, _arrives_radially, solve_nine
 
 
 @dataclass(frozen=True)
@@ -49,13 +49,30 @@ class CourseSolveResult:
 def _course_violations(front: tuple[PlacedBean, ...], back: tuple[PlacedBean, ...],
                        rules: ValidationRules, clubhouse: tuple[float, float],
                        front_clubhouse_max: float,
-                       back_clubhouse_max: float | None = None) -> list[str]:
+                       back_clubhouse_max: float | None = None, *,
+                       arrival_max_angle_deg: float | None = None,
+                       par3_bounds: tuple[int, int] | None = None,
+                       par5_bounds: tuple[int, int] | None = None) -> list[str]:
     """``back_clubhouse_max`` (défaut ``None``) : plafond dur départ/retour du
     BACK si différent de celui du front (décision utilisateur, tee 10 /
     green 18 autorisés plus loin -- voir ``solve_course(back_clubhouse_max=
     ...)``). ``None`` retombe sur ``front_clubhouse_max`` pour les deux
     nines : tout appelant existant qui ne précise qu'un seul argument
-    positionnel garde un comportement strictement inchangé."""
+    positionnel garde un comportement strictement inchangé.
+
+    ``arrival_max_angle_deg`` (opt-in, décision utilisateur PLAN.md ligne 6,
+    expérience « arrivée radiale ») : vérifie indépendamment, pour chaque
+    nine non vide, que son trou de clôture (dernier élément) arrive sur le
+    clubhouse à moins de cet angle (``solver._arrives_radially``, mirroir de
+    ``solver._starts_outward``) -- ``None`` (défaut) désactive la
+    vérification, comportement byte-identique.
+
+    ``par3_bounds`` / ``par5_bounds`` (opt-in, défaut ``None`` ->
+    vérification désactivée, byte-identique) : vérifie indépendamment, pour
+    chaque nine non vide, que son propre compte de par3/par5 tombe dans ces
+    bornes (``solver.SolverParams.par3_bounds``/``par5_bounds``, mode
+    ``bounded_quota``) -- distinct de ``par_quotas`` ci-dessous, qui ne
+    porte que sur le total GLOBAL des 18 trous."""
     back_max = front_clubhouse_max if back_clubhouse_max is None else back_clubhouse_max
     violations = [problem.kind for problem in validate((*front, *back), rules, check_links=False)]
     violations.extend(problem.kind for problem in validate(front, rules))
@@ -70,6 +87,17 @@ def _course_violations(front: tuple[PlacedBean, ...], back: tuple[PlacedBean, ..
             violations.append(f"{label}_start")
         if math.dist(nine[-1].green, clubhouse) > clubhouse_max:
             violations.append(f"{label}_return")
+        if (arrival_max_angle_deg is not None
+                and not _arrives_radially(nine[-1], clubhouse, arrival_max_angle_deg)):
+            violations.append(f"{label}_radial_arrival")
+        if par3_bounds is not None or par5_bounds is not None:
+            counts = Counter(bean.template.par for bean in nine)
+            lo3, hi3 = par3_bounds or (0, 9)
+            lo5, hi5 = par5_bounds or (0, 9)
+            if not (lo3 <= counts.get(3, 0) <= hi3):
+                violations.append(f"{label}_par3_bounds")
+            if not (lo5 <= counts.get(5, 0) <= hi5):
+                violations.append(f"{label}_par5_bounds")
     if front and back:
         if math.dist(front[0].tee, back[0].tee) < 18.0:
             violations.append("starts_not_distinct")
@@ -110,7 +138,9 @@ def solve_course(seed: int, front_params: SolverParams | None = None,
                  back_clubhouse_max: float | None = None,
                  back_start_radii: tuple[float, ...] | None = None,
                  back_start_radius_groups: tuple[tuple[float, ...], ...] | None = None,
-                 back_start_radius_depth2_min_survivors: int | None = None) -> CourseSolveResult:
+                 back_start_radius_depth2_min_survivors: int | None = None,
+                 par5_deadline: int | None = None,
+                 arrival_max_angle_deg: float | None = None) -> CourseSolveResult:
     """``halfplane_*`` : surcharge le biais souple de demi-plan
     (``halfplane.py``, EXPERIMENT_18_HALFPLANE.md) côté front uniquement, sans
     toucher au reste de ``front_params`` — ``None`` (défaut) ne change rien,
@@ -163,7 +193,21 @@ def solve_course(seed: int, front_params: SolverParams | None = None,
     des départs du tee 10 par groupe de rayon, voir
     ``solver.SolverParams.start_radius_groups``) — ``None`` (défaut) ne
     change rien ; comme les deux surcharges précédentes, ne touchent QUE le
-    back."""
+    back.
+
+    ``par5_deadline`` (décision utilisateur, PLAN.md ligne 6, expérience
+    « deadline par5 ») : surcharge ``SolverParams.par5_deadline`` sur LES
+    DEUX nines (contrairement aux surcharges ``back_*`` ci-dessus, cette
+    règle doit s'appliquer symétriquement au front ET au back) — ``None``
+    (défaut) ne change rien, sans effet si ``bounded_quota`` est faux.
+
+    ``arrival_max_angle_deg`` (décision utilisateur, PLAN.md ligne 6,
+    expérience « arrivée radiale ») : surcharge ``SolverParams.
+    arrival_max_angle_deg`` sur LES DEUX nines (même raison que
+    ``par5_deadline`` : le trou de clôture du front, 9, et celui du back,
+    18, doivent tous les deux respecter la règle) ET le même seuil est
+    transmis à ``_course_violations`` ci-dessous pour la validation
+    indépendante — ``None`` (défaut) ne change rien."""
     if free_quota and bounded_quota:
         raise ValueError("free_quota et bounded_quota sont mutuellement exclusifs")
     rules = rules or ValidationRules()
@@ -200,6 +244,12 @@ def solve_course(seed: int, front_params: SolverParams | None = None,
     if back_start_radius_depth2_min_survivors is not None:
         back_params = replace(back_params,
                               start_radius_depth2_min_survivors=back_start_radius_depth2_min_survivors)
+    if par5_deadline is not None:
+        front_params = replace(front_params, par5_deadline=par5_deadline)
+        back_params = replace(back_params, par5_deadline=par5_deadline)
+    if arrival_max_angle_deg is not None:
+        front_params = replace(front_params, arrival_max_angle_deg=arrival_max_angle_deg)
+        back_params = replace(back_params, arrival_max_angle_deg=arrival_max_angle_deg)
     bank = generate_bank(seed, GenerationParams.eighteen())
 
     if bounded_quota:
@@ -221,8 +271,13 @@ def solve_course(seed: int, front_params: SolverParams | None = None,
                       obstacles=front.state.placed, blocked_ids=used, order_offset=9,
                       par_quota=back_quota)
     clubhouse = (rules.width / 2.0, rules.height / 2.0)
-    violations = _course_violations(front.state.placed, back.state.placed, rules, clubhouse,
-                                     front_params.clubhouse_max, back_params.clubhouse_max)
+    violations = _course_violations(
+        front.state.placed, back.state.placed, rules, clubhouse,
+        front_params.clubhouse_max, back_params.clubhouse_max,
+        arrival_max_angle_deg=front_params.arrival_max_angle_deg,
+        par3_bounds=front_params.par3_bounds if bounded_quota else None,
+        par5_bounds=front_params.par5_bounds if bounded_quota else None,
+    )
     if not back.complete:
         violations.append("back_incomplete")
     complete = front.complete and back.complete and not violations
