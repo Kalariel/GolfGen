@@ -282,6 +282,12 @@ spatiales et produit un parcours visualisable dans le viewer.
 5. Les paramètres expérimentaux restent dans `experiments/bean_paving/`.
 6. `golfgen/loop_router.py` reste inchangé pendant le spike.
 7. Aucun benchmark multi-seeds n'est lancé avant l'étape 5.
+8. Décision utilisateur 2026-10-04 : le solveur conjoint (`joint_solver.py`,
+   `solve_course_joint`) est **abandonné** — ses sorties visuelles jugées
+   trop symétriques (deux nines qui se répondent en miroir plutôt que des
+   formes variées). Le code reste dans le dépôt pour référence, mais n'est
+   plus lancé dans aucune session suivante ; seul le solveur séquentiel
+   (`solve_course`) reste actif.
 
 ## Avancement
 
@@ -292,5 +298,5 @@ spatiales et produit un parcours visualisable dans le viewer.
 | 3. Placement local | Terminé | Chaînes 4/4 valides sur seeds 1, 7, 42, 123 ; seed 42 en 340 essais |
 | 4. Paveur d'un nine | Terminé | Seed 42 valide, beam 48, 68 850 essais, 5 fermetures ; échec intermédiaire conservé |
 | 5. Benchmark 1..10 | Terminé | 10/10, 0 violation dure, 0 doublon exact ; biais pourtour et départ par 3 consignés |
-| 6. Banque de 36 et 18 trous | Partiel | 350 (règles d'origine) : séquentiel 9+1, conjoint ≤9/18 ; 500 : 18/18. Variante `shared_rough` testée en 350 seulement (fairway isolé du rough, bord assoupli, antiparallèle remplacé par une pile côte-à-côte bornée) : séquentiel 16/18 (front 9+back 7), conjoint 11/18 (front 6+back 5) — mieux qu'avant mais toujours pas 18/18 à 350. Décision en attente : 400/450 non lancés (`EXPERIMENT_18_ROUGH.md`) |
+| 6. Banque de 36 et 18 trous | Partiel | 350 (règles d'origine) : séquentiel 9+1, conjoint ≤9/18 ; 500 : 18/18. Variante `shared_rough` (350 seulement) : séquentiel 16/18 (front 9+back 7), conjoint 11/18 (front 6+back 5). **Solveur conjoint abandonné le 2026-10-04** (décision utilisateur : sorties trop symétriques visuellement) — non relancé depuis. Suite (exclusion clubhouse dure + biais souple de demi-plan + recherche d'orientation, séquentiel uniquement) : toujours 16/18 au mieux à 350×350, voir `EXPERIMENT_18_HALFPLANE.md`. 400/450 toujours non lancés |
 | 7. Substitution par vrais trous | À faire | — |
