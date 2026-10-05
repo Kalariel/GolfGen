@@ -94,59 +94,58 @@
         "lookahead_pruned": 363,
         "parents": 72,
         "rejection_counts": {
-          "axis_crossing": 12002,
-          "bounds": 7874,
-          "fairway_gap": 15817,
-          "parallel_stack": 5709
+          "axis_crossing": 10304,
+          "bounds": 6701,
+          "fairway_gap": 13369,
+          "parallel_stack": 4580
         },
-        "trials": 16704
+        "trials": 14256
       },
       {
-        "accepted": 153,
-        "dead_ends": 44,
+        "accepted": 102,
+        "dead_ends": 50,
         "depth": 7,
         "kept": 72,
-        "lookahead_calls": 153,
-        "lookahead_pruned": 141,
+        "lookahead_calls": 102,
+        "lookahead_pruned": 97,
         "parents": 72,
         "rejection_counts": {
-          "axis_crossing": 11903,
-          "bounds": 2349,
-          "fairway_gap": 15399,
-          "parallel_stack": 6308
+          "axis_crossing": 7975,
+          "bounds": 1380,
+          "fairway_gap": 10266,
+          "parallel_stack": 4187
         },
-        "trials": 15552
+        "trials": 10368
       },
       {
-        "accepted": 479,
-        "dead_ends": 13,
+        "accepted": 412,
+        "dead_ends": 16,
         "depth": 8,
         "kept": 72,
-        "lookahead_calls": 479,
-        "lookahead_pruned": 90,
+        "lookahead_calls": 412,
+        "lookahead_pruned": 32,
         "parents": 72,
         "rejection_counts": {
-          "axis_crossing": 12152,
-          "bounds": 161,
-          "clubhouse_clear": 8,
-          "fairway_gap": 15064,
-          "parallel_stack": 2552
+          "axis_crossing": 7749,
+          "bounds": 211,
+          "fairway_gap": 9926,
+          "parallel_stack": 2475
         },
-        "trials": 15552
+        "trials": 10368
       },
       {
-        "accepted": 193,
-        "dead_ends": 24,
+        "accepted": 337,
+        "dead_ends": 0,
         "depth": 9,
         "kept": 72,
         "lookahead_calls": 0,
         "lookahead_pruned": 0,
         "parents": 72,
         "rejection_counts": {
-          "axis_crossing": 7542,
-          "clubhouse_clear": 5087,
-          "fairway_gap": 9873,
-          "parallel_stack": 31
+          "axis_crossing": 6869,
+          "clubhouse_clear": 5256,
+          "fairway_gap": 9770,
+          "parallel_stack": 36
         },
         "trials": 10368
       }
@@ -155,7 +154,7 @@
       "arrival_max_angle_deg": null,
       "bbox_weight": 0.00018,
       "beam_width": 72,
-      "bounded_quota": false,
+      "bounded_quota": true,
       "candidates_per_par": 4,
       "closing_lookahead_from": 7,
       "closure_lookahead": true,
@@ -217,186 +216,186 @@
     "placed": [
       {
         "green": [
-          116.1946,
-          104.0
+          104.0,
+          116.1946
         ],
         "id": "s2-p3-04",
         "order": 10,
         "par": 3,
         "tee": [
-          200.0,
-          104.0
+          104.0,
+          200.0
         ],
         "transform": {
           "mirrored": true,
-          "rotation_deg": 180,
-          "x": 200.0,
-          "y": 104.0
+          "rotation_deg": 270,
+          "x": 104.0,
+          "y": 200.0
         }
       },
       {
         "green": [
-          256.057,
-          40.5745
+          35.9927,
+          255.5148
         ],
-        "id": "s2-p4-02",
+        "id": "s2-p4-13",
         "order": 11,
         "par": 4,
         "tee": [
-          104.1946,
-          83.2154
+          64.0,
+          116.1946
         ],
         "transform": {
-          "mirrored": true,
-          "rotation_deg": 330,
-          "x": 104.1946,
-          "y": 83.2154
+          "mirrored": false,
+          "rotation_deg": 90,
+          "x": 64.0,
+          "y": 116.1946
         }
       },
       {
         "green": [
-          374.2451,
-          100.1587
+          77.4227,
+          43.7805
         ],
-        "id": "s2-p4-01",
+        "id": "s2-p5-06",
         "order": 12,
-        "par": 4,
+        "par": 5,
         "tee": [
-          256.057,
-          64.5745
+          35.9927,
+          215.5148
         ],
         "transform": {
-          "mirrored": true,
-          "rotation_deg": 30,
-          "x": 256.057,
-          "y": 64.5745
+          "mirrored": false,
+          "rotation_deg": 270,
+          "x": 35.9927,
+          "y": 215.5148
         }
       },
       {
         "green": [
-          158.8239,
-          9.6006
+          312.8438,
+          19.8634
         ],
         "id": "s2-p5-03",
         "order": 13,
         "par": 5,
         "tee": [
-          374.2451,
-          68.1587
+          97.4227,
+          78.4215
         ],
         "transform": {
-          "mirrored": false,
-          "rotation_deg": 210,
-          "x": 374.2451,
-          "y": 68.1587
+          "mirrored": true,
+          "rotation_deg": 330,
+          "x": 97.4227,
+          "y": 78.4215
         }
       },
       {
         "green": [
-          9.7251,
-          95.6829
+          388.4281,
+          138.0515
         ],
-        "id": "s2-p4-19",
+        "id": "s2-p4-01",
         "order": 14,
         "par": 4,
         "tee": [
-          138.0393,
-          21.6006
+          352.8438,
+          19.8634
         ],
         "transform": {
-          "mirrored": true,
-          "rotation_deg": 150,
-          "x": 138.0393,
-          "y": 21.6006
+          "mirrored": false,
+          "rotation_deg": 60,
+          "x": 352.8438,
+          "y": 19.8634
         }
       },
       {
         "green": [
-          21.7178,
-          235.0031
+          273.4143,
+          40.663
         ],
-        "id": "s2-p4-13",
+        "id": "s2-p4-03",
         "order": 15,
         "par": 4,
         "tee": [
-          49.7251,
-          95.6829
+          376.4281,
+          158.8361
         ],
         "transform": {
-          "mirrored": false,
-          "rotation_deg": 90,
-          "x": 49.7251,
-          "y": 95.6829
+          "mirrored": true,
+          "rotation_deg": 240,
+          "x": 376.4281,
+          "y": 158.8361
         }
       },
       {
         "green": [
-          86.4761,
-          97.6892
+          351.6326,
+          170.8592
         ],
-        "id": "s2-p4-14",
+        "id": "s2-p4-02",
         "order": 16,
         "par": 4,
         "tee": [
-          45.7178,
-          235.0031
+          238.7733,
+          60.663
         ],
         "transform": {
           "mirrored": true,
-          "rotation_deg": 300,
-          "x": 45.7178,
-          "y": 235.0031
+          "rotation_deg": 30,
+          "x": 238.7733,
+          "y": 60.663
         }
       },
       {
         "green": [
-          279.9136,
-          109.8193
+          237.8114,
+          95.9646
         ],
-        "id": "s2-p5-07",
+        "id": "s2-p4-17",
         "order": 17,
-        "par": 5,
+        "par": 4,
         "tee": [
-          106.4761,
-          132.3302
+          371.6326,
+          205.5002
         ],
         "transform": {
           "mirrored": true,
-          "rotation_deg": 0,
-          "x": 106.4761,
-          "y": 132.3302
+          "rotation_deg": 210,
+          "x": 371.6326,
+          "y": 205.5002
         }
       },
       {
         "green": [
-          168.0834,
-          192.3335
+          170.9148,
+          202.8684
         ],
-        "id": "s2-p4-10",
+        "id": "s2-p4-11",
         "order": 18,
         "par": 4,
         "tee": [
-          314.5546,
-          129.8193
+          217.8114,
+          61.3236
         ],
         "transform": {
-          "mirrored": false,
-          "rotation_deg": 150,
-          "x": 314.5546,
-          "y": 129.8193
+          "mirrored": true,
+          "rotation_deg": 120,
+          "x": 217.8114,
+          "y": 61.3236
         }
       }
     ],
-    "score": 29.83997,
+    "score": 28.80518,
     "seed": 2654435771,
-    "total_trials": 135504
+    "total_trials": 122688
   },
   "complete": true,
   "demarcation": {
     "band": 40.0,
-    "interleave_pairs": 1,
+    "interleave_pairs": 3,
     "theta_deg": 0.0,
-    "wrong_side_holes": 9
+    "wrong_side_holes": 8
   },
   "front": {
     "clubhouse": [

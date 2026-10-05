@@ -86,59 +86,59 @@
         "trials": 10368
       },
       {
-        "accepted": 29,
-        "dead_ends": 34,
+        "accepted": 27,
+        "dead_ends": 36,
         "depth": 6,
-        "kept": 21,
-        "lookahead_calls": 29,
-        "lookahead_pruned": 29,
+        "kept": 20,
+        "lookahead_calls": 27,
+        "lookahead_pruned": 27,
         "parents": 44,
         "rejection_counts": {
-          "axis_crossing": 7106,
-          "bounds": 4545,
-          "fairway_gap": 9592,
-          "parallel_stack": 2430
+          "axis_crossing": 6650,
+          "bounds": 4246,
+          "fairway_gap": 9037,
+          "parallel_stack": 2332
         },
-        "trials": 9936
+        "trials": 9360
       },
       {
-        "accepted": 15,
-        "dead_ends": 13,
+        "accepted": 11,
+        "dead_ends": 15,
         "depth": 7,
-        "kept": 14,
-        "lookahead_calls": 15,
-        "lookahead_pruned": 15,
-        "parents": 21,
+        "kept": 11,
+        "lookahead_calls": 11,
+        "lookahead_pruned": 11,
+        "parents": 20,
         "rejection_counts": {
-          "axis_crossing": 3164,
-          "bounds": 617,
-          "fairway_gap": 4449,
-          "parallel_stack": 285
+          "axis_crossing": 2154,
+          "bounds": 315,
+          "fairway_gap": 2869,
+          "parallel_stack": 111
         },
-        "trials": 4464
+        "trials": 2880
       },
       {
         "accepted": 0,
-        "dead_ends": 14,
+        "dead_ends": 11,
         "depth": 8,
         "kept": 0,
         "lookahead_calls": 0,
         "lookahead_pruned": 0,
-        "parents": 14,
+        "parents": 11,
         "rejection_counts": {
-          "axis_crossing": 2285,
-          "bounds": 102,
-          "fairway_gap": 2448,
-          "parallel_stack": 1194
+          "axis_crossing": 1455,
+          "bounds": 87,
+          "fairway_gap": 1584,
+          "parallel_stack": 736
         },
-        "trials": 2448
+        "trials": 1584
       }
     ],
     "params": {
       "arrival_max_angle_deg": null,
       "bbox_weight": 0.00018,
       "beam_width": 72,
-      "bounded_quota": false,
+      "bounded_quota": true,
       "candidates_per_par": 4,
       "closing_lookahead_from": 7,
       "closure_lookahead": true,
@@ -200,141 +200,141 @@
     "placed": [
       {
         "green": [
-          104.0,
-          117.2325
+          109.0038,
+          118.9901
         ],
-        "id": "s4-p3-04",
+        "id": "s4-p3-06",
         "order": 10,
         "par": 3,
         "tee": [
-          104.0,
+          120.0,
           200.0
         ],
         "transform": {
-          "mirrored": false,
+          "mirrored": true,
           "rotation_deg": 270,
-          "x": 104.0,
+          "x": 120.0,
           "y": 200.0
         }
       },
       {
         "green": [
-          120.5565,
-          344.4219
+          127.7215,
+          348.1931
         ],
-        "id": "s4-p5-04",
+        "id": "s4-p5-07",
         "order": 11,
         "par": 5,
         "tee": [
-          76.2872,
-          133.2325
+          89.0038,
+          153.6311
         ],
         "transform": {
           "mirrored": true,
           "rotation_deg": 90,
-          "x": 76.2872,
-          "y": 133.2325
+          "x": 89.0038,
+          "y": 153.6311
         }
       },
       {
         "green": [
-          38.7903,
-          314.3704
+          45.9553,
+          318.1416
         ],
         "id": "s4-p4-19",
         "order": 12,
         "par": 4,
         "tee": [
-          155.1976,
-          364.4219
+          162.3625,
+          368.1931
         ],
         "transform": {
           "mirrored": false,
           "rotation_deg": 180,
-          "x": 155.1976,
-          "y": 364.4219
+          "x": 162.3625,
+          "y": 368.1931
         }
       },
       {
         "green": [
-          9.6317,
-          127.0523
+          11.7888,
+          107.1604
         ],
-        "id": "s4-p4-05",
+        "id": "s4-p5-03",
         "order": 13,
-        "par": 4,
+        "par": 5,
         "tee": [
-          38.7903,
-          274.3704
+          66.7399,
+          306.1416
         ],
         "transform": {
           "mirrored": true,
-          "rotation_deg": 270,
-          "x": 38.7903,
-          "y": 274.3704
+          "rotation_deg": 240,
+          "x": 66.7399,
+          "y": 306.1416
         }
       },
       {
         "green": [
-          123.3808,
-          13.8774
+          134.0372,
+          11.3262
         ],
-        "id": "s4-p4-08",
+        "id": "s4-p4-04",
         "order": 14,
         "par": 4,
         "tee": [
-          9.6317,
-          87.0523
+          11.7888,
+          83.1604
         ],
         "transform": {
           "mirrored": true,
           "rotation_deg": 330,
-          "x": 9.6317,
-          "y": 87.0523
+          "x": 11.7888,
+          "y": 83.1604
         }
       },
       {
         "green": [
-          36.4384,
-          121.2091
+          41.0185,
+          130.2945
         ],
-        "id": "s4-p4-15",
+        "id": "s4-p4-09",
         "order": 15,
         "par": 4,
         "tee": [
-          144.1654,
-          25.8774
+          168.6782,
+          31.3262
         ],
         "transform": {
           "mirrored": true,
           "rotation_deg": 150,
-          "x": 144.1654,
-          "y": 25.8774
+          "x": 168.6782,
+          "y": 31.3262
         }
       },
       {
         "green": [
-          79.1023,
-          293.2498
+          89.7147,
+          305.8958
         ],
-        "id": "s4-p4-09",
+        "id": "s4-p4-15",
         "order": 16,
         "par": 4,
         "tee": [
-          57.223,
-          133.2091
+          61.0185,
+          164.9356
         ],
         "transform": {
           "mirrored": true,
           "rotation_deg": 90,
-          "x": 57.223,
-          "y": 133.2091
+          "x": 61.0185,
+          "y": 164.9356
         }
       }
     ],
-    "score": 105.83015,
+    "score": 105.38638,
     "seed": 2654435773,
-    "total_trials": 87696
+    "total_trials": 84672
   },
   "complete": false,
   "demarcation": {
@@ -724,7 +724,6 @@
   "seed": 4,
   "violations": [
     "back_return",
-    "back_par5_bounds",
     "back_incomplete"
   ]
 }

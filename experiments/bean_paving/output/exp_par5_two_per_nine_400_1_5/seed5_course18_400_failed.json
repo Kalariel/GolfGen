@@ -86,77 +86,43 @@
         "trials": 17280
       },
       {
-        "accepted": 114,
-        "dead_ends": 44,
+        "accepted": 36,
+        "dead_ends": 53,
         "depth": 6,
-        "kept": 72,
-        "lookahead_calls": 114,
-        "lookahead_pruned": 114,
+        "kept": 34,
+        "lookahead_calls": 36,
+        "lookahead_pruned": 36,
         "parents": 72,
         "rejection_counts": {
-          "axis_crossing": 11934,
-          "bounds": 7999,
-          "fairway_gap": 16542,
+          "axis_crossing": 10243,
+          "bounds": 6413,
+          "fairway_gap": 13519,
           "parallel_stack": 671
         },
-        "trials": 17280
-      },
-      {
-        "accepted": 150,
-        "dead_ends": 49,
-        "depth": 7,
-        "kept": 72,
-        "lookahead_calls": 150,
-        "lookahead_pruned": 150,
-        "parents": 72,
-        "rejection_counts": {
-          "axis_crossing": 15695,
-          "bounds": 4355,
-          "fairway_gap": 19290,
-          "parallel_stack": 3545
-        },
-        "trials": 19440
-      },
-      {
-        "accepted": 10,
-        "dead_ends": 66,
-        "depth": 8,
-        "kept": 10,
-        "lookahead_calls": 10,
-        "lookahead_pruned": 10,
-        "parents": 72,
-        "rejection_counts": {
-          "axis_crossing": 12908,
-          "bounds": 495,
-          "clubhouse_clear": 85,
-          "fairway_gap": 14102,
-          "parallel_stack": 2423
-        },
-        "trials": 14112
+        "trials": 13824
       },
       {
         "accepted": 0,
-        "dead_ends": 10,
-        "depth": 9,
+        "dead_ends": 34,
+        "depth": 7,
         "kept": 0,
         "lookahead_calls": 0,
         "lookahead_pruned": 0,
-        "parents": 10,
+        "parents": 34,
         "rejection_counts": {
-          "axis_crossing": 1222,
-          "clubhouse_clear": 675,
-          "clubhouse_return": 36,
-          "fairway_gap": 1402,
-          "parallel_stack": 429
+          "axis_crossing": 4338,
+          "bounds": 1041,
+          "fairway_gap": 4896,
+          "parallel_stack": 1359
         },
-        "trials": 1440
+        "trials": 4896
       }
     ],
     "params": {
       "arrival_max_angle_deg": null,
       "bbox_weight": 0.00018,
       "beam_width": 72,
-      "bounded_quota": false,
+      "bounded_quota": true,
       "candidates_per_par": 4,
       "closing_lookahead_from": 7,
       "closure_lookahead": true,
@@ -294,91 +260,53 @@
       },
       {
         "green": [
-          19.9884,
-          278.7501
+          33.6922,
+          333.0009
         ],
         "id": "s5-p4-15",
         "order": 14,
         "par": 4,
         "tee": [
-          103.2891,
-          366.945
+          149.9301,
+          367.7296
         ],
         "transform": {
           "mirrored": false,
-          "rotation_deg": 210,
-          "x": 103.2891,
-          "y": 366.945
+          "rotation_deg": 180,
+          "x": 149.9301,
+          "y": 367.7296
         }
       },
       {
         "green": [
-          131.3217,
-          362.4639
+          241.6261,
+          364.5742
         ],
-        "id": "s5-p4-20",
+        "id": "s5-p5-08",
         "order": 15,
-        "par": 4,
-        "tee": [
-          40.7731,
-          266.7501
-        ],
-        "transform": {
-          "mirrored": true,
-          "rotation_deg": 60,
-          "x": 40.7731,
-          "y": 266.7501
-        }
-      },
-      {
-        "green": [
-          50.2009,
-          243.8159
-        ],
-        "id": "s5-p4-06",
-        "order": 16,
-        "par": 4,
-        "tee": [
-          151.3217,
-          327.8229
-        ],
-        "transform": {
-          "mirrored": true,
-          "rotation_deg": 210,
-          "x": 151.3217,
-          "y": 327.8229
-        }
-      },
-      {
-        "green": [
-          297.3813,
-          267.8821
-        ],
-        "id": "s5-p5-02",
-        "order": 17,
         "par": 5,
         "tee": [
-          90.2009,
-          243.8159
+          54.4768,
+          321.0009
         ],
         "transform": {
           "mirrored": false,
           "rotation_deg": 0,
-          "x": 90.2009,
-          "y": 243.8159
+          "x": 54.4768,
+          "y": 321.0009
         }
       }
     ],
-    "score": 102.55814,
+    "score": 99.99196,
     "seed": 2654435772,
-    "total_trials": 130032
+    "total_trials": 96480
   },
   "complete": false,
   "demarcation": {
     "band": 40.0,
-    "interleave_pairs": 2,
+    "interleave_pairs": 0,
     "theta_deg": 0.0,
-    "wrong_side_holes": 5
+    "wrong_side_holes": 4
   },
   "front": {
     "clubhouse": [

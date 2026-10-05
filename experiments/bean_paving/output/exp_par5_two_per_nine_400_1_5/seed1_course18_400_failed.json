@@ -94,12 +94,12 @@
         "lookahead_pruned": 6,
         "parents": 52,
         "rejection_counts": {
-          "axis_crossing": 10923,
-          "bounds": 6100,
-          "fairway_gap": 12495,
-          "parallel_stack": 952
+          "axis_crossing": 10539,
+          "bounds": 5886,
+          "fairway_gap": 12064,
+          "parallel_stack": 920
         },
-        "trials": 12528
+        "trials": 12096
       },
       {
         "accepted": 2,
@@ -137,7 +137,7 @@
       "arrival_max_angle_deg": null,
       "bbox_weight": 0.00018,
       "beam_width": 72,
-      "bounded_quota": false,
+      "bounded_quota": true,
       "candidates_per_par": 4,
       "closing_lookahead_from": 7,
       "closure_lookahead": true,
@@ -333,7 +333,7 @@
     ],
     "score": 107.13551,
     "seed": 2654435768,
-    "total_trials": 91440
+    "total_trials": 91008
   },
   "complete": false,
   "demarcation": {

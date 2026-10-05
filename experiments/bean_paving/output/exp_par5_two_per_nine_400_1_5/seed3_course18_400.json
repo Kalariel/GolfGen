@@ -94,69 +94,67 @@
         "lookahead_pruned": 83,
         "parents": 72,
         "rejection_counts": {
-          "axis_crossing": 11438,
-          "bounds": 6611,
-          "fairway_gap": 15258,
-          "parallel_stack": 1783
+          "axis_crossing": 11238,
+          "bounds": 6503,
+          "fairway_gap": 14971,
+          "parallel_stack": 1766
         },
-        "trials": 15696
+        "trials": 15408
       },
       {
-        "accepted": 136,
-        "dead_ends": 39,
+        "accepted": 51,
+        "dead_ends": 51,
         "depth": 7,
-        "kept": 72,
-        "lookahead_calls": 136,
-        "lookahead_pruned": 135,
+        "kept": 45,
+        "lookahead_calls": 51,
+        "lookahead_pruned": 51,
         "parents": 72,
         "rejection_counts": {
-          "axis_crossing": 13105,
-          "bounds": 5090,
-          "fairway_gap": 17432,
-          "parallel_stack": 2954
-        },
-        "trials": 17568
-      },
-      {
-        "accepted": 462,
-        "dead_ends": 26,
-        "depth": 8,
-        "kept": 72,
-        "lookahead_calls": 462,
-        "lookahead_pruned": 449,
-        "parents": 72,
-        "rejection_counts": {
-          "axis_crossing": 11371,
-          "bounds": 118,
-          "clubhouse_clear": 125,
-          "fairway_gap": 15040,
-          "parallel_stack": 2790
-        },
-        "trials": 15552
-      },
-      {
-        "accepted": 34,
-        "dead_ends": 59,
-        "depth": 9,
-        "kept": 31,
-        "lookahead_calls": 0,
-        "lookahead_pruned": 0,
-        "parents": 72,
-        "rejection_counts": {
-          "axis_crossing": 8541,
-          "clubhouse_clear": 5122,
-          "clubhouse_return": 106,
-          "fairway_gap": 10201,
-          "parallel_stack": 423
+          "axis_crossing": 8041,
+          "bounds": 2544,
+          "fairway_gap": 10317,
+          "parallel_stack": 1754
         },
         "trials": 10368
+      },
+      {
+        "accepted": 53,
+        "dead_ends": 25,
+        "depth": 8,
+        "kept": 50,
+        "lookahead_calls": 53,
+        "lookahead_pruned": 45,
+        "parents": 45,
+        "rejection_counts": {
+          "axis_crossing": 5050,
+          "bounds": 100,
+          "fairway_gap": 6420,
+          "parallel_stack": 1772
+        },
+        "trials": 6480
+      },
+      {
+        "accepted": 8,
+        "dead_ends": 43,
+        "depth": 9,
+        "kept": 8,
+        "lookahead_calls": 0,
+        "lookahead_pruned": 0,
+        "parents": 50,
+        "rejection_counts": {
+          "axis_crossing": 5492,
+          "clubhouse_clear": 4097,
+          "fairway_gap": 7172,
+          "parallel_stack": 629
+        },
+        "trials": 7200
       }
     ],
     "params": {
       "arrival_max_angle_deg": null,
       "bbox_weight": 0.00018,
       "beam_width": 72,
-      "bounded_quota": false,
+      "bounded_quota": true,
       "candidates_per_par": 4,
       "closing_lookahead_from": 7,
       "closure_lookahead": true,
@@ -218,186 +216,186 @@
     "placed": [
       {
         "green": [
-          122.5043,
-          308.2121
+          308.2121,
+          277.4957
         ],
         "id": "s3-p3-03",
         "order": 10,
         "par": 3,
         "tee": [
-          136.0,
-          200.0
+          200.0,
+          264.0
         ],
         "transform": {
           "mirrored": false,
-          "rotation_deg": 90,
-          "x": 136.0,
-          "y": 200.0
+          "rotation_deg": 0,
+          "x": 200.0,
+          "y": 264.0
         }
       },
       {
         "green": [
-          29.9884,
-          189.539
+          189.539,
+          370.0116
         ],
         "id": "s3-p4-07",
         "order": 11,
         "par": 4,
         "tee": [
-          98.5043,
-          308.2121
+          308.2121,
+          301.4957
         ],
         "transform": {
-          "mirrored": false,
-          "rotation_deg": 240,
-          "x": 98.5043,
-          "y": 308.2121
+          "mirrored": true,
+          "rotation_deg": 150,
+          "x": 308.2121,
+          "y": 301.4957
         }
       },
       {
         "green": [
-          73.546,
-          362.1097
+          374.4161,
+          305.2037
         ],
-        "id": "s3-p4-05",
+        "id": "s3-p4-10",
         "order": 12,
         "par": 4,
         "tee": [
-          29.9884,
-          229.539
+          229.539,
+          370.0116
         ],
         "transform": {
-          "mirrored": false,
-          "rotation_deg": 60,
-          "x": 29.9884,
-          "y": 229.539
+          "mirrored": true,
+          "rotation_deg": 330,
+          "x": 229.539,
+          "y": 370.0116
         }
       },
       {
         "green": [
-          304.5834,
-          383.9405
+          147.3786,
+          389.3883
         ],
         "id": "s3-p5-05",
         "order": 13,
         "par": 5,
         "tee": [
-          93.546,
-          327.4687
+          358.4161,
+          332.9165
         ],
         "transform": {
-          "mirrored": true,
-          "rotation_deg": 30,
-          "x": 93.546,
-          "y": 327.4687
+          "mirrored": false,
+          "rotation_deg": 150,
+          "x": 358.4161,
+          "y": 332.9165
         }
       },
       {
         "green": [
-          386.5734,
-          264.6556
+          13.397,
+          306.3835
         ],
-        "id": "s3-p4-12",
+        "id": "s3-p4-20",
         "order": 14,
         "par": 4,
         "tee": [
-          292.5834,
-          363.1559
+          147.3786,
+          365.3883
         ],
         "transform": {
           "mirrored": false,
-          "rotation_deg": 330,
-          "x": 292.5834,
-          "y": 363.1559
+          "rotation_deg": 210,
+          "x": 147.3786,
+          "y": 365.3883
         }
       },
       {
         "green": [
-          271.9832,
-          363.8477
+          20.4069,
+          171.6202
         ],
-        "id": "s3-p4-02",
+        "id": "s3-p4-06",
         "order": 15,
         "par": 4,
         "tee": [
-          351.9323,
-          244.6556
-        ],
-        "transform": {
-          "mirrored": false,
-          "rotation_deg": 150,
-          "x": 351.9323,
-          "y": 244.6556
-        }
-      },
-      {
-        "green": [
-          357.5157,
-          215.9551
-        ],
-        "id": "s3-p4-04",
-        "order": 16,
-        "par": 4,
-        "tee": [
-          251.9832,
-          329.2067
+          48.038,
+          286.3835
         ],
         "transform": {
           "mirrored": true,
-          "rotation_deg": 300,
-          "x": 251.9832,
-          "y": 329.2067
+          "rotation_deg": 240,
+          "x": 48.038,
+          "y": 286.3835
         }
       },
       {
         "green": [
-          180.0482,
-          325.8915
+          185.769,
+          349.0878
         ],
         "id": "s3-p5-04",
-        "order": 17,
+        "order": 16,
         "par": 5,
         "tee": [
-          341.5157,
-          188.2423
+          48.1198,
+          187.6202
         ],
         "transform": {
           "mirrored": true,
-          "rotation_deg": 150,
-          "x": 341.5157,
-          "y": 188.2423
+          "rotation_deg": 60,
+          "x": 48.1198,
+          "y": 187.6202
         }
       },
       {
         "green": [
-          175.6793,
-          211.1283
+          90.9273,
+          219.0222
         ],
-        "id": "s3-p4-06",
+        "id": "s3-p4-19",
+        "order": 17,
+        "par": 4,
+        "tee": [
+          205.769,
+          314.4468
+        ],
+        "transform": {
+          "mirrored": true,
+          "rotation_deg": 210,
+          "x": 205.769,
+          "y": 314.4468
+        }
+      },
+      {
+        "green": [
+          218.9469,
+          229.6937
+        ],
+        "id": "s3-p4-04",
         "order": 18,
         "par": 4,
         "tee": [
-          148.0482,
-          325.8915
+          70.9273,
+          184.3812
         ],
         "transform": {
           "mirrored": false,
-          "rotation_deg": 300,
-          "x": 148.0482,
-          "y": 325.8915
+          "rotation_deg": 30,
+          "x": 70.9273,
+          "y": 184.3812
         }
       }
     ],
-    "score": 27.67702,
+    "score": 28.64547,
     "seed": 2654435770,
-    "total_trials": 135936
+    "total_trials": 116208
   },
   "complete": true,
   "demarcation": {
     "band": 40.0,
     "interleave_pairs": 2,
     "theta_deg": 0.0,
-    "wrong_side_holes": 8
+    "wrong_side_holes": 9
   },
   "front": {
     "clubhouse": [

@@ -1,5 +1,16 @@
 """Expérience A' — 2 par5 PAR NINE (PLAN.md ligne 6, décision utilisateur),
-seeds 1 à 5, 400×400, EXPÉRIENCE RUN-ONLY (aucun changement de code).
+seeds 1 à 5, 400×400.
+
+CORRECTIF (revue de code, 2026-10-05) : le premier run de cette expérience
+(``bounded_quota=True`` seul) ne posait ``par5_bounds``/``par5_deadline`` en
+mode forcé QUE côté front -- ``course_solver.solve_course`` ne mettait
+``SolverParams.bounded_quota=True`` que sur ``front_params``, jamais sur
+``back_params``, donc ``solver._bounded_quota_filter`` (et le forçage
+``par5_deadline`` qu'il porte) n'était jamais exercé côté BACK. Le run
+original (2/5) n'a donc jamais testé la contrainte annoncée sur le back (voir
+preuve : seed 2/3 avaient leur seul par5 du back au trou 8, au-delà de la
+deadline 7). Corrigé par le nouveau paramètre opt-in
+``solve_course(bounded_quota_back=True)`` ; ce script l'active désormais.
 
 Contexte (``output/exp_par5deadline_400_1_5/REPORT.md``, config A =
 ``par5_deadline=7`` avec ``par5_bounds`` par défaut ``[1, 3]``) : le front
@@ -88,7 +99,8 @@ def _build_params() -> tuple[SolverParams, SolverParams, ValidationRules]:
 def _run_seed(seed: int):
     start = time.perf_counter()
     front_params, back_params, rules = _build_params()
-    result = solve_course(seed, front_params, back_params, rules, bounded_quota=True)
+    result = solve_course(seed, front_params, back_params, rules, bounded_quota=True,
+                          bounded_quota_back=True)
     return result, time.perf_counter() - start
 
 
@@ -104,7 +116,7 @@ def _seed_summary(result: CourseSolveResult, elapsed: float, rules: ValidationRu
     par5_bounds = result.front.params.par5_bounds
     independent_violations = _course_violations(
         front_placed, back_placed, rules, clubhouse, front_clubhouse_max, back_clubhouse_max,
-        par3_bounds=par3_bounds, par5_bounds=par5_bounds,
+        par3_bounds=par3_bounds, par5_bounds=par5_bounds, par5_deadline=PAR5_DEADLINE,
     )
     independent_valid = (len(front_placed) == 9 and len(back_placed) == 9 and not independent_violations)
 

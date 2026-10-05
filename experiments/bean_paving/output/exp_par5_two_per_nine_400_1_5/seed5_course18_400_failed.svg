@@ -72,10 +72,8 @@
 <line x1="438.3" y1="630.5" x2="400.7" y2="565.4" stroke="#8b949e" stroke-dasharray="5 4"/>
 <line x1="647.9" y1="610.5" x2="713.0" y2="572.9" stroke="#8b949e" stroke-dasharray="5 4"/>
 <line x1="555.4" y1="730.4" x2="516.4" y2="752.9" stroke="#8b949e" stroke-dasharray="5 4"/>
-<line x1="240.7" y1="752.9" x2="218.2" y2="713.9" stroke="#8b949e" stroke-dasharray="5 4"/>
-<line x1="61.6" y1="548.1" x2="100.7" y2="525.5" stroke="#8b949e" stroke-dasharray="5 4"/>
-<line x1="270.9" y1="705.4" x2="308.5" y2="640.3" stroke="#8b949e" stroke-dasharray="5 4"/>
-<line x1="118.4" y1="482.4" x2="193.6" y2="482.4" stroke="#8b949e" stroke-dasharray="5 4"/>
+<line x1="240.7" y1="752.9" x2="305.9" y2="715.3" stroke="#8b949e" stroke-dasharray="5 4"/>
+<line x1="87.3" y1="650.0" x2="126.4" y2="627.5" stroke="#8b949e" stroke-dasharray="5 4"/>
 <polygon points="281.1,564.0 446.0,659.2 467.0,622.8 302.1,527.6" fill="#58a6ff" fill-opacity="0.09" stroke="#58a6ff" stroke-opacity="0.36" stroke-dasharray="6 3"/>
 <polygon points="293.9,560.5 442.6,646.4 454.2,626.3 305.5,540.4" fill="#58a6ff" fill-opacity="0.23" stroke="#58a6ff" stroke-opacity="0.72" stroke-width="1.4" stroke-dasharray="6 3"/>
 <polyline points="309.8,556.3 438.3,630.5" fill="none" stroke="#58a6ff" stroke-opacity="0.72" stroke-width="2.7"/>
@@ -100,32 +98,20 @@
 <circle cx="516.4" cy="752.9" r="3" fill="#f0f6fc"/>
 <circle cx="240.7" cy="752.9" r="4" fill="#56d364" stroke="#f0f6fc"/>
 <text x="520.4" y="748.9" font-size="10">B13/p4</text>
-<polygon points="248.5,705.7 139.5,642.8 70.2,517.9 31.4,539.4 106.7,675.1 226.3,744.2" fill="#56d364" fill-opacity="0.09" stroke="#56d364" stroke-opacity="0.36" stroke-dasharray="6 3"/>
-<polygon points="235.7,709.2 132.6,649.6 66.6,530.7 44.2,543.1 113.6,668.3 222.9,731.3" fill="#56d364" fill-opacity="0.23" stroke="#56d364" stroke-opacity="0.72" stroke-width="1.4" stroke-dasharray="6 3"/>
-<polyline points="218.2,713.9 123.1,659.0 61.6,548.1" fill="none" stroke="#56d364" stroke-opacity="0.72" stroke-width="2.7"/>
-<circle cx="218.2" cy="713.9" r="3" fill="#f0f6fc"/>
-<circle cx="61.6" cy="548.1" r="4" fill="#56d364" stroke="#f0f6fc"/>
-<text x="222.2" y="709.9" font-size="10">B14/p4</text>
-<polygon points="108.6,495.9 154.0,574.5 229.9,618.0 301.3,709.1 267.2,735.9 201.0,651.5 122.3,606.4 71.0,517.6" fill="#56d364" fill-opacity="0.09" stroke="#56d364" stroke-opacity="0.36" stroke-dasharray="6 3"/>
-<polygon points="105.2,508.7 147.1,581.4 223.6,625.3 288.1,707.5 268.8,722.7 207.2,644.2 129.2,599.5 83.9,521.0" fill="#56d364" fill-opacity="0.23" stroke="#56d364" stroke-opacity="0.72" stroke-width="1.4" stroke-dasharray="6 3"/>
-<polyline points="100.7,525.5 138.2,590.4 215.4,634.7 270.9,705.4" fill="none" stroke="#56d364" stroke-opacity="0.72" stroke-width="2.7"/>
-<circle cx="100.7" cy="525.5" r="3" fill="#f0f6fc"/>
-<circle cx="270.9" cy="705.4" r="4" fill="#56d364" stroke="#f0f6fc"/>
-<text x="104.7" y="521.5" font-size="10">B15/p4</text>
-<polygon points="317.6,674.5 165.7,586.8 83.3,477.5 123.3,447.3 199.6,548.5 342.7,631.1" fill="#56d364" fill-opacity="0.09" stroke="#56d364" stroke-opacity="0.36" stroke-dasharray="6 3"/>
-<polygon points="314.2,661.7 172.1,579.6 96.5,479.3 121.5,460.5 193.2,555.7 329.8,634.6" fill="#56d364" fill-opacity="0.23" stroke="#56d364" stroke-opacity="0.72" stroke-width="1.4" stroke-dasharray="6 3"/>
-<polyline points="308.5,640.3 182.7,567.7 118.4,482.4" fill="none" stroke="#56d364" stroke-opacity="0.72" stroke-width="2.7"/>
-<circle cx="308.5" cy="640.3" r="3" fill="#f0f6fc"/>
-<circle cx="118.4" cy="482.4" r="4" fill="#56d364" stroke="#f0f6fc"/>
-<text x="312.5" y="636.3" font-size="10">B16/p4</text>
-<polygon points="169.1,506.8 379.0,506.8 601.6,556.8 612.3,509.1 384.4,457.9 169.1,457.9" fill="#f2cc60" fill-opacity="0.09" stroke="#f2cc60" stroke-opacity="0.36" stroke-dasharray="6 3"/>
-<polygon points="178.5,497.4 380.0,497.4 594.4,545.6 601.0,516.2 383.4,467.3 178.5,467.3" fill="#f2cc60" fill-opacity="0.23" stroke="#f2cc60" stroke-opacity="0.72" stroke-width="1.4" stroke-dasharray="6 3"/>
-<polyline points="193.6,482.4 381.7,482.4 583.1,527.6" fill="none" stroke="#f2cc60" stroke-opacity="0.72" stroke-width="2.7"/>
-<circle cx="193.6" cy="482.4" r="3" fill="#f0f6fc"/>
-<circle cx="583.1" cy="527.6" r="4" fill="#f2cc60" stroke="#f0f6fc"/>
-<text x="197.6" y="478.4" font-size="10">B17/p5</text>
-<text x="24" y="830" font-size="14">ÉCHEC · seed 5 · front 9/9 · back 8/9</text>
+<polygon points="328.1,693.1 202.2,693.1 79.7,619.6 56.9,657.6 189.9,737.5 328.1,737.5" fill="#56d364" fill-opacity="0.09" stroke="#56d364" stroke-opacity="0.36" stroke-dasharray="6 3"/>
+<polygon points="318.7,702.5 199.6,702.5 83.0,632.5 69.8,654.4 192.5,728.1 318.7,728.1" fill="#56d364" fill-opacity="0.23" stroke="#56d364" stroke-opacity="0.72" stroke-width="1.4" stroke-dasharray="6 3"/>
+<polyline points="305.9,715.3 196.1,715.3 87.3,650.0" fill="none" stroke="#56d364" stroke-opacity="0.72" stroke-width="2.7"/>
+<circle cx="305.9" cy="715.3" r="3" fill="#f0f6fc"/>
+<circle cx="87.3" cy="650.0" r="4" fill="#56d364" stroke="#f0f6fc"/>
+<text x="309.9" y="711.3" font-size="10">B14/p4</text>
+<polygon points="103.0,650.9 317.6,650.9 488.0,741.0 509.8,699.7 329.2,604.1 103.0,604.1" fill="#f2cc60" fill-opacity="0.09" stroke="#f2cc60" stroke-opacity="0.36" stroke-dasharray="6 3"/>
+<polygon points="112.4,641.5 319.9,641.5 484.1,728.3 497.1,703.6 326.9,613.5 112.4,613.5" fill="#f2cc60" fill-opacity="0.23" stroke="#f2cc60" stroke-opacity="0.72" stroke-width="1.4" stroke-dasharray="6 3"/>
+<polyline points="126.4,627.5 323.4,627.5 478.3,709.4" fill="none" stroke="#f2cc60" stroke-opacity="0.72" stroke-width="2.7"/>
+<circle cx="126.4" cy="627.5" r="3" fill="#f0f6fc"/>
+<circle cx="478.3" cy="709.4" r="4" fill="#f2cc60" stroke="#f0f6fc"/>
+<text x="130.4" y="623.5" font-size="10">B15/p5</text>
+<text x="24" y="830" font-size="14">ÉCHEC · seed 5 · front 9/9 · back 6/9</text>
 <text x="24" y="852" font-size="11">violations ['back_return', 'back_par5_bounds', 'back_incomplete']</text>
-<text x="24" y="890" font-size="11">demi-plan theta=0° bande=40 · hors-camp=5 · paires front-back collées=2</text>
+<text x="24" y="890" font-size="11">demi-plan theta=0° bande=40 · hors-camp=4 · paires front-back collées=0</text>
 <text x="24" y="870" font-size="11">rough partagé : cœur plein, rough translucide, pile &gt; 3 en rose · F=plein, B=tirets</text>
 </svg>

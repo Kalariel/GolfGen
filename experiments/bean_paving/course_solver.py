@@ -52,7 +52,8 @@ def _course_violations(front: tuple[PlacedBean, ...], back: tuple[PlacedBean, ..
                        back_clubhouse_max: float | None = None, *,
                        arrival_max_angle_deg: float | None = None,
                        par3_bounds: tuple[int, int] | None = None,
-                       par5_bounds: tuple[int, int] | None = None) -> list[str]:
+                       par5_bounds: tuple[int, int] | None = None,
+                       par5_deadline: int | None = None) -> list[str]:
     """``back_clubhouse_max`` (défaut ``None``) : plafond dur départ/retour du
     BACK si différent de celui du front (décision utilisateur, tee 10 /
     green 18 autorisés plus loin -- voir ``solve_course(back_clubhouse_max=
@@ -72,7 +73,17 @@ def _course_violations(front: tuple[PlacedBean, ...], back: tuple[PlacedBean, ..
     chaque nine non vide, que son propre compte de par3/par5 tombe dans ces
     bornes (``solver.SolverParams.par3_bounds``/``par5_bounds``, mode
     ``bounded_quota``) -- distinct de ``par_quotas`` ci-dessous, qui ne
-    porte que sur le total GLOBAL des 18 trous."""
+    porte que sur le total GLOBAL des 18 trous.
+
+    ``par5_deadline`` (opt-in, défaut ``None`` -> vérification désactivée,
+    byte-identique) : vérifie indépendamment, pour chaque nine non vide, que
+    son ``par5_bounds[0]``-ième par5 (ordre de jeu, 1-indexé ; ``par5_bounds``
+    non fourni -> ``1``, même défaut que ``solver.SolverParams.par5_bounds``)
+    tombe au plus tard au trou ``par5_deadline`` -- mirroir indépendant du
+    forçage de ``solver._bounded_quota_filter``. Quand ``par5_bounds`` est
+    ``(n, n)`` (borne basse = borne haute), ce point est aussi le DERNIER
+    par5 du nine (il y en a exactement ``n``), donc la vérification couvre
+    alors TOUS les par5 du nine, pas seulement le premier requis."""
     back_max = front_clubhouse_max if back_clubhouse_max is None else back_clubhouse_max
     violations = [problem.kind for problem in validate((*front, *back), rules, check_links=False)]
     violations.extend(problem.kind for problem in validate(front, rules))
@@ -98,6 +109,11 @@ def _course_violations(front: tuple[PlacedBean, ...], back: tuple[PlacedBean, ..
                 violations.append(f"{label}_par3_bounds")
             if not (lo5 <= counts.get(5, 0) <= hi5):
                 violations.append(f"{label}_par5_bounds")
+        if par5_deadline is not None:
+            lo5 = (par5_bounds or (1, 9))[0]
+            par5_positions = [i + 1 for i, bean in enumerate(nine) if bean.template.par == 5]
+            if len(par5_positions) >= lo5 and par5_positions[lo5 - 1] > par5_deadline:
+                violations.append(f"{label}_par5_deadline")
     if front and back:
         if math.dist(front[0].tee, back[0].tee) < 18.0:
             violations.append("starts_not_distinct")
@@ -134,6 +150,7 @@ def solve_course(seed: int, front_params: SolverParams | None = None,
                  halfplane_band: float | None = None,
                  free_quota: bool = False,
                  bounded_quota: bool = False,
+                 bounded_quota_back: bool = False,
                  back_closing_lookahead_from: int | None = None,
                  back_clubhouse_max: float | None = None,
                  back_start_radii: tuple[float, ...] | None = None,
@@ -172,6 +189,26 @@ def solve_course(seed: int, front_params: SolverParams | None = None,
     ``_global_remaining_from_front``), ce qui tombe toujours dans ses
     propres bornes puisque ``GLOBAL_PAR_QUOTA[3] == GLOBAL_PAR_QUOTA[5] ==
     4 == min + max`` des bornes par défaut.
+
+    ``bounded_quota_back`` (opt-in, défaut ``False`` -> comportement
+    byte-identique, PRÉ-EXISTANT BUG corrigé ici) : seul ``front_params``
+    recevait ``bounded_quota=True`` ci-dessous -- ``back_params`` restait
+    inchangé et passé tel quel à ``solve_nine``, donc
+    ``solver._bounded_quota_filter`` (et le forçage ``par5_bounds``/
+    ``par5_deadline`` qu'il porte) n'était JAMAIS exercé côté BACK, quel que
+    soit ``bounded_quota``. Quand ``bounded_quota_back`` est vrai, ce
+    paramètre force aussi ``back_params.bounded_quota=True`` : le back doit
+    alors finir avec son propre compte de par3/par5 dans SES bornes
+    (``back_params.par3_bounds``/``par5_bounds``, déjà plombées par
+    l'appelant ou par ``par5_deadline`` ci-dessous) via le même mécanisme de
+    forçage que le front. Aucun ``global_quota`` n'est transmis au back (reste
+    ``None``, défaut de ``solve_nine``) : le back est le DERNIER nine, il n'y
+    a plus de nine suivant dont protéger le minimum (le « plafond solidaire »
+    de ``_bounded_quota_filter`` ne s'applique qu'entre deux nines successifs)
+    -- ses propres bornes ``lo``/``hi`` et son quota exact
+    (``_global_remaining_from_front``, déjà le ``par_quota`` transmis plus
+    bas) suffisent à le contraindre correctement, y compris quand
+    ``lo == hi`` (ex. ``(2, 2)``, voir les tests).
 
     ``back_closing_lookahead_from`` : surcharge ``back_params.closing_lookahead_from``
     (fermeture anticipée, ``solver._has_closing_sequence``) sans toucher au
@@ -250,6 +287,8 @@ def solve_course(seed: int, front_params: SolverParams | None = None,
     if arrival_max_angle_deg is not None:
         front_params = replace(front_params, arrival_max_angle_deg=arrival_max_angle_deg)
         back_params = replace(back_params, arrival_max_angle_deg=arrival_max_angle_deg)
+    if bounded_quota_back:
+        back_params = replace(back_params, bounded_quota=True)
     bank = generate_bank(seed, GenerationParams.eighteen())
 
     if bounded_quota:
@@ -277,6 +316,7 @@ def solve_course(seed: int, front_params: SolverParams | None = None,
         arrival_max_angle_deg=front_params.arrival_max_angle_deg,
         par3_bounds=front_params.par3_bounds if bounded_quota else None,
         par5_bounds=front_params.par5_bounds if bounded_quota else None,
+        par5_deadline=front_params.par5_deadline,
     )
     if not back.complete:
         violations.append("back_incomplete")
