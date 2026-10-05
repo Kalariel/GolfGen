@@ -62,7 +62,13 @@ def _largest_parallel_stack(beans: tuple[PlacedBean, ...], rules: ValidationRule
         if not any(problem.kind == "parallel_stack"
                    for problem in validate(beans, trial_rules, check_links=False)):
             return threshold
-    return len(beans)
+    # Inatteignable : une composante connexe ne peut jamais excéder
+    # ``len(beans)``, donc le seuil ``threshold == len(beans)`` ne laisse
+    # jamais subsister de violation ``parallel_stack`` — la boucle retourne
+    # toujours au plus tard à cette itération (revue de code : ancien
+    # ``return len(beans)`` après la boucle, jamais exécuté, couverture
+    # 0 % confirmée sur toute la suite de tests).
+    raise AssertionError("unreachable: threshold == len(beans) always clears parallel_stack")
 
 
 def _last_depths(diagnostics, count: int = 3) -> list[dict]:
@@ -87,7 +93,9 @@ def _run_seed(seed: int, rules: ValidationRules, halfplane_weight: float, *,
              free_quota: bool = False, bounded_quota: bool = False,
              par3_bounds: tuple[int, int] | None = None,
              par5_bounds: tuple[int, int] | None = None,
-             back_closing_lookahead_from: int | None = None):
+             back_closing_lookahead_from: int | None = None,
+             back_clubhouse_max: float | None = None,
+             back_start_radii: tuple[float, ...] | None = None):
     start = time.perf_counter()
     front_params = None
     if bounded_quota and (par3_bounds is not None or par5_bounds is not None):
@@ -104,7 +112,9 @@ def _run_seed(seed: int, rules: ValidationRules, halfplane_weight: float, *,
         )
     result = solve_course(seed, front_params, None, rules, halfplane_weight=halfplane_weight,
                           free_quota=free_quota, bounded_quota=bounded_quota,
-                          back_closing_lookahead_from=back_closing_lookahead_from)
+                          back_closing_lookahead_from=back_closing_lookahead_from,
+                          back_clubhouse_max=back_clubhouse_max,
+                          back_start_radii=back_start_radii)
     return result, time.perf_counter() - start
 
 
@@ -114,10 +124,22 @@ def _seed_summary(result: CourseSolveResult, elapsed: float, rules: ValidationRu
     all_placed = front_placed + back_placed
 
     clubhouse = rules.clubhouse
-    clubhouse_max = SolverParams().clubhouse_max  # défaut partagé par front/back, indépendant du run
-    independent_violations = _course_violations(front_placed, back_placed, rules, clubhouse, clubhouse_max)
+    # Plafond RÉEL utilisé par chaque nine (``result.*.params.clubhouse_max``),
+    # jamais un défaut partagé câblé en dur : si le back a reçu un plafond
+    # différent (décision utilisateur, ``solve_course(back_clubhouse_max=
+    # ...)``), la validation indépendante le reflète. Défaut inchangé
+    # (``SolverParams().clubhouse_max``, 50.0) quand le back est absent.
+    front_clubhouse_max = result.front.params.clubhouse_max
+    back_clubhouse_max = (SolverParams().clubhouse_max if result.back is None
+                          else result.back.params.clubhouse_max)
+    independent_violations = _course_violations(front_placed, back_placed, rules, clubhouse,
+                                                front_clubhouse_max, back_clubhouse_max)
     independent_valid = (len(front_placed) == 9 and len(back_placed) == 9
                          and not independent_violations)
+    back_start_distance = (round(math.dist(back_placed[0].tee, clubhouse), 3)
+                           if back_placed else None)
+    back_return_distance = (round(math.dist(back_placed[-1].green, clubhouse), 3)
+                            if back_placed else None)
 
     footprint_ratio = (sum(_polygon_area(bean.footprint) for bean in all_placed)
                        / (rules.width * rules.height)) if all_placed else 0.0
@@ -149,6 +171,10 @@ def _seed_summary(result: CourseSolveResult, elapsed: float, rules: ValidationRu
         "largest_parallel_stack": _largest_parallel_stack(all_placed, rules),
         "rejection_counts": dict(sorted(rejection_counts.items())),
         "back_last_depths": () if result.back is None else _last_depths(result.back.diagnostics),
+        "front_clubhouse_max": front_clubhouse_max,
+        "back_clubhouse_max": back_clubhouse_max,
+        "back_start_distance": back_start_distance,
+        "back_return_distance": back_return_distance,
     }
 
 
@@ -163,16 +189,21 @@ def _markdown(report: dict, rules: ValidationRules) -> str:
         f"- Quasi-doublons (similarité ≥ 85 %) : **{len(report['near_duplicates'])}**",
         f"- Temps total ({report.get('workers', 16)} process) : **{report.get('total_seconds', 0):.1f}s**",
         "",
-        "| Seed | Résultat | Front | Back | Temps | Essais | Empreinte | Pile max | Indép. |",
-        "|---:|:---:|:---:|:---:|---:|---:|---:|---:|:---:|",
+        "| Seed | Résultat | Front | Back | Temps | Essais | Empreinte | Pile max | Tee10→club | "
+        "Green18→club | Indép. |",
+        "|---:|:---:|:---:|:---:|---:|---:|---:|---:|---:|---:|:---:|",
     ]
     for item in report["seeds"]:
         result = "OK" if item["success"] else "échec"
         indep = "OK" if item["independent_valid"] else "KO"
+        tee10 = item.get("back_start_distance")
+        green18 = item.get("back_return_distance")
+        tee10_text = f"{tee10:.1f}" if tee10 is not None else "—"
+        green18_text = f"{green18:.1f}" if green18 is not None else "—"
         lines.append(
             f"| {item['seed']} | {result} | {item['front_holes']}/9 | {item['back_holes']}/9 | "
             f"{item['seconds']:.1f}s | {item['trials']} | {item['footprint_ratio']:.1%} | "
-            f"{item['largest_parallel_stack']} | {indep} |")
+            f"{item['largest_parallel_stack']} | {tee10_text} | {green18_text} | {indep} |")
     lines.extend(["", "## Pars par nine (ordre de jeu)", ""])
     for item in report["seeds"]:
         front = "-".join(map(str, item["front_pars"])) or "—"
@@ -215,6 +246,8 @@ def run_benchmark_course(output: Path, workers: int = 16, rules: ValidationRules
                          par3_bounds: tuple[int, int] | None = None,
                          par5_bounds: tuple[int, int] | None = None,
                          back_closing_lookahead_from: int | None = None,
+                         back_clubhouse_max: float | None = None,
+                         back_start_radii: tuple[float, ...] | None = None,
                          observations: list[str] | None = None) -> dict:
     rules = rules or ValidationRules(
         shared_rough=True, fairway_gap=5.0, edge_min=1.0,
@@ -228,7 +261,9 @@ def run_benchmark_course(output: Path, workers: int = 16, rules: ValidationRules
             result, elapsed = _run_seed(seed, rules, halfplane_weight, free_quota=free_quota,
                                         bounded_quota=bounded_quota, par3_bounds=par3_bounds,
                                         par5_bounds=par5_bounds,
-                                        back_closing_lookahead_from=back_closing_lookahead_from)
+                                        back_closing_lookahead_from=back_closing_lookahead_from,
+                                        back_clubhouse_max=back_clubhouse_max,
+                                        back_start_radii=back_start_radii)
             completed[result.seed] = (result, elapsed)
             print(f"seed {result.seed}: {'OK' if result.complete else 'échec'} "
                   f"front={result.front.state.depth}/9 "
@@ -239,7 +274,9 @@ def run_benchmark_course(output: Path, workers: int = 16, rules: ValidationRules
             futures = {executor.submit(_run_seed, seed, rules, halfplane_weight,
                                        free_quota=free_quota, bounded_quota=bounded_quota,
                                        par3_bounds=par3_bounds, par5_bounds=par5_bounds,
-                                       back_closing_lookahead_from=back_closing_lookahead_from): seed
+                                       back_closing_lookahead_from=back_closing_lookahead_from,
+                                       back_clubhouse_max=back_clubhouse_max,
+                                       back_start_radii=back_start_radii): seed
                       for seed in seeds}
             for future in as_completed(futures):
                 result, elapsed = future.result()
@@ -292,6 +329,8 @@ def run_benchmark_course(output: Path, workers: int = 16, rules: ValidationRules
             "par3_bounds": list(par3_bounds) if par3_bounds else None,
             "par5_bounds": list(par5_bounds) if par5_bounds else None,
             "back_closing_lookahead_from": back_closing_lookahead_from,
+            "back_clubhouse_max": back_clubhouse_max,
+            "back_start_radii": list(back_start_radii) if back_start_radii else None,
         },
         "workers": workers,
         "total_seconds": total_seconds,
@@ -323,6 +362,10 @@ def main() -> None:
     parser.add_argument("--par5-bounds", type=int, nargs=2, default=None, metavar=("MIN", "MAX"))
     parser.add_argument("--back-closing-lookahead-from", type=int, default=None,
                         help="Fermeture anticipée du back (défaut: comportement historique, 9)")
+    parser.add_argument("--back-clubhouse-max", type=float, default=None,
+                        help="Plafond dur départ/retour du back (défaut: comportement historique, 50.0)")
+    parser.add_argument("--back-start-radii", type=float, nargs="+", default=None,
+                        help="Rayons de départ du tee 10 (défaut: comportement historique, 44 48)")
     parser.add_argument("--output", type=Path,
                         default=Path("experiments/bean_paving/output/benchmark_course18_400_1_10"))
     args = parser.parse_args()
@@ -338,6 +381,8 @@ def main() -> None:
         par3_bounds=tuple(args.par3_bounds) if args.par3_bounds else None,
         par5_bounds=tuple(args.par5_bounds) if args.par5_bounds else None,
         back_closing_lookahead_from=args.back_closing_lookahead_from,
+        back_clubhouse_max=args.back_clubhouse_max,
+        back_start_radii=tuple(args.back_start_radii) if args.back_start_radii else None,
     )
     print(f"benchmark course18: {report['success_count']}/10 complet, "
           f"{report['independent_valid_count']}/10 validé indépendamment")

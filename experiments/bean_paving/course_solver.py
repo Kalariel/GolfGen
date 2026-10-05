@@ -48,13 +48,21 @@ class CourseSolveResult:
 
 def _course_violations(front: tuple[PlacedBean, ...], back: tuple[PlacedBean, ...],
                        rules: ValidationRules, clubhouse: tuple[float, float],
-                       clubhouse_max: float) -> list[str]:
+                       front_clubhouse_max: float,
+                       back_clubhouse_max: float | None = None) -> list[str]:
+    """``back_clubhouse_max`` (défaut ``None``) : plafond dur départ/retour du
+    BACK si différent de celui du front (décision utilisateur, tee 10 /
+    green 18 autorisés plus loin -- voir ``solve_course(back_clubhouse_max=
+    ...)``). ``None`` retombe sur ``front_clubhouse_max`` pour les deux
+    nines : tout appelant existant qui ne précise qu'un seul argument
+    positionnel garde un comportement strictement inchangé."""
+    back_max = front_clubhouse_max if back_clubhouse_max is None else back_clubhouse_max
     violations = [problem.kind for problem in validate((*front, *back), rules, check_links=False)]
     violations.extend(problem.kind for problem in validate(front, rules))
     violations.extend(problem.kind for problem in validate(back, rules))
     if len({bean.id for bean in (*front, *back)}) != len(front) + len(back):
         violations.append("duplicate_template")
-    for label, nine in (("front", front), ("back", back)):
+    for label, nine, clubhouse_max in (("front", front, front_clubhouse_max), ("back", back, back_max)):
         if not nine:
             violations.append(f"{label}_empty")
             continue
@@ -98,7 +106,9 @@ def solve_course(seed: int, front_params: SolverParams | None = None,
                  halfplane_band: float | None = None,
                  free_quota: bool = False,
                  bounded_quota: bool = False,
-                 back_closing_lookahead_from: int | None = None) -> CourseSolveResult:
+                 back_closing_lookahead_from: int | None = None,
+                 back_clubhouse_max: float | None = None,
+                 back_start_radii: tuple[float, ...] | None = None) -> CourseSolveResult:
     """``halfplane_*`` : surcharge le biais souple de demi-plan
     (``halfplane.py``, EXPERIMENT_18_HALFPLANE.md) côté front uniquement, sans
     toucher au reste de ``front_params`` — ``None`` (défaut) ne change rien,
@@ -133,7 +143,16 @@ def solve_course(seed: int, front_params: SolverParams | None = None,
 
     ``back_closing_lookahead_from`` : surcharge ``back_params.closing_lookahead_from``
     (fermeture anticipée, ``solver._has_closing_sequence``) sans toucher au
-    reste de ``back_params`` — ``None`` (défaut) ne change rien."""
+    reste de ``back_params`` — ``None`` (défaut) ne change rien.
+
+    ``back_clubhouse_max`` / ``back_start_radii`` (décision utilisateur) :
+    surchargent respectivement ``back_params.clubhouse_max`` (plafond dur
+    départ trou 10 / retour trou 18) et ``back_params.start_radii`` (rayons
+    de départ essayés au tee 10, voir ``solver._raw_transforms``) sans
+    toucher au reste de ``back_params`` ni au front — ``None`` (défaut) ne
+    change rien. Le plafond du front (``front_params.clubhouse_max``) et le
+    sien propre (``start_radii``) restent inchangés dans tous les cas : ces
+    deux surcharges ne touchent QUE le back."""
     if free_quota and bounded_quota:
         raise ValueError("free_quota et bounded_quota sont mutuellement exclusifs")
     rules = rules or ValidationRules()
@@ -161,6 +180,10 @@ def solve_course(seed: int, front_params: SolverParams | None = None,
     )
     if back_closing_lookahead_from is not None:
         back_params = replace(back_params, closing_lookahead_from=back_closing_lookahead_from)
+    if back_clubhouse_max is not None:
+        back_params = replace(back_params, clubhouse_max=back_clubhouse_max)
+    if back_start_radii is not None:
+        back_params = replace(back_params, start_radii=back_start_radii)
     bank = generate_bank(seed, GenerationParams.eighteen())
 
     if bounded_quota:
@@ -183,7 +206,7 @@ def solve_course(seed: int, front_params: SolverParams | None = None,
                       par_quota=back_quota)
     clubhouse = (rules.width / 2.0, rules.height / 2.0)
     violations = _course_violations(front.state.placed, back.state.placed, rules, clubhouse,
-                                     back_params.clubhouse_max)
+                                     front_params.clubhouse_max, back_params.clubhouse_max)
     if not back.complete:
         violations.append("back_incomplete")
     complete = front.complete and back.complete and not violations
