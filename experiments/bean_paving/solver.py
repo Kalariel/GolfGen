@@ -132,6 +132,17 @@ class SolverParams:
     # Intervalle ``(r_min, r_max)`` du rayon de départ tiré uniformément
     # quand ``random_departures`` est actif. Ignoré sinon.
     random_departure_radius: tuple[float, float] = (0.0, 0.0)
+    # Cible de score EXPLICITE pour la profondeur 9 (opt-in, décision
+    # utilisateur PLAN.md ligne 6, expérience "disque 25 équitable") :
+    # remplace la formule ``max(cible actuelle, rules.clubhouse_block_radius
+    # + 15)`` de ``_scaled_target_radius`` par une valeur posée directement
+    # par l'appelant -- utile quand la marge fixe de 15 blocs au-dessus du
+    # disque ne suffit pas (ex. ``clubhouse_block_radius=25`` -> 40, trop
+    # proche de la frontière réelle de l'anneau jouable). ``None`` (défaut)
+    # retombe sur le comportement historique (formule ``+15`` si
+    # ``rules.clubhouse_block_radius`` est renseigné, sinon la cible
+    # d'origine) -- comportement byte-identique.
+    target_radius_depth9_min: float | None = None
 
 
 @dataclass(frozen=True)
@@ -211,6 +222,7 @@ class SolveResult:
                 "random_departures": self.params.random_departures,
                 "random_departure_count": self.params.random_departure_count,
                 "random_departure_radius": list(self.params.random_departure_radius),
+                "target_radius_depth9_min": self.params.target_radius_depth9_min,
             },
             "diagnostics": [{
                 "depth": item.depth,
@@ -340,7 +352,11 @@ def _scaled_target_radius(depth: int, params: SolverParams, rules: ValidationRul
         # disque (marge de 15 blocs), sinon le score pousserait le retour
         # DANS une zone que ``geometry.validate`` rejette de toute façon --
         # ``None`` (défaut) ne change rien.
-        if rules.clubhouse_block_radius is not None:
+        if params.target_radius_depth9_min is not None:
+            # Cible explicite (opt-in) : prend le pas sur la formule
+            # ``+15`` ci-dessous -- voir la docstring du paramètre.
+            target = max(target, params.target_radius_depth9_min)
+        elif rules.clubhouse_block_radius is not None:
             target = max(target, rules.clubhouse_block_radius + 15.0)
         return target
     map_scale = min(rules.width, rules.height) / 350.0

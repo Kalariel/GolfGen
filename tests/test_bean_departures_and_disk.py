@@ -187,3 +187,40 @@ def test_scaled_target_radius_depth9_widens_for_the_block_disk():
     assert _scaled_target_radius(9, params, without_disk) == min(35.0, 60.0 * 0.75)
     assert _scaled_target_radius(9, params, with_disk) == max(min(35.0, 60.0 * 0.75), 25.0 + 15.0)
     assert _scaled_target_radius(9, params, with_disk) == 40.0
+
+
+# -- solver.py : cible de profondeur 9 explicite (expérience "disque équitable") --
+
+
+def test_solver_params_target_radius_depth9_min_default_is_none_and_inert():
+    # Défaut ``None`` -> ``_scaled_target_radius`` retombe sur la formule
+    # historique (``+15`` si ``rules.clubhouse_block_radius`` est renseigné) :
+    # comportement byte-identique à avant ce paramètre.
+    from experiments.bean_paving.solver import _scaled_target_radius
+    params = SolverParams(clubhouse_max=60.0)
+    assert params.target_radius_depth9_min is None
+    with_disk = ValidationRules(clubhouse_block_radius=25.0)
+    assert _scaled_target_radius(9, params, with_disk) == 40.0
+
+
+def test_scaled_target_radius_depth9_min_overrides_the_plus15_formula():
+    # Valeur explicite (ex. 50.0, expérience "disque équitable") : prend le
+    # pas sur la formule ``+15`` (qui donnerait 40.0 ici) même avec le même
+    # disque -- et s'applique aussi SANS disque actif (``rules.clubhouse_block_radius``
+    # ``None``), contrairement à la formule qu'elle remplace.
+    from experiments.bean_paving.solver import _scaled_target_radius
+    params = SolverParams(clubhouse_max=80.0, target_radius_depth9_min=50.0)
+    with_disk = ValidationRules(clubhouse_block_radius=25.0)
+    without_disk = ValidationRules(clubhouse_block_radius=None)
+    assert _scaled_target_radius(9, params, with_disk) == 50.0
+    assert _scaled_target_radius(9, params, without_disk) == 50.0
+
+
+def test_scaled_target_radius_depth9_min_still_bounded_by_clubhouse_max():
+    # La cible reste un ``max(...)`` appliqué APRÈS le plafond
+    # ``min(_target_radius(9), clubhouse_max * 0.75)`` -- une valeur
+    # explicite plus petite que ce plafond ne l'abaisse pas.
+    from experiments.bean_paving.solver import _scaled_target_radius
+    params = SolverParams(clubhouse_max=200.0, target_radius_depth9_min=10.0)
+    rules = ValidationRules(clubhouse_block_radius=25.0)
+    assert _scaled_target_radius(9, params, rules) == min(35.0, 200.0 * 0.75)
