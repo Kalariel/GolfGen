@@ -13,6 +13,8 @@ from dataclasses import replace
 from unittest.mock import patch
 import inspect
 
+import pytest
+
 from experiments.bean_paving import course_solver as cs
 from experiments.bean_paving.bean_bank import GenerationParams, generate_bank
 from experiments.bean_paving.geometry import PlacedBean, Transform, ValidationRules
@@ -39,6 +41,18 @@ def test_default_bounded_quota_back_is_false():
         cs.solve_course(1, bounded_quota=True)
     assert captured["front"].bounded_quota is True
     assert captured["back"].bounded_quota is False
+
+
+def test_bounded_quota_back_without_bounded_quota_raises():
+    """Garde-fou (revue de code) : ``bounded_quota_back=True`` sans
+    ``bounded_quota=True`` est un piège -- ``back_quota`` (ligne ~307 de
+    ``course_solver.solve_course``) ne bascule sur
+    ``_global_remaining_from_front`` que si ``bounded_quota`` (ou
+    ``free_quota``) est vrai ; sinon le back recevrait le quota générique
+    ``PAR_QUOTAS`` alors que ``solver._bounded_quota_filter`` serait quand
+    même actif côté back. Doit lever ``ValueError`` avant tout calcul."""
+    with pytest.raises(ValueError):
+        cs.solve_course(1, bounded_quota_back=True)
 
 
 def test_bounded_quota_back_propagates_flag_to_back_params():

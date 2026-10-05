@@ -191,7 +191,11 @@ def solve_course(seed: int, front_params: SolverParams | None = None,
     4 == min + max`` des bornes par défaut.
 
     ``bounded_quota_back`` (opt-in, défaut ``False`` -> comportement
-    byte-identique, PRÉ-EXISTANT BUG corrigé ici) : seul ``front_params``
+    byte-identique, PRÉ-EXISTANT BUG corrigé ici, EXIGE ``bounded_quota=True``
+    sinon ``ValueError`` -- voir le garde-fou juste avant la génération de la
+    banque : sans ``bounded_quota``, ``back_quota`` (ligne ~307) resterait
+    ``PAR_QUOTAS`` générique alors que ``back_params.bounded_quota`` serait
+    quand même forcé à ``True`` ci-dessous, un piège silencieux) : seul ``front_params``
     recevait ``bounded_quota=True`` ci-dessous -- ``back_params`` restait
     inchangé et passé tel quel à ``solve_nine``, donc
     ``solver._bounded_quota_filter`` (et le forçage ``par5_bounds``/
@@ -247,6 +251,14 @@ def solve_course(seed: int, front_params: SolverParams | None = None,
     indépendante — ``None`` (défaut) ne change rien."""
     if free_quota and bounded_quota:
         raise ValueError("free_quota et bounded_quota sont mutuellement exclusifs")
+    if bounded_quota_back and not bounded_quota:
+        raise ValueError(
+            "bounded_quota_back=True sans bounded_quota=True est un piège : "
+            "back_quota (ligne ~307) ne bascule sur _global_remaining_from_front "
+            "que si bounded_quota (ou free_quota) est vrai, sinon le back reçoit "
+            "le quota générique PAR_QUOTAS alors que solver._bounded_quota_filter "
+            "est quand même actif côté back -- activez aussi bounded_quota=True."
+        )
     rules = rules or ValidationRules()
     front_params = front_params or SolverParams(
         beam_width=72,
