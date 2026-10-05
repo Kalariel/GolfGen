@@ -199,3 +199,194 @@ session, pour rester dans le périmètre convenu.
   conservé comme alias `steps_remaining=1`).
 - Sorties : `output/back_closure_400/seed{2,8,9,1}_failed.{json,svg}` +
   `summary.json` ; variante : `output/back_closure_400_variant_from6/summary.json`.
+
+## Reprise — A/B quota fixe vs quota borné, fermeture anticipée isolée
+
+Reprend les deux pistes laissées ouvertes ci-dessus, sur les mêmes 4 seeds
+(2, 8, 9, 1) et les mêmes règles (400×400, `shared_rough`, `fairway_gap=5`,
+`edge_min=1`, `max_parallel_stack=3`, `clubhouse_clear_radius=10`, poids
+demi-plan 0, `beam_width=72` front et back inchangé) :
+
+**A) Quota fixe `2/5/2` (`free_quota=False`, défaut historique) + fermeture
+anticipée isolée (`back_closing_lookahead_from=7`)** — cette fois sans le
+quota global libre, pour mesurer l'effet PROPRE de la fermeture anticipée
+sur le vrai plateau à 7-8/9 (pas le cas dégénéré profondeur-1 du run
+précédent).
+
+**B) Quota borné par nine (`solve_course(bounded_quota=True)`, nouveau,
+opt-in — défaut `False`, comportement byte-identique sans lui)** : chaque
+nine doit finir avec un compte de par3 ET de par5 dans `[1, 3]`
+(`SolverParams.par3_bounds` / `par5_bounds`, des paramètres, pas des
+constantes câblées) ; le par4 complète librement jusqu'à 9. Implémentation
+(`solver._bounded_quota_filter`, appelée depuis `expand_state` uniquement
+côté front) :
+
+1. **Forçage** : si le besoin TOTAL restant (somme des manques par3 + par5
+   par rapport à leur minimum) égale ou dépasse les emplacements restants,
+   SEULES les classes encore sous leur minimum deviennent éligibles (le
+   par4 est exclu de ce coup). Le forçage porte sur la somme des deux
+   classes, pas sur chacune isolément — sinon deux besoins qui deviennent
+   tendus au même coup (ex. profondeur 8, 2 emplacements restants, 1 par3 ET
+   1 par5 encore nécessaires) ne seraient forcés qu'à la toute dernière
+   profondeur, trop tard pour satisfaire les deux à la fois.
+2. **Plafond solidaire** : une classe bornée n'est éligible que si, après
+   l'avoir prise, le quota global restant (`joint_solver.GLOBAL_PAR_QUOTA`
+   moins ce que CE nine a RÉELLEMENT posé, jamais un compteur périmé —
+   `course_solver._bounded_front_quota` / `_global_remaining_from_front`)
+   laisse encore à l'AUTRE nine au moins son propre minimum.
+
+Le back reçoit ensuite exactement le quota global restant (même mécanisme
+que `free_quota`, via `_global_remaining_from_front`), qui tombe
+automatiquement dans ses propres bornes `[1, 3]` puisque
+`GLOBAL_PAR_QUOTA[3] == GLOBAL_PAR_QUOTA[5] == 4 == min + max` des bornes
+par défaut — si le front reste dans ses bornes, le reste pour le back y
+reste aussi, par construction arithmétique, pas par une vérification
+séparée côté back. Même fermeture anticipée isolée
+(`back_closing_lookahead_from=7`) que la config A.
+
+Compteur ajouté (`solver.DepthDiagnostics.lookahead_calls` /
+`lookahead_pruned`, nouveaux champs à défaut `0`, aucun autre champ modifié)
+pour mesurer si la fermeture anticipée est réellement exercée : incrémentés
+dans `expand_state` à chaque appel de `_has_closing_sequence`, `pruned`
+quand l'appel renvoie `False` (le candidat reçoit la pénalité +80, un
+rejet souple qui le défavorise à la sélection du beam, pas un retrait dur).
+
+### Résultat
+
+**A : 0/4 (identique au benchmark de référence sur ces 4 seeds). B : 3/4 —
+seeds 2, 8, 1 ferment à 18/18, validées indépendamment ; seule la seed 9
+reste bloquée à 8/9.**
+
+| Seed | Benchmark (réf.) | A (quota fixe + lookahead 7) | B (quota borné + lookahead 7) |
+|---:|:---:|:---:|:---:|
+| 2 | 8/9 (profondeur 9) | 8/9 (profondeur 9), 905.3s | **9/9 (18/18)**, 605.5s |
+| 8 | 8/9 (profondeur 9) | 8/9 (profondeur 9), 582.4s | **9/9 (18/18)**, 958.7s |
+| 9 | 8/9 (profondeur 9) | 8/9 (profondeur 9), 545.7s | 8/9 (profondeur 8), 535.0s |
+| 1 | 7/9 (profondeur 8) | 7/9 (profondeur 8), 445.2s | **9/9 (18/18)**, 693.3s |
+
+Validation indépendante (`geometry.validate` front+back+conjoint, contrôle
+départ/retour clubhouse, `course_solver._course_violations`) : **conforme
+sur les 3 succès B (seeds 2, 8, 1)**, aucune divergence avec `complete` du
+solveur ; sans objet sur A et sur B/seed 9 (pas de 18/18 à valider).
+
+### A — la fermeture anticipée isolée reproduit EXACTEMENT le plafond du benchmark
+
+Sur les 4 seeds, `back_holes` de A est identique, trou pour trou, au
+benchmark de référence (8, 8, 8, 7) — avec le même nombre de pars par
+classe au back (quota fixe `2/5/2` inchangé). La fermeture anticipée est
+bien exercée cette fois (contrairement au run précédent où elle ne
+s'activait jamais, le back mourant à la profondeur 1) :
+
+| Seed | Appels lookahead (back) | Renvoient `False` (pénalisés) | Taux |
+|---:|---:|---:|---:|
+| 2 | 2956 | 2956 | 100 % |
+| 8 | 2486 | 2486 | 100 % |
+| 9 | 791 | 791 | 100 % |
+| 1 | 336 | 336 | 100 % |
+
+**100 % des appels renvoient `False` sur les 4 seeds — la fermeture
+anticipée n'a JAMAIS trouvé de séquence valide vers le clubhouse depuis les
+états explorés aux profondeurs 6-8.** Ce n'est pas un bug : avec le quota
+fixe `2/5/2`, les classes de haricots disponibles pour les 2-3 derniers
+trous sont déjà déterminées (2 par3, 5 par4, 2 par5 au total, consommés
+dans un ordre que le beam a figé plus tôt) ; si la géométrie bloque
+réellement toute fermeture depuis ces états (mêmes causes dominantes que le
+benchmark : `axis_crossing`, `bounds`, `fairway_gap` aux profondeurs 6-7,
+puis `axis_crossing`/`clubhouse_clear`/`clubhouse_return` à la profondeur
+9 pour les seeds 2/8/9 ; uniquement `axis_crossing`/`fairway_gap`/
+`parallel_stack` à la profondeur 8 pour la seed 1, confirmant la
+description déjà posée dans ce document), la sonde de plausibilité ne peut
+que le confirmer plus tôt — elle ne crée pas de nouvelles options. La
+pénalité +80 réordonne la sélection du beam parmi des candidats tous
+également condamnés, elle ne change pas l'issue. **Conclusion A :
+isolée du quota global libre, la fermeture anticipée ne résout pas le
+plafond à 7-8/9 — elle le détecte, mais ne peut pas le contourner tant que
+le quota par-nine fixe limite les classes disponibles en fin de nine.**
+
+### B — le quota borné lève le plafond sur 3 seeds sur 4
+
+Le front se stabilise systématiquement sur la même composition `par3=3,
+par4=5, par5=1` (plafond haut de `par3_bounds`, plancher bas de
+`par5_bounds`) sur les 4 seeds, laissant au back un quota global restant
+`{3: 1, 4: 5, 5: 3}` — vérifié identique sur les 4 seeds, succès comme
+échec. Contrairement au run précédent (quota global libre SANS garde-fou,
+où le front épuisait le par3 à 4/4 et en laissait 0 au back), le back garde
+ici toujours au moins 1 par3 pour ouvrir — exactement le garde-fou suggéré
+au point de reprise ci-dessus.
+
+Sur les 3 succès (seeds 2, 8, 1), le beam atteint la profondeur 9 avec
+quelques états acceptés (2, 20, 6 respectivement) là où A n'en a jamais
+aucun — la diversité supplémentaire apportée par le par5 restant au back
+(3 au lieu de 2) et par l'ordre différent des classes (le quota borné
+réordonne `_par_order` différemment du `2/5/2` fixe) suffit, sur ces 3
+seeds, à ouvrir des chemins de fermeture que le quota fixe fermait
+systématiquement.
+
+La seed 9 (échec, 8/9) a la MÊME composition de quota back `{3: 1, 4: 5,
+5: 3}` que les 3 succès — l'échec n'est donc pas une carence de quota mais
+un blocage géométrique propre à cette seed (profondeur 8 : seulement 5
+états acceptés sur 5328 essais, causes `axis_crossing`/`bounds` ; profondeur
+9 : 0 accepté sur 720 essais, cause dominante `clubhouse_return` (657/720,
+91 %) — la seed se rapproche du clubhouse mais ne rentre jamais dans
+`clubhouse_max`, contrairement aux 3 autres qui mêlaient davantage
+`axis_crossing`/`clubhouse_clear`).
+
+Fermeture anticipée en B (comme en A, exercée des centaines à quelques
+milliers de fois) :
+
+| Seed | Appels | Pruned (`False`) | Trouvées (`True`) |
+|---:|---:|---:|---:|
+| 2 | 1373 | 1371 | 2 |
+| 8 | 2586 | 2580 | 6 |
+| 9 | 209 | 209 | 0 |
+| 1 | 691 | 685 | 6 |
+
+Sur les 3 succès, quelques appels (2 à 6) renvoient enfin `True` — la
+fermeture anticipée a donc, ici, un effet réel et mesurable (pas seulement
+une pénalité qui ne change jamais rien comme en A), même si elle reste
+l'exception (0,1-0,9 % des appels) plutôt que la règle : l'essentiel du
+travail de déblocage vient du quota borné, la fermeture anticipée confirme
+et accélère la détection des quelques chemins qui existent.
+
+### Comparaison au benchmark et au run précédent
+
+| | Benchmark (2/5/2, lookahead 9) | Quota global libre (lookahead 7) | A (2/5/2, lookahead 7) | B (borné, lookahead 7) |
+|---|:---:|:---:|:---:|:---:|
+| Score /4 (seeds 2,8,9,1) | 0/4 | 0/4 | 0/4 | **3/4** |
+| Meilleur résultat | 8/9 | 0/9 (profondeur 1) | 8/9 (identique) | **9/9 ×3** |
+| Cause dominante | géométrie fin de nine | par3 épuisé par le front | géométrie fin de nine (identique) | géométrie fin de nine (1 seed résiduelle) |
+| Lookahead exercé | non mesuré | jamais (mort avant profondeur 5) | oui, 100 % pruned | oui, 0,1-0,9 % trouvées |
+
+### Conclusion
+
+Le quota borné par nine (`bounded_quota=True`) est, sur cet échantillon de
+4 seeds, la première variante de cette série à dépasser le plafond
+historique de 7-8/9 — **3 seeds sur 4 ferment à 18/18**, validées
+indépendamment, contre 0/10 au benchmark et 0/4 aux deux tentatives
+précédentes (quota global libre, puis fermeture anticipée isolée avec
+quota fixe). La fermeture anticipée seule (config A), isolée du quota,
+confirme la conclusion du run précédent : elle détecte bien le blocage
+(exercée des centaines à quelques milliers de fois par seed) mais ne le
+lève pas tant que le quota par-nine fixe limite les classes disponibles en
+fin de nine — le levier qui fonctionne est le garde-fou de quota, pas la
+profondeur de la sonde de fermeture.
+
+Reste un échec sur quatre (seed 9, B) : blocage géométrique
+(`clubhouse_return` dominant à la profondeur 9) avec une composition de
+quota pourtant identique aux 3 succès — pas un problème de garde-fou
+supplémentaire à ajouter, un cas à reprendre avec d'autres leviers (plus de
+largeur de beam, d'autres bornes `par3_bounds`/`par5_bounds`, ou une
+fermeture anticipée moins restrictive en largeur réduite) si cette piste
+est poursuivie.
+
+Code ajouté pour cette reprise : `solver.SolverParams.bounded_quota` /
+`par3_bounds` / `par5_bounds` (opt-in, défaut `False` / `(1, 3)` / `(1, 3)`,
+comportement byte-identique sans eux), `solver._bounded_quota_filter`,
+`solver.expand_state(global_quota=...)`, `solver.solve_nine(global_quota=...)`,
+`course_solver.solve_course(bounded_quota=...)`,
+`course_solver._bounded_front_quota`, `solver.DepthDiagnostics.lookahead_calls`
+/ `lookahead_pruned` (nouveaux champs, défaut `0`). Tests rapides :
+`tests/test_bean_back_closure.py` (forçage, plafond, quota global, défauts
+inchangés, front jamais sous le minimum du back). Sorties :
+`output/closure_ab_400/{A,B}/seed{2,8,9,1}_{success,failed}.{json,svg}` +
+`output/closure_ab_400/summary.json`.

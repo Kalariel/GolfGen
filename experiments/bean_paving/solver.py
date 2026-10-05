@@ -74,6 +74,15 @@ class SolverParams:
     # valeurs ne changent rien quand ``closing_lookahead_from`` reste à 9.
     lookahead_candidates_per_par: int = 1
     lookahead_transforms_per_candidate: int = 4
+    # Quota borné par nine (EXPERIMENT_18_CLOSURE.md, opt-in, défaut ``False``
+    # -> comportement byte-identique). Quand activé (``bounded_quota=True``),
+    # ``expand_state`` applique ``_bounded_quota_filter`` : chaque nine doit
+    # finir avec un compte de par3 et de par5 dans ces bornes ; le par4
+    # complète librement jusqu'à 9. Les bornes sont des paramètres, pas des
+    # constantes câblées.
+    bounded_quota: bool = False
+    par3_bounds: tuple[int, int] = (1, 3)
+    par5_bounds: tuple[int, int] = (1, 3)
 
 
 @dataclass(frozen=True)
@@ -96,6 +105,14 @@ class DepthDiagnostics:
     kept: int
     dead_ends: int
     rejection_counts: dict[str, int]
+    # Fermeture anticipée (EXPERIMENT_18_CLOSURE.md) : combien de fois
+    # ``_has_closing_sequence`` a été appelée à cette profondeur, et combien
+    # de fois elle a renvoyé ``False`` (pénalité +80, le candidat est
+    # défavorisé pour la sélection du beam -- une "coupe" souple, pas un
+    # retrait dur). Toujours (0, 0) quand ``closure_lookahead`` ne se
+    # déclenche pas à cette profondeur (comportement historique inchangé).
+    lookahead_calls: int = 0
+    lookahead_pruned: int = 0
 
 
 @dataclass(frozen=True)
@@ -134,6 +151,9 @@ class SolveResult:
                 "closing_lookahead_from": self.params.closing_lookahead_from,
                 "lookahead_candidates_per_par": self.params.lookahead_candidates_per_par,
                 "lookahead_transforms_per_candidate": self.params.lookahead_transforms_per_candidate,
+                "bounded_quota": self.params.bounded_quota,
+                "par3_bounds": list(self.params.par3_bounds),
+                "par5_bounds": list(self.params.par5_bounds),
                 "halfplane_weight": self.params.halfplane_weight,
                 "halfplane_theta_deg": self.params.halfplane_theta_deg,
                 "halfplane_band": self.params.halfplane_band,
@@ -146,6 +166,8 @@ class SolveResult:
                 "kept": item.kept,
                 "dead_ends": item.dead_ends,
                 "rejection_counts": dict(sorted(item.rejection_counts.items())),
+                "lookahead_calls": item.lookahead_calls,
+                "lookahead_pruned": item.lookahead_pruned,
             } for item in self.diagnostics],
             "placed": [{
                 "order": bean.order,
@@ -192,6 +214,50 @@ def _consume(values: tuple[int, int, int], par: int) -> tuple[int, int, int]:
     result = list(values)
     result[(3, 4, 5).index(par)] -= 1
     return tuple(result)
+
+
+def _bounded_quota_filter(pars: list[int], state: SearchState, depth: int,
+                          params: SolverParams,
+                          global_quota: dict[int, int] | None) -> list[int]:
+    """Filtre additionnel pour le mode quota borné par nine (opt-in,
+    ``params.bounded_quota``, EXPERIMENT_18_CLOSURE.md). ``pars`` est déjà
+    restreint aux classes dont la capacité haute (``state.remaining``) n'est
+    pas épuisée.
+
+    1. Forçage : si une classe bornée (par3/par5) ne peut plus atteindre son
+       minimum ``lo`` avec les emplacements restants (CE coup inclus), elle
+       devient la SEULE classe éligible -- sinon ce nine pourrait finir avec
+       un compte sous le minimum (ex. 0 par3) sans jamais violer la règle 2,
+       qui ne protège que l'AUTRE nine.
+    2. Plafond solidaire : une classe bornée n'est éligible que si, après
+       l'avoir prise, le quota global restant (``global_quota`` moins ce que
+       CE nine a RÉELLEMENT posé, jamais un compteur périmé) laisse encore à
+       l'autre nine au moins son propre minimum ``lo``.
+    """
+    bounds = {3: params.par3_bounds, 5: params.par5_bounds}
+    counts = Counter(bean.template.par for bean in state.placed)
+    slots_from_now = 10 - depth  # emplacements restants, CE coup inclus
+
+    # Forçage sur le besoin TOTAL (somme des deux classes bornées), pas
+    # classe par classe isolément : sinon deux besoins qui deviennent
+    # tendus au même moment (ex. profondeur 8, 2 emplacements restants, 1
+    # par3 ET 1 par5 encore nécessaires) ne seraient forcés qu'à la toute
+    # dernière profondeur, trop tard pour satisfaire les deux à la fois.
+    needs = {par: max(0, lo - counts[par]) for par, (lo, _hi) in bounds.items()}
+    if sum(needs.values()) >= slots_from_now:
+        forced = [par for par, need in needs.items() if need > 0]
+        return [par for par in pars if par in forced]
+
+    eligible = []
+    for par in pars:
+        if par in bounds:
+            lo, hi = bounds[par]
+            if counts[par] + 1 > hi:
+                continue
+            if global_quota is not None and global_quota[par] - (counts[par] + 1) < lo:
+                continue
+        eligible.append(par)
+    return eligible
 
 
 def _candidate_templates(bank: BeanBank, state: SearchState, par: int,
@@ -422,6 +488,8 @@ class ExpansionResult:
     trials: int
     accepted: int
     rejected: Counter
+    lookahead_calls: int = 0
+    lookahead_pruned: int = 0
 
 
 def expand_state(state: SearchState, target_depth: int, bank: BeanBank,
@@ -429,7 +497,8 @@ def expand_state(state: SearchState, target_depth: int, bank: BeanBank,
                  rules: ValidationRules, seed: int, *,
                  obstacles: tuple[PlacedBean, ...] = (),
                  blocked_ids: frozenset[str] = frozenset(), order_offset: int = 0,
-                 par_quota: dict[int, int] = PAR_QUOTAS) -> ExpansionResult:
+                 par_quota: dict[int, int] = PAR_QUOTAS,
+                 global_quota: dict[int, int] | None = None) -> ExpansionResult:
     """Développe un seul état d'une profondeur : candidats, transformations,
     validation, score. Corps extrait de la boucle de ``solve_nine`` pour être
     réutilisé par le paveur conjoint (``joint_solver.py``), qui développe les
@@ -440,12 +509,20 @@ def expand_state(state: SearchState, target_depth: int, bank: BeanBank,
     classes essayées en premier (l'éligibilité reste pilotée par
     ``state.remaining``) : un compteur partagé peut ainsi remplacer le
     module-level ``PAR_QUOTAS`` sans toucher à cette fonction.
+
+    ``global_quota`` : budget global fixe (ex. ``joint_solver.GLOBAL_PAR_QUOTA``)
+    utilisé UNIQUEMENT par ``_bounded_quota_filter`` quand
+    ``params.bounded_quota`` est vrai (EXPERIMENT_18_CLOSURE.md) ; ``None``
+    (défaut) ne change rien.
     """
     children: list[SearchState] = []
     rejected: Counter = Counter()
     trials = accepted = 0
+    lookahead_calls = lookahead_pruned = 0
     remaining = _remaining_dict(state.remaining)
     pars = [par for par in _par_order(par_quota) if remaining[par] > 0]
+    if params.bounded_quota:
+        pars = _bounded_quota_filter(pars, state, target_depth, params, global_quota)
     for par in pars:
         for template in _candidate_templates(bank, state, par, params, seed, blocked_ids):
             for transform in _transforms(template, state, clubhouse, params, seed, rules):
@@ -475,11 +552,14 @@ def expand_state(state: SearchState, target_depth: int, bank: BeanBank,
                     closure = _has_closing_sequence(child, bank, clubhouse, params, rules, seed,
                                                     obstacles, blocked_ids, order_offset, par_quota,
                                                     steps_remaining=steps_remaining)
+                    lookahead_calls += 1
+                    if not closure:
+                        lookahead_pruned += 1
                     child = SearchState(candidate, remaining_after,
                                         child.score - 80.0 if closure else child.score + 80.0)
                 children.append(child)
                 accepted += 1
-    return ExpansionResult(tuple(children), trials, accepted, rejected)
+    return ExpansionResult(tuple(children), trials, accepted, rejected, lookahead_calls, lookahead_pruned)
 
 
 def solve_nine(seed: int, params: SolverParams | None = None,
@@ -487,8 +567,12 @@ def solve_nine(seed: int, params: SolverParams | None = None,
                obstacles: tuple[PlacedBean, ...] = (),
                blocked_ids: frozenset[str] = frozenset(), order_offset: int = 0,
                par_quota: dict[int, int] | None = None,
-               require_full_quota: bool = True) -> SolveResult:
-    """``require_full_quota`` (défaut ``True``, inchangé) : la complétude
+               require_full_quota: bool = True,
+               global_quota: dict[int, int] | None = None) -> SolveResult:
+    """``global_quota`` : transmis tel quel à ``expand_state`` (voir sa
+    docstring) ; sans effet si ``params.bounded_quota`` est faux (défaut).
+
+    ``require_full_quota`` (défaut ``True``, inchangé) : la complétude
     exige que ``remaining`` tombe exactement à ``(0, 0, 0)`` à la profondeur
     9 — vrai par construction dès que la somme du quota de départ est 9
     (``PAR_QUOTAS`` ou tout quota par-nine qui somme à 9), puisqu'aucune
@@ -512,26 +596,30 @@ def solve_nine(seed: int, params: SolverParams | None = None,
         next_states: list[SearchState] = []
         rejected: Counter = Counter()
         trials = accepted = dead_ends = 0
+        lookahead_calls = lookahead_pruned = 0
         parent_count = len(beam)
         for state in beam:
             result = expand_state(state, target_depth, bank, clubhouse, params, rules, seed,
                                   obstacles=obstacles, blocked_ids=blocked_ids,
-                                  order_offset=order_offset, par_quota=quota)
+                                  order_offset=order_offset, par_quota=quota,
+                                  global_quota=global_quota)
             trials += result.trials
             accepted += result.accepted
             rejected.update(result.rejected)
             next_states.extend(result.children)
+            lookahead_calls += result.lookahead_calls
+            lookahead_pruned += result.lookahead_pruned
             if result.accepted == 0:
                 dead_ends += 1
 
         if not next_states:
             diagnostics.append(DepthDiagnostics(target_depth, parent_count, trials, accepted, 0,
-                                                dead_ends, dict(rejected)))
+                                                dead_ends, dict(rejected), lookahead_calls, lookahead_pruned))
             break
         beam = _select_beam(next_states, params.beam_width)
         best = beam[0]
         diagnostics.append(DepthDiagnostics(target_depth, parent_count, trials, accepted, len(beam),
-                                            dead_ends, dict(rejected)))
+                                            dead_ends, dict(rejected), lookahead_calls, lookahead_pruned))
         if target_depth == 9:
             break
 

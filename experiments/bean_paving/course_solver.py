@@ -82,6 +82,14 @@ def _global_remaining_from_front(front_placed: tuple[PlacedBean, ...]) -> dict[i
     return {par: GLOBAL_PAR_QUOTA[par] - used[par] for par in (3, 4, 5)}
 
 
+def _bounded_front_quota(params: SolverParams) -> dict[int, int]:
+    """Capacité haute de départ du front en mode quota borné
+    (EXPERIMENT_18_CLOSURE.md) : les bornes de ``params.par3_bounds`` /
+    ``par5_bounds`` plafonnent par3/par5, le par4 complète librement
+    jusqu'à 9 (aucun plafond propre autre que les 9 trous du nine)."""
+    return {3: params.par3_bounds[1], 4: 9, 5: params.par5_bounds[1]}
+
+
 def solve_course(seed: int, front_params: SolverParams | None = None,
                  back_params: SolverParams | None = None,
                  rules: ValidationRules | None = None, *,
@@ -89,6 +97,7 @@ def solve_course(seed: int, front_params: SolverParams | None = None,
                  halfplane_theta_deg: float | None = None,
                  halfplane_band: float | None = None,
                  free_quota: bool = False,
+                 bounded_quota: bool = False,
                  back_closing_lookahead_from: int | None = None) -> CourseSolveResult:
     """``halfplane_*`` : surcharge le biais souple de demi-plan
     (``halfplane.py``, EXPERIMENT_18_HALFPLANE.md) côté front uniquement, sans
@@ -107,9 +116,26 @@ def solve_course(seed: int, front_params: SolverParams | None = None,
     lui-même) — donc le back garde toujours au moins un candidat inutilisé
     disponible par classe qu'il lui reste à poser.
 
+    ``bounded_quota`` (défaut ``False``, inchangé, incompatible avec
+    ``free_quota`` — EXPERIMENT_18_CLOSURE.md) : chaque nine doit finir avec
+    un compte de par3 et de par5 dans ``front_params.par3_bounds`` /
+    ``par5_bounds`` (``[1, 3]`` par défaut), le par4 complétant librement
+    jusqu'à 9 ; le total global reste exactement ``4/10/4``. Le front
+    (``solver._bounded_quota_filter``, activé via
+    ``SolverParams.bounded_quota``) n'a le droit de prendre une classe
+    bornée que si le quota global restant APRÈS (recalculé depuis les
+    haricots réellement posés, jamais un compteur périmé) laisse encore au
+    back au moins son propre minimum ; le back reçoit ensuite exactement ce
+    qui reste (même mécanisme que ``free_quota``, via
+    ``_global_remaining_from_front``), ce qui tombe toujours dans ses
+    propres bornes puisque ``GLOBAL_PAR_QUOTA[3] == GLOBAL_PAR_QUOTA[5] ==
+    4 == min + max`` des bornes par défaut.
+
     ``back_closing_lookahead_from`` : surcharge ``back_params.closing_lookahead_from``
     (fermeture anticipée, ``solver._has_closing_sequence``) sans toucher au
     reste de ``back_params`` — ``None`` (défaut) ne change rien."""
+    if free_quota and bounded_quota:
+        raise ValueError("free_quota et bounded_quota sont mutuellement exclusifs")
     rules = rules or ValidationRules()
     front_params = front_params or SolverParams(
         beam_width=72,
@@ -137,14 +163,21 @@ def solve_course(seed: int, front_params: SolverParams | None = None,
         back_params = replace(back_params, closing_lookahead_from=back_closing_lookahead_from)
     bank = generate_bank(seed, GenerationParams.eighteen())
 
-    front_quota = dict(GLOBAL_PAR_QUOTA) if free_quota else dict(PAR_QUOTAS)
-    front = solve_nine(seed, front_params, rules, bank=bank, par_quota=front_quota,
-                       require_full_quota=not free_quota)
+    if bounded_quota:
+        front_params = replace(front_params, bounded_quota=True)
+        front_quota = _bounded_front_quota(front_params)
+        front = solve_nine(seed, front_params, rules, bank=bank, par_quota=front_quota,
+                           require_full_quota=False, global_quota=GLOBAL_PAR_QUOTA)
+    else:
+        front_quota = dict(GLOBAL_PAR_QUOTA) if free_quota else dict(PAR_QUOTAS)
+        front = solve_nine(seed, front_params, rules, bank=bank, par_quota=front_quota,
+                           require_full_quota=not free_quota)
     if not front.complete:
         return CourseSolveResult(seed, front, None, False, ("front_incomplete",))
 
     used = frozenset(bean.id for bean in front.state.placed)
-    back_quota = _global_remaining_from_front(front.state.placed) if free_quota else dict(PAR_QUOTAS)
+    back_quota = (_global_remaining_from_front(front.state.placed) if (free_quota or bounded_quota)
+                 else dict(PAR_QUOTAS))
     back = solve_nine(seed ^ 0x9E3779B9, back_params, rules, bank=bank,
                       obstacles=front.state.placed, blocked_ids=used, order_offset=9,
                       par_quota=back_quota)
