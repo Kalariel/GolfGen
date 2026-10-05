@@ -108,7 +108,9 @@ def solve_course(seed: int, front_params: SolverParams | None = None,
                  bounded_quota: bool = False,
                  back_closing_lookahead_from: int | None = None,
                  back_clubhouse_max: float | None = None,
-                 back_start_radii: tuple[float, ...] | None = None) -> CourseSolveResult:
+                 back_start_radii: tuple[float, ...] | None = None,
+                 back_start_radius_groups: tuple[tuple[float, ...], ...] | None = None,
+                 back_start_radius_depth2_min_survivors: int | None = None) -> CourseSolveResult:
     """``halfplane_*`` : surcharge le biais souple de demi-plan
     (``halfplane.py``, EXPERIMENT_18_HALFPLANE.md) côté front uniquement, sans
     toucher au reste de ``front_params`` — ``None`` (défaut) ne change rien,
@@ -152,7 +154,16 @@ def solve_course(seed: int, front_params: SolverParams | None = None,
     toucher au reste de ``back_params`` ni au front — ``None`` (défaut) ne
     change rien. Le plafond du front (``front_params.clubhouse_max``) et le
     sien propre (``start_radii``) restent inchangés dans tous les cas : ces
-    deux surcharges ne touchent QUE le back."""
+    deux surcharges ne touchent QUE le back.
+
+    ``back_start_radius_groups`` / ``back_start_radius_depth2_min_survivors``
+    (décision utilisateur, PLAN.md ligne 6) : surchargent respectivement
+    ``back_params.start_radius_groups`` et
+    ``back_params.start_radius_depth2_min_survivors`` (diversité stratifiée
+    des départs du tee 10 par groupe de rayon, voir
+    ``solver.SolverParams.start_radius_groups``) — ``None`` (défaut) ne
+    change rien ; comme les deux surcharges précédentes, ne touchent QUE le
+    back."""
     if free_quota and bounded_quota:
         raise ValueError("free_quota et bounded_quota sont mutuellement exclusifs")
     rules = rules or ValidationRules()
@@ -184,6 +195,11 @@ def solve_course(seed: int, front_params: SolverParams | None = None,
         back_params = replace(back_params, clubhouse_max=back_clubhouse_max)
     if back_start_radii is not None:
         back_params = replace(back_params, start_radii=back_start_radii)
+    if back_start_radius_groups is not None:
+        back_params = replace(back_params, start_radius_groups=back_start_radius_groups)
+    if back_start_radius_depth2_min_survivors is not None:
+        back_params = replace(back_params,
+                              start_radius_depth2_min_survivors=back_start_radius_depth2_min_survivors)
     bank = generate_bank(seed, GenerationParams.eighteen())
 
     if bounded_quota:

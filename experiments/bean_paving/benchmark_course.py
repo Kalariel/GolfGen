@@ -23,7 +23,7 @@ from experiments.bean_paving.benchmark import _angle_bin, _similarity
 from experiments.bean_paving.course_solver import CourseSolveResult, _course_violations, solve_course
 from experiments.bean_paving.geometry import PlacedBean, ValidationRules, validate
 from experiments.bean_paving.render_course import render_course_svg
-from experiments.bean_paving.solver import SolverParams
+from experiments.bean_paving.solver import SolverParams, _radius_group_index
 
 
 def _polygon_area(points) -> float:
@@ -95,7 +95,9 @@ def _run_seed(seed: int, rules: ValidationRules, halfplane_weight: float, *,
              par5_bounds: tuple[int, int] | None = None,
              back_closing_lookahead_from: int | None = None,
              back_clubhouse_max: float | None = None,
-             back_start_radii: tuple[float, ...] | None = None):
+             back_start_radii: tuple[float, ...] | None = None,
+             back_start_radius_groups: tuple[tuple[float, ...], ...] | None = None,
+             back_start_radius_depth2_min_survivors: int | None = None):
     start = time.perf_counter()
     front_params = None
     if bounded_quota and (par3_bounds is not None or par5_bounds is not None):
@@ -114,7 +116,9 @@ def _run_seed(seed: int, rules: ValidationRules, halfplane_weight: float, *,
                           free_quota=free_quota, bounded_quota=bounded_quota,
                           back_closing_lookahead_from=back_closing_lookahead_from,
                           back_clubhouse_max=back_clubhouse_max,
-                          back_start_radii=back_start_radii)
+                          back_start_radii=back_start_radii,
+                          back_start_radius_groups=back_start_radius_groups,
+                          back_start_radius_depth2_min_survivors=back_start_radius_depth2_min_survivors)
     return result, time.perf_counter() - start
 
 
@@ -140,6 +144,15 @@ def _seed_summary(result: CourseSolveResult, elapsed: float, rules: ValidationRu
                            if back_placed else None)
     back_return_distance = (round(math.dist(back_placed[-1].green, clubhouse), 3)
                             if back_placed else None)
+    # Groupe de rayon de départ dont est issu le back final (lignage du
+    # premier haricot, même regroupement que ``solver.SolverParams.
+    # start_radius_groups`` -- diagnostic PLAN.md ligne 6). ``None`` si le
+    # back n'a pas défini de groupes (comportement historique) ou n'a posé
+    # aucun trou.
+    back_start_groups = (None if result.back is None else result.back.params.start_radius_groups)
+    back_start_group = (None if not back_start_groups or not back_placed
+                        else list(back_start_groups[_radius_group_index(back_start_distance,
+                                                                         back_start_groups)]))
 
     footprint_ratio = (sum(_polygon_area(bean.footprint) for bean in all_placed)
                        / (rules.width * rules.height)) if all_placed else 0.0
@@ -175,6 +188,7 @@ def _seed_summary(result: CourseSolveResult, elapsed: float, rules: ValidationRu
         "back_clubhouse_max": back_clubhouse_max,
         "back_start_distance": back_start_distance,
         "back_return_distance": back_return_distance,
+        "back_start_group": back_start_group,
     }
 
 
@@ -190,8 +204,8 @@ def _markdown(report: dict, rules: ValidationRules) -> str:
         f"- Temps total ({report.get('workers', 16)} process) : **{report.get('total_seconds', 0):.1f}s**",
         "",
         "| Seed | Résultat | Front | Back | Temps | Essais | Empreinte | Pile max | Tee10→club | "
-        "Green18→club | Indép. |",
-        "|---:|:---:|:---:|:---:|---:|---:|---:|---:|---:|---:|:---:|",
+        "Green18→club | Groupe | Indép. |",
+        "|---:|:---:|:---:|:---:|---:|---:|---:|---:|---:|---:|---:|:---:|",
     ]
     for item in report["seeds"]:
         result = "OK" if item["success"] else "échec"
@@ -200,10 +214,12 @@ def _markdown(report: dict, rules: ValidationRules) -> str:
         green18 = item.get("back_return_distance")
         tee10_text = f"{tee10:.1f}" if tee10 is not None else "—"
         green18_text = f"{green18:.1f}" if green18 is not None else "—"
+        group = item.get("back_start_group")
+        group_text = "/".join(str(value) for value in group) if group else "—"
         lines.append(
             f"| {item['seed']} | {result} | {item['front_holes']}/9 | {item['back_holes']}/9 | "
             f"{item['seconds']:.1f}s | {item['trials']} | {item['footprint_ratio']:.1%} | "
-            f"{item['largest_parallel_stack']} | {tee10_text} | {green18_text} | {indep} |")
+            f"{item['largest_parallel_stack']} | {tee10_text} | {green18_text} | {group_text} | {indep} |")
     lines.extend(["", "## Pars par nine (ordre de jeu)", ""])
     for item in report["seeds"]:
         front = "-".join(map(str, item["front_pars"])) or "—"
@@ -248,6 +264,8 @@ def run_benchmark_course(output: Path, workers: int = 16, rules: ValidationRules
                          back_closing_lookahead_from: int | None = None,
                          back_clubhouse_max: float | None = None,
                          back_start_radii: tuple[float, ...] | None = None,
+                         back_start_radius_groups: tuple[tuple[float, ...], ...] | None = None,
+                         back_start_radius_depth2_min_survivors: int | None = None,
                          observations: list[str] | None = None) -> dict:
     rules = rules or ValidationRules(
         shared_rough=True, fairway_gap=5.0, edge_min=1.0,
@@ -263,7 +281,10 @@ def run_benchmark_course(output: Path, workers: int = 16, rules: ValidationRules
                                         par5_bounds=par5_bounds,
                                         back_closing_lookahead_from=back_closing_lookahead_from,
                                         back_clubhouse_max=back_clubhouse_max,
-                                        back_start_radii=back_start_radii)
+                                        back_start_radii=back_start_radii,
+                                        back_start_radius_groups=back_start_radius_groups,
+                                        back_start_radius_depth2_min_survivors=
+                                        back_start_radius_depth2_min_survivors)
             completed[result.seed] = (result, elapsed)
             print(f"seed {result.seed}: {'OK' if result.complete else 'échec'} "
                   f"front={result.front.state.depth}/9 "
@@ -276,7 +297,10 @@ def run_benchmark_course(output: Path, workers: int = 16, rules: ValidationRules
                                        par3_bounds=par3_bounds, par5_bounds=par5_bounds,
                                        back_closing_lookahead_from=back_closing_lookahead_from,
                                        back_clubhouse_max=back_clubhouse_max,
-                                       back_start_radii=back_start_radii): seed
+                                       back_start_radii=back_start_radii,
+                                       back_start_radius_groups=back_start_radius_groups,
+                                       back_start_radius_depth2_min_survivors=
+                                       back_start_radius_depth2_min_survivors): seed
                       for seed in seeds}
             for future in as_completed(futures):
                 result, elapsed = future.result()
@@ -331,6 +355,9 @@ def run_benchmark_course(output: Path, workers: int = 16, rules: ValidationRules
             "back_closing_lookahead_from": back_closing_lookahead_from,
             "back_clubhouse_max": back_clubhouse_max,
             "back_start_radii": list(back_start_radii) if back_start_radii else None,
+            "back_start_radius_groups": ([list(group) for group in back_start_radius_groups]
+                                         if back_start_radius_groups else None),
+            "back_start_radius_depth2_min_survivors": back_start_radius_depth2_min_survivors,
         },
         "workers": workers,
         "total_seconds": total_seconds,

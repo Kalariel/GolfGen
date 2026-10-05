@@ -83,6 +83,33 @@ class SolverParams:
     bounded_quota: bool = False
     par3_bounds: tuple[int, int] = (1, 3)
     par5_bounds: tuple[int, int] = (1, 3)
+    # Diversité stratifiée des départs du tee 10 par groupe de rayon
+    # (PLAN.md, décision utilisateur, étape suivant ``back_start_radii``
+    # étendus) : opt-in, défaut ``()`` -> comportement byte-identique (tout
+    # le code existant qui ne passe pas ce paramètre n'est pas affecté).
+    # Diagnostic ayant motivé ce paramètre (``experiments/bean_paving/
+    # output/benchmark_course18_400_backfar_1_10/REPORT.md``) : à la
+    # profondeur 1, ``_transform_rank`` classe les rayons étendus (64/80/96)
+    # plus près de la cible d'expansion que les rayons historiques (44/48),
+    # qui se retrouvent minoritaires AVANT la coupe de troncature par
+    # candidat (``start_transforms_per_candidate``) et avant la sélection du
+    # beam -- sur certaines seeds (4, 8) la seule trajectoire gagnante
+    # partait justement d'un rayon historique. Chaque groupe (ex. ``((44.0,
+    # 48.0), (64.0,), (80.0,), (96.0,))``) reçoit une part égale à CES DEUX
+    # endroits (``_stratified_truncate``, ``_select_beam_stratified`` à la
+    # profondeur 1) ; le reliquat (division non entière, groupe sous-peuplé)
+    # est comblé par rang global, jamais perdu.
+    start_radius_groups: tuple[tuple[float, ...], ...] = ()
+    # Garde-fou LÉGER (pas une répartition stricte) à la profondeur 2 :
+    # réserve au moins ``start_radius_depth2_min_survivors`` places par
+    # groupe (même lignage que la profondeur 1, ``placed[0]``) avant de
+    # combler le reliquat par rang global -- motivé par un diagnostic
+    # chiffré (script jetable, voir le rapport) montrant que la diversité de
+    # la profondeur 1 s'effondre quasi totalement dès la profondeur 2 sans
+    # cette garde (ex. seed 4 : groupe {44,48} passe de 47/72 à 4/72 une
+    # profondeur plus tard). Défaut ``0`` -> désactivé, comportement
+    # byte-identique ; sans effet si ``start_radius_groups`` est vide.
+    start_radius_depth2_min_survivors: int = 0
 
 
 @dataclass(frozen=True)
@@ -157,6 +184,8 @@ class SolveResult:
                 "halfplane_weight": self.params.halfplane_weight,
                 "halfplane_theta_deg": self.params.halfplane_theta_deg,
                 "halfplane_band": self.params.halfplane_band,
+                "start_radius_groups": [list(group) for group in self.params.start_radius_groups],
+                "start_radius_depth2_min_survivors": self.params.start_radius_depth2_min_survivors,
             },
             "diagnostics": [{
                 "depth": item.depth,
@@ -323,6 +352,51 @@ def _transform_rank(template: BeanTemplate, transform: Transform, depth: int,
     return rank
 
 
+def _radius_group_index(radius: float, groups: tuple[tuple[float, ...], ...]) -> int:
+    """Groupe le plus proche de ``radius`` parmi ``groups`` (tolérance au
+    bruit flottant du aller-retour polaire -> cartésien -> distance, jamais
+    une égalité exacte garantie) -- toujours un résultat, même si ``radius``
+    ne correspond à AUCUNE valeur de ``groups`` (plus proche par défaut)."""
+    return min(range(len(groups)),
+               key=lambda idx: min(abs(radius - value) for value in groups[idx]))
+
+
+def _stratified_truncate(transforms: list[Transform], limit: int,
+                         groups: tuple[tuple[float, ...], ...],
+                         clubhouse: tuple[float, float]) -> list[Transform]:
+    """Troncature (a) de ``_transforms`` à la profondeur 1 : répartit
+    ``limit`` en part égale par groupe de rayon de départ (``groups``) au
+    lieu de garder bêtement les ``limit`` premiers du tri global (qui
+    favorise structurellement les rayons les plus proches de la cible
+    d'expansion, cf. ``SolverParams.start_radius_groups``). ``transforms``
+    est déjà trié par ``_transform_rank`` : l'ordre relatif à l'intérieur
+    de chaque groupe est préservé. Le reliquat (part non entière, groupe
+    sous-peuplé) est comblé par rang global, jamais perdu -- la taille du
+    résultat ne dépasse jamais ``limit`` et n'est inférieure que si
+    ``transforms`` lui-même en a moins."""
+    share = max(1, limit // len(groups))
+    grouped: list[list[Transform]] = [[] for _ in groups]
+    for transform in transforms:
+        radius = math.dist((transform.x, transform.y), clubhouse)
+        grouped[_radius_group_index(radius, groups)].append(transform)
+
+    selected: list[Transform] = []
+    taken: set[int] = set()
+    for bucket in grouped:
+        for transform in bucket[:share]:
+            selected.append(transform)
+            taken.add(id(transform))
+    if len(selected) < limit:
+        for transform in transforms:
+            if len(selected) >= limit:
+                break
+            if id(transform) in taken:
+                continue
+            selected.append(transform)
+            taken.add(id(transform))
+    return selected[:limit]
+
+
 def _transforms(template: BeanTemplate, state: SearchState,
                 clubhouse: tuple[float, float], params: SolverParams, seed: int,
                 rules: ValidationRules):
@@ -331,8 +405,12 @@ def _transforms(template: BeanTemplate, state: SearchState,
     rng = _rng_for(seed, state, f"transforms-{template.id}")
     rng.shuffle(transforms)  # départage déterministe des rangs égaux
     transforms.sort(key=lambda item: _transform_rank(template, item, depth, clubhouse, params, rules))
-    limit = params.start_transforms_per_candidate if not state.placed else params.transforms_per_candidate
-    return transforms[:limit]
+    if not state.placed:
+        limit = params.start_transforms_per_candidate
+        if params.start_radius_groups:
+            return _stratified_truncate(transforms, limit, params.start_radius_groups, clubhouse)
+        return transforms[:limit]
+    return transforms[:params.transforms_per_candidate]
 
 
 def _state_score(placed: tuple[PlacedBean, ...], clubhouse: tuple[float, float],
@@ -397,6 +475,57 @@ def _select_beam(states: Iterable[SearchState], width: int) -> list[SearchState]
             if not values:
                 del buckets[key]
     return selected
+
+
+def _lineage_start_radius(state: SearchState, clubhouse: tuple[float, float]) -> float:
+    """Rayon de départ (profondeur 1) du lignage de ``state`` -- le premier
+    haricot posé ne change plus une fois le tee 10 choisi, donc ce rayon
+    reste valable à n'importe quelle profondeur ultérieure."""
+    first = state.placed[0].transform
+    return math.dist((first.x, first.y), clubhouse)
+
+
+def _select_beam_stratified(states: Iterable[SearchState], width: int, share: int,
+                            groups: tuple[tuple[float, ...], ...],
+                            clubhouse: tuple[float, float]) -> list[SearchState]:
+    """Sélection du beam (b), stratifiée par groupe de rayon de départ
+    (lignage, ``_lineage_start_radius``) : chaque groupe reçoit AU MOINS
+    ``share`` places (sélectionnées via ``_select_beam`` à l'intérieur du
+    groupe, donc la diversité de quotas par3/5 existante est préservée à
+    l'intérieur de chaque groupe), le reliquat (``width - sum(shares)``, ou
+    un groupe sous-peuplé) est comblé par rang global parmi les états
+    restants -- jamais perdu, jamais plus de ``width`` au total. Utilisée à
+    la profondeur 1 (``share = width // len(groups)``, répartition stricte,
+    ``SolverParams.start_radius_groups``) et, en option, à la profondeur 2
+    (``share`` plus petit, garde-fou léger,
+    ``SolverParams.start_radius_depth2_min_survivors`` -- voir le
+    diagnostic chiffré dans le rapport motivant ce second point
+    d'intervention)."""
+    grouped: list[list[SearchState]] = [[] for _ in groups]
+    for state in states:
+        grouped[_radius_group_index(_lineage_start_radius(state, clubhouse), groups)].append(state)
+
+    selected: list[SearchState] = []
+    selected_keys: set[tuple] = set()
+    for bucket in grouped:
+        for state in _select_beam(bucket, share):
+            key = _state_key(state)
+            if key in selected_keys:
+                continue
+            selected_keys.add(key)
+            selected.append(state)
+            if len(selected) == width:
+                return selected
+
+    if len(selected) < width:
+        remaining_pool = [state for state in states if _state_key(state) not in selected_keys]
+        for state in _select_beam(remaining_pool, width - len(selected)):
+            key = _state_key(state)
+            if key in selected_keys:
+                continue
+            selected_keys.add(key)
+            selected.append(state)
+    return selected[:width]
 
 
 def _starts_outward(bean: PlacedBean, clubhouse: tuple[float, float]) -> bool:
@@ -616,7 +745,24 @@ def solve_nine(seed: int, params: SolverParams | None = None,
             diagnostics.append(DepthDiagnostics(target_depth, parent_count, trials, accepted, 0,
                                                 dead_ends, dict(rejected), lookahead_calls, lookahead_pruned))
             break
-        beam = _select_beam(next_states, params.beam_width)
+        if params.start_radius_groups and target_depth == 1:
+            # (b) sélection stratifiée du beam à la profondeur 1 -- part
+            # égale par groupe, reliquat par rang global (voir
+            # ``_select_beam_stratified`` et ``SolverParams.start_radius_groups``).
+            share = max(1, params.beam_width // len(params.start_radius_groups))
+            beam = _select_beam_stratified(next_states, params.beam_width, share,
+                                           params.start_radius_groups, clubhouse)
+        elif (params.start_radius_groups and target_depth == 2
+              and params.start_radius_depth2_min_survivors > 0):
+            # Garde-fou léger à la profondeur 2 (voir
+            # ``SolverParams.start_radius_depth2_min_survivors`` -- motivé
+            # par un diagnostic chiffré montrant l'effondrement de la
+            # diversité de la profondeur 1 une profondeur plus tard).
+            beam = _select_beam_stratified(next_states, params.beam_width,
+                                           params.start_radius_depth2_min_survivors,
+                                           params.start_radius_groups, clubhouse)
+        else:
+            beam = _select_beam(next_states, params.beam_width)
         best = beam[0]
         diagnostics.append(DepthDiagnostics(target_depth, parent_count, trials, accepted, len(beam),
                                             dead_ends, dict(rejected), lookahead_calls, lookahead_pruned))
