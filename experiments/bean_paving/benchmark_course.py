@@ -1,0 +1,264 @@
+"""Benchmark reproductible des seeds 1 à 10 du parcours 18 trous
+(``course_solver.solve_course``), paramétré par taille de carte et règles.
+
+Mirroré sur ``benchmark.py`` (le benchmark du nine) mais pour deux nines
+coordonnés : complétude front/back, validation indépendante des 18 trous
+(mêmes appels que ``course_solver._course_violations``), pile côte-à-côte la
+plus grande et occupation de la carte complète. Ne modifie pas
+``benchmark.py`` ni son comportement.
+"""
+
+from __future__ import annotations
+
+import argparse
+from collections import Counter
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from dataclasses import replace
+import json
+import math
+from pathlib import Path
+import time
+
+from experiments.bean_paving.benchmark import _angle_bin, _similarity
+from experiments.bean_paving.course_solver import CourseSolveResult, _course_violations, solve_course
+from experiments.bean_paving.geometry import PlacedBean, ValidationRules, validate
+from experiments.bean_paving.render_course import render_course_svg
+from experiments.bean_paving.solver import SolverParams
+
+
+def _polygon_area(points) -> float:
+    return abs(sum(a[0] * b[1] - b[0] * a[1]
+                   for a, b in zip(points, (*points[1:], points[0]))) / 2.0)
+
+
+def _fingerprint_beans(beans: tuple[PlacedBean, ...]) -> tuple:
+    """Même signature que ``benchmark._fingerprint``, mais sur une liste de
+    trous déjà posés (ici les 18 trous front+back) plutôt que sur un
+    ``SolveResult`` de nine isolé."""
+    if not beans:
+        return ()
+    raw_angles = [_angle_bin(bean.tee, bean.green) for bean in beans]
+    origin = raw_angles[0]
+    relative = tuple((value - origin) % 12 for value in raw_angles)
+    mirrored = tuple((-value) % 12 for value in relative)
+    angles = min(relative, mirrored)
+    lengths = tuple(round(math.dist(bean.tee, bean.green) / 10.0) for bean in beans)
+    pars = tuple(bean.template.par for bean in beans)
+    links = tuple(round(math.dist(a.green, b.tee) / 8.0) for a, b in zip(beans, beans[1:]))
+    return pars, angles, lengths, links
+
+
+def _largest_parallel_stack(beans: tuple[PlacedBean, ...], rules: ValidationRules) -> int | None:
+    """Taille de la plus grande composante connexe de la relation côte-à-côte
+    (``parallel_stack``), recalculée sans filtrage par seuil — même méthode
+    que EXPERIMENT_18_ROUGH.md, section « Essai 400×400 » : on ne réutilise
+    que l'oracle public ``validate`` (pas les fonctions privées de
+    ``geometry.py``), en balayant ``max_parallel_stack`` jusqu'à ce qu'aucune
+    violation ``parallel_stack`` ne subsiste."""
+    if not rules.shared_rough or len(beans) < 2:
+        return 0 if beans else None
+    for threshold in range(1, len(beans) + 1):
+        trial_rules = replace(rules, max_parallel_stack=threshold)
+        if not any(problem.kind == "parallel_stack"
+                   for problem in validate(beans, trial_rules, check_links=False)):
+            return threshold
+    return len(beans)
+
+
+def _run_seed(seed: int, rules: ValidationRules, halfplane_weight: float):
+    start = time.perf_counter()
+    result = solve_course(seed, None, None, rules, halfplane_weight=halfplane_weight)
+    return result, time.perf_counter() - start
+
+
+def _seed_summary(result: CourseSolveResult, elapsed: float, rules: ValidationRules) -> dict:
+    front_placed = result.front.state.placed
+    back_placed = () if result.back is None else result.back.state.placed
+    all_placed = front_placed + back_placed
+
+    clubhouse = rules.clubhouse
+    clubhouse_max = SolverParams().clubhouse_max  # défaut partagé par front/back, indépendant du run
+    independent_violations = _course_violations(front_placed, back_placed, rules, clubhouse, clubhouse_max)
+    independent_valid = (len(front_placed) == 9 and len(back_placed) == 9
+                         and not independent_violations)
+
+    footprint_ratio = (sum(_polygon_area(bean.footprint) for bean in all_placed)
+                       / (rules.width * rules.height)) if all_placed else 0.0
+
+    rejection_counts: Counter = Counter()
+    for nine in (result.front, result.back):
+        if nine is None:
+            continue
+        for depth in nine.diagnostics:
+            rejection_counts.update(depth.rejection_counts)
+
+    front_trials = result.front.total_trials
+    back_trials = 0 if result.back is None else result.back.total_trials
+
+    return {
+        "seed": result.seed,
+        "success": result.complete,
+        "independent_valid": independent_valid,
+        "independent_violations": independent_violations,
+        "seconds": round(elapsed, 3),
+        "trials": front_trials + back_trials,
+        "front_trials": front_trials,
+        "back_trials": back_trials,
+        "front_holes": len(front_placed),
+        "back_holes": len(back_placed),
+        "front_pars": [bean.template.par for bean in front_placed],
+        "back_pars": [bean.template.par for bean in back_placed],
+        "footprint_ratio": round(footprint_ratio, 4),
+        "largest_parallel_stack": _largest_parallel_stack(all_placed, rules),
+        "rejection_counts": dict(sorted(rejection_counts.items())),
+    }
+
+
+def _markdown(report: dict, rules: ValidationRules) -> str:
+    size = int(rules.width)
+    lines = [
+        f"# Benchmark parcours 18 trous — seeds 1 à 10 ({size}×{size}, rough partagé)",
+        "",
+        f"- Succès (18/18) : **{report['success_count']}/10**",
+        f"- Validation indépendante conforme : **{report['independent_valid_count']}/10**",
+        f"- Doublons exacts normalisés : **{len(report['exact_duplicates'])}**",
+        f"- Quasi-doublons (similarité ≥ 85 %) : **{len(report['near_duplicates'])}**",
+        "",
+        "| Seed | Résultat | Front | Back | Temps | Essais | Empreinte | Pile max | Indép. |",
+        "|---:|:---:|:---:|:---:|---:|---:|---:|---:|:---:|",
+    ]
+    for item in report["seeds"]:
+        result = "OK" if item["success"] else "échec"
+        indep = "OK" if item["independent_valid"] else "KO"
+        lines.append(
+            f"| {item['seed']} | {result} | {item['front_holes']}/9 | {item['back_holes']}/9 | "
+            f"{item['seconds']:.1f}s | {item['trials']} | {item['footprint_ratio']:.1%} | "
+            f"{item['largest_parallel_stack']} | {indep} |")
+    lines.extend(["", "## Pars par nine (ordre de jeu)", ""])
+    for item in report["seeds"]:
+        front = "-".join(map(str, item["front_pars"])) or "—"
+        back = "-".join(map(str, item["back_pars"])) or "—"
+        lines.append(f"- seed {item['seed']} : front {front} / back {back}")
+    lines.extend(["", "## Rejets cumulés", ""])
+    for kind, count in report["rejection_counts"].items():
+        lines.append(f"- `{kind}` : {count}")
+    if report["near_duplicates"]:
+        lines.extend(["", "## Quasi-doublons", ""])
+        for pair in report["near_duplicates"]:
+            lines.append(f"- seeds {pair['seeds'][0]} et {pair['seeds'][1]} : {pair['similarity']:.1%}")
+    failures = [item for item in report["seeds"] if not item["success"]]
+    if failures:
+        lines.extend(["", "## Échecs — meilleur état et causes dominantes", ""])
+        for item in failures:
+            dominant = sorted(item["rejection_counts"].items(), key=lambda kv: -kv[1])[:3]
+            dominant_text = ", ".join(f"{kind} {count}" for kind, count in dominant) or "—"
+            lines.append(f"- seed {item['seed']} : front {item['front_holes']}/9, "
+                         f"back {item['back_holes']}/9 — causes dominantes : {dominant_text}")
+    lines.extend(["", "## Observations", ""])
+    for observation in report.get("observations", []):
+        lines.append(f"- {observation}")
+    lines.append("")
+    return "\n".join(lines)
+
+
+def run_benchmark_course(output: Path, workers: int = 16, rules: ValidationRules | None = None,
+                         halfplane_weight: float = 0.0, seeds: range = range(1, 11)) -> dict:
+    rules = rules or ValidationRules(
+        shared_rough=True, fairway_gap=5.0, edge_min=1.0,
+        max_parallel_stack=3, clubhouse_clear_radius=10.0,
+    )
+    output.mkdir(parents=True, exist_ok=True)
+    completed: dict[int, tuple[CourseSolveResult, float]] = {}
+    if workers <= 1:
+        for seed in seeds:
+            result, elapsed = _run_seed(seed, rules, halfplane_weight)
+            completed[result.seed] = (result, elapsed)
+            print(f"seed {result.seed}: {'OK' if result.complete else 'échec'} "
+                  f"front={result.front.state.depth}/9 "
+                  f"back={0 if result.back is None else result.back.state.depth}/9 "
+                  f"temps={elapsed:.1f}s", flush=True)
+    else:
+        with ProcessPoolExecutor(max_workers=workers) as executor:
+            futures = {executor.submit(_run_seed, seed, rules, halfplane_weight): seed for seed in seeds}
+            for future in as_completed(futures):
+                result, elapsed = future.result()
+                completed[result.seed] = (result, elapsed)
+                print(f"seed {result.seed}: {'OK' if result.complete else 'échec'} "
+                      f"front={result.front.state.depth}/9 "
+                      f"back={0 if result.back is None else result.back.state.depth}/9 "
+                      f"temps={elapsed:.1f}s", flush=True)
+
+    summaries = []
+    fingerprints = {}
+    rejection_counts: Counter = Counter()
+    size_label = int(rules.width)
+    for seed in sorted(completed):
+        result, elapsed = completed[seed]
+        summary = _seed_summary(result, elapsed, rules)
+        summaries.append(summary)
+        rejection_counts.update(summary["rejection_counts"])
+        suffix = f"course18_{size_label}" + ("" if result.complete else "_failed")
+        (output / f"seed{seed}_{suffix}.json").write_text(result.to_json(), encoding="utf-8")
+        (output / f"seed{seed}_{suffix}.svg").write_text(render_course_svg(result, rules), encoding="utf-8")
+        if result.complete:
+            fingerprints[seed] = _fingerprint_beans(result.placed)
+
+    exact, near = [], []
+    fp_seeds = sorted(fingerprints)
+    for index, first in enumerate(fp_seeds):
+        for second in fp_seeds[index + 1:]:
+            similarity = _similarity(fingerprints[first], fingerprints[second])
+            if fingerprints[first] == fingerprints[second]:
+                exact.append([first, second])
+            elif similarity >= 0.85:
+                near.append({"seeds": [first, second], "similarity": round(similarity, 4)})
+
+    success_count = sum(item["success"] for item in summaries)
+    independent_valid_count = sum(item["independent_valid"] for item in summaries)
+    report = {
+        "size": size_label,
+        "rules": {
+            "shared_rough": rules.shared_rough,
+            "fairway_gap": rules.fairway_gap,
+            "edge_min": rules.edge_min,
+            "max_parallel_stack": rules.max_parallel_stack,
+            "clubhouse_clear_radius": rules.clubhouse_clear_radius,
+        },
+        "success_count": success_count,
+        "independent_valid_count": independent_valid_count,
+        "exact_duplicates": exact,
+        "near_duplicates": near,
+        "rejection_counts": dict(sorted(rejection_counts.items())),
+        "seeds": summaries,
+        "observations": [],
+    }
+    (output / "report.json").write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    (output / "REPORT.md").write_text(_markdown(report, rules), encoding="utf-8")
+    return report
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--workers", type=int, default=16)
+    parser.add_argument("--size", type=float, default=400.0)
+    parser.add_argument("--fairway-gap", type=float, default=5.0)
+    parser.add_argument("--edge-min", type=float, default=1.0)
+    parser.add_argument("--max-parallel-stack", type=int, default=3)
+    parser.add_argument("--clubhouse-clear-radius", type=float, default=10.0)
+    parser.add_argument("--halfplane-weight", type=float, default=0.0)
+    parser.add_argument("--output", type=Path,
+                        default=Path("experiments/bean_paving/output/benchmark_course18_400_1_10"))
+    args = parser.parse_args()
+    rules = ValidationRules(
+        width=args.size, height=args.size, shared_rough=True,
+        fairway_gap=args.fairway_gap, edge_min=args.edge_min,
+        max_parallel_stack=args.max_parallel_stack,
+        clubhouse_clear_radius=args.clubhouse_clear_radius,
+    )
+    report = run_benchmark_course(args.output, args.workers, rules, args.halfplane_weight)
+    print(f"benchmark course18: {report['success_count']}/10 complet, "
+          f"{report['independent_valid_count']}/10 validé indépendamment")
+
+
+if __name__ == "__main__":
+    main()
