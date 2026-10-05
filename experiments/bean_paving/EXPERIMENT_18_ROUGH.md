@@ -274,3 +274,119 @@ Pour la reprendre :
 
 Conserver la seed témoin 42, la banque `8/20/8`, le validateur indépendant
 (`geometry.validate`) et `golfgen/loop_router.py` inchangé.
+
+## Essai 400×400
+
+**Portée : un seul lancement, séquentiel uniquement (`solve_course`), seed
+42, 400×400, `shared_rough=True`, mêmes paramètres de beam que le run
+séquentiel 350 ci-dessus (`SolverParams` par défaut des deux nines, aucun
+réglage).** Deux différences assumées par rapport au run 350 : la taille de
+carte et `clubhouse_clear_radius=10` (règle ajoutée après ce run 350 dans
+une session ultérieure, voir `EXPERIMENT_18_HALFPLANE.md` point A — absente
+de la comptabilisation des causes de rejet du run 350 ci-dessus). Les deux
+facteurs sont donc confondus dans ce résultat : rien ici ne permet de dire
+lequel des deux explique le gain, seulement que leur combinaison suffit.
+
+Commande : `render_course.py --seed 42 --size 400 --shared-rough
+--fairway-gap 5 --edge-min 1 --max-parallel-stack 3
+--clubhouse-clear-radius 10 --halfplane-weight 0`.
+
+### Résultat
+
+| Run | complet ? | front | back | total | trials | temps |
+|---|---|---|---|---|---|---|
+| séquentiel, 400×400 | **oui** | 9/9 | 9/9 | **18/18** | 292 482 | ~7 min (estimé, non chronométré précisément — lancé en tâche de fond ; extrapolé du débit mesuré à 350, ≈680 essais/s) |
+
+Contre 16/18 (front 9/9, back 7/9) à 350×350 avec les mêmes règles et les
+mêmes paramètres de recherche : le passage à 400×400 (+ exclusion
+clubhouse) fait franchir le plafond observé à 350, le back allant cette
+fois jusqu'au bout au lieu de se bloquer à la profondeur 8.
+
+Pars posés (ordre de jeu) :
+
+- front (9/9) : 3-4-4-4-3-4-5-4-5
+- back (9/9) : 4-4-4-5-4-4-3-5-3
+
+**Validation indépendante sur les 18 trous.** Les beans ont été reconstruits
+depuis le JSON exporté (banque + id + transform) et revalidés avec
+`geometry.validate`, exactement comme `course_solver._course_violations` le
+fait : `validate(front, rules)`, `validate(back, rules)` (liaisons
+intra-nine comprises) et `validate(front + back, rules, check_links=False)`
+(contraintes croisées, sans le lien 9→10 qui traverse le clubhouse) —
+**les trois appels renvoient une liste vide**, donc aucune règle dure n'est
+violée sur l'ensemble des 18 trous, confirmé indépendamment du run.
+
+**Pile côte-à-côte la plus grande.** Recalculée directement (composantes
+connexes de la relation côte-à-côte, sans filtrage par seuil) sur les 18
+trous posés : tailles de composantes `[3, 2, 2, 2, 1×9]` — la plus grande
+pile est de **3**, exactement au seuil `max_parallel_stack=3`, donc jamais
+en violation. Même taille de pile maximale qu'à 350×350.
+
+**Causes de rejet, agrégées sur toute la recherche (front + back, 292 482
+essais, décompte brut des causes — un essai peut échouer plusieurs règles à
+la fois, donc la somme des causes dépasse le nombre d'essais, comme dans le
+run 350 ci-dessus) :**
+
+| cause | occurrences | part |
+|---|---|---|
+| fairway_gap | 207 390 | 45,3 % |
+| axis_crossing | 151 373 | 33,0 % |
+| bounds | 77 582 | 16,9 % |
+| parallel_stack | 7 578 | 1,7 % |
+| clubhouse_clear | 6 513 | 1,4 % |
+| clubhouse_return | 6 219 | 1,4 % |
+| clubhouse_departure | 1 414 | 0,3 % |
+
+Même hiérarchie qu'à 350×350 (`fairway_gap` puis `axis_crossing` puis
+`bounds` dominent largement, `parallel_stack` reste marginal) ; la seule
+nouveauté est `clubhouse_clear` (règle inexistante au moment du run 350),
+qui reste elle aussi marginale (1,4 %).
+
+Détail par profondeur — back (9/9, complet cette fois, à comparer avec le
+blocage à la profondeur 8 du run 350) :
+
+| profondeur | parents | essais | acceptés | morts | causes dominantes |
+|---|---|---|---|---|---|
+| 1 | 1 | 1 728 | 151 | 0 | clubhouse_departure 1 054, fairway_gap 523, axis_crossing 323 |
+| 2 | 72 | 31 104 | 9 196 | 0 | fairway_gap 21 908, axis_crossing 16 327, parallel_stack 149 |
+| 3 | 72 | 28 944 | 5 014 | 0 | fairway_gap 18 209, axis_crossing 12 553, bounds 12 834 |
+| 4 | 72 | 25 920 | 1 177 | 2 | bounds 21 657, fairway_gap 15 176, axis_crossing 9 900 |
+| 5 | 72 | 23 472 | 664 | 20 | bounds 18 940, fairway_gap 15 912, axis_crossing 10 986 |
+| 6 | 72 | 22 896 | 1 338 | 26 | fairway_gap 20 790, axis_crossing 15 172, bounds 7 029 |
+| 7 | 72 | 20 736 | 234 | 37 | fairway_gap 20 486, axis_crossing 15 572, bounds 6 151 |
+| 8 | 72 | 16 704 | 333 | 29 | fairway_gap 16 335, axis_crossing 13 722, bounds 225 |
+| 9 | 72 | 10 368 | 8 | 70 | clubhouse_return 4 084, clubhouse_clear 3 200, fairway_gap 6 276 |
+
+À la profondeur 8, le run 350 ne gardait plus aucun survivant (0 accepté,
+68 morts) ; ici 333 acceptés sur 72 parents, et la profondeur 9 réussit à
+en garder 4 jusqu'à la fermeture (`kept=4`, voir diagnostics JSON) au lieu
+de mourir.
+
+### Interprétation
+
+`solver._scaled_target_radius` multiplie le profil d'anneau fixe par
+`map_scale = min(width, height) / 350`, donc à 400×400 ce facteur est
+`400/350 ≈ 1,14` : les anneaux cibles des profondeurs d'expansion (2 à 8)
+sont environ 14 % plus larges qu'à 350, ce qui donne mécaniquement plus de
+surface disponible pour que `fairway_gap`/`axis_crossing` (les deux causes
+dominantes, inchangées en proportion relative) finissent par laisser passer
+suffisamment d'états pour fermer le parcours — exactement le goulot qui
+tuait le back à la profondeur 8 à 350×350. Cela confirme, sur cette seed et
+ce jeu de paramètres précis, l'hypothèse ouverte à la fin du run 350
+(« cette session n'a pas testé si cette marge suffit à atteindre 18/18 »).
+
+### Limites honnêtes
+
+- **Un seul tirage** (seed 42) : aucun benchmark multi-seed n'a été lancé,
+  conformément à la discipline §7 du `PLAN.md` (pas de benchmark avant un
+  18/18 validé indépendamment — c'est fait ici, mais pour une seule seed).
+- **Deux facteurs confondus** : taille de carte et `clubhouse_clear_radius`
+  changent en même temps par rapport au run 350 ; ce résultat ne dit pas si
+  400×400 seul (sans l'exclusion clubhouse) aurait suffi, ni l'inverse.
+- Aucun réglage de poids, de beam ni de `fairway_gap`/`edge_min` n'a été
+  essayé à 400×400 : les paramètres sont strictement ceux du run 350
+  séquentiel, seule la carte change (plus la règle clubhouse déjà en place
+  depuis la session précédente).
+- Le temps de recherche n'a pas été chronométré avec un minuteur explicite
+  (exécution en tâche de fond) ; la valeur ci-dessus est une extrapolation,
+  pas une mesure directe.

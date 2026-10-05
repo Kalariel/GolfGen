@@ -288,6 +288,12 @@ spatiales et produit un parcours visualisable dans le viewer.
    formes variées). Le code reste dans le dépôt pour référence, mais n'est
    plus lancé dans aucune session suivante ; seul le solveur séquentiel
    (`solve_course`) reste actif.
+9. Décision utilisateur 2026-10-05 : le mode lobe (`lobe.py`,
+   `lobe_search.py`, `EXPERIMENT_18_LOBES.md`) est **abandonné** — sur les 4
+   tirages testés à 350×350 (`shared_rough`), le back reste bloqué à 0/9
+   dans les 4 cas, avant et après le seul ajustement permis. Développé sur la
+   branche `rambo/lobe-targets`, jamais fusionnée dans `spike/bean-paving` ;
+   le mode radial (anneaux par profondeur) reste le seul actif.
 
 ## Avancement
 
@@ -298,5 +304,5 @@ spatiales et produit un parcours visualisable dans le viewer.
 | 3. Placement local | Terminé | Chaînes 4/4 valides sur seeds 1, 7, 42, 123 ; seed 42 en 340 essais |
 | 4. Paveur d'un nine | Terminé | Seed 42 valide, beam 48, 68 850 essais, 5 fermetures ; échec intermédiaire conservé |
 | 5. Benchmark 1..10 | Terminé | 10/10, 0 violation dure, 0 doublon exact ; biais pourtour et départ par 3 consignés |
-| 6. Banque de 36 et 18 trous | Partiel | 350 (règles d'origine) : séquentiel 9+1, conjoint ≤9/18 ; 500 : 18/18. Variante `shared_rough` (350 seulement) : séquentiel 16/18 (front 9+back 7), conjoint 11/18 (front 6+back 5). **Solveur conjoint abandonné le 2026-10-04** (décision utilisateur : sorties trop symétriques visuellement) — non relancé depuis. Suite (exclusion clubhouse dure + biais souple de demi-plan + recherche d'orientation, séquentiel uniquement) : toujours 16/18 au mieux à 350×350, voir `EXPERIMENT_18_HALFPLANE.md`. 400/450 toujours non lancés |
+| 6. Banque de 36 et 18 trous | Partiel | 350 (règles d'origine) : séquentiel 9+1, conjoint ≤9/18 ; 500 : 18/18. Variante `shared_rough` (350 seulement) : séquentiel 16/18 (front 9+back 7), conjoint 11/18 (front 6+back 5). **Solveur conjoint abandonné le 2026-10-04** (décision utilisateur : sorties trop symétriques visuellement) — non relancé depuis. Suite (exclusion clubhouse dure + biais souple de demi-plan + recherche d'orientation, séquentiel uniquement) : toujours 16/18 au mieux à 350×350, voir `EXPERIMENT_18_HALFPLANE.md`. **Mode lobe abandonné le 2026-10-05** (décision utilisateur, 4 tirages à 350×350, back bloqué à 0/9 sur les 4 ; branche `rambo/lobe-targets` non fusionnée). **400×400, séquentiel, `shared_rough` + exclusion clubhouse (mêmes paramètres de beam que le run 350) : 18/18 (seed 42, un seul tirage)** — voir `EXPERIMENT_18_ROUGH.md`, section « Essai 400×400 » ; taille de carte et exclusion clubhouse confondues dans ce résultat, pas de benchmark multi-seed |
 | 7. Substitution par vrais trous | À faire | — |

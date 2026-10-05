@@ -1,0 +1,695 @@
+{
+  "back": {
+    "clubhouse": [
+      200.0,
+      200.0
+    ],
+    "complete": true,
+    "diagnostics": [
+      {
+        "accepted": 151,
+        "dead_ends": 0,
+        "depth": 1,
+        "kept": 72,
+        "parents": 1,
+        "rejection_counts": {
+          "axis_crossing": 323,
+          "clubhouse_departure": 1054,
+          "fairway_gap": 523
+        },
+        "trials": 1728
+      },
+      {
+        "accepted": 9196,
+        "dead_ends": 0,
+        "depth": 2,
+        "kept": 72,
+        "parents": 72,
+        "rejection_counts": {
+          "axis_crossing": 16327,
+          "fairway_gap": 21908,
+          "parallel_stack": 149
+        },
+        "trials": 31104
+      },
+      {
+        "accepted": 5014,
+        "dead_ends": 0,
+        "depth": 3,
+        "kept": 72,
+        "parents": 72,
+        "rejection_counts": {
+          "axis_crossing": 12553,
+          "bounds": 12834,
+          "fairway_gap": 18209,
+          "parallel_stack": 67
+        },
+        "trials": 28944
+      },
+      {
+        "accepted": 1177,
+        "dead_ends": 2,
+        "depth": 4,
+        "kept": 72,
+        "parents": 72,
+        "rejection_counts": {
+          "axis_crossing": 9900,
+          "bounds": 21657,
+          "fairway_gap": 15176,
+          "parallel_stack": 102
+        },
+        "trials": 25920
+      },
+      {
+        "accepted": 664,
+        "dead_ends": 20,
+        "depth": 5,
+        "kept": 72,
+        "parents": 72,
+        "rejection_counts": {
+          "axis_crossing": 10986,
+          "bounds": 18940,
+          "fairway_gap": 15912,
+          "parallel_stack": 758
+        },
+        "trials": 23472
+      },
+      {
+        "accepted": 1338,
+        "dead_ends": 26,
+        "depth": 6,
+        "kept": 72,
+        "parents": 72,
+        "rejection_counts": {
+          "axis_crossing": 15172,
+          "bounds": 7029,
+          "fairway_gap": 20790,
+          "parallel_stack": 1021
+        },
+        "trials": 22896
+      },
+      {
+        "accepted": 234,
+        "dead_ends": 37,
+        "depth": 7,
+        "kept": 72,
+        "parents": 72,
+        "rejection_counts": {
+          "axis_crossing": 15572,
+          "bounds": 6151,
+          "fairway_gap": 20486,
+          "parallel_stack": 1446
+        },
+        "trials": 20736
+      },
+      {
+        "accepted": 333,
+        "dead_ends": 29,
+        "depth": 8,
+        "kept": 72,
+        "parents": 72,
+        "rejection_counts": {
+          "axis_crossing": 13722,
+          "bounds": 225,
+          "clubhouse_clear": 40,
+          "fairway_gap": 16335,
+          "parallel_stack": 1760
+        },
+        "trials": 16704
+      },
+      {
+        "accepted": 8,
+        "dead_ends": 70,
+        "depth": 9,
+        "kept": 4,
+        "parents": 72,
+        "rejection_counts": {
+          "axis_crossing": 5772,
+          "clubhouse_clear": 3200,
+          "clubhouse_return": 4084,
+          "fairway_gap": 6276,
+          "parallel_stack": 17
+        },
+        "trials": 10368
+      }
+    ],
+    "params": {
+      "bbox_weight": 0.00018,
+      "beam_width": 72,
+      "candidates_per_par": 4,
+      "closure_lookahead": true,
+      "clubhouse_max": 50.0,
+      "departure_angles": [
+        0,
+        30,
+        60,
+        90,
+        120,
+        150,
+        180,
+        210,
+        240,
+        270,
+        300,
+        330
+      ],
+      "halfplane_band": 40.0,
+      "halfplane_theta_deg": 0.0,
+      "halfplane_weight": 0.0,
+      "link_lengths": [
+        24.0,
+        32.0,
+        40.0
+      ],
+      "rotation_step_deg": 30,
+      "start_radii": [
+        44.0,
+        48.0
+      ],
+      "start_transforms_per_candidate": 144,
+      "target_radius_scale": 1.0,
+      "transforms_per_candidate": 36
+    },
+    "placed": [
+      {
+        "green": [
+          112.4568,
+          94.0313
+        ],
+        "id": "s42-p4-09",
+        "order": 10,
+        "par": 4,
+        "tee": [
+          224.0,
+          158.4308
+        ],
+        "transform": {
+          "mirrored": false,
+          "rotation_deg": 210,
+          "x": 224.0,
+          "y": 158.4308
+        }
+      },
+      {
+        "green": [
+          232.329,
+          31.9925
+        ],
+        "id": "s42-p4-18",
+        "order": 11,
+        "par": 4,
+        "tee": [
+          112.4568,
+          62.0313
+        ],
+        "transform": {
+          "mirrored": true,
+          "rotation_deg": 0,
+          "x": 112.4568,
+          "y": 62.0313
+        }
+      },
+      {
+        "green": [
+          35.7719,
+          73.8077
+        ],
+        "id": "s42-p4-20",
+        "order": 12,
+        "par": 4,
+        "tee": [
+          192.329,
+          31.9925
+        ],
+        "transform": {
+          "mirrored": false,
+          "rotation_deg": 180,
+          "x": 192.329,
+          "y": 31.9925
+        }
+      },
+      {
+        "green": [
+          19.1478,
+          305.1929
+        ],
+        "id": "s42-p5-01",
+        "order": 13,
+        "par": 5,
+        "tee": [
+          51.7719,
+          101.5205
+        ],
+        "transform": {
+          "mirrored": true,
+          "rotation_deg": 90,
+          "x": 51.7719,
+          "y": 101.5205
+        }
+      },
+      {
+        "green": [
+          135.4536,
+          386.0634
+        ],
+        "id": "s42-p4-01",
+        "order": 14,
+        "par": 4,
+        "tee": [
+          19.1478,
+          345.1929
+        ],
+        "transform": {
+          "mirrored": false,
+          "rotation_deg": 30,
+          "x": 19.1478,
+          "y": 345.1929
+        }
+      },
+      {
+        "green": [
+          49.5109,
+          312.4444
+        ],
+        "id": "s42-p4-19",
+        "order": 15,
+        "par": 4,
+        "tee": [
+          156.2382,
+          374.0634
+        ],
+        "transform": {
+          "mirrored": false,
+          "rotation_deg": 210,
+          "x": 156.2382,
+          "y": 374.0634
+        }
+      },
+      {
+        "green": [
+          134.9742,
+          337.7866
+        ],
+        "id": "s42-p3-03",
+        "order": 16,
+        "par": 3,
+        "tee": [
+          49.5109,
+          288.4444
+        ],
+        "transform": {
+          "mirrored": false,
+          "rotation_deg": 30,
+          "x": 49.5109,
+          "y": 288.4444
+        }
+      },
+      {
+        "green": [
+          107.0354,
+          114.1645
+        ],
+        "id": "s42-p5-05",
+        "order": 17,
+        "par": 5,
+        "tee": [
+          134.9742,
+          313.7866
+        ],
+        "transform": {
+          "mirrored": false,
+          "rotation_deg": 270,
+          "x": 134.9742,
+          "y": 313.7866
+        }
+      },
+      {
+        "green": [
+          208.1226,
+          172.5272
+        ],
+        "id": "s42-p3-08",
+        "order": 18,
+        "par": 3,
+        "tee": [
+          134.7482,
+          130.1645
+        ],
+        "transform": {
+          "mirrored": false,
+          "rotation_deg": 30,
+          "x": 134.7482,
+          "y": 130.1645
+        }
+      }
+    ],
+    "score": 27.88963,
+    "seed": 2654435731,
+    "total_trials": 181872
+  },
+  "complete": true,
+  "demarcation": {
+    "band": 40.0,
+    "interleave_pairs": 3,
+    "theta_deg": 0.0,
+    "wrong_side_holes": 17
+  },
+  "front": {
+    "clubhouse": [
+      200.0,
+      200.0
+    ],
+    "complete": true,
+    "diagnostics": [
+      {
+        "accepted": 180,
+        "dead_ends": 0,
+        "depth": 1,
+        "kept": 72,
+        "parents": 1,
+        "rejection_counts": {
+          "clubhouse_departure": 360
+        },
+        "trials": 540
+      },
+      {
+        "accepted": 8865,
+        "dead_ends": 0,
+        "depth": 2,
+        "kept": 72,
+        "parents": 72,
+        "rejection_counts": {
+          "axis_crossing": 7655,
+          "clubhouse_clear": 180,
+          "fairway_gap": 10517
+        },
+        "trials": 19440
+      },
+      {
+        "accepted": 7416,
+        "dead_ends": 0,
+        "depth": 3,
+        "kept": 72,
+        "parents": 72,
+        "rejection_counts": {
+          "axis_crossing": 6501,
+          "bounds": 167,
+          "fairway_gap": 9715
+        },
+        "trials": 17280
+      },
+      {
+        "accepted": 4516,
+        "dead_ends": 0,
+        "depth": 4,
+        "kept": 72,
+        "parents": 72,
+        "rejection_counts": {
+          "axis_crossing": 6441,
+          "bounds": 3442,
+          "fairway_gap": 9433
+        },
+        "trials": 15480
+      },
+      {
+        "accepted": 2734,
+        "dead_ends": 5,
+        "depth": 5,
+        "kept": 72,
+        "parents": 72,
+        "rejection_counts": {
+          "axis_crossing": 7234,
+          "bounds": 2642,
+          "fairway_gap": 10450,
+          "parallel_stack": 611
+        },
+        "trials": 14040
+      },
+      {
+        "accepted": 2652,
+        "dead_ends": 9,
+        "depth": 6,
+        "kept": 72,
+        "parents": 72,
+        "rejection_counts": {
+          "axis_crossing": 7446,
+          "bounds": 3737,
+          "fairway_gap": 10239,
+          "parallel_stack": 976
+        },
+        "trials": 14040
+      },
+      {
+        "accepted": 3822,
+        "dead_ends": 4,
+        "depth": 7,
+        "kept": 72,
+        "parents": 72,
+        "rejection_counts": {
+          "axis_crossing": 6432,
+          "bounds": 758,
+          "fairway_gap": 8896,
+          "parallel_stack": 192
+        },
+        "trials": 12960
+      },
+      {
+        "accepted": 598,
+        "dead_ends": 17,
+        "depth": 8,
+        "kept": 72,
+        "parents": 72,
+        "rejection_counts": {
+          "axis_crossing": 7351,
+          "clubhouse_clear": 440,
+          "fairway_gap": 9683,
+          "parallel_stack": 468
+        },
+        "trials": 10350
+      },
+      {
+        "accepted": 554,
+        "dead_ends": 19,
+        "depth": 9,
+        "kept": 72,
+        "parents": 72,
+        "rejection_counts": {
+          "axis_crossing": 1986,
+          "clubhouse_clear": 2653,
+          "clubhouse_return": 2135,
+          "fairway_gap": 2842,
+          "parallel_stack": 11
+        },
+        "trials": 6480
+      }
+    ],
+    "params": {
+      "bbox_weight": 0.0004,
+      "beam_width": 72,
+      "candidates_per_par": 3,
+      "closure_lookahead": true,
+      "clubhouse_max": 50.0,
+      "departure_angles": [
+        300,
+        330,
+        0,
+        30,
+        60
+      ],
+      "halfplane_band": 40.0,
+      "halfplane_theta_deg": 0.0,
+      "halfplane_weight": 0.0,
+      "link_lengths": [
+        24.0,
+        32.0,
+        40.0
+      ],
+      "rotation_step_deg": 30,
+      "start_radii": [
+        24.0,
+        36.0
+      ],
+      "start_transforms_per_candidate": 60,
+      "target_radius_scale": 0.9,
+      "transforms_per_candidate": 30
+    },
+    "placed": [
+      {
+        "green": [
+          314.7481,
+          182.0
+        ],
+        "id": "s42-p3-02",
+        "order": 1,
+        "par": 3,
+        "tee": [
+          231.1769,
+          182.0
+        ],
+        "transform": {
+          "mirrored": true,
+          "rotation_deg": 0,
+          "x": 231.1769,
+          "y": 182.0
+        }
+      },
+      {
+        "green": [
+          243.9301,
+          47.9168
+        ],
+        "id": "s42-p4-06",
+        "order": 2,
+        "par": 4,
+        "tee": [
+          280.1071,
+          162.0
+        ],
+        "transform": {
+          "mirrored": true,
+          "rotation_deg": 240,
+          "x": 280.1071,
+          "y": 162.0
+        }
+      },
+      {
+        "green": [
+          368.1425,
+          125.5552
+        ],
+        "id": "s42-p4-03",
+        "order": 3,
+        "par": 4,
+        "tee": [
+          275.9301,
+          47.9168
+        ],
+        "transform": {
+          "mirrored": false,
+          "rotation_deg": 30,
+          "x": 275.9301,
+          "y": 47.9168
+        }
+      },
+      {
+        "green": [
+          371.4896,
+          262.8772
+        ],
+        "id": "s42-p4-12",
+        "order": 4,
+        "par": 4,
+        "tee": [
+          328.1425,
+          125.5552
+        ],
+        "transform": {
+          "mirrored": false,
+          "rotation_deg": 60,
+          "x": 328.1425,
+          "y": 125.5552
+        }
+      },
+      {
+        "green": [
+          351.4896,
+          310.8885
+        ],
+        "id": "s42-p3-05",
+        "order": 5,
+        "par": 3,
+        "tee": [
+          351.4896,
+          228.2362
+        ],
+        "transform": {
+          "mirrored": false,
+          "rotation_deg": 90,
+          "x": 351.4896,
+          "y": 228.2362
+        }
+      },
+      {
+        "green": [
+          225.0712,
+          356.84
+        ],
+        "id": "s42-p4-17",
+        "order": 6,
+        "par": 4,
+        "tee": [
+          363.4896,
+          331.6731
+        ],
+        "transform": {
+          "mirrored": false,
+          "rotation_deg": 180,
+          "x": 363.4896,
+          "y": 331.6731
+        }
+      },
+      {
+        "green": [
+          339.6594,
+          207.1197
+        ],
+        "id": "s42-p5-02",
+        "order": 7,
+        "par": 5,
+        "tee": [
+          204.2866,
+          344.84
+        ],
+        "transform": {
+          "mirrored": true,
+          "rotation_deg": 330,
+          "x": 204.2866,
+          "y": 344.84
+        }
+      },
+      {
+        "green": [
+          192.6728,
+          315.423
+        ],
+        "id": "s42-p4-11",
+        "order": 8,
+        "par": 4,
+        "tee": [
+          307.6594,
+          207.1197
+        ],
+        "transform": {
+          "mirrored": true,
+          "rotation_deg": 150,
+          "x": 307.6594,
+          "y": 207.1197
+        }
+      },
+      {
+        "green": [
+          173.0636,
+          173.9812
+        ],
+        "id": "s42-p5-08",
+        "order": 9,
+        "par": 5,
+        "tee": [
+          172.6728,
+          350.064
+        ],
+        "transform": {
+          "mirrored": false,
+          "rotation_deg": 270,
+          "x": 172.6728,
+          "y": 350.064
+        }
+      }
+    ],
+    "score": 33.1437,
+    "seed": 42,
+    "total_trials": 110610
+  },
+  "seed": 42,
+  "violations": []
+}
