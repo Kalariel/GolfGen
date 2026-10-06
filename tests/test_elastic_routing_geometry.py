@@ -132,76 +132,146 @@ def test_final_rules_report_link_distance_and_blocking():
     assert counts["link_blocked"] > 0
 
 
-def test_synthetic_layout_has_no_parallel_stack_under_clique_detection():
-    # Avant l'étape 2b, `_connected_components` comptait 4 violations
-    # `parallel_stack` sur ce layout : chaque nine forme deux chaînes de trous
-    # voisins qui se touchent deux à deux (1-2-3-4-5 et 6-7-8-9 côté front,
-    # pareil côté back), union-find les fusionnait en une seule « pile » par
-    # chaîne. Mais aucun triplet de cette chaîne n'est une clique (le trou 1
-    # ne touche pas le trou 3, etc.) : ce n'est pas une pile parallèle au sens
-    # de la définition (clique maximale), seulement une suite de voisinages.
-    # Avec Bron–Kerbosch, les cliques maximales de ce graphe sont toutes des
-    # arêtes isolées (taille 2), sous le seuil `max_parallel_stack=3` : 0
-    # violation `parallel_stack`, et non plus 4.
-    violations = validate(build_synthetic_layout(), ValidationRules())
-    counts = Counter(item.kind for item in violations)
+def test_synthetic_layout_parallel_stack_matches_expected_consecutive_series():
+    # Étape 2b (cliques maximales) comptait 0 `parallel_stack` sur ce layout :
+    # chaque nine forme deux chaînes de voisinages deux à deux qui ne sont
+    # jamais des cliques (le trou 1 ne touche pas le trou 3, etc.), donc la
+    # définition par clique ne détectait aucune pile réelle. La nouvelle
+    # définition (série de trous CONSÉCUTIFS dans l'ordre de jeu, chacun
+    # `_side_by_side` avec le suivant, tous alignés deux à deux) retrouve bien
+    # les 4 vraies piles de bandes parallèles du layout synthétique :
+    # 1-2-3-4-5, 6-7-8-9, 10-11-12-13-14 et 15-16-17-18 (4 violations, comme
+    # avant l'étape 2b). Les bornes diffèrent légèrement de l'estimation du
+    # plan (2-5/11-14 au lieu de 1-5/10-14) : les trous 1 et 10, qui ouvrent
+    # chaque nine, se trouvent être alignés et en recouvrement projeté avec
+    # TOUS les trous de leur bande (pas seulement leur voisin immédiat), donc
+    # la série maximale les inclut aussi.
+    violations = [v for v in validate(build_synthetic_layout(), ValidationRules())
+                  if v.kind == "parallel_stack"]
 
-    assert counts["parallel_stack"] == 0
+    assert sorted(v.holes for v in violations) == [
+        (1, 2, 3, 4, 5), (6, 7, 8, 9), (10, 11, 12, 13, 14), (15, 16, 17, 18),
+    ]
 
 
-def _stack(layout, orders, y_values, x_start=50.0, length=90.0):
+def _row(layout, orders, y_values, *, x_start=50.0, length=90.0,
+         width=11.0, rough_margin=5.0):
+    """Place des trous réalistes en bande horizontale (sans fairways
+    superposés) : largeur et marge de rough comparables au layout
+    synthétique, espacement entre rangées de 20 blocs (pas 6, irréaliste)."""
     for order, y in zip(orders, y_values):
         layout = _replace_hole(
             layout, order,
             tee=ControlPoint(x_start, y), green=ControlPoint(x_start + length, y),
-            width=12.0, rough_margin=5.0,
+            width=width, rough_margin=rough_margin,
         )
     return layout
 
 
-def test_true_clique_of_four_holes_triggers_one_parallel_stack_violation():
-    # 4 trous parallèles, alignés, qui se recouvrent tous deux à deux (écart
-    # 6 blocs, rayon de rough 11 : même les deux trous les plus éloignés se
-    # touchent) : une vraie clique de taille 4, hors carte pour l'isoler de
-    # tout le reste du layout.
-    layout = _stack(build_synthetic_layout(), (2, 3, 4, 5),
-                     (-100.0, -94.0, -88.0, -82.0))
-    violations = [v for v in validate(layout, ValidationRules()) if v.kind == "parallel_stack"]
+def _fan(layout, orders, *, cx=0.0, cy=-300.0, step=10.0, angle_step_deg=15.0,
+          length=90.0, width=11.0, rough_margin=5.0):
+    """Éventail réaliste : chaque trou tourne de `angle_step_deg` par rapport
+    au précédent et reste en contact avec lui (bande qui longe une courbe),
+    mais les extrémités de la série finissent par dépasser le seuil
+    d'angle (20°) entre elles."""
+    theta = 0.0
+    for order in orders:
+        rad = math.radians(theta)
+        dx, dy = math.cos(rad), math.sin(rad)
+        tee = ControlPoint(cx - dx * length / 2.0, cy - dy * length / 2.0)
+        green = ControlPoint(cx + dx * length / 2.0, cy + dy * length / 2.0)
+        layout = _replace_hole(layout, order, tee=tee, green=green,
+                                width=width, rough_margin=rough_margin)
+        px, py = -math.sin(rad), math.cos(rad)
+        cx += px * step
+        cy += py * step
+        theta += angle_step_deg
+    return layout
+
+
+def _parallel_stack_touching(layout, orders):
+    """Violations `parallel_stack` impliquant au moins un des `orders`.
+
+    Le layout synthétique porte déjà ses propres piles ailleurs (voir le
+    test de décompte ci-dessus) ; les tests ci-dessous ne modifient que
+    quelques trous et doivent ignorer ce bruit de fond sans rapport.
+    """
+    orders = set(orders)
+    violations = validate(layout, ValidationRules())
+    return [v for v in violations if v.kind == "parallel_stack" and set(v.holes) & orders]
+
+
+def test_four_consecutive_holes_stacked_trigger_one_violation():
+    # Vraie pile de 4 trous consécutifs (2-3-4-5), bande réaliste.
+    layout = _row(build_synthetic_layout(), (2, 3, 4, 5),
+                  (-100.0, -80.0, -60.0, -40.0))
+    violations = _parallel_stack_touching(layout, (2, 3, 4, 5))
 
     assert len(violations) == 1
     assert violations[0].holes == (2, 3, 4, 5)
 
 
-def test_true_clique_of_exactly_max_size_triggers_no_violation():
-    # Frontière : une vraie clique de taille exactement égale à
-    # max_parallel_stack (3) ne doit déclencher aucune violation, seule une
-    # taille strictement supérieure au seuil (len(clique) > max) compte.
-    layout = _stack(build_synthetic_layout(), (2, 3, 4),
-                     (-100.0, -94.0, -88.0))
-    violations = [v for v in validate(layout, ValidationRules()) if v.kind == "parallel_stack"]
+def test_three_consecutive_holes_stacked_trigger_no_violation():
+    # Frontière : une série de taille exactement `max_parallel_stack` (3) ne
+    # déclenche aucune violation, seule une taille strictement supérieure
+    # compte.
+    layout = _row(build_synthetic_layout(), (2, 3, 4),
+                  (-100.0, -80.0, -60.0))
 
-    assert violations == []
-
-
-def test_chain_without_pairwise_parallelism_triggers_no_parallel_stack():
-    # A-B, B-C, C-D se touchent (écart 15, rayon 11 : 15-22<0) mais A-C, B-D,
-    # A-D ne se touchent pas (écart >= 30, 30-22>0) : chaîne sans triangle,
-    # aucune clique de taille > 3.
-    layout = _stack(build_synthetic_layout(), (2, 3, 4, 5),
-                     (-300.0, -285.0, -270.0, -255.0))
-    violations = [v for v in validate(layout, ValidationRules()) if v.kind == "parallel_stack"]
-
-    assert violations == []
+    assert _parallel_stack_touching(layout, (2, 3, 4)) == []
 
 
-def test_two_distinct_faulty_cliques_produce_two_diagnostics():
-    layout = _stack(build_synthetic_layout(), (2, 3, 4, 5),
-                     (-100.0, -94.0, -88.0, -82.0))
-    layout = _stack(layout, (6, 7, 8, 9),
-                     (-500.0, -494.0, -488.0, -482.0))
-    violations = [v for v in validate(layout, ValidationRules()) if v.kind == "parallel_stack"]
+def test_four_stacked_holes_non_consecutive_order_trigger_no_violation():
+    # Trous 2, 4, 6, 8 empilés côte à côte, mais 3, 5, 7 (laissés à leur
+    # position d'origine) rompent la consécutivité dans l'ordre de jeu : la
+    # série ne peut jamais s'étendre au-delà d'un trou isolé.
+    layout = _row(build_synthetic_layout(), (2, 4, 6, 8),
+                  (-100.0, -80.0, -60.0, -40.0))
+
+    assert _parallel_stack_touching(layout, (2, 4, 6, 8)) == []
+
+
+def test_four_stacked_holes_across_nines_non_consecutive_trigger_no_violation():
+    # Trous 2, 5 (front) et 12, 15 (back) empilés côte à côte : ni
+    # consécutifs dans leur nine, ni dans le même nine pour certains d'entre
+    # eux, donc aucune série.
+    layout = _row(build_synthetic_layout(), (2, 5, 12, 15),
+                  (-100.0, -80.0, -60.0, -40.0))
+
+    assert _parallel_stack_touching(layout, (2, 5, 12, 15)) == []
+
+
+def test_rotating_fan_of_four_consecutive_holes_triggers_no_violation():
+    # Éventail de 4 trous consécutifs (2-3-4-5), chaque voisin aligné à 15°
+    # (`_side_by_side` vrai pour chaque paire adjacente), mais les extrémités
+    # (2 et 4, 2 et 5, 3 et 5) dépassent 20° : la série entière n'est pas
+    # alignée deux à deux, donc aucune pile parallèle n'est détectée malgré
+    # la chaîne de contacts.
+    layout = _fan(build_synthetic_layout(), (2, 3, 4, 5))
+
+    assert _parallel_stack_touching(layout, (2, 3, 4, 5)) == []
+
+
+def test_two_distinct_consecutive_series_produce_two_diagnostics():
+    layout = _row(build_synthetic_layout(), (2, 3, 4, 5),
+                  (-100.0, -80.0, -60.0, -40.0))
+    layout = _row(layout, (6, 7, 8, 9),
+                  (-500.0, -480.0, -460.0, -440.0))
+    violations = _parallel_stack_touching(layout, (2, 3, 4, 5, 6, 7, 8, 9))
 
     assert sorted(v.holes for v in violations) == [(2, 3, 4, 5), (6, 7, 8, 9)]
+
+
+def test_series_does_not_merge_across_nine_boundary():
+    # 7, 8, 9 (fin du front) et 10, 11, 12 (début du back) forment une seule
+    # bande continue de 6 rangées : si la coupure 9→10 n'était pas respectée,
+    # ce serait une pile de 6 trous (violation). Chaque nine ne porte que 3
+    # de ces trous (taille au seuil, pas de violation), et la frontière de
+    # nine empêche toute fusion.
+    layout = _row(build_synthetic_layout(), (7, 8, 9, 10, 11, 12),
+                  (-100.0, -80.0, -60.0, -40.0, -20.0, 0.0))
+
+    assert _parallel_stack_touching(layout, (7, 8, 9, 10, 11, 12)) == []
 
 
 def test_validator_reports_per_nine_par_bounds_while_global_quota_stays_exact():

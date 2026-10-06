@@ -10,7 +10,6 @@ from __future__ import annotations
 from collections import Counter
 from dataclasses import dataclass
 import math
-from typing import Iterable
 
 from experiments.elastic_routing.model import CourseLayout, ElasticHole, PAR_SPECS
 
@@ -260,51 +259,78 @@ def _aligned(a: Point, b: Point, c: Point, d: Point, angle_deg: float) -> bool:
     return abs((ux * vx + uy * vy) / lengths) >= math.cos(math.radians(angle_deg)) - EPSILON
 
 
-def _side_by_side(first: HoleGeometry, second: HoleGeometry,
-                  rules: ValidationRules) -> bool:
-    aligned = any(
+def _aligned_overlap(first: HoleGeometry, second: HoleGeometry,
+                     rules: ValidationRules) -> bool:
+    """Angle ≤ seuil et recouvrement projeté > seuil, sans exigence de contact.
+
+    Utilisé à la fois par `_side_by_side` (avec contact) et par la détection
+    de piles parallèles pour vérifier l'alignement deux à deux d'une série
+    entière, y compris entre trous non voisins qui ne se touchent pas.
+    """
+    return any(
         _aligned(a, b, c, d, rules.parallel_stack_angle_deg)
         and _projected_overlap(a, b, c, d) > rules.parallel_stack_overlap
         for a, b in _segments(first.axis)
         for c, d in _segments(second.axis)
     )
-    return aligned and polygon_gap(first.rough, second.rough) <= EPSILON
 
 
-def _maximal_cliques(ids: Iterable[int], pairs: Iterable[tuple[int, int]]) -> list[tuple[int, ...]]:
-    """Énumère toutes les cliques maximales du graphe de parallélisme.
+def _side_by_side(first: HoleGeometry, second: HoleGeometry,
+                  rules: ValidationRules) -> bool:
+    return (_aligned_overlap(first, second, rules)
+            and polygon_gap(first.rough, second.rough) <= EPSILON)
 
-    Bron–Kerbosch avec pivot. Une pile parallèle est une clique (tous les
-    trous sont mutuellement `_side_by_side`), pas une composante connexe
-    (transitive, donc trop grossière : A∥B et B∥C n'impliquent pas A∥C).
-    Ordre déterministe : sommets et candidats triés, pivot choisi par degré
-    décroissant puis identifiant croissant, cliques triées en sortie.
+
+def _consecutive_parallel_series(nine_holes: tuple[ElasticHole, ...],
+                                 geometries: dict[int, HoleGeometry],
+                                 rules: ValidationRules) -> list[Violation]:
+    """Séries maximales de trous consécutifs en pile parallèle, dans un nine.
+
+    Une série = trous consécutifs dans l'ordre de jeu, chacun `_side_by_side`
+    (contact + alignement) avec le suivant, ET tous les trous de la série
+    alignés deux à deux (alignement seul, sans exigence de contact) — ce
+    second critère exclut l'éventail qui tourne progressivement (chaque
+    voisin aligné, mais les extrémités ne le sont plus). Une violation par
+    série maximale strictement plus longue que `max_parallel_stack`.
     """
-    vertices = sorted(set(ids))
-    neighbors: dict[int, set[int]] = {vertex: set() for vertex in vertices}
-    for first, second in pairs:
-        neighbors[first].add(second)
-        neighbors[second].add(first)
+    count = len(nine_holes)
+    geoms = [geometries[hole.order] for hole in nine_holes]
+    chain_edge = [_side_by_side(geoms[index], geoms[index + 1], rules)
+                  for index in range(count - 1)]
+    alignment_cache: dict[tuple[int, int], bool] = {}
 
-    cliques: list[tuple[int, ...]] = []
+    def aligned(i: int, j: int) -> bool:
+        key = (i, j)
+        if key not in alignment_cache:
+            alignment_cache[key] = _aligned_overlap(geoms[i], geoms[j], rules)
+        return alignment_cache[key]
 
-    def bron_kerbosch(clique: frozenset[int], candidates: set[int], excluded: set[int]) -> None:
-        if not candidates and not excluded:
-            cliques.append(tuple(sorted(clique)))
-            return
-        pool = candidates | excluded
-        pivot = max(pool, key=lambda vertex: (len(candidates & neighbors[vertex]), -vertex))
-        for vertex in sorted(candidates - neighbors[pivot]):
-            bron_kerbosch(
-                clique | {vertex},
-                candidates & neighbors[vertex],
-                excluded & neighbors[vertex],
-            )
-            candidates = candidates - {vertex}
-            excluded = excluded | {vertex}
+    # Fenêtre maximale commençant à chaque indice : extension gloutonne tant
+    # que le trou suivant reste chaîné (contact) et aligné avec tous les
+    # trous déjà inclus. Ces fenêtres sont croissantes avec l'indice de
+    # départ (retirer le premier trou ne peut qu'assouplir les contraintes),
+    # donc une fenêtre n'est maximale (non incluse dans la précédente) que
+    # si sa fin dépasse strictement celle de la fenêtre précédente.
+    ends: list[int] = []
+    for start in range(count):
+        end = start
+        while (end + 1 < count and chain_edge[end]
+               and all(aligned(previous, end + 1) for previous in range(start, end + 1))):
+            end += 1
+        ends.append(end)
 
-    bron_kerbosch(frozenset(), set(vertices), set())
-    return sorted(cliques)
+    violations: list[Violation] = []
+    for start, end in enumerate(ends):
+        if start > 0 and end <= ends[start - 1]:
+            continue
+        size = end - start + 1
+        if size > rules.max_parallel_stack:
+            orders = tuple(nine_holes[index].order for index in range(start, end + 1))
+            violations.append(Violation(
+                "parallel_stack", orders,
+                f"pile de {size} trous consécutifs > {rules.max_parallel_stack}",
+            ))
+    return violations
 
 
 def _segment_crosses_polygon(start: Point, end: Point, polygon: tuple[Point, ...]) -> bool:
@@ -371,7 +397,6 @@ def validate(layout: CourseLayout, rules: ValidationRules | None = None) -> list
                     f"cœur à {distance:.2f} blocs du clubhouse, minimum {rules.clubhouse_clear_radius:.2f}",
                 ))
 
-    side_by_side: list[tuple[int, int]] = []
     for index, first in enumerate(layout.holes):
         first_geometry = geometries[first.order]
         for second in layout.holes[index + 1:]:
@@ -387,17 +412,10 @@ def validate(layout: CourseLayout, rules: ValidationRules | None = None) -> list
                     "fairway_gap", pair,
                     f"écart fairway {gap:.2f}, minimum {rules.fairway_gap:.2f}",
                 ))
-            if rules.max_parallel_stack is not None \
-                    and _side_by_side(first_geometry, second_geometry, rules):
-                side_by_side.append(pair)
 
     if rules.max_parallel_stack is not None:
-        for clique in _maximal_cliques(geometries, side_by_side):
-            if len(clique) > rules.max_parallel_stack:
-                violations.append(Violation(
-                    "parallel_stack", clique,
-                    f"pile de {len(clique)} trous > {rules.max_parallel_stack}",
-                ))
+        for nine in (layout.front, layout.back):
+            violations.extend(_consecutive_parallel_series(nine.holes, geometries, rules))
 
     violations.extend(_validate_nine_pars(layout, rules))
 
