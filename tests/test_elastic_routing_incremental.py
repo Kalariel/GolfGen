@@ -8,6 +8,7 @@ reconstruisent un ``CourseLayout`` valide depuis des trous modifiés.
 from __future__ import annotations
 
 from dataclasses import replace
+import math
 import random
 
 import pytest
@@ -149,15 +150,19 @@ def test_nine_par_bounds_violation_raises_the_topologie_component():
     assert score.topologie > 0.0
 
 
-def test_conservative_margin_can_over_report_a_near_threshold_fairway_gap():
-    """Écart documenté : le surrogate traite chaque trou comme une capsule et
-    retranche une marge conservatrice (``conservative_margin``, 1.0 bloc par
-    défaut) de la distance axe-à-axe pour ne jamais *manquer* un écart réel
-    (joints biseautés de l'oracle, cf. ``geometry.buffered_axis``). Il peut
-    donc signaler un écart fairway que l'oracle polygonal juge valide, tant
-    que l'écart réel est à moins de ``conservative_margin`` du seuil : ce
-    faux positif est résolu par l'oracle complet, périodiquement (PLAN.md,
-    point c), pas par ce surrogate.
+def test_surrogate_margin_can_over_report_a_near_threshold_fairway_gap():
+    """Écart documenté : le surrogate traite chaque trou comme une capsule à
+    bouts ronds bâtie sur un axe étendu de ``half_width`` à chaque bout (pour
+    contenir le rectangle à bout plat de l'oracle), et retranche une marge
+    forfaitaire (``conservative_margin``, 1.0 bloc par défaut) — plus, si le
+    trou a un dogleg, une marge d'onglet (``half_width * (1/0.72 - 1)``) — de
+    la distance axe-à-axe, pour ne jamais *manquer* un écart réel (joints
+    biseautés et extrémités prolongées de ``geometry.buffered_axis``). Il
+    peut donc signaler un écart fairway que l'oracle polygonal juge valide,
+    tant que l'écart réel est à moins de cette marge du seuil : ce faux
+    positif est résolu par l'oracle complet, périodiquement (PLAN.md,
+    point c), pas par ce surrogate. Voir aussi le test de propriété
+    ci-dessous pour une mesure du taux de faux positifs sur un échantillon.
     """
     layout = build_synthetic_layout()
     broken = _replace_hole(layout, 1, tee=ControlPoint(140.0, 200.0), green=ControlPoint(140.0, 290.0), width=10.0)
@@ -167,6 +172,113 @@ def test_conservative_margin_can_over_report_a_near_threshold_fairway_gap():
 
     score = IncrementalEvaluator(broken, PERMISSIVE).score()
     assert score.ecarts > 0.0  # le surrogate, pessimiste par construction, le signale
+
+
+# -- (a-bis) propriété seedée : zéro faux négatif, faux positifs mesurés ----
+
+def _add_sharp_dogleg(hole, rng: random.Random):
+    """Ajoute un dogleg à virage serré, pour stresser le joint en onglet."""
+    tee, green = hole.tee, hole.green
+    mx, my = (tee.x + green.x) / 2.0, (tee.y + green.y) / 2.0
+    dx, dy = green.x - tee.x, green.y - tee.y
+    length = math.hypot(dx, dy) or 1.0
+    nx, ny = -dy / length, dx / length
+    offset = rng.uniform(5.0, 20.0) * rng.choice((-1, 1))
+    return replace(hole, doglegs=(ControlPoint(mx + nx * offset, my + ny * offset),))
+
+
+def _nudge_hole(hole, rng: random.Random, spread: float = 10.0):
+    dx1, dy1 = rng.uniform(-spread, spread), rng.uniform(-spread, spread)
+    dx2, dy2 = rng.uniform(-spread, spread), rng.uniform(-spread, spread)
+    return replace(hole,
+                    tee=ControlPoint(hole.tee.x + dx1, hole.tee.y + dy1),
+                    green=ControlPoint(hole.green.x + dx2, hole.green.y + dy2))
+
+
+def _force_close_pair(layout: CourseLayout, rng: random.Random) -> CourseLayout:
+    """Place un trou tout près (bout à bout) d'un autre : stresse les cas
+    « près des extrémités » (axe étendu) et les écarts proches du seuil."""
+    holes = {hole.order: hole for hole in layout.holes}
+    anchor_order, moved_order = rng.sample(range(1, 19), 2)
+    anchor = holes[anchor_order]
+    gap = rng.uniform(-2.0, 10.0)
+    angle = rng.uniform(0.0, 2 * math.pi)
+    base = ControlPoint(anchor.tee.x + gap * math.cos(angle), anchor.tee.y + gap * math.sin(angle))
+    direction = rng.uniform(0.0, 2 * math.pi)
+    length = rng.uniform(80.0, 120.0)
+    holes[moved_order] = replace(
+        holes[moved_order], tee=base,
+        green=ControlPoint(base.x + length * math.cos(direction), base.y + length * math.sin(direction)),
+    )
+    return _with_holes(layout, holes.values())
+
+
+def _force_near_clubhouse(layout: CourseLayout, rng: random.Random) -> CourseLayout:
+    holes = {hole.order: hole for hole in layout.holes}
+    order = rng.choice(range(1, 19))
+    distance = rng.uniform(0.0, 20.0)
+    angle = rng.uniform(0.0, 2 * math.pi)
+    tee = ControlPoint(layout.clubhouse.x + distance * math.cos(angle),
+                        layout.clubhouse.y + distance * math.sin(angle))
+    direction = rng.uniform(0.0, 2 * math.pi)
+    length = rng.uniform(80.0, 120.0)
+    green = ControlPoint(tee.x + length * math.cos(direction), tee.y + length * math.sin(direction))
+    holes[order] = replace(holes[order], tee=tee, green=green)
+    return _with_holes(layout, holes.values())
+
+
+def _perturbed_layout(layout: CourseLayout, rng: random.Random) -> CourseLayout:
+    mode = rng.random()
+    if mode < 0.35:
+        holes = {hole.order: hole for hole in layout.holes}
+        for order in rng.sample(range(1, 19), rng.randint(1, 3)):
+            hole = holes[order]
+            if rng.random() < 0.5:
+                hole = _add_sharp_dogleg(hole, rng)
+            holes[order] = _nudge_hole(hole, rng)
+        return _with_holes(layout, holes.values())
+    if mode < 0.65:
+        return _force_close_pair(layout, rng)
+    return _force_near_clubhouse(layout, rng)
+
+
+def test_surrogate_has_zero_false_negatives_on_seeded_perturbations():
+    """Propriété (300 layouts perturbés seedés, dont des cas proches des
+    extrémités et des doglegs à virage serré) : pour fairway_gap,
+    clubhouse_clear et link_blocked, dès que l'oracle signale une violation,
+    la composante surrogate correspondante est strictement positive — zéro
+    faux négatif. Les faux positifs (surrogate > 0 sans violation oracle,
+    attendus par construction pessimiste) sont comptés et rapportés, sans
+    assertion stricte dessus.
+    """
+    rng = random.Random(777)
+    rules = ValidationRules()
+    mapping = (("fairway_gap", "ecarts"), ("clubhouse_clear", "clubhouse"), ("link_blocked", "liaisons"))
+    false_positive_opportunities = {component: 0 for _, component in mapping}
+    false_positives = {component: 0 for _, component in mapping}
+    oracle_occurrences = {kind: 0 for kind, _ in mapping}
+
+    for _ in range(300):
+        layout = _perturbed_layout(build_synthetic_layout(), rng)
+        kinds = {violation.kind for violation in validate(layout, rules)}
+        score = IncrementalEvaluator(layout, rules).score()
+        for kind, component in mapping:
+            value = getattr(score, component)
+            if kind in kinds:
+                oracle_occurrences[kind] += 1
+                assert value > 0.0, f"faux négatif : oracle={kind}, surrogate={component}=0"
+            else:
+                false_positive_opportunities[component] += 1
+                if value > 0.0:
+                    false_positives[component] += 1
+
+    rates = {
+        component: (false_positives[component] / false_positive_opportunities[component]
+                    if false_positive_opportunities[component] else None)
+        for _, component in mapping
+    }
+    print("occurrences oracle :", oracle_occurrences)
+    print("taux de faux positifs (surrogate pessimiste, attendu) :", rates)
 
 
 # -- (b) incrémental == recalcul complet ------------------------------------

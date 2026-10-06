@@ -133,7 +133,11 @@ def main() -> None:
         "pas 3×, car les paires communes aux 3 trous changés ne sont recalculées qu'une fois "
         "chacune ;",
         "- comparaison à l'oracle sur un échantillon réduit (30 appels) car ~11 ms/appel "
-        "rendrait un grand échantillon coûteux pour un résultat déjà stable.",
+        "rendrait un grand échantillon coûteux pour un résultat déjà stable ;",
+        "- le budget 100 000/60 s porte sur le coût **moyen** d'une évaluation (soit "
+        "0,6 ms) : un `max` ponctuel de k=3 proche ou légèrement au-dessus (GC, jitter "
+        "de l'interpréteur) n'invalide pas le go/no-go tant que la moyenne et le p95 "
+        "restent nettement en dessous, ce qui est le cas ici.",
     ]
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)

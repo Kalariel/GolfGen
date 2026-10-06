@@ -11,18 +11,36 @@ objectifs souples pas encore définis par l'oracle (étape 5) : elles restent
 
 Approximations assumées (documentées, pas masquées) :
 
-- chaque trou est traité comme une **capsule** (axe + demi-largeur), alors que
-  l'oracle polygonal utilise des joints biseautés et des extrémités
-  prolongées sur les virages (``geometry.buffered_axis``). Une marge
-  conservatrice ``conservative_margin`` est retranchée de chaque distance
-  estimée (écart fairway, clubhouse, blocage de liaison) pour que le
-  surrogate ne *manque* jamais une violation réelle de l'oracle ; il peut en
-  revanche signaler de faux positifs occasionnels près des seuils, résolus
-  périodiquement par l'oracle complet (voir PLAN.md, point c) ;
-- le rejet rapide par boîtes englobantes élargies (``_bbox_overlap``) peut, en
-  théorie, laisser passer un recouvrement extrême si la marge conservatrice
-  est insuffisante pour un virage très serré ; en pratique la marge par
-  défaut couvre les cas du layout synthétique et des perturbations testées.
+- chaque trou est traité comme une **capsule à bouts ronds** (axe + demi-
+  largeur), alors que l'oracle polygonal (``geometry.buffered_axis``) produit
+  des **extrémités plates prolongées** (rectangle, extension tangentielle de
+  ``half_width`` à chaque bout) et des **joints en onglet clampés** aux
+  virages (``dot = max(0.72, ...)``, donc une longueur d'onglet jusqu'à
+  ``half_width / 0.72`` ≈ 1,39 fois le rayon). Pour que le surrogate
+  *contienne* toujours le polygone réel (zéro faux négatif) :
+
+  1. l'axe utilisé pour les contrôles à base de cœur (écart fairway,
+     clubhouse, blocage de liaison — PAS le croisement d'axes, qui compare
+     les axes bruts des deux côtés, oracle inclus) est prolongé aux deux
+     bouts de ``half_width`` le long de la tangente terminale
+     (``_extend_axis``) : la capsule à bouts ronds bâtie sur cet axe étendu
+     contient alors le rectangle à bout plat de l'oracle ;
+  2. une marge additionnelle ``half_width * (1/0.72 - 1)`` (``MITER_FACTOR``,
+     valeur dérivée de la constante de clamp de ``geometry.buffered_axis``)
+     est ajoutée pour tout trou ayant au moins un dogleg, en plus de la marge
+     forfaitaire ``conservative_margin`` (défaut 1,0 bloc) — ensemble, cela
+     couvre le pire cas de protrusion d'un joint en onglet clampé.
+
+  Cette marge reste volontairement pessimiste : le surrogate peut signaler un
+  faux positif près d'un seuil (l'oracle complet tranche, périodiquement —
+  PLAN.md, point c) mais ne doit jamais manquer une violation réelle. Voir
+  ``tests/test_elastic_routing_incremental.py`` pour un test de non-régression
+  (zéro faux négatif sur un échantillon seedé) et le taux de faux positifs
+  mesuré ;
+- le rejet rapide par boîtes englobantes élargies (``_bbox_overlap``) est
+  bâti sur les mêmes marges (axe étendu + ``conservative_margin`` + marge
+  d'onglet), donc sans risque supplémentaire de faux négatif par rapport aux
+  calculs exacts qu'il remplace.
 
 Mapping violation de l'oracle -> composante du score vectoriel (pas de nom
 dédié "bounds"/"map_size" dans la liste imposée, donc rattaché à
@@ -70,6 +88,12 @@ COMPONENT_NAMES = (
 
 LinkKey = tuple[int | None, int | None]
 
+# Constante de clamp de ``geometry.buffered_axis.vertex_offset`` (dot >= 0.72) :
+# la longueur d'un onglet de joint peut atteindre ``radius / MITER_MIN_DOT``,
+# donc un excès de ``radius * (MITER_FACTOR - 1)`` au-delà du simple rayon.
+MITER_MIN_DOT = 0.72
+MITER_FACTOR = 1.0 / MITER_MIN_DOT
+
 
 def _point(control: ControlPoint) -> Point:
     return (control.x, control.y)
@@ -84,6 +108,29 @@ def _point_segment_distance(point: Point, a: Point, b: Point) -> float:
     ratio = ((point[0] - a[0]) * dx + (point[1] - a[1]) * dy) / length_sq
     ratio = max(0.0, min(1.0, ratio))
     return math.dist(point, (a[0] + ratio * dx, a[1] + ratio * dy))
+
+
+def _unit(a: Point, b: Point) -> Point:
+    """Duplication locale (primitive privée de geometry.py, non importée)."""
+    dx, dy = b[0] - a[0], b[1] - a[1]
+    length = math.hypot(dx, dy)
+    return (dx / length, dy / length)
+
+
+def _extend_axis(axis: tuple[Point, ...], half_width: float) -> tuple[Point, ...]:
+    """Prolonge les deux bouts de l'axe de ``half_width`` le long de la
+    tangente terminale, pour que la capsule à bouts ronds bâtie dessus
+    contienne le rectangle à bout plat du polygone de l'oracle (cf.
+    ``geometry.buffered_axis``, extension tangentielle des deux côtés)."""
+    if len(axis) < 2:
+        return axis
+    start_tangent = _unit(axis[0], axis[1])
+    end_tangent = _unit(axis[-2], axis[-1])
+    extended_start = (axis[0][0] - half_width * start_tangent[0],
+                       axis[0][1] - half_width * start_tangent[1])
+    extended_end = (axis[-1][0] + half_width * end_tangent[0],
+                     axis[-1][1] + half_width * end_tangent[1])
+    return (extended_start,) + axis[1:-1] + (extended_end,)
 
 
 def _bbox_overlap(first: tuple[float, float, float, float],
@@ -117,7 +164,9 @@ class ScoreVector:
 class _HoleCache:
     hole: ElasticHole
     axis: tuple[Point, ...]
+    core_axis: tuple[Point, ...]
     half_width: float
+    margin: float
     bbox: tuple[float, float, float, float]
     gap_bbox: tuple[float, float, float, float]
     self_penalty: Mapping[str, float]
@@ -212,9 +261,12 @@ class IncrementalEvaluator:
     def _build_hole_cache(self, hole: ElasticHole) -> _HoleCache:
         axis = tuple(_point(point) for point in hole.axis)
         half_width = hole.width / 2.0
-        radius = half_width + self._conservative_margin
-        xs = [point[0] for point in axis]
-        ys = [point[1] for point in axis]
+        joint_margin = half_width * (MITER_FACTOR - 1.0) if hole.doglegs else 0.0
+        margin = self._conservative_margin + joint_margin
+        core_axis = _extend_axis(axis, half_width)
+        radius = half_width + margin
+        xs = [point[0] for point in core_axis]
+        ys = [point[1] for point in core_axis]
         bbox = (min(xs) - radius, min(ys) - radius, max(xs) + radius, max(ys) + radius)
         # bbox élargie en plus du seuil d'écart fairway : une paire ne peut
         # être rejetée avant calcul exact que si elle est hors de portée de
@@ -227,12 +279,12 @@ class IncrementalEvaluator:
         spec = PAR_SPECS[hole.par]
         length_penalty = max(0.0, spec.length_min - hole.length) + max(0.0, hole.length - spec.length_max)
         width_penalty = max(0.0, spec.width_min - hole.width) + max(0.0, hole.width - spec.width_max)
-        bounds_penalty = self._bounds_penalty(axis, radius)
+        bounds_penalty = self._bounds_penalty(core_axis, radius)
         clubhouse_penalty = 0.0
         if self._rules.clubhouse_clear_radius is not None:
             min_dist = min(_point_segment_distance(self._clubhouse, a, b)
-                            for a, b in zip(axis, axis[1:]))
-            estimate = min_dist - half_width - self._conservative_margin
+                            for a, b in zip(core_axis, core_axis[1:]))
+            estimate = min_dist - half_width - margin
             clubhouse_penalty = max(0.0, self._rules.clubhouse_clear_radius - estimate)
 
         self_penalty = {
@@ -240,14 +292,14 @@ class IncrementalEvaluator:
             "topologie": bounds_penalty,
             "clubhouse": clubhouse_penalty,
         }
-        return _HoleCache(hole=hole, axis=axis, half_width=half_width, bbox=bbox,
-                          gap_bbox=gap_bbox, self_penalty=self_penalty)
+        return _HoleCache(hole=hole, axis=axis, core_axis=core_axis, half_width=half_width,
+                          margin=margin, bbox=bbox, gap_bbox=gap_bbox, self_penalty=self_penalty)
 
-    def _bounds_penalty(self, axis: tuple[Point, ...], radius: float) -> float:
+    def _bounds_penalty(self, core_axis: tuple[Point, ...], radius: float) -> float:
         edge_min = self._rules.edge_min
         width, height = self._rules.width, self._rules.height
         penalty = 0.0
-        for x, y in axis:
+        for x, y in core_axis:
             penalty += max(0.0, (edge_min + radius) - x)
             penalty += max(0.0, x - (width - edge_min - radius))
             penalty += max(0.0, (edge_min + radius) - y)
@@ -255,16 +307,23 @@ class IncrementalEvaluator:
         return penalty
 
     def _build_pair_entry(self, first: _HoleCache, second: _HoleCache) -> _PairEntry:
-        if not _bbox_overlap(first.gap_bbox, second.gap_bbox):
-            return _PairEntry(penalty={"croisements": 0.0, "ecarts": 0.0})
-        first_segments = tuple(zip(first.axis, first.axis[1:]))
-        second_segments = tuple(zip(second.axis, second.axis[1:]))
+        # Croisement d'axes : même primitive que l'oracle (axes bruts, pas de
+        # marge nécessaire, zéro écart connu).
+        first_axis_segments = tuple(zip(first.axis, first.axis[1:]))
+        second_axis_segments = tuple(zip(second.axis, second.axis[1:]))
         crossing = any(segments_intersect(a, b, c, d)
-                       for a, b in first_segments for c, d in second_segments)
+                       for a, b in first_axis_segments for c, d in second_axis_segments)
         axis_penalty = 1.0 if crossing else 0.0
+
+        if not _bbox_overlap(first.gap_bbox, second.gap_bbox):
+            return _PairEntry(penalty={"croisements": axis_penalty, "ecarts": 0.0})
+        # Écart fairway : axes étendus (bouts + marge d'onglet), capsule
+        # conservatrice autour du cœur biseauté de l'oracle.
+        first_core_segments = tuple(zip(first.core_axis, first.core_axis[1:]))
+        second_core_segments = tuple(zip(second.core_axis, second.core_axis[1:]))
         min_gap = min(segment_distance(a, b, c, d)
-                      for a, b in first_segments for c, d in second_segments)
-        estimate = min_gap - first.half_width - second.half_width - self._conservative_margin
+                      for a, b in first_core_segments for c, d in second_core_segments)
+        estimate = min_gap - first.half_width - second.half_width - first.margin - second.margin
         gap_penalty = max(0.0, self._rules.fairway_gap - estimate)
         return _PairEntry(penalty={"croisements": axis_penalty, "ecarts": gap_penalty})
 
@@ -274,13 +333,14 @@ class IncrementalEvaluator:
         return start, end
 
     def _block_penalty(self, start: Point, end: Point, cache: _HoleCache) -> float:
-        threshold = cache.half_width + self._conservative_margin
+        threshold = cache.half_width + cache.margin
         minx, maxx = min(start[0], end[0]), max(start[0], end[0])
         miny, maxy = min(start[1], end[1]), max(start[1], end[1])
         bx0, by0, bx1, by1 = cache.bbox
         if maxx < bx0 or minx > bx1 or maxy < by0 or miny > by1:
             return 0.0
-        min_dist = min(segment_distance(start, end, a, b) for a, b in zip(cache.axis, cache.axis[1:]))
+        min_dist = min(segment_distance(start, end, a, b)
+                       for a, b in zip(cache.core_axis, cache.core_axis[1:]))
         return max(0.0, threshold - min_dist)
 
     def _build_link_entry(self, key: LinkKey) -> _LinkEntry:
