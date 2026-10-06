@@ -1,0 +1,534 @@
+{
+  "back": {
+    "holes": [
+      {
+        "doglegs": [],
+        "green": {
+          "x": 225.0,
+          "y": 220.0
+        },
+        "order": 10,
+        "par": 3,
+        "rough_margin": 5.0,
+        "tee": {
+          "x": 300.0,
+          "y": 220.0
+        },
+        "width": 10.0
+      },
+      {
+        "doglegs": [],
+        "green": {
+          "x": 345.0,
+          "y": 240.0
+        },
+        "order": 11,
+        "par": 4,
+        "rough_margin": 5.0,
+        "tee": {
+          "x": 225.0,
+          "y": 240.0
+        },
+        "width": 11.0
+      },
+      {
+        "doglegs": [],
+        "green": {
+          "x": 225.0,
+          "y": 260.0
+        },
+        "order": 12,
+        "par": 4,
+        "rough_margin": 5.0,
+        "tee": {
+          "x": 345.0,
+          "y": 260.0
+        },
+        "width": 11.0
+      },
+      {
+        "doglegs": [],
+        "green": {
+          "x": 345.0,
+          "y": 280.0
+        },
+        "order": 13,
+        "par": 4,
+        "rough_margin": 5.0,
+        "tee": {
+          "x": 225.0,
+          "y": 280.0
+        },
+        "width": 11.0
+      },
+      {
+        "doglegs": [],
+        "green": {
+          "x": 225.0,
+          "y": 300.0
+        },
+        "order": 14,
+        "par": 4,
+        "rough_margin": 5.0,
+        "tee": {
+          "x": 345.0,
+          "y": 300.0
+        },
+        "width": 11.0
+      },
+      {
+        "doglegs": [],
+        "green": {
+          "x": 50.0,
+          "y": 320.0
+        },
+        "order": 15,
+        "par": 5,
+        "rough_margin": 5.0,
+        "tee": {
+          "x": 225.0,
+          "y": 320.0
+        },
+        "width": 12.0
+      },
+      {
+        "doglegs": [],
+        "green": {
+          "x": 225.0,
+          "y": 340.0
+        },
+        "order": 16,
+        "par": 5,
+        "rough_margin": 5.0,
+        "tee": {
+          "x": 50.0,
+          "y": 340.0
+        },
+        "width": 12.0
+      },
+      {
+        "doglegs": [],
+        "green": {
+          "x": 105.0,
+          "y": 360.0
+        },
+        "order": 17,
+        "par": 4,
+        "rough_margin": 5.0,
+        "tee": {
+          "x": 225.0,
+          "y": 360.0
+        },
+        "width": 11.0
+      },
+      {
+        "doglegs": [],
+        "green": {
+          "x": 180.0,
+          "y": 380.0
+        },
+        "order": 18,
+        "par": 3,
+        "rough_margin": 5.0,
+        "tee": {
+          "x": 105.0,
+          "y": 380.0
+        },
+        "width": 10.0
+      }
+    ],
+    "links": [
+      {
+        "end": {
+          "x": 300.0,
+          "y": 220.0
+        },
+        "from_hole_order": null,
+        "start": {
+          "x": 200.0,
+          "y": 200.0
+        },
+        "to_hole_order": 10
+      },
+      {
+        "end": {
+          "x": 225.0,
+          "y": 240.0
+        },
+        "from_hole_order": 10,
+        "start": {
+          "x": 225.0,
+          "y": 220.0
+        },
+        "to_hole_order": 11
+      },
+      {
+        "end": {
+          "x": 345.0,
+          "y": 260.0
+        },
+        "from_hole_order": 11,
+        "start": {
+          "x": 345.0,
+          "y": 240.0
+        },
+        "to_hole_order": 12
+      },
+      {
+        "end": {
+          "x": 225.0,
+          "y": 280.0
+        },
+        "from_hole_order": 12,
+        "start": {
+          "x": 225.0,
+          "y": 260.0
+        },
+        "to_hole_order": 13
+      },
+      {
+        "end": {
+          "x": 345.0,
+          "y": 300.0
+        },
+        "from_hole_order": 13,
+        "start": {
+          "x": 345.0,
+          "y": 280.0
+        },
+        "to_hole_order": 14
+      },
+      {
+        "end": {
+          "x": 225.0,
+          "y": 320.0
+        },
+        "from_hole_order": 14,
+        "start": {
+          "x": 225.0,
+          "y": 300.0
+        },
+        "to_hole_order": 15
+      },
+      {
+        "end": {
+          "x": 50.0,
+          "y": 340.0
+        },
+        "from_hole_order": 15,
+        "start": {
+          "x": 50.0,
+          "y": 320.0
+        },
+        "to_hole_order": 16
+      },
+      {
+        "end": {
+          "x": 225.0,
+          "y": 360.0
+        },
+        "from_hole_order": 16,
+        "start": {
+          "x": 225.0,
+          "y": 340.0
+        },
+        "to_hole_order": 17
+      },
+      {
+        "end": {
+          "x": 105.0,
+          "y": 380.0
+        },
+        "from_hole_order": 17,
+        "start": {
+          "x": 105.0,
+          "y": 360.0
+        },
+        "to_hole_order": 18
+      },
+      {
+        "end": {
+          "x": 200.0,
+          "y": 200.0
+        },
+        "from_hole_order": 18,
+        "start": {
+          "x": 180.0,
+          "y": 380.0
+        },
+        "to_hole_order": null
+      }
+    ],
+    "start_order": 10
+  },
+  "clubhouse": {
+    "x": 200.0,
+    "y": 200.0
+  },
+  "front": {
+    "holes": [
+      {
+        "doglegs": [],
+        "green": {
+          "x": 175.0,
+          "y": 180.0
+        },
+        "order": 1,
+        "par": 3,
+        "rough_margin": 5.0,
+        "tee": {
+          "x": 100.0,
+          "y": 180.0
+        },
+        "width": 10.0
+      },
+      {
+        "doglegs": [],
+        "green": {
+          "x": 55.0,
+          "y": 160.0
+        },
+        "order": 2,
+        "par": 4,
+        "rough_margin": 5.0,
+        "tee": {
+          "x": 175.0,
+          "y": 160.0
+        },
+        "width": 11.0
+      },
+      {
+        "doglegs": [],
+        "green": {
+          "x": 175.0,
+          "y": 140.0
+        },
+        "order": 3,
+        "par": 4,
+        "rough_margin": 5.0,
+        "tee": {
+          "x": 55.0,
+          "y": 140.0
+        },
+        "width": 11.0
+      },
+      {
+        "doglegs": [],
+        "green": {
+          "x": 55.0,
+          "y": 120.0
+        },
+        "order": 4,
+        "par": 4,
+        "rough_margin": 5.0,
+        "tee": {
+          "x": 175.0,
+          "y": 120.0
+        },
+        "width": 11.0
+      },
+      {
+        "doglegs": [],
+        "green": {
+          "x": 175.0,
+          "y": 100.0
+        },
+        "order": 5,
+        "par": 4,
+        "rough_margin": 5.0,
+        "tee": {
+          "x": 55.0,
+          "y": 100.0
+        },
+        "width": 11.0
+      },
+      {
+        "doglegs": [],
+        "green": {
+          "x": 350.0,
+          "y": 80.0
+        },
+        "order": 6,
+        "par": 5,
+        "rough_margin": 5.0,
+        "tee": {
+          "x": 175.0,
+          "y": 80.0
+        },
+        "width": 12.0
+      },
+      {
+        "doglegs": [],
+        "green": {
+          "x": 175.0,
+          "y": 60.0
+        },
+        "order": 7,
+        "par": 5,
+        "rough_margin": 5.0,
+        "tee": {
+          "x": 350.0,
+          "y": 60.0
+        },
+        "width": 12.0
+      },
+      {
+        "doglegs": [],
+        "green": {
+          "x": 295.0,
+          "y": 40.0
+        },
+        "order": 8,
+        "par": 4,
+        "rough_margin": 5.0,
+        "tee": {
+          "x": 175.0,
+          "y": 40.0
+        },
+        "width": 11.0
+      },
+      {
+        "doglegs": [],
+        "green": {
+          "x": 220.0,
+          "y": 20.0
+        },
+        "order": 9,
+        "par": 3,
+        "rough_margin": 5.0,
+        "tee": {
+          "x": 295.0,
+          "y": 20.0
+        },
+        "width": 10.0
+      }
+    ],
+    "links": [
+      {
+        "end": {
+          "x": 100.0,
+          "y": 180.0
+        },
+        "from_hole_order": null,
+        "start": {
+          "x": 200.0,
+          "y": 200.0
+        },
+        "to_hole_order": 1
+      },
+      {
+        "end": {
+          "x": 175.0,
+          "y": 160.0
+        },
+        "from_hole_order": 1,
+        "start": {
+          "x": 175.0,
+          "y": 180.0
+        },
+        "to_hole_order": 2
+      },
+      {
+        "end": {
+          "x": 55.0,
+          "y": 140.0
+        },
+        "from_hole_order": 2,
+        "start": {
+          "x": 55.0,
+          "y": 160.0
+        },
+        "to_hole_order": 3
+      },
+      {
+        "end": {
+          "x": 175.0,
+          "y": 120.0
+        },
+        "from_hole_order": 3,
+        "start": {
+          "x": 175.0,
+          "y": 140.0
+        },
+        "to_hole_order": 4
+      },
+      {
+        "end": {
+          "x": 55.0,
+          "y": 100.0
+        },
+        "from_hole_order": 4,
+        "start": {
+          "x": 55.0,
+          "y": 120.0
+        },
+        "to_hole_order": 5
+      },
+      {
+        "end": {
+          "x": 175.0,
+          "y": 80.0
+        },
+        "from_hole_order": 5,
+        "start": {
+          "x": 175.0,
+          "y": 100.0
+        },
+        "to_hole_order": 6
+      },
+      {
+        "end": {
+          "x": 350.0,
+          "y": 60.0
+        },
+        "from_hole_order": 6,
+        "start": {
+          "x": 350.0,
+          "y": 80.0
+        },
+        "to_hole_order": 7
+      },
+      {
+        "end": {
+          "x": 175.0,
+          "y": 40.0
+        },
+        "from_hole_order": 7,
+        "start": {
+          "x": 175.0,
+          "y": 60.0
+        },
+        "to_hole_order": 8
+      },
+      {
+        "end": {
+          "x": 295.0,
+          "y": 20.0
+        },
+        "from_hole_order": 8,
+        "start": {
+          "x": 295.0,
+          "y": 40.0
+        },
+        "to_hole_order": 9
+      },
+      {
+        "end": {
+          "x": 200.0,
+          "y": 200.0
+        },
+        "from_hole_order": 9,
+        "start": {
+          "x": 220.0,
+          "y": 20.0
+        },
+        "to_hole_order": null
+      }
+    ],
+    "start_order": 1
+  },
+  "height": 400.0,
+  "schema_version": 1,
+  "seed": 0,
+  "width": 400.0
+}
