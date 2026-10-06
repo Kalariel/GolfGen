@@ -59,7 +59,9 @@ def _course_violations(front: tuple[PlacedBean, ...], back: tuple[PlacedBean, ..
                        par5_deadline: int | None = None,
                        back_par3_bounds: tuple[int, int] | None = _UNSET,
                        back_par5_bounds: tuple[int, int] | None = _UNSET,
-                       back_par5_deadline: int | None = _UNSET) -> list[str]:
+                       back_par5_deadline: int | None = _UNSET,
+                       reserved_corridors: tuple[tuple[tuple[float, float], tuple[float, float], int], ...]
+                       = ()) -> list[str]:
     """``back_clubhouse_max`` (défaut ``None``) : plafond dur départ/retour du
     BACK si différent de celui du front (décision utilisateur, tee 10 /
     green 18 autorisés plus loin -- voir ``solve_course(back_clubhouse_max=
@@ -112,6 +114,15 @@ def _course_violations(front: tuple[PlacedBean, ...], back: tuple[PlacedBean, ..
     correspondante pour le BACK SEUL, indépendamment du FRONT -- c'est ce que
     fait ``solve_course`` ci-dessous.
 
+    ``reserved_corridors`` (opt-in, défaut ``()`` -> comportement
+    byte-identique, décision utilisateur PLAN.md ligne 6, expérience C1
+    « couloirs de départ réservés ») : couloirs STATIQUES supplémentaires
+    (``(point_a, point_b, owner_order)``, voir ``geometry.ValidationRules.
+    reserved_corridors``) vérifiés ici en plus de ceux déjà portés par
+    ``rules`` -- utile pour la validation indépendante d'une config C1, où
+    les deux couloirs (clubhouse->tee1, clubhouse->tee10) sont déjà
+    entièrement connus une fois les deux nines complets.
+
     Note sur les configs A et A' (``run_exp_par5deadline_and_radialarrival.py``,
     ``run_exp_par5_two_per_nine.py``) : correctif sans effet observable chez
     elles. En A, ``solve_course(par5_deadline=7)`` pose la MÊME deadline sur
@@ -131,6 +142,8 @@ def _course_violations(front: tuple[PlacedBean, ...], back: tuple[PlacedBean, ..
         back_par5_bounds = par5_bounds
     if back_par5_deadline is _UNSET:
         back_par5_deadline = par5_deadline
+    if reserved_corridors:
+        rules = replace(rules, reserved_corridors=tuple(rules.reserved_corridors) + tuple(reserved_corridors))
     violations = [problem.kind for problem in validate((*front, *back), rules, check_links=False)]
     violations.extend(problem.kind for problem in validate(front, rules))
     violations.extend(problem.kind for problem in validate(back, rules))

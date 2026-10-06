@@ -178,6 +178,43 @@ class SolverParams:
     # autour du clubhouse). ``None`` (défaut) désactive la règle --
     # comportement byte-identique.
     arrival_max_angle_deg: float | None = None
+    # Départ FIXÉ de la profondeur 1 (opt-in, décision utilisateur PLAN.md
+    # ligne 6, expérience C1 « couloirs de départ réservés ») : ``(x, y,
+    # heading_deg)`` -- quand renseigné, ``_raw_transforms`` n'énumère plus
+    # la grille ``start_radii`` x ``departure_angles`` x rotations à la
+    # profondeur 1, elle renvoie EXACTEMENT ce transform (plus sa variante
+    # miroir si ``template.allow_mirror``). Motivé par le tee 10 : une fois
+    # un candidat de départ choisi (``run_exp_c1_corridors._tee10_candidates``),
+    # la position doit rester IDENTIQUE quel que soit le gabarit retenu par
+    # la recherche du back, pour que le couloir clubhouse->tee10 (voir
+    # ``corridor_from_own_start`` ci-dessous et ``ValidationRules.
+    # reserved_corridors``) reste un segment fixe. ``None`` (défaut)
+    # désactive -- comportement byte-identique.
+    fixed_start: tuple[float, float, float] | None = None
+    # Couloir réservé DYNAMIQUE clubhouse -> tee du premier trou posé de CE
+    # nine (opt-in, décision utilisateur PLAN.md ligne 6, expérience C1) :
+    # quand vrai, ``expand_state``/``_has_closing_sequence`` ajoutent, dès
+    # que ``state.placed`` n'est pas vide, un couloir ``(clubhouse,
+    # state.placed[0].tee, state.placed[0].order)`` aux ``extra_corridors``
+    # de ``geometry.validate`` -- le point ``state.placed[0].tee`` n'est
+    # connu qu'une fois ce premier trou RÉELLEMENT posé (contrairement au
+    # couloir tee10, connu d'avance via ``fixed_start`` et porté par
+    # ``ValidationRules.reserved_corridors``, STATIQUE pour toute la
+    # recherche). ``False`` (défaut) désactive -- comportement byte-identique.
+    corridor_from_own_start: bool = False
+    # Divergence angulaire minimale (profondeur 1 seule, opt-in, décision
+    # utilisateur PLAN.md ligne 6, expérience C1) : si
+    # ``start_angle_reference_deg`` est renseigné, tout départ de profondeur
+    # 1 dont l'angle (vu depuis le clubhouse) est à moins de
+    # ``start_angle_divergence_min_deg`` de cette référence est rejeté
+    # (``rejected["start_angle_divergence"]``) -- motivé par le tee 1 (front)
+    # qui doit rester à au moins 90° du tee 10 déjà choisi (angle vu depuis
+    # le clubhouse, pas le cap du trou), pour éviter l'entrelacement observé
+    # sur la config A (liaisons piétonnes clubhouse<->tee traversées par un
+    # fairway de l'autre nine). ``None`` (défaut, sur l'une ou l'autre
+    # valeur) désactive -- comportement byte-identique.
+    start_angle_reference_deg: float | None = None
+    start_angle_divergence_min_deg: float | None = None
 
 
 @dataclass(frozen=True)
@@ -260,6 +297,11 @@ class SolveResult:
                 "target_radius_depth9_min": self.params.target_radius_depth9_min,
                 "par5_deadline": self.params.par5_deadline,
                 "arrival_max_angle_deg": self.params.arrival_max_angle_deg,
+                "fixed_start": (None if self.params.fixed_start is None
+                               else list(self.params.fixed_start)),
+                "corridor_from_own_start": self.params.corridor_from_own_start,
+                "start_angle_reference_deg": self.params.start_angle_reference_deg,
+                "start_angle_divergence_min_deg": self.params.start_angle_divergence_min_deg,
             },
             "diagnostics": [{
                 "depth": item.depth,
@@ -444,6 +486,16 @@ def _raw_transforms(template: BeanTemplate, state: SearchState,
     rotations = range(0, 360, params.rotation_step_deg)
     mirrors = (False, True) if template.allow_mirror else (False,)
     if not state.placed:
+        if params.fixed_start is not None:
+            # Départ fixé (opt-in, ``SolverParams.fixed_start``) : ignore
+            # ``start_radii``/``departure_angles``/``rotation_step_deg``,
+            # renvoie exactement ce transform (plus sa variante miroir si le
+            # gabarit l'autorise) -- voir sa docstring.
+            x, y, heading = params.fixed_start
+            yield Transform(x, y, heading, False)
+            if template.allow_mirror:
+                yield Transform(x, y, heading, True)
+            return
         if params.random_departures:
             # Positions tirées (opt-in, ``SolverParams.random_departures``) :
             # angle uniforme sur tout le cercle, rayon uniforme dans
@@ -680,6 +732,28 @@ def _starts_outward(bean: PlacedBean, clubhouse: tuple[float, float]) -> bool:
     return tee_vector[0] * hole_vector[0] + tee_vector[1] * hole_vector[1] > 0.0
 
 
+def _tee_angle_deg(bean: PlacedBean, clubhouse: tuple[float, float]) -> float:
+    """Angle (degrés, ``[0, 360)``) du tee de ``bean`` vu depuis le
+    clubhouse -- la position angulaire de DÉPART, pas le cap du trou (voir
+    ``SolverParams.start_angle_reference_deg``)."""
+    return math.degrees(math.atan2(bean.tee[1] - clubhouse[1], bean.tee[0] - clubhouse[0])) % 360.0
+
+
+def _angular_distance_deg(first_deg: float, second_deg: float) -> float:
+    """Écart angulaire circulaire (``[0, 180]``) entre deux angles en degrés."""
+    diff = abs(first_deg - second_deg) % 360.0
+    return min(diff, 360.0 - diff)
+
+
+def _starts_divergent(bean: PlacedBean, clubhouse: tuple[float, float],
+                      reference_deg: float, min_divergence_deg: float) -> bool:
+    """Vrai si la position angulaire du tee de ``bean`` (vue depuis le
+    clubhouse) est à au moins ``min_divergence_deg`` de ``reference_deg``
+    (expérience C1, divergence tee1/tee10 -- voir ``SolverParams.
+    start_angle_reference_deg``)."""
+    return _angular_distance_deg(_tee_angle_deg(bean, clubhouse), reference_deg) >= min_divergence_deg
+
+
 def _arrival_angle_deg(bean: PlacedBean, clubhouse: tuple[float, float]) -> float | None:
     """Angle (degrés, ``[0, 180]``) entre (a) le DERNIER segment de l'axe du
     trou (celui qui finit sur le green) et (b) la direction du DÉBUT de ce
@@ -757,7 +831,8 @@ def _has_closing_sequence(state: SearchState, bank: BeanBank, clubhouse: tuple[f
                         and not _arrives_radially(placed, clubhouse, params.arrival_max_angle_deg)):
                     continue
                 candidate = (*state.placed, placed)
-                if _placement_problems(candidate, obstacles, rules):
+                corridors = _own_start_corridor(state, clubhouse, params)
+                if _placement_problems(candidate, obstacles, rules, corridors):
                     continue
                 if final_step:
                     return True
@@ -782,11 +857,25 @@ def _has_closing_move(state: SearchState, bank: BeanBank, clubhouse: tuple[float
                                  steps_remaining=1)
 
 
+def _own_start_corridor(state: SearchState, clubhouse: tuple[float, float],
+                        params: SolverParams) -> tuple[tuple[tuple[float, float], tuple[float, float], int], ...]:
+    """Couloir réservé DYNAMIQUE clubhouse -> tee du premier trou déjà posé
+    de CE nine (``SolverParams.corridor_from_own_start``, expérience C1) --
+    vide tant qu'aucun trou n'est encore posé dans ``state``, ou si l'option
+    est désactivée (comportement byte-identique par défaut)."""
+    if params.corridor_from_own_start and state.placed:
+        first = state.placed[0]
+        return ((clubhouse, first.tee, first.order),)
+    return ()
+
+
 def _placement_problems(candidate: tuple[PlacedBean, ...], obstacles: tuple[PlacedBean, ...],
-                        rules: ValidationRules):
-    problems = validate(candidate, rules)
+                        rules: ValidationRules,
+                        extra_corridors: tuple[tuple[tuple[float, float], tuple[float, float], int], ...] = ()):
+    problems = validate(candidate, rules, extra_corridors=extra_corridors)
     if obstacles:
-        problems.extend(validate((*obstacles, *candidate), rules, check_links=False))
+        problems.extend(validate((*obstacles, *candidate), rules, check_links=False,
+                                 extra_corridors=extra_corridors))
     return problems
 
 
@@ -841,7 +930,14 @@ def expand_state(state: SearchState, target_depth: int, bank: BeanBank,
                 if target_depth == 1 and not _starts_outward(placed, clubhouse):
                     rejected["clubhouse_departure"] += 1
                     continue
-                problems = _placement_problems(candidate, obstacles, rules)
+                if (target_depth == 1 and params.start_angle_reference_deg is not None
+                        and params.start_angle_divergence_min_deg is not None
+                        and not _starts_divergent(placed, clubhouse, params.start_angle_reference_deg,
+                                                  params.start_angle_divergence_min_deg)):
+                    rejected["start_angle_divergence"] += 1
+                    continue
+                corridors = _own_start_corridor(state, clubhouse, params)
+                problems = _placement_problems(candidate, obstacles, rules, corridors)
                 if target_depth == 9 and math.dist(placed.green, clubhouse) > params.clubhouse_max:
                     rejected["clubhouse_return"] += 1
                     continue

@@ -121,6 +121,24 @@ class ValidationRules:
     # ``_placement_problems``, donc couverts sans changement séparé).
     # ``False`` (défaut) désactive la règle -- comportement byte-identique.
     walkable_links: bool = False
+    # Couloirs réservés STATIQUES (opt-in, décision utilisateur PLAN.md
+    # ligne 6, expérience C1 « couloirs de départ réservés ») : chaque entrée
+    # ``(point_a, point_b, owner_order)`` interdit à tout cœur fairway
+    # (``bean.core``), SAUF celui du trou dont ``bean.order == owner_order``,
+    # de croiser OU toucher le segment ``point_a``-``point_b``
+    # (``_segment_crosses_core``, même sémantique de contact fermé que
+    # ``walkable_links``). Contrairement à ``walkable_links`` (liaisons
+    # dérivées DYNAMIQUEMENT des trous présents dans ``beans``), ces couloirs
+    # sont des segments FIXES fournis par l'appelant -- utile quand l'un des
+    # deux points n'appartient pas encore à ``beans`` au moment du test (ex.
+    # le couloir clubhouse->tee10 reste identique pendant toute la recherche
+    # du front, alors que le trou 10 n'existe encore dans aucun nine). Le
+    # couloir clubhouse->tee1, lui, n'est connu qu'une fois le trou 1 posé ;
+    # voir ``solver.SolverParams.corridor_from_own_start`` pour la variante
+    # DYNAMIQUE (dérivée de l'état de recherche courant), combinée à ce champ
+    # via l'argument ``extra_corridors`` de ``validate``. Défaut ``()`` ->
+    # comportement byte-identique (aucun couloir vérifié).
+    reserved_corridors: tuple[tuple[Point, Point, int], ...] = ()
 
     @property
     def clubhouse(self) -> Point:
@@ -361,8 +379,16 @@ def _walking_links(ordered: tuple[PlacedBean, ...],
 
 
 def validate(beans: Iterable[PlacedBean], rules: ValidationRules | None = None,
-             *, check_links: bool = True) -> list[Violation]:
-    """Retourne toutes les violations, sans réparer ni assouplir le résultat."""
+             *, check_links: bool = True,
+             extra_corridors: tuple[tuple[Point, Point, int], ...] = ()) -> list[Violation]:
+    """Retourne toutes les violations, sans réparer ni assouplir le résultat.
+
+    ``extra_corridors`` : couloirs réservés supplémentaires, DYNAMIQUES
+    (dérivés de l'état de recherche courant par l'appelant, ex.
+    ``solver.SolverParams.corridor_from_own_start``), combinés à
+    ``rules.reserved_corridors`` (couloirs STATIQUES) -- même sémantique de
+    contact fermé, même exclusion du propriétaire (``owner_order``). Défaut
+    ``()`` -> aucun couloir supplémentaire, comportement byte-identique."""
     rules = rules or ValidationRules()
     ordered = sorted(beans, key=lambda bean: bean.order)
     violations: list[Violation] = []
@@ -471,6 +497,18 @@ def validate(beans: Iterable[PlacedBean], rules: ValidationRules | None = None,
                     violations.append(Violation(
                         "link_blocked", tuple(sorted({*owners, bean.id})),
                         f"liaison piétonne {owners} traverse le cœur fairway de {bean.id}"))
+
+    corridors = tuple(rules.reserved_corridors) + tuple(extra_corridors)
+    if corridors:
+        for start, end, owner_order in corridors:
+            for bean in ordered:
+                if bean.order == owner_order:
+                    continue
+                if _segment_crosses_core(start, end, bean.core):
+                    violations.append(Violation(
+                        "corridor_blocked", (bean.id,),
+                        f"couloir réservé (propriétaire trou {owner_order}) traverse le cœur "
+                        f"fairway de {bean.id}"))
 
     if check_links:
         for previous, current in zip(ordered, ordered[1:]):
