@@ -15,8 +15,8 @@ import pytest
 
 from experiments.elastic_routing.geometry import ValidationRules, validate
 from experiments.elastic_routing.incremental import COMPONENT_NAMES, IncrementalEvaluator
-from experiments.elastic_routing.model import ControlPoint, CourseLayout, NineLayout, PAR_SPECS
-from experiments.elastic_routing.synthetic import build_synthetic_layout
+from experiments.elastic_routing.model import ControlPoint, CourseLayout, ElasticHole, NineLayout, PAR_SPECS
+from experiments.elastic_routing.synthetic import NINE_PARS, build_synthetic_layout
 
 
 PERMISSIVE = ValidationRules(
@@ -176,18 +176,29 @@ def test_surrogate_margin_can_over_report_a_near_threshold_fairway_gap():
 
 # -- (a-bis) propriété seedée : zéro faux négatif, faux positifs mesurés ----
 
-def _add_sharp_dogleg(hole, rng: random.Random):
+def _layout_scale(layout: CourseLayout) -> float:
+    """Longueur de trou moyenne du layout : unité de perturbation relative,
+    pour que les mêmes fonctions de perturbation restent proportionnées sur
+    le layout synthétique (trous ~75-235) et sur la boucle compacte de
+    ``_clean_liaisons_layout`` (trous ~25) — sans quoi des décalages
+    absolus calibrés sur le premier écrasent la géométrie du second et
+    gonflent artificiellement le taux de faux positifs mesuré."""
+    return sum(hole.length for hole in layout.holes) / len(layout.holes)
+
+
+def _add_sharp_dogleg(hole, rng: random.Random, scale: float):
     """Ajoute un dogleg à virage serré, pour stresser le joint en onglet."""
     tee, green = hole.tee, hole.green
     mx, my = (tee.x + green.x) / 2.0, (tee.y + green.y) / 2.0
     dx, dy = green.x - tee.x, green.y - tee.y
     length = math.hypot(dx, dy) or 1.0
     nx, ny = -dy / length, dx / length
-    offset = rng.uniform(5.0, 20.0) * rng.choice((-1, 1))
+    offset = rng.uniform(0.04 * scale, 0.16 * scale) * rng.choice((-1, 1))
     return replace(hole, doglegs=(ControlPoint(mx + nx * offset, my + ny * offset),))
 
 
-def _nudge_hole(hole, rng: random.Random, spread: float = 10.0):
+def _nudge_hole(hole, rng: random.Random, scale: float):
+    spread = 0.08 * scale
     dx1, dy1 = rng.uniform(-spread, spread), rng.uniform(-spread, spread)
     dx2, dy2 = rng.uniform(-spread, spread), rng.uniform(-spread, spread)
     return replace(hole,
@@ -195,9 +206,13 @@ def _nudge_hole(hole, rng: random.Random, spread: float = 10.0):
                     green=ControlPoint(hole.green.x + dx2, hole.green.y + dy2))
 
 
-def _force_close_pair(layout: CourseLayout, rng: random.Random) -> CourseLayout:
+def _force_close_pair(layout: CourseLayout, rng: random.Random, scale: float) -> CourseLayout:
     """Place un trou tout près (bout à bout) d'un autre : stresse les cas
-    « près des extrémités » (axe étendu) et les écarts proches du seuil."""
+    « près des extrémités » (axe étendu) et les écarts proches du seuil.
+    Le jeu (``gap``) teste la proximité du seuil fairway_gap (indépendant de
+    l'échelle du layout, même largeurs de trou des deux côtés) ; la longueur
+    du trou déplacé est, elle, relative à ``scale`` pour ne pas déborder sur
+    tout le reste d'un petit layout."""
     holes = {hole.order: hole for hole in layout.holes}
     anchor_order, moved_order = rng.sample(range(1, 19), 2)
     anchor = holes[anchor_order]
@@ -205,7 +220,7 @@ def _force_close_pair(layout: CourseLayout, rng: random.Random) -> CourseLayout:
     angle = rng.uniform(0.0, 2 * math.pi)
     base = ControlPoint(anchor.tee.x + gap * math.cos(angle), anchor.tee.y + gap * math.sin(angle))
     direction = rng.uniform(0.0, 2 * math.pi)
-    length = rng.uniform(80.0, 120.0)
+    length = rng.uniform(0.6 * scale, 1.0 * scale)
     holes[moved_order] = replace(
         holes[moved_order], tee=base,
         green=ControlPoint(base.x + length * math.cos(direction), base.y + length * math.sin(direction)),
@@ -213,7 +228,7 @@ def _force_close_pair(layout: CourseLayout, rng: random.Random) -> CourseLayout:
     return _with_holes(layout, holes.values())
 
 
-def _force_near_clubhouse(layout: CourseLayout, rng: random.Random) -> CourseLayout:
+def _force_near_clubhouse(layout: CourseLayout, rng: random.Random, scale: float) -> CourseLayout:
     holes = {hole.order: hole for hole in layout.holes}
     order = rng.choice(range(1, 19))
     distance = rng.uniform(0.0, 20.0)
@@ -221,25 +236,85 @@ def _force_near_clubhouse(layout: CourseLayout, rng: random.Random) -> CourseLay
     tee = ControlPoint(layout.clubhouse.x + distance * math.cos(angle),
                         layout.clubhouse.y + distance * math.sin(angle))
     direction = rng.uniform(0.0, 2 * math.pi)
-    length = rng.uniform(80.0, 120.0)
+    length = rng.uniform(0.6 * scale, 1.0 * scale)
     green = ControlPoint(tee.x + length * math.cos(direction), tee.y + length * math.sin(direction))
     holes[order] = replace(holes[order], tee=tee, green=green)
     return _with_holes(layout, holes.values())
 
 
+def _loop_nine(start_order: int, center, radius: float, rotation: float, gap: float):
+    """Neuf trous disposés en boucle (ennéagone) : chaque trou occupe une
+    arête, un petit jeu ``gap`` de chaque côté du sommet laisse place à la
+    liaison. Le sommet d'indice 0 (partagé par le premier tee et le dernier
+    green) sert de point d'ancrage pour le clubhouse."""
+    vertices = [
+        (center[0] + radius * math.cos(rotation + 2 * math.pi * i / 9),
+         center[1] + radius * math.sin(rotation + 2 * math.pi * i / 9))
+        for i in range(10)
+    ]
+    holes = []
+    for index, (order, par) in enumerate(zip(range(start_order, start_order + 9), NINE_PARS)):
+        start, end = vertices[index], vertices[index + 1]
+        dx, dy = end[0] - start[0], end[1] - start[1]
+        edge_length = math.hypot(dx, dy)
+        ux, uy = dx / edge_length, dy / edge_length
+        tee = ControlPoint(start[0] + ux * gap, start[1] + uy * gap)
+        green = ControlPoint(end[0] - ux * gap, end[1] - uy * gap)
+        holes.append(ElasticHole(order=order, par=par, tee=tee, green=green,
+                                 width=PAR_SPECS[par].width_min))
+    return tuple(holes)
+
+
+def _clean_liaisons_layout() -> CourseLayout:
+    """Parcours fixe (hors classe des longueurs, non testée ici) où toutes
+    les liaisons sont praticables : deux boucles à 9 trous tangentes en un
+    seul point (cercles de même rayon, centres diamétralement opposés par
+    rapport à ce point => tangence externe, aucun autre recouvrement),
+    décalées d'un petit ``d`` pour que les deux trous du seuil (front/back)
+    gardent un écart fairway correct. Sert à mesurer le taux de faux
+    positifs de la composante ``liaisons`` sur une base où l'oracle ne
+    signale ni ``link_distance`` ni ``link_blocked`` (contrairement au
+    layout synthétique, qui les viole déjà near clubhouse).
+
+    ``gap`` choisi assez grand (20, pas le minimum qui tient dans
+    ``[12, 45]``) pour que l'estimation surrogate du sommet partagé entre
+    deux trous consécutifs (capsules à bouts ronds qui comblent le creux
+    concave du virage plus que le polygone réel — cf. docstring de module)
+    reste, elle aussi, au-dessus du seuil fairway_gap à l'état non perturbé
+    (vérifié : pénalité ``ecarts`` surrogate nulle partout avant
+    perturbation). Avec un ``gap`` trop petit (15), ce même calcul
+    surrogate franchissait déjà le seuil sans perturbation — un faux positif
+    *systématique*, pas une mesure utile du taux de faux positifs."""
+    radius, gap, offset, shift = 80.0, 20.0, 20.0, 1000.0
+    front = _loop_nine(1, (radius + offset, 0.0), radius, math.pi, gap)
+    back = _loop_nine(10, (-(radius + offset), 0.0), radius, 0.0, gap)
+
+    def shifted(hole):
+        return replace(hole, tee=ControlPoint(hole.tee.x + shift, hole.tee.y + shift),
+                       green=ControlPoint(hole.green.x + shift, hole.green.y + shift))
+
+    clubhouse = ControlPoint(shift, shift)
+    return CourseLayout(
+        seed=0, width=3000.0, height=3000.0, clubhouse=clubhouse,
+        front=NineLayout.from_holes(1, clubhouse, tuple(shifted(h) for h in front)),
+        back=NineLayout.from_holes(10, clubhouse, tuple(shifted(h) for h in back)),
+    )
+
+
 def _perturbed_layout(layout: CourseLayout, rng: random.Random) -> CourseLayout:
+    scale = _layout_scale(layout)
     mode = rng.random()
     if mode < 0.35:
         holes = {hole.order: hole for hole in layout.holes}
         for order in rng.sample(range(1, 19), rng.randint(1, 3)):
             hole = holes[order]
             if rng.random() < 0.5:
-                hole = _add_sharp_dogleg(hole, rng)
-            holes[order] = _nudge_hole(hole, rng)
+                hole = _add_sharp_dogleg(hole, rng, scale)
+            holes[order] = _nudge_hole(hole, rng, scale)
         return _with_holes(layout, holes.values())
     if mode < 0.65:
-        return _force_close_pair(layout, rng)
-    return _force_near_clubhouse(layout, rng)
+        return _force_close_pair(layout, rng, scale)
+    return _force_near_clubhouse(layout, rng, scale)
 
 
 def test_surrogate_has_zero_false_negatives_on_seeded_perturbations():
@@ -250,35 +325,63 @@ def test_surrogate_has_zero_false_negatives_on_seeded_perturbations():
     faux négatif. Les faux positifs (surrogate > 0 sans violation oracle,
     attendus par construction pessimiste) sont comptés et rapportés, sans
     assertion stricte dessus.
+
+    Deux layouts de base alternés : le layout synthétique (qui viole déjà
+    ``link_distance``/``link_blocked`` près du clubhouse, donc mesure bien le
+    zéro faux négatif de ``liaisons``) et ``_clean_liaisons_layout`` (dont
+    aucune liaison n'est violée avant perturbation, donc mesure aussi le taux
+    de faux positifs de ``liaisons`` — jamais testé sinon, le layout
+    synthétique seul violant ``link_blocked`` dans 100% des échantillons).
+
+    Le taux de faux positifs ``ecarts`` est rapporté globalement ET par
+    layout de base (``-s`` pour le voir) : il est nettement plus élevé sur
+    ``_clean_liaisons_layout`` que sur le synthétique, pour une raison
+    géométrique comprise et documentée dans ``incremental.py`` (capsules
+    voisines à un sommet d'angle partagé, pas un bug ni un faux négatif —
+    voir le docstring de module, section « Source de faux positifs
+    distincte »).
     """
     rng = random.Random(777)
-    rules = ValidationRules()
+    bases = (build_synthetic_layout, _clean_liaisons_layout)
     mapping = (("fairway_gap", "ecarts"), ("clubhouse_clear", "clubhouse"), ("link_blocked", "liaisons"))
-    false_positive_opportunities = {component: 0 for _, component in mapping}
-    false_positives = {component: 0 for _, component in mapping}
-    oracle_occurrences = {kind: 0 for kind, _ in mapping}
+
+    def _empty_stats():
+        return {
+            "fpo": {component: 0 for _, component in mapping},
+            "fp": {component: 0 for _, component in mapping},
+            "occ": {kind: 0 for kind, _ in mapping},
+        }
+
+    overall = _empty_stats()
+    per_base = {base.__name__: _empty_stats() for base in bases}
 
     for _ in range(300):
-        layout = _perturbed_layout(build_synthetic_layout(), rng)
+        base_fn = bases[rng.randrange(len(bases))]
+        layout = _perturbed_layout(base_fn(), rng)
+        rules = ValidationRules(width=layout.width, height=layout.height)
         kinds = {violation.kind for violation in validate(layout, rules)}
         score = IncrementalEvaluator(layout, rules).score()
-        for kind, component in mapping:
-            value = getattr(score, component)
-            if kind in kinds:
-                oracle_occurrences[kind] += 1
-                assert value > 0.0, f"faux négatif : oracle={kind}, surrogate={component}=0"
-            else:
-                false_positive_opportunities[component] += 1
-                if value > 0.0:
-                    false_positives[component] += 1
+        for stats in (overall, per_base[base_fn.__name__]):
+            for kind, component in mapping:
+                value = getattr(score, component)
+                if kind in kinds:
+                    stats["occ"][kind] += 1
+                    assert value > 0.0, f"faux négatif : oracle={kind}, surrogate={component}=0"
+                else:
+                    stats["fpo"][component] += 1
+                    if value > 0.0:
+                        stats["fp"][component] += 1
 
-    rates = {
-        component: (false_positives[component] / false_positive_opportunities[component]
-                    if false_positive_opportunities[component] else None)
-        for _, component in mapping
-    }
-    print("occurrences oracle :", oracle_occurrences)
-    print("taux de faux positifs (surrogate pessimiste, attendu) :", rates)
+    def _rates(stats):
+        return {
+            component: (stats["fp"][component] / stats["fpo"][component] if stats["fpo"][component] else None)
+            for _, component in mapping
+        }
+
+    print("occurrences oracle (global) :", overall["occ"])
+    print("taux de faux positifs (global, surrogate pessimiste, attendu) :", _rates(overall))
+    for name, stats in per_base.items():
+        print(f"  dont {name} : occurrences={stats['occ']} taux_fp={_rates(stats)}")
 
 
 # -- (b) incrémental == recalcul complet ------------------------------------
