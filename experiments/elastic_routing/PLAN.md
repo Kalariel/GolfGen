@@ -279,8 +279,7 @@ et quota global exact 4/10/4. La suite complète passe à **259/259** en
 
 **Livrable** : modèle instanciable et sérialisable, sans solveur.
 
-**Porte 1 — prête pour validation** : aucun rendu ni algorithme ne commence
-avant revue de ce modèle et de ses tests.
+**Porte 1 — franchie** : validation administrative consignée le 2026-10-06.
 
 ### Étape 2 — oracle indépendant et rendu
 
@@ -311,27 +310,147 @@ surbrillance rose des violations sont lisibles et cohérents avec le rapport.
 **Livrable** : un layout écrit à la main peut être rendu et déclaré valide ou
 invalide par un oracle qui ne dépend pas du futur optimiseur.
 
-**Porte 2 — prête pour validation** : revue du SVG synthétique et des tests
-avant toute génération. L'étape 3 ne commence pas avant validation utilisateur.
+**Porte 2 — franchie** le 2026-10-06. Le SVG synthétique a été revu : axes,
+empreintes, liaisons, numéros et violations lisibles, 14 violations
+cohérentes avec le rapport. Il ne valide aucune qualité de génération (le
+layout est artificiel). Mesure consignée : l'oracle complet coûte 11,46 ms
+par validation (~87/s), donc 100 000 validations ≈ 19 min. Incompatible avec
+la cible de 60 s : un score incrémental est obligatoire (voir « Décision
+d'architecture avant l'étape 3 »).
 
-### Étape 3 — squelette global grossier
+### Décision d'architecture avant l'étape 3
 
-- [ ] Représenter sur grille les deux séquences alternées trou/liaison.
-- [ ] Réserver les quatre ports clubhouse : tee 1, green 9, tee 10, green 18.
-- [ ] Générer une topologie complète de 18 trous sans chercher encore les
-  formes finales.
-- [ ] Empêcher les croisements topologiques grossiers.
-- [ ] Introduire une asymétrie seedée et reproductible entre les deux nines.
-- [ ] Rendre le squelette initial dans un SVG dédié.
+**Décisions validées par l'utilisateur le 2026-10-06 (seconde série).**
+
+#### a. Niveau 1 = contour d'un arbre aléatoire
+
+Le niveau 1 ne « génère » plus une topologie par construction directe de
+corridors ; il construit un arbre aléatoire puis en extrait le contour.
+Algorithme officiel :
+
+1. arbre enraciné au clubhouse, exactement deux sous-arbres racines (un par
+   nine) ;
+2. croissance alternée des deux sous-arbres, seedée, sans retour arrière ;
+3. budget de longueur cible propre à chaque sous-arbre ;
+4. halo interdisant tout contact entre arêtes/cellules non voisines dans
+   l'arbre, y compris entre les deux sous-arbres racines (le pas de grille et
+   le halo garantissent que le contour épaissi ne se touche pas lui-même) ;
+5. nombre maximal de feuilles par sous-arbre (chaque feuille = une épingle ;
+   chaque nine n'a que dix fenêtres de liaison pour absorber épingles et
+   virages serrés) ; borne éventuelle sur les virages serrés ;
+6. rejet complet, déterministe et peu coûteux de l'arbre si un budget ne peut
+   être atteint (pas de retour arrière interne) ;
+7. épaississement de l'arbre puis extraction de son contour (courbe simple
+   par construction) ;
+8. coupure du contour à ses deux passages au clubhouse → deux arcs
+   clubhouse→clubhouse = front et back ;
+9. DP de découpage sur chaque arc, inspirée de `_cut_nine()` de
+   `golfgen/loop_router.py` (adaptation probable, pas réutilisation telle
+   quelle) ;
+10. validation par l'oracle indépendant.
+
+Nuances :
+
+- « sans impasse » vaut seulement au sens topologique : une branche peut
+  épuiser son espace disponible, ce qui provoque un rejet complet bon marché
+  de l'arbre ; ce n'est pas le problème combinatoire de `bean_paving` ;
+- risque de parallélisme : chaque branche produit naturellement une paire
+  aller/retour (acceptée) ; une interdiction locale de deux arêtes parallèles
+  dans des cellules voisines doit suffire à limiter les piles à plus de
+  quatre.
+
+#### b. Place de `loop_router`
+
+`loop_router` reste une baseline de temps et de validité, une source de
+primitives et de la DP de découpage, et une éventuelle solution de secours
+pour tester le pipeline. Il n'est PAS la graine de l'optimisation : sa
+partition diagonale en triangles miroirs est structurelle, des mutations
+locales ne la défont pas.
+
+#### c. Score incrémental obligatoire
+
+Conçu avant l'optimiseur, pas après. Cache : géométrie dérivée par trou,
+pénalités par trou, matrice des pénalités par paire, pénalités par liaison,
+agrégats par nine et globaux.
+
+Chaîne d'évaluation :
+
+1. boîtes englobantes élargies (en cache, pas d'index spatial complexe pour
+   18 trous) ;
+2. si proches, distance entre axes moins demi-largeurs (surrogate exact pour
+   des capsules, mais l'oracle utilise des extrémités prolongées et des
+   joints biseautés : une marge conservatrice est obligatoire) ;
+3. oracle polygonal complet seulement périodiquement, pour les candidats
+   prometteurs et la validation finale ; seul l'oracle polygonal décide du
+   succès.
+
+Le microbenchmark doit mesurer une mutation complète (géométrie + paires
+touchées + score) et démontrer < ~0,6 ms, sinon 100 000 évaluations sont
+incompatibles avec 60 s.
+
+#### d. Score vectoriel
+
+Composantes : topologie, croisements, écarts, longueurs, liaisons, clubhouse,
+parallélisme, variété, déformation. Chaque phase d'inflation change
+tolérances et poids sans toucher l'oracle ni le stockage incrémental. Léger
+réchauffement de la température à chaque phase d'inflation. Pourcentages de
+budget et températures fixés à l'étape 5 après mesures.
+
+#### e. Définitions
+
+- **pile parallèle** = clique maximale de plus de trois trous dans le graphe
+  de parallélisme (sommet = trou, arête = relation `side_by_side` actuelle :
+  angle ≤ 20°, recouvrement projeté > 40 blocs, roughs en contact). Remplace
+  les composantes connexes (transitives, trop grossières). Toutes les
+  cliques maximales fautives sont signalées, triées pour un diagnostic
+  déterministe ;
+- **liaison praticable** = segment droit de 12 à 45 blocs ne traversant le
+  cœur d'aucun fairway non propriétaire ; pas de chemin routé dans ce spike
+  (viendra avec les obstacles réels).
+
+### Étape 2b — oracle : piles par cliques
+
+- [ ] Passer `geometry.py` des composantes connexes aux cliques maximales
+  pour détecter les piles parallèles.
+- [ ] Tester : une vraie clique de 4 trous déclenche une violation.
+- [ ] Tester : une chaîne A∥B, B∥C, C∥D sans parallélisme deux à deux ne
+  produit aucune pile.
+- [ ] Tester : deux cliques fautives distinctes produisent deux diagnostics.
+- [ ] Vérifier le cas synthétique de l'étape 2 : le décompte (aujourd'hui
+  4 `parallel_stack`) reste cohérent, ou est explicitement actualisé.
+
+**Porte 2b** : revue des tests et du nouveau décompte avant l'étape 3.
+
+### Étape 3 — squelette global grossier (contour d'un arbre aléatoire)
+
+- [ ] Construire l'arbre enraciné au clubhouse à deux sous-arbres (un par
+  nine), croissance alternée et seedée, sans retour arrière.
+- [ ] Appliquer le halo interdisant tout contact entre arêtes/cellules non
+  voisines dans l'arbre, y compris entre les deux sous-arbres racines.
+- [ ] Appliquer le budget de longueur cible par sous-arbre et le nombre
+  maximal de feuilles par sous-arbre (une feuille = une épingle).
+- [ ] Rejeter complètement et de façon déterministe tout arbre qui ne peut
+  atteindre son budget, sans retour arrière interne.
+- [ ] Épaissir l'arbre puis extraire son contour (courbe simple par
+  construction).
+- [ ] Couper le contour à ses deux passages au clubhouse pour obtenir les
+  deux arcs clubhouse→clubhouse (front et back).
+- [ ] Appliquer la DP de découpage sur chaque arc, inspirée de `_cut_nine()`
+  de `golfgen/loop_router.py`.
+- [ ] Rendre le squelette (arbre, contour et découpage) dans un SVG dédié.
 
 **Livrable** : un squelette 18 trous complet produit rapidement, même s'il ne
 respecte pas encore les largeurs finales.
 
 **Porte 3** : inspection visuelle obligatoire. Rejeter les deux anneaux, la
-symétrie excessive et les liaisons incohérentes avant de poursuivre.
+symétrie excessive, les liaisons incohérentes et toute pile de 4 trous ou
+plus avant de poursuivre.
 
 ### Étape 4 — trous élastiques et mutations locales
 
+- [ ] Implémenter le cache incrémental et la chaîne boîtes → distance d'axes
+  → oracle.
+- [ ] Microbenchmark d'une mutation complète < ~0,6 ms.
 - [ ] Convertir chaque corridor grossier en axe continu à 0–2 doglegs.
 - [ ] Implémenter les mutations d'un trou : tee, green, dogleg, longueur,
   rotation et largeur.
@@ -492,6 +611,8 @@ Décisions approuvées le 2026-10-06 :
 6. **Raffinement** : recuit simulé avec mutations locales, complété
    périodiquement par une réparation à grand voisinage portant sur 2 à 5
    trous.
+7. Voir aussi les décisions d'architecture complémentaires du 2026-10-06
+   (seconde série), section « Décision d'architecture avant l'étape 3 ».
 
 Ces décisions ferment la Porte 0. Toute modification ultérieure doit être
 consignée comme une nouvelle expérience, sans changer plusieurs paramètres à
