@@ -462,27 +462,37 @@ fenêtre maximale où (a) chaque trou est `_side_by_side` avec le suivant
 (contact + alignement, inchangé) et (b) tous les trous de la fenêtre sont
 alignés deux à deux (angle ≤ 20°, recouvrement projeté > 40 blocs, SANS
 exigence de contact — critère extrait de `_side_by_side` dans le nouveau
-helper `_aligned_overlap`, mêmes seuils). Les fenêtres par point de départ
-sont croissantes avec l'indice (propriété démontrée : retirer le premier trou
-d'une fenêtre valide ne peut qu'assouplir ses contraintes), ce qui permet de
+helper `_aligned_overlap`, mêmes seuils). Justification de l'algorithme :
+fermeture par préfixe retiré du prédicat de validité d'une fenêtre (si
+`[start, end]` est valide, `[start+1, end]` l'est aussi, chaîne et paires
+alignées étant un sous-ensemble de celles déjà vérifiées), donc la fenêtre
+commençant à `start+1` est soit incluse dans celle commençant à `start`, soit
+la prolonge strictement — jamais un cas intermédiaire. Cela permet de
 calculer les séries réellement maximales en O(n²) par nine sans retour en
 arrière. Une violation par série maximale de taille strictement supérieure à
-`max_parallel_stack` (3), diagnostics triés par tuple de trous.
+`max_parallel_stack` (3), diagnostics triés par tuple de trous. Deux séries
+maximales peuvent se chevaucher sans que l'une contienne l'autre (l'alignement
+deux à deux peut casser au milieu d'une série plus longue) : c'est voulu,
+chacune est alors un diagnostic distinct.
 
-8 tests ajoutés/remplacés dans `tests/test_elastic_routing_geometry.py` : 4
+9 tests ajoutés/remplacés dans `tests/test_elastic_routing_geometry.py` : 4
 consécutifs empilés → 1 violation ; 3 → 0 ; 4 empilés non consécutifs dans
 l'ordre de jeu (2,4,6,8 et 2,5,12,15 à cheval sur les nines) → 0 ; éventail de
 4 consécutifs en contact qui tourne (voisins à 15°, extrémités à 45°) → 0 ;
-deux séries fautives distinctes → 2 diagnostics ; série de 6 rangées à cheval
-sur 9→10 (3 trous par nine, sous le seuil) → aucune fusion, 0 violation ;
-décompte du layout synthétique explicitement actualisé et vérifié. Les
-géométries de test utilisent un espacement de 20 blocs entre rangées (comme
-le layout synthétique), pas 6 (superposition de fairways irréaliste de la
-version précédente). 1 test de rendu `parallel_stack` simplifié pour
-réutiliser directement le layout synthétique (qui couvre de nouveau ce cas),
-sans réimporter de fixture entre modules de test. Suite ciblée :
+deux séries fautives distinctes (bandes séparées) → 2 diagnostics ; deux
+séries maximales qui se chevauchent sans inclusion mutuelle (l'alignement
+casse au milieu d'une bande de 6 trous chaînés, ex. 2 n'est plus aligné avec
+6 mais 3 reste aligné avec 7) → 2 diagnostics `[2..5]` et `[3..7]` ; série de
+6 rangées à cheval sur 9→10 (3 trous par nine, sous le seuil) → aucune
+fusion, 0 violation ; décompte du layout synthétique explicitement actualisé
+et vérifié. Les géométries de test utilisent un espacement de 20 blocs entre
+rangées (comme le layout synthétique), pas 6 (superposition de fairways
+irréaliste de la version précédente). 1 test de rendu `parallel_stack`
+simplifié pour réutiliser directement le layout synthétique (qui couvre de
+nouveau ce cas), sans réimporter de fixture entre modules de test. Suite
+ciblée :
 `pytest tests/test_elastic_routing_geometry.py tests/test_elastic_routing_model.py
-tests/test_elastic_routing_render.py` → 32 passed.
+tests/test_elastic_routing_render.py` → 33 passed.
 
 Décompte du cas synthétique : **4** `parallel_stack` (violations totales 14,
 comme avant l'introduction des cliques) : 1-2-3-4-5, 6-7-8-9, 10-11-12-13-14,

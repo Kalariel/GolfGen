@@ -189,6 +189,23 @@ def _fan(layout, orders, *, cx=0.0, cy=-300.0, step=10.0, angle_step_deg=15.0,
     return layout
 
 
+def _sliding_row(layout, orders, x_values, *, y_start=-100.0, y_step=-20.0,
+                  length=90.0, width=11.0, rough_margin=5.0):
+    """Bande réaliste où chaque trou glisse en x par rapport au précédent
+    (recouvrement projeté décroissant avec l'écart d'indice), pour casser
+    l'alignement deux à deux entre des trous éloignés dans la série tout en
+    gardant chaque voisin immédiat `_side_by_side` (même angle horizontal,
+    contact par rangées espacées de 20 blocs)."""
+    for index, (order, x) in enumerate(zip(orders, x_values)):
+        y = y_start + y_step * index
+        layout = _replace_hole(
+            layout, order,
+            tee=ControlPoint(x, y), green=ControlPoint(x + length, y),
+            width=width, rough_margin=rough_margin,
+        )
+    return layout
+
+
 def _parallel_stack_touching(layout, orders):
     """Violations `parallel_stack` impliquant au moins un des `orders`.
 
@@ -260,6 +277,23 @@ def test_two_distinct_consecutive_series_produce_two_diagnostics():
     violations = _parallel_stack_touching(layout, (2, 3, 4, 5, 6, 7, 8, 9))
 
     assert sorted(v.holes for v in violations) == [(2, 3, 4, 5), (6, 7, 8, 9)]
+
+
+def test_overlapping_maximal_series_both_reported():
+    # 6 trous consécutifs (2 à 7) tous chaînés par contact (chaque voisin
+    # `_side_by_side`), mais l'alignement deux à deux casse au milieu : le
+    # trou 2 n'est plus aligné avec le trou 6 (recouvrement projeté 37 <= 40)
+    # alors que le trou 3 reste aligné avec le trou 7 (recouvrement 70 > 40).
+    # Deux séries maximales se chevauchent donc sans que l'une contienne
+    # l'autre : [2..5] (le 2 ne peut pas s'étendre plus loin) et [3..7] (le 3
+    # s'étend plus loin une fois le 2 écarté). Les deux sont des diagnostics
+    # distincts, c'est voulu : chaque série maximale est signalée séparément,
+    # même si elles partagent des trous (3, 4, 5).
+    layout = _sliding_row(build_synthetic_layout(), (2, 3, 4, 5, 6, 7),
+                          (0.0, 35.0, 41.0, 47.0, 53.0, 55.0))
+    violations = _parallel_stack_touching(layout, (2, 3, 4, 5, 6, 7))
+
+    assert sorted(v.holes for v in violations) == [(2, 3, 4, 5), (3, 4, 5, 6, 7)]
 
 
 def test_series_does_not_merge_across_nine_boundary():

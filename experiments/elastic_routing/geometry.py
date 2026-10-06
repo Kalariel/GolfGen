@@ -307,9 +307,17 @@ def _consecutive_parallel_series(nine_holes: tuple[ElasticHole, ...],
 
     # Fenêtre maximale commençant à chaque indice : extension gloutonne tant
     # que le trou suivant reste chaîné (contact) et aligné avec tous les
-    # trous déjà inclus. Ces fenêtres sont croissantes avec l'indice de
-    # départ (retirer le premier trou ne peut qu'assouplir les contraintes),
-    # donc une fenêtre n'est maximale (non incluse dans la précédente) que
+    # trous déjà inclus. La justification n'est pas une monotonie globale
+    # des fins de fenêtres, mais la fermeture par préfixe retiré du
+    # prédicat de validité : si [start, end] est valide (chaîne intacte et
+    # toutes les paires alignées), alors [start+1, end] l'est aussi, car ses
+    # arêtes et ses paires sont un sous-ensemble de celles déjà vérifiées.
+    # Donc la fenêtre commençant à start+1 est soit incluse dans celle
+    # commençant à start, soit la prolonge strictement au-delà — jamais un
+    # cas intermédiaire. Des fenêtres qui se chevauchent sans inclusion
+    # mutuelle sont possibles (l'alignement deux à deux peut casser au
+    # milieu d'une série) ; chacune est alors une violation distincte.
+    # Une fenêtre n'est donc maximale (non incluse dans la précédente) que
     # si sa fin dépasse strictement celle de la fenêtre précédente.
     ends: list[int] = []
     for start in range(count):
