@@ -124,3 +124,54 @@ def test_course_violations_deadline_disabled_by_default():
     violations = cs._course_violations((), back, rules, clubhouse, 4000.0,
                                        par5_bounds=(2, 2))
     assert not any(v.endswith("par5_deadline") for v in violations)
+
+
+# -- régression EXP A'' (revue de code, 2026-10-06) : le BACK n'était jamais
+# contrôlé avec SA PROPRE deadline/bornes, toujours celles du FRONT ---------
+
+
+def test_course_violations_back_own_none_deadline_accepts_late_par5_front_stays_enforced():
+    """``front_params.par5_deadline=7`` (gardé), ``back_params.par5_deadline=
+    None`` (``back_par5_deadline=None`` explicite) -- exactement la config
+    EXP A'' qui invalidait les seeds 2/3 (back 18/18 mais rejeté sur
+    ``back_par5_deadline`` alors que ``back_params`` n'a jamais eu de
+    deadline). Le 2e par5 du FRONT au trou 8 reste signalé (sa propre
+    deadline 7 continue de s'appliquer), celui du BACK au même trou 8 ne
+    doit plus l'être (plus aucune deadline sur le back)."""
+    bank = generate_bank(1, GenerationParams.eighteen())
+    front = _placed_nine(bank, [4, 4, 4, 4, 4, 4, 5, 5, 4])
+    back = _placed_nine(bank, [4, 4, 4, 4, 4, 4, 5, 5, 4], order_offset=9)
+    rules = ValidationRules(width=4000.0, height=4000.0)
+    clubhouse = (2000.0, 2000.0)
+    violations = cs._course_violations(front, back, rules, clubhouse, 4000.0,
+                                       par5_bounds=(2, 2), par5_deadline=7,
+                                       back_par5_deadline=None)
+    assert "front_par5_deadline" in violations
+    assert "back_par5_deadline" not in violations
+
+
+def test_course_violations_back_own_deadline_enforced_when_set():
+    """``back_par5_deadline`` explicitement renseigné (distinct de celui du
+    front, voire en son absence) : le 2e par5 du back au trou 8 doit être
+    signalé -- le back a bien SA PROPRE deadline, indépendante de celle du
+    front."""
+    bank = generate_bank(1, GenerationParams.eighteen())
+    back = _placed_nine(bank, [4, 4, 4, 4, 4, 4, 5, 5, 4], order_offset=9)
+    rules = ValidationRules(width=4000.0, height=4000.0)
+    clubhouse = (2000.0, 2000.0)
+    violations = cs._course_violations((), back, rules, clubhouse, 4000.0,
+                                       par5_bounds=(2, 2), back_par5_deadline=7)
+    assert "back_par5_deadline" in violations
+
+
+def test_course_violations_back_bounds_mirror_front_when_not_overridden():
+    """Sans ``back_par3_bounds``/``back_par5_bounds`` explicites (sentinelle
+    ``_UNSET`` par défaut), le BACK continue d'être contrôlé avec les bornes
+    du FRONT -- comportement historique préservé pour tout appelant qui ne
+    précise que les paramètres partagés (configs A et A', symétriques)."""
+    bank = generate_bank(1, GenerationParams.eighteen())
+    back = _placed_nine(bank, [4, 4, 4, 4, 4, 4, 4, 5, 4], order_offset=9)  # 1 seul par5
+    rules = ValidationRules(width=4000.0, height=4000.0)
+    clubhouse = (2000.0, 2000.0)
+    violations = cs._course_violations((), back, rules, clubhouse, 4000.0, par5_bounds=(2, 2))
+    assert "back_par5_bounds" in violations

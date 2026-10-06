@@ -46,6 +46,9 @@ class CourseSolveResult:
         return json.dumps(self.to_dict(), indent=2, sort_keys=True) + "\n"
 
 
+_UNSET = object()
+
+
 def _course_violations(front: tuple[PlacedBean, ...], back: tuple[PlacedBean, ...],
                        rules: ValidationRules, clubhouse: tuple[float, float],
                        front_clubhouse_max: float,
@@ -53,7 +56,10 @@ def _course_violations(front: tuple[PlacedBean, ...], back: tuple[PlacedBean, ..
                        arrival_max_angle_deg: float | None = None,
                        par3_bounds: tuple[int, int] | None = None,
                        par5_bounds: tuple[int, int] | None = None,
-                       par5_deadline: int | None = None) -> list[str]:
+                       par5_deadline: int | None = None,
+                       back_par3_bounds: tuple[int, int] | None = _UNSET,
+                       back_par5_bounds: tuple[int, int] | None = _UNSET,
+                       back_par5_deadline: int | None = _UNSET) -> list[str]:
     """``back_clubhouse_max`` (défaut ``None``) : plafond dur départ/retour du
     BACK si différent de celui du front (décision utilisateur, tee 10 /
     green 18 autorisés plus loin -- voir ``solve_course(back_clubhouse_max=
@@ -83,14 +89,58 @@ def _course_violations(front: tuple[PlacedBean, ...], back: tuple[PlacedBean, ..
     forçage de ``solver._bounded_quota_filter``. Quand ``par5_bounds`` est
     ``(n, n)`` (borne basse = borne haute), ce point est aussi le DERNIER
     par5 du nine (il y en a exactement ``n``), donc la vérification couvre
-    alors TOUS les par5 du nine, pas seulement le premier requis."""
+    alors TOUS les par5 du nine, pas seulement le premier requis.
+
+    ``back_par3_bounds`` / ``back_par5_bounds`` / ``back_par5_deadline``
+    (opt-in, défaut sentinelle ``_UNSET`` -> retombe sur ``par3_bounds`` /
+    ``par5_bounds`` / ``par5_deadline`` ci-dessus pour le BACK AUSSI, donc
+    byte-identique pour tout appelant existant qui ne précise que les
+    paramètres partagés) : BUG DE LECTURE corrigé ici (revue de code,
+    2026-10-06, EXP A'' invalidée -- seeds 2/3 placées 18/18 mais rejetées
+    sur ``back_par5_deadline``) -- avant ce correctif, le BACK était
+    TOUJOURS contrôlé avec les bornes/deadline du FRONT (``par3_bounds``/
+    ``par5_bounds``/``par5_deadline`` ci-dessus), jamais les siennes propres,
+    alors que ``solver._bounded_quota_filter`` (le mécanisme qui les force
+    RÉELLEMENT pendant la recherche) lit bien ``back_params.par3_bounds``/
+    ``par5_bounds``/``par5_deadline`` quand ``back_params.bounded_quota`` est
+    vrai (``bounded_quota_back=True``, voir ``solve_course`` docstring) :
+    front et back peuvent légitimement avoir des bornes/deadline DIFFÉRENTES
+    (ex. EXP A'' : deadline posée sur le front seul, ``back_params.
+    par5_deadline=None``) et la validation doit refléter CE QUE CHAQUE NINE
+    A RÉELLEMENT REÇU, pas celui de l'autre. Passer explicitement ``None``
+    (plutôt que de laisser la sentinelle) désactive la vérification
+    correspondante pour le BACK SEUL, indépendamment du FRONT -- c'est ce que
+    fait ``solve_course`` ci-dessous.
+
+    Note sur les configs A et A' (``run_exp_par5deadline_and_radialarrival.py``,
+    ``run_exp_par5_two_per_nine.py``) : correctif sans effet observable chez
+    elles. En A, ``solve_course(par5_deadline=7)`` pose la MÊME deadline sur
+    ``front_params`` ET ``back_params`` (symétrique, voir docstring de
+    ``solve_course``) et ``par3_bounds``/``par5_bounds`` ne sont jamais
+    surchargés séparément par nine -- back et front partagent donc déjà les
+    mêmes valeurs AVANT ce correctif, qui ne fait que les lire à la bonne
+    source. En A', ``par5_bounds=(2, 2)`` et ``par5_deadline=7`` sont posés
+    identiquement sur ``front_params`` ET ``back_params`` par l'appelant
+    (``run_exp_par5_two_per_nine.py``) -- même raison. Seule EXP A''
+    (``front_params.par5_deadline=7``, ``back_params.par5_deadline=None``,
+    valeurs désormais ASYMÉTRIQUES) révèle la différence."""
     back_max = front_clubhouse_max if back_clubhouse_max is None else back_clubhouse_max
+    if back_par3_bounds is _UNSET:
+        back_par3_bounds = par3_bounds
+    if back_par5_bounds is _UNSET:
+        back_par5_bounds = par5_bounds
+    if back_par5_deadline is _UNSET:
+        back_par5_deadline = par5_deadline
     violations = [problem.kind for problem in validate((*front, *back), rules, check_links=False)]
     violations.extend(problem.kind for problem in validate(front, rules))
     violations.extend(problem.kind for problem in validate(back, rules))
     if len({bean.id for bean in (*front, *back)}) != len(front) + len(back):
         violations.append("duplicate_template")
-    for label, nine, clubhouse_max in (("front", front, front_clubhouse_max), ("back", back, back_max)):
+    nine_specs = (
+        ("front", front, front_clubhouse_max, par3_bounds, par5_bounds, par5_deadline),
+        ("back", back, back_max, back_par3_bounds, back_par5_bounds, back_par5_deadline),
+    )
+    for label, nine, clubhouse_max, nine_par3_bounds, nine_par5_bounds, nine_par5_deadline in nine_specs:
         if not nine:
             violations.append(f"{label}_empty")
             continue
@@ -101,18 +151,18 @@ def _course_violations(front: tuple[PlacedBean, ...], back: tuple[PlacedBean, ..
         if (arrival_max_angle_deg is not None
                 and not _arrives_radially(nine[-1], clubhouse, arrival_max_angle_deg)):
             violations.append(f"{label}_radial_arrival")
-        if par3_bounds is not None or par5_bounds is not None:
+        if nine_par3_bounds is not None or nine_par5_bounds is not None:
             counts = Counter(bean.template.par for bean in nine)
-            lo3, hi3 = par3_bounds or (0, 9)
-            lo5, hi5 = par5_bounds or (0, 9)
+            lo3, hi3 = nine_par3_bounds or (0, 9)
+            lo5, hi5 = nine_par5_bounds or (0, 9)
             if not (lo3 <= counts.get(3, 0) <= hi3):
                 violations.append(f"{label}_par3_bounds")
             if not (lo5 <= counts.get(5, 0) <= hi5):
                 violations.append(f"{label}_par5_bounds")
-        if par5_deadline is not None:
-            lo5 = (par5_bounds or (1, 9))[0]
+        if nine_par5_deadline is not None:
+            lo5 = (nine_par5_bounds or (1, 9))[0]
             par5_positions = [i + 1 for i, bean in enumerate(nine) if bean.template.par == 5]
-            if len(par5_positions) >= lo5 and par5_positions[lo5 - 1] > par5_deadline:
+            if len(par5_positions) >= lo5 and par5_positions[lo5 - 1] > nine_par5_deadline:
                 violations.append(f"{label}_par5_deadline")
     if front and back:
         if math.dist(front[0].tee, back[0].tee) < 18.0:
@@ -326,9 +376,21 @@ def solve_course(seed: int, front_params: SolverParams | None = None,
         front.state.placed, back.state.placed, rules, clubhouse,
         front_params.clubhouse_max, back_params.clubhouse_max,
         arrival_max_angle_deg=front_params.arrival_max_angle_deg,
+        # BUG corrigé ici (voir _course_violations docstring, back_par3_bounds
+        # / back_par5_bounds / back_par5_deadline) : chaque nine est désormais
+        # contrôlé avec SES PROPRES par3_bounds/par5_bounds/par5_deadline
+        # (``front_params``/``back_params``), pas toujours ceux du front --
+        # le gate ``if <params>.bounded_quota`` est appliqué indépendamment
+        # par nine (``bounded_quota`` local == ``front_params.bounded_quota``
+        # après le forçage ci-dessus ; ``back_params.bounded_quota`` n'est
+        # vrai que si ``bounded_quota_back=True``), ``par5_deadline`` reste
+        # non gated (comme avant) car indépendant du mode quota borné.
         par3_bounds=front_params.par3_bounds if bounded_quota else None,
         par5_bounds=front_params.par5_bounds if bounded_quota else None,
         par5_deadline=front_params.par5_deadline,
+        back_par3_bounds=back_params.par3_bounds if back_params.bounded_quota else None,
+        back_par5_bounds=back_params.par5_bounds if back_params.bounded_quota else None,
+        back_par5_deadline=back_params.par5_deadline,
     )
     if not back.complete:
         violations.append("back_incomplete")
