@@ -172,6 +172,17 @@ def test_true_clique_of_four_holes_triggers_one_parallel_stack_violation():
     assert violations[0].holes == (2, 3, 4, 5)
 
 
+def test_true_clique_of_exactly_max_size_triggers_no_violation():
+    # Frontière : une vraie clique de taille exactement égale à
+    # max_parallel_stack (3) ne doit déclencher aucune violation, seule une
+    # taille strictement supérieure au seuil (len(clique) > max) compte.
+    layout = _stack(build_synthetic_layout(), (2, 3, 4),
+                     (-100.0, -94.0, -88.0))
+    violations = [v for v in validate(layout, ValidationRules()) if v.kind == "parallel_stack"]
+
+    assert violations == []
+
+
 def test_chain_without_pairwise_parallelism_triggers_no_parallel_stack():
     # A-B, B-C, C-D se touchent (écart 15, rayon 11 : 15-22<0) mais A-C, B-D,
     # A-D ne se touchent pas (écart >= 30, 30-22>0) : chaîne sans triangle,

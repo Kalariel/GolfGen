@@ -430,13 +430,17 @@ par degré décroissant puis identifiant croissant, candidats et cliques triés)
 sur le même graphe `_side_by_side` inchangé (angle ≤ 20°, recouvrement projeté
 > 40 blocs, roughs en contact). Une violation `parallel_stack` par clique
 maximale de taille > `max_parallel_stack` (3), violations triées par tuple de
-trous. 4 tests ajoutés dans `tests/test_elastic_routing_geometry.py` (vraie
-clique de 4 → 1 violation ; chaîne A∥B-B∥C-C∥D sans triangle → 0 violation ;
-deux cliques fautives distinctes → 2 diagnostics ; décompte du layout
-synthétique explicitement actualisé) et `tests/test_elastic_routing_render.py`
-mis à jour en conséquence (assertion `parallel_stack:` retirée). Suite ciblée :
+trous. 5 tests ajoutés dans `tests/test_elastic_routing_geometry.py` (vraie
+clique de 4 → 1 violation ; frontière : vraie clique de exactement 3
+(= max_parallel_stack) → 0 violation ; chaîne A∥B-B∥C-C∥D sans triangle → 0
+violation ; deux cliques fautives distinctes → 2 diagnostics ; décompte du
+layout synthétique explicitement actualisé) et 1 test ajouté dans
+`tests/test_elastic_routing_render.py`, qui réutilise la fixture clique de 4
+pour vérifier que `render_svg` liste et surligne bien une violation
+`parallel_stack` (couverture perdue quand le layout synthétique est passé à
+0). Suite ciblée :
 `pytest tests/test_elastic_routing_geometry.py tests/test_elastic_routing_model.py
-tests/test_elastic_routing_render.py` → 28 passed.
+tests/test_elastic_routing_render.py` → 30 passed.
 
 Décompte du cas synthétique : **4 → 0** `parallel_stack` (violations totales
 14 → 10). Chaque nine du layout synthétique forme deux chaînes de voisins qui
