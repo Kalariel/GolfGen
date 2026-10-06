@@ -181,6 +181,13 @@ global reste exactement 4.
 
 - variété des caps et des doglegs ;
 - éviter les longues séries parallèles ;
+- objectif « voyage » (souple, à pondérer à l'étape 5, distinct de la
+  violation dure `parallel_stack`) : une série de 3 trous consécutifs côte à
+  côte est autorisée mais pénalisée, une simple paire consécutive côte à côte
+  légèrement pénalisée ; favoriser une trajectoire de nine qui s'éloigne puis
+  revient progressivement plutôt que des allers-retours sur place ; un
+  voisinage avec un trou non consécutif (ex. le 5 et le 15) reste neutre,
+  voire favorable ;
 - limiter la distance totale des liaisons ;
 - éviter les fairways inutilement proches du bord ;
 - répartir l'occupation de la carte sans produire deux demi-cartes visibles ;
@@ -398,60 +405,103 @@ budget et températures fixés à l'étape 5 après mesures.
 
 #### e. Définitions
 
-- **pile parallèle** = clique maximale de plus de trois trous dans le graphe
-  de parallélisme (sommet = trou, arête = relation `side_by_side` actuelle :
-  angle ≤ 20°, recouvrement projeté > 40 blocs, roughs en contact). Remplace
-  les composantes connexes (transitives, trop grossières). Toutes les
-  cliques maximales fautives sont signalées, triées pour un diagnostic
-  déterministe ;
+- **pile parallèle** = série d'au moins quatre trous **consécutifs dans
+  l'ordre de jeu**, à l'intérieur d'un même nine (la coupure 9→10, comme
+  18→1, ne compte jamais), telle que chaque trou est `side_by_side` avec le
+  suivant (angle ≤ 20°, recouvrement projeté > 40 blocs, roughs en contact)
+  ET que tous les trous de la série sont alignés deux à deux (angle +
+  recouvrement projeté, sans exigence de contact — ce second critère exclut
+  l'éventail qui tourne progressivement : chaque voisin aligné, mais les
+  extrémités ne le sont plus). Le critère est le *voyage* du joueur, pas la
+  seule géométrie : deux trous côte à côte mais non consécutifs dans l'ordre
+  de jeu (ex. le 5 et le 15) ne sont jamais une pile. Une violation par série
+  maximale, diagnostics triés pour un résultat déterministe. Les cliques
+  maximales du graphe `side_by_side` ont été essayées (étape 2b, première
+  passe) puis abandonnées : `side_by_side` exige un contact de rough, or
+  dans une vraie pile de bandes parallèles chaque trou ne touche que ses
+  voisins immédiats — aucune clique de taille > 2 sans fairways superposés,
+  donc la définition par clique ne détectait plus aucune vraie pile ;
 - **liaison praticable** = segment droit de 12 à 45 blocs ne traversant le
   cœur d'aucun fairway non propriétaire ; 12–45 est la plage de validation
   finale, la construction tolère 12–60 avec resserrement progressif
   (décision 3) ; pas de chemin routé dans ce spike (viendra avec les
   obstacles réels).
 
-### Étape 2b — oracle : piles par cliques
+### Étape 2b — oracle : piles par séries consécutives
 
-- [x] Passer `geometry.py` des composantes connexes aux cliques maximales
-  pour détecter les piles parallèles.
-- [x] Tester : une vraie clique de 4 trous déclenche une violation.
-- [x] Tester : une chaîne A∥B, B∥C, C∥D sans parallélisme deux à deux ne
-  produit aucune pile.
-- [x] Tester : deux cliques fautives distinctes produisent deux diagnostics.
-- [x] Vérifier le cas synthétique de l'étape 2 : le décompte (aujourd'hui
-  4 `parallel_stack`) reste cohérent, ou est explicitement actualisé.
+Première passe (cliques maximales, voir historique ci-dessous) abandonnée :
+`side_by_side` exige un contact de rough, or dans une vraie pile de bandes
+parallèles chaque trou ne touche que ses voisins immédiats — aucune clique de
+taille > 2 sans fairways superposés. Sur le layout synthétique, les vraies
+piles 1-5 et 11-14 n'étaient plus détectées (décompte retombé à 0, faux
+négatif). Nouvelle définition validée par l'utilisateur : le critère est le
+*voyage* du joueur (série de trous consécutifs dans l'ordre de jeu), pas la
+seule géométrie — voir « Décision d'architecture avant l'étape 3 », point e.
+
+- [x] Remplacer les cliques maximales par un parcours linéaire de chaque nine
+  détectant les séries de trous consécutifs dans l'ordre de jeu.
+- [x] Tester : 4 trous consécutifs empilés déclenchent une violation ; 3 non.
+- [x] Tester : 4 trous empilés mais non consécutifs dans l'ordre de jeu (y
+  compris à cheval sur les deux nines) ne produisent aucune violation.
+- [x] Tester : un éventail de trous consécutifs en contact qui tourne
+  progressivement (chaque voisin aligné, les extrémités non) ne produit
+  aucune violation.
+- [x] Tester : deux séries fautives distinctes produisent deux diagnostics.
+- [x] Tester : une série coupée au passage 9→10 ne fusionne pas.
+- [x] Vérifier le cas synthétique de l'étape 2 : le décompte (4
+  `parallel_stack`) reste cohérent, ou est explicitement actualisé.
 
 **Porte 2b** : revue des tests et du nouveau décompte avant l'étape 3 — prête
 pour validation (pas franchie, l'utilisateur valide).
 
-**Résultat du 2026-10-06** : `_connected_components` (union-find) remplacé par
-`_maximal_cliques`, une énumération Bron–Kerbosch avec pivot (choix du pivot
-par degré décroissant puis identifiant croissant, candidats et cliques triés)
-sur le même graphe `_side_by_side` inchangé (angle ≤ 20°, recouvrement projeté
-> 40 blocs, roughs en contact). Une violation `parallel_stack` par clique
-maximale de taille > `max_parallel_stack` (3), violations triées par tuple de
-trous. 5 tests ajoutés dans `tests/test_elastic_routing_geometry.py` (vraie
-clique de 4 → 1 violation ; frontière : vraie clique de exactement 3
-(= max_parallel_stack) → 0 violation ; chaîne A∥B-B∥C-C∥D sans triangle → 0
-violation ; deux cliques fautives distinctes → 2 diagnostics ; décompte du
-layout synthétique explicitement actualisé) et 1 test ajouté dans
-`tests/test_elastic_routing_render.py`, qui réutilise la fixture clique de 4
-pour vérifier que `render_svg` liste et surligne bien une violation
-`parallel_stack` (couverture perdue quand le layout synthétique est passé à
-0). Suite ciblée :
-`pytest tests/test_elastic_routing_geometry.py tests/test_elastic_routing_model.py
-tests/test_elastic_routing_render.py` → 30 passed.
+**Résultat du 2026-10-06** : `_maximal_cliques` (Bron–Kerbosch) supprimé,
+remplacé par `_consecutive_parallel_series` dans `geometry.py` — pour chaque
+nine (front, back séparément, jamais fusionnés entre eux), parcours linéaire
+des trous dans l'ordre de jeu ; une série de trous consécutifs est une
+fenêtre maximale où (a) chaque trou est `_side_by_side` avec le suivant
+(contact + alignement, inchangé) et (b) tous les trous de la fenêtre sont
+alignés deux à deux (angle ≤ 20°, recouvrement projeté > 40 blocs, SANS
+exigence de contact — critère extrait de `_side_by_side` dans le nouveau
+helper `_aligned_overlap`, mêmes seuils). Les fenêtres par point de départ
+sont croissantes avec l'indice (propriété démontrée : retirer le premier trou
+d'une fenêtre valide ne peut qu'assouplir ses contraintes), ce qui permet de
+calculer les séries réellement maximales en O(n²) par nine sans retour en
+arrière. Une violation par série maximale de taille strictement supérieure à
+`max_parallel_stack` (3), diagnostics triés par tuple de trous.
 
-Décompte du cas synthétique : **4 → 0** `parallel_stack` (violations totales
-14 → 10). Chaque nine du layout synthétique forme deux chaînes de voisins qui
-se touchent par paires (ex. front : trous 1-2, 2-3, 3-4, 4-5, fusionnés par
-l'ancien union-find en une seule « pile » de 5 trous ; pareil pour 6-7-8-9).
-Mais aucun triplet n'y est une clique : le trou 1 ne touche pas le trou 3, ni
-le 4, ni le 5 — ce n'est qu'une suite de voisinages transitifs, pas une pile
-parallèle au sens de la définition retenue (étape 0, point e). Les cliques
-maximales de ce graphe sont toutes des arêtes isolées (taille 2), sous le
-seuil de 3 : le nouveau décompte (0) est le comportement correct, l'ancien (4)
-était un faux positif de la transitivité des composantes connexes.
+8 tests ajoutés/remplacés dans `tests/test_elastic_routing_geometry.py` : 4
+consécutifs empilés → 1 violation ; 3 → 0 ; 4 empilés non consécutifs dans
+l'ordre de jeu (2,4,6,8 et 2,5,12,15 à cheval sur les nines) → 0 ; éventail de
+4 consécutifs en contact qui tourne (voisins à 15°, extrémités à 45°) → 0 ;
+deux séries fautives distinctes → 2 diagnostics ; série de 6 rangées à cheval
+sur 9→10 (3 trous par nine, sous le seuil) → aucune fusion, 0 violation ;
+décompte du layout synthétique explicitement actualisé et vérifié. Les
+géométries de test utilisent un espacement de 20 blocs entre rangées (comme
+le layout synthétique), pas 6 (superposition de fairways irréaliste de la
+version précédente). 1 test de rendu `parallel_stack` simplifié pour
+réutiliser directement le layout synthétique (qui couvre de nouveau ce cas),
+sans réimporter de fixture entre modules de test. Suite ciblée :
+`pytest tests/test_elastic_routing_geometry.py tests/test_elastic_routing_model.py
+tests/test_elastic_routing_render.py` → 32 passed.
+
+Décompte du cas synthétique : **4** `parallel_stack` (violations totales 14,
+comme avant l'introduction des cliques) : 1-2-3-4-5, 6-7-8-9, 10-11-12-13-14,
+15-16-17-18. Les bornes diffèrent légèrement de l'estimation initiale du
+point e (2-5/11-14 au lieu de 1-5/10-14) : les trous 1 et 10, qui ouvrent
+chaque nine, se trouvent être alignés et en recouvrement projeté avec
+l'ensemble de leur bande (pas seulement leur voisin immédiat), donc la série
+maximale les inclut aussi — comportement correct au vu de la définition, pas
+une anomalie.
+
+**Historique (abandonné) — cliques maximales (2026-10-06, première passe)** :
+`_connected_components` (union-find) avait été remplacé par `_maximal_cliques`
+(Bron–Kerbosch avec pivot) sur le graphe `_side_by_side` inchangé. Décompte
+obtenu sur le synthétique : 4 → 0 `parallel_stack`. Diagnostic : chaque nine
+forme une chaîne de voisinages deux à deux (1-2, 2-3, 3-4, 4-5) mais aucun
+triplet n'y est une clique (le trou 1 ne touche pas le trou 3, ni le 4, ni le
+5) — la définition par clique exige un contact mutuel entre TOUS les trous de
+la pile, incompatible avec une vraie pile de bandes parallèles où le contact
+n'existe qu'entre voisins immédiats. D'où la redéfinition ci-dessus.
 
 ### Étape 3 — squelette global grossier (contour d'un arbre aléatoire)
 
@@ -461,6 +511,10 @@ seuil de 3 : le nouveau décompte (0) est le comportement correct, l'ancien (4)
   voisines dans l'arbre, y compris entre les deux sous-arbres racines.
 - [ ] Appliquer le budget de longueur cible par sous-arbre et le nombre
   maximal de feuilles par sous-arbre (une feuille = une épingle).
+- [ ] Imposer une longueur minimale de branche (≥ ~2 trous portés par côté) :
+  une branche trop courte force le contour à faire un aller-retour sur
+  place, ce qui produit exactement les séries de trous consécutifs côte à
+  côte (zigzags) que l'objectif « voyage » pénalise.
 - [ ] Rejeter complètement et de façon déterministe tout arbre qui ne peut
   atteindre son budget, sans retour arrière interne.
 - [ ] Épaissir l'arbre puis extraire son contour (courbe simple par
