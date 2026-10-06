@@ -24,9 +24,13 @@ def test_render_produces_parseable_svg_with_course_semantics():
 
 
 def test_render_lists_and_highlights_invalid_holes():
+    # Depuis l'étape 2b (cliques maximales au lieu des composantes connexes),
+    # le layout synthétique ne contient plus de pile parallèle fautive (voir
+    # tests/test_elastic_routing_geometry.py pour le détail) : seuls
+    # link_distance et link_blocked restent attendus ici.
     svg = render_svg(build_synthetic_layout(), ValidationRules())
 
     assert "INVALIDE" in svg
     assert "link_distance:" in svg
-    assert "parallel_stack:" in svg
+    assert "link_blocked:" in svg
     assert 'stroke="#ff2d7a"' in svg

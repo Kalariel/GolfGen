@@ -271,24 +271,40 @@ def _side_by_side(first: HoleGeometry, second: HoleGeometry,
     return aligned and polygon_gap(first.rough, second.rough) <= EPSILON
 
 
-def _connected_components(ids: Iterable[int], pairs: Iterable[tuple[int, int]]) -> list[list[int]]:
-    parent = {identifier: identifier for identifier in ids}
+def _maximal_cliques(ids: Iterable[int], pairs: Iterable[tuple[int, int]]) -> list[tuple[int, ...]]:
+    """Énumère toutes les cliques maximales du graphe de parallélisme.
 
-    def find(identifier: int) -> int:
-        while parent[identifier] != identifier:
-            parent[identifier] = parent[parent[identifier]]
-            identifier = parent[identifier]
-        return identifier
-
+    Bron–Kerbosch avec pivot. Une pile parallèle est une clique (tous les
+    trous sont mutuellement `_side_by_side`), pas une composante connexe
+    (transitive, donc trop grossière : A∥B et B∥C n'impliquent pas A∥C).
+    Ordre déterministe : sommets et candidats triés, pivot choisi par degré
+    décroissant puis identifiant croissant, cliques triées en sortie.
+    """
+    vertices = sorted(set(ids))
+    neighbors: dict[int, set[int]] = {vertex: set() for vertex in vertices}
     for first, second in pairs:
-        root_first, root_second = find(first), find(second)
-        if root_first != root_second:
-            parent[root_first] = root_second
+        neighbors[first].add(second)
+        neighbors[second].add(first)
 
-    groups: dict[int, list[int]] = {}
-    for identifier in parent:
-        groups.setdefault(find(identifier), []).append(identifier)
-    return list(groups.values())
+    cliques: list[tuple[int, ...]] = []
+
+    def bron_kerbosch(clique: frozenset[int], candidates: set[int], excluded: set[int]) -> None:
+        if not candidates and not excluded:
+            cliques.append(tuple(sorted(clique)))
+            return
+        pool = candidates | excluded
+        pivot = max(pool, key=lambda vertex: (len(candidates & neighbors[vertex]), -vertex))
+        for vertex in sorted(candidates - neighbors[pivot]):
+            bron_kerbosch(
+                clique | {vertex},
+                candidates & neighbors[vertex],
+                excluded & neighbors[vertex],
+            )
+            candidates = candidates - {vertex}
+            excluded = excluded | {vertex}
+
+    bron_kerbosch(frozenset(), set(vertices), set())
+    return sorted(cliques)
 
 
 def _segment_crosses_polygon(start: Point, end: Point, polygon: tuple[Point, ...]) -> bool:
@@ -376,11 +392,11 @@ def validate(layout: CourseLayout, rules: ValidationRules | None = None) -> list
                 side_by_side.append(pair)
 
     if rules.max_parallel_stack is not None:
-        for component in _connected_components(geometries, side_by_side):
-            if len(component) > rules.max_parallel_stack:
+        for clique in _maximal_cliques(geometries, side_by_side):
+            if len(clique) > rules.max_parallel_stack:
                 violations.append(Violation(
-                    "parallel_stack", tuple(sorted(component)),
-                    f"pile de {len(component)} trous > {rules.max_parallel_stack}",
+                    "parallel_stack", clique,
+                    f"pile de {len(clique)} trous > {rules.max_parallel_stack}",
                 ))
 
     violations.extend(_validate_nine_pars(layout, rules))
