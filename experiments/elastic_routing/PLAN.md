@@ -544,17 +544,45 @@ plus avant de poursuivre.
 
 ### Étape 4 — trous élastiques et mutations locales
 
-- [ ] Implémenter le cache incrémental et la chaîne boîtes → distance d'axes
+- [x] Implémenter le cache incrémental et la chaîne boîtes → distance d'axes
   → oracle.
-- [ ] Microbenchmark d'une mutation complète < ~0,6 ms.
+- [x] Microbenchmark d'une mutation complète < ~0,6 ms.
 - [ ] Convertir chaque corridor grossier en axe continu à 0–2 doglegs.
 - [ ] Implémenter les mutations d'un trou : tee, green, dogleg, longueur,
   rotation et largeur.
 - [ ] Implémenter les mutations de voisinage sur 2–5 trous contigus.
 - [ ] Ajouter échange de pars et reroutage d'une fenêtre sans casser le quota
   global 4/10/4.
-- [ ] Recalculer seulement les contraintes touchées par une mutation.
+- [x] Recalculer seulement les contraintes touchées par une mutation.
 - [ ] Tester la reproductibilité d'une séquence de mutations seedée.
+
+**Résultat partiel du 2026-10-06** : travail avancé en parallèle de l'étape 3
+(indépendant du squelette). Module `incremental.py` : évaluateur surrogate
+par capsules — axes prolongés de `half_width` à chaque bout pour contenir les
+extrémités plates de l'oracle, disques de rayon `half_width / 0.72` aux
+sommets de dogleg pour contenir les onglets de joint clampés, marge
+forfaitaire conservatrice de 1,0 bloc retranchée une fois sur l'estimation
+finale. Zéro faux négatif vérifié par un test de propriété seedé sur 300
+layouts perturbés. Taux de faux positifs mesurés : composante `ecarts`
+~25 % (surtout aux sommets partagés entre trous consécutifs d'une boucle,
+où les bouts arrondis comblent le creux concave entre deux trous plus que le
+polygone biseauté réel), `clubhouse` ~4 %, `liaisons` ~5 %.
+
+Microbenchmark (`output/bench_incremental/REPORT.md`) : k=1 (un trou)
+0,1736 ms en moyenne, k=3 (trous contigus) 0,3749 ms, oracle polygonal
+complet ~8,03 ms (échantillon réduit) — contre ~11,46 ms mesurés à l'étape 2
+sur un layout différent. Verdict **GO** : cible ~0,6 ms atteinte pour k=1 et
+k=3 (accélération ×46 et ×21 vs oracle).
+
+Composantes `parallelisme`, `variete` et `deformation` du score vectoriel
+restent à 0 : la règle des séries consécutives (étape 2b) n'est pas encore
+branchée dans `incremental.py`, et l'objectif « voyage » reste à définir à
+l'étape 5. Suite ciblée `elastic_routing` : 47 tests.
+
+Le reste de l'étape 4 (conversion des corridors en axes continus, mutations
+de trou et de voisinage, échange de pars, démonstration de réparation) attend
+la sortie de l'étape 3 (squelette grossier), dont il a besoin comme entrée.
+La **Porte 4 n'est pas franchie**.
 
 **Livrable** : démonstration synthétique où une collision volontaire est
 réparée sans reconstruire tout le parcours.
