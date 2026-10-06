@@ -35,21 +35,31 @@ global 4/10/4 inchangé) :
   ``front_params`` via ``dataclasses.replace``, comme dans
   ``run_exp_par5_two_per_nine.py``.
 
-PIÈGE DE LECTURE vérifié en code (ne change rien à cette expérience, mais à
-documenter) : la validation indépendante finale de ``solve_course``
-(``course_solver.py:325-332``) appelle ``_course_violations`` avec UN SEUL
-jeu ``par5_bounds``/``par5_deadline`` -- toujours celui de ``front_params``,
-jamais celui de ``back_params`` -- appliqué aux DEUX nines par la boucle
-``for label, nine, ... in (("front", ...), ("back", ...))``
-(``course_solver.py:93-116``). Résultat : ``back_params.par5_deadline=None``
-n'a donc AUCUN effet observable sur ``result.complete`` -- la deadline 7 du
-front est, de fait, également vérifiée sur le back au moment du bilan final,
-même si (contrairement à A') la RECHERCHE du back n'a jamais été guidée vers
-cette contrainte pendant l'expansion (``bounded_quota_back=False``). Cette
-expérience teste donc en pratique : « même exigence finale 2 par5 ≤ trou 7
-sur les deux nines qu'A', mais recherche du back non guidée » -- un résultat
-différent d'A' mesurerait l'effet du GUIDAGE de recherche, pas de la règle
-elle-même.
+BUG DE VALIDATION CORRIGÉ (revue de code, 2026-10-06, voir ``course_solver.
+_course_violations`` docstring et ``PLAN.md`` ligne 307) : la validation
+indépendante finale de ``solve_course`` (``course_solver.py:375-394``)
+appelait TOUJOURS ``_course_violations`` avec le SEUL jeu ``par5_bounds``/
+``par5_deadline`` de ``front_params`` pour contrôler les DEUX nines, jamais
+celui de ``back_params`` -- ``back_params.par5_deadline=None`` n'avait donc
+AUCUN effet sur ``result.complete`` : la deadline 7 du front était, de fait,
+également vérifiée sur le back au moment du bilan final, même si
+(contrairement à A') la RECHERCHE du back n'avait jamais été guidée vers
+cette contrainte pendant l'expansion (``bounded_quota_back=False``). Le
+premier run de cette expérience (``output/exp_a2_par5_split_400_1_5/``) a
+été produit avec ce bug et est INVALIDÉ (0/5 complet, 0/5 validé
+indépendamment) -- ne pas s'y référer, voir ``output/
+exp_a2_par5_split_fixed_400_1_5/`` pour le run corrigé.
+
+Depuis le correctif, ``_course_violations`` accepte des bornes/deadline BACK
+DISTINCTS (``back_par3_bounds``/``back_par5_bounds``/``back_par5_deadline``)
+et ``solve_course`` lui passe les valeurs RÉELLES de ``back_params`` --
+``back_params.par5_deadline=None`` désactive donc bien la vérification
+correspondante côté back, et cette expérience teste réellement « deadline 2
+par5 ≤ trou 7 sur le front SEUL, recherche du back non guidée et non
+contrainte en position » (``_seed_summary`` ci-dessous applique la MÊME
+grille de lecture, gated par ``bounded_quota``/``bounded_quota_back``, pour
+le champ diagnostique ``independent_valid``, au lieu de dupliquer l'ancien
+bug).
 
 Reste STRICTEMENT identique à la config A (back-far + deadline par5) : front
 = ``_front_base()`` (beam 72, départs fixes à 5 angles), back =
@@ -142,11 +152,21 @@ def _seed_summary(result: CourseSolveResult, elapsed: float, rules: ValidationRu
     front_clubhouse_max = result.front.params.clubhouse_max
     back_clubhouse_max = (SolverParams().clubhouse_max if result.back is None
                           else result.back.params.clubhouse_max)
-    par3_bounds = result.front.params.par3_bounds
-    par5_bounds = result.front.params.par5_bounds
+    front_bq_params = result.front.params
+    back_bq_params = SolverParams() if result.back is None else result.back.params
+    # Même grille que l'appel réel dans course_solver.solve_course
+    # (course_solver.py:388-393) : chaque nine est contrôlé avec SES PROPRES
+    # par3_bounds/par5_bounds/par5_deadline, gated par SON PROPRE
+    # params.bounded_quota -- plus le bug corrigé qui réutilisait toujours
+    # ceux du front pour le back (voir docstring du module).
     independent_violations = _course_violations(
         front_placed, back_placed, rules, clubhouse, front_clubhouse_max, back_clubhouse_max,
-        par3_bounds=par3_bounds, par5_bounds=par5_bounds, par5_deadline=PAR5_DEADLINE,
+        par3_bounds=front_bq_params.par3_bounds if front_bq_params.bounded_quota else None,
+        par5_bounds=front_bq_params.par5_bounds if front_bq_params.bounded_quota else None,
+        par5_deadline=front_bq_params.par5_deadline,
+        back_par3_bounds=back_bq_params.par3_bounds if back_bq_params.bounded_quota else None,
+        back_par5_bounds=back_bq_params.par5_bounds if back_bq_params.bounded_quota else None,
+        back_par5_deadline=back_bq_params.par5_deadline,
     )
     independent_valid = (len(front_placed) == 9 and len(back_placed) == 9 and not independent_violations)
 
@@ -225,10 +245,12 @@ def _markdown(summaries: list[dict], rules: ValidationRules, total_seconds: floa
         "``par5_bounds=(2, 2)`` reste posé sur les DEUX nines pour que le partage global 2+2=4 "
         "soit respecté. ``par3_bounds`` ``(1, 3)`` et le quota global 4/10/4 inchangés.",
         "",
-        "- RAPPEL (voir docstring du module) : la validation finale de ``solve_course`` "
-        "(``course_solver.py:325-332``) réutilise TOUJOURS ``front_params.par5_bounds``/"
-        "``par5_deadline`` pour contrôler le BACK aussi -- ``back_params.par5_deadline=None`` est "
-        "donc sans effet sur ``result.complete`` ; seule la RECHERCHE du back (non guidée ici, "
+        "- RAPPEL (voir docstring du module) : un bug corrigé le 2026-10-06 faisait réutiliser "
+        "TOUJOURS ``front_params.par5_bounds``/``par5_deadline`` pour contrôler le BACK aussi, "
+        "rendant ``back_params.par5_deadline=None`` sans effet sur ``result.complete`` -- le "
+        "premier run de cette expérience (``output/exp_a2_par5_split_400_1_5/``) a été produit "
+        "avec ce bug et est INVALIDÉ. Depuis le correctif, ``back_params.par5_deadline=None`` "
+        "désactive bien la vérification côté back ; seule la RECHERCHE du back (non guidée ici, "
         "contrairement à A') peut différer.",
         "",
         "| Seed | Résultat | Front | Back | Temps | Tee1→club | Green9→club | Tee10→club | "

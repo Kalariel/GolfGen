@@ -2,7 +2,7 @@
   "back_par5_deadline": null,
   "experiment": "a2_par5_split",
   "front_par5_deadline": 7,
-  "independent_valid_count": 0,
+  "independent_valid_count": 2,
   "par5_bounds": [
     2,
     2
@@ -208,10 +208,8 @@
         4
       ],
       "green9_distance": 24.649,
-      "independent_valid": false,
-      "independent_violations": [
-        "back_par5_deadline"
-      ],
+      "independent_valid": true,
+      "independent_violations": [],
       "largest_parallel_stack": 3,
       "rejection_counts": {
         "axis_crossing": 136085,
@@ -317,10 +315,8 @@
         3
       ],
       "green9_distance": 26.038,
-      "independent_valid": false,
-      "independent_violations": [
-        "back_par5_deadline"
-      ],
+      "independent_valid": true,
+      "independent_violations": [],
       "largest_parallel_stack": 3,
       "rejection_counts": {
         "axis_crossing": 132335,
@@ -423,8 +419,7 @@
       "green9_distance": 25.186,
       "independent_valid": false,
       "independent_violations": [
-        "back_return",
-        "back_par5_bounds"
+        "back_return"
       ],
       "largest_parallel_stack": 3,
       "rejection_counts": {
@@ -531,8 +526,7 @@
       "green9_distance": 39.365,
       "independent_valid": false,
       "independent_violations": [
-        "back_return",
-        "back_par5_bounds"
+        "back_return"
       ],
       "largest_parallel_stack": 3,
       "rejection_counts": {
