@@ -405,8 +405,10 @@ budget et températures fixés à l'étape 5 après mesures.
   cliques maximales fautives sont signalées, triées pour un diagnostic
   déterministe ;
 - **liaison praticable** = segment droit de 12 à 45 blocs ne traversant le
-  cœur d'aucun fairway non propriétaire ; pas de chemin routé dans ce spike
-  (viendra avec les obstacles réels).
+  cœur d'aucun fairway non propriétaire ; 12–45 est la plage de validation
+  finale, la construction tolère 12–60 avec resserrement progressif
+  (décision 3) ; pas de chemin routé dans ce spike (viendra avec les
+  obstacles réels).
 
 ### Étape 2b — oracle : piles par cliques
 
@@ -611,8 +613,9 @@ Décisions approuvées le 2026-10-06 :
 6. **Raffinement** : recuit simulé avec mutations locales, complété
    périodiquement par une réparation à grand voisinage portant sur 2 à 5
    trous.
-7. Voir aussi les décisions d'architecture complémentaires du 2026-10-06
-   (seconde série), section « Décision d'architecture avant l'étape 3 ».
+
+Voir aussi les décisions d'architecture complémentaires du 2026-10-06
+(seconde série), section « Décision d'architecture avant l'étape 3 ».
 
 Ces décisions ferment la Porte 0. Toute modification ultérieure doit être
 consignée comme une nouvelle expérience, sans changer plusieurs paramètres à
