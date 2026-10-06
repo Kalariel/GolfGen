@@ -412,16 +412,42 @@ budget et températures fixés à l'étape 5 après mesures.
 
 ### Étape 2b — oracle : piles par cliques
 
-- [ ] Passer `geometry.py` des composantes connexes aux cliques maximales
+- [x] Passer `geometry.py` des composantes connexes aux cliques maximales
   pour détecter les piles parallèles.
-- [ ] Tester : une vraie clique de 4 trous déclenche une violation.
-- [ ] Tester : une chaîne A∥B, B∥C, C∥D sans parallélisme deux à deux ne
+- [x] Tester : une vraie clique de 4 trous déclenche une violation.
+- [x] Tester : une chaîne A∥B, B∥C, C∥D sans parallélisme deux à deux ne
   produit aucune pile.
-- [ ] Tester : deux cliques fautives distinctes produisent deux diagnostics.
-- [ ] Vérifier le cas synthétique de l'étape 2 : le décompte (aujourd'hui
+- [x] Tester : deux cliques fautives distinctes produisent deux diagnostics.
+- [x] Vérifier le cas synthétique de l'étape 2 : le décompte (aujourd'hui
   4 `parallel_stack`) reste cohérent, ou est explicitement actualisé.
 
-**Porte 2b** : revue des tests et du nouveau décompte avant l'étape 3.
+**Porte 2b** : revue des tests et du nouveau décompte avant l'étape 3 — prête
+pour validation (pas franchie, l'utilisateur valide).
+
+**Résultat du 2026-10-06** : `_connected_components` (union-find) remplacé par
+`_maximal_cliques`, une énumération Bron–Kerbosch avec pivot (choix du pivot
+par degré décroissant puis identifiant croissant, candidats et cliques triés)
+sur le même graphe `_side_by_side` inchangé (angle ≤ 20°, recouvrement projeté
+> 40 blocs, roughs en contact). Une violation `parallel_stack` par clique
+maximale de taille > `max_parallel_stack` (3), violations triées par tuple de
+trous. 4 tests ajoutés dans `tests/test_elastic_routing_geometry.py` (vraie
+clique de 4 → 1 violation ; chaîne A∥B-B∥C-C∥D sans triangle → 0 violation ;
+deux cliques fautives distinctes → 2 diagnostics ; décompte du layout
+synthétique explicitement actualisé) et `tests/test_elastic_routing_render.py`
+mis à jour en conséquence (assertion `parallel_stack:` retirée). Suite ciblée :
+`pytest tests/test_elastic_routing_geometry.py tests/test_elastic_routing_model.py
+tests/test_elastic_routing_render.py` → 28 passed.
+
+Décompte du cas synthétique : **4 → 0** `parallel_stack` (violations totales
+14 → 10). Chaque nine du layout synthétique forme deux chaînes de voisins qui
+se touchent par paires (ex. front : trous 1-2, 2-3, 3-4, 4-5, fusionnés par
+l'ancien union-find en une seule « pile » de 5 trous ; pareil pour 6-7-8-9).
+Mais aucun triplet n'y est une clique : le trou 1 ne touche pas le trou 3, ni
+le 4, ni le 5 — ce n'est qu'une suite de voisinages transitifs, pas une pile
+parallèle au sens de la définition retenue (étape 0, point e). Les cliques
+maximales de ce graphe sont toutes des arêtes isolées (taille 2), sous le
+seuil de 3 : le nouveau décompte (0) est le comportement correct, l'ancien (4)
+était un faux positif de la transitivité des composantes connexes.
 
 ### Étape 3 — squelette global grossier (contour d'un arbre aléatoire)
 
