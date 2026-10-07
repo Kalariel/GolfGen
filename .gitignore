@@ -16,3 +16,6 @@ pyvenv.cfg
 # artefacts de generation
 output/.cache/
 output/steps/
+
+# cache de relief du spike elastic_routing (etape M)
+experiments/elastic_routing/output/.cache/
