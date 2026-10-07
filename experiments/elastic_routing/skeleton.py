@@ -1,24 +1,35 @@
 """Étape 3 — squelette global grossier : contour d'un arbre aléatoire.
 
-Algorithme (voir PLAN.md, « Décision d'architecture avant l'étape 3 ») :
+Round correctif du 2026-10-07 (Porte 3 refusée à l'inspection visuelle du
+premier essai : le méandre en boustrophédon produisait deux serpentins en S
+qui se font face autour du clubhouse, la moitié de la carte vide — voir
+PLAN.md). Ce round ne couvre QUE la génération de l'arbre, son contour et la
+coupure aux deux passages au clubhouse (pas de DP de découpage ni de
+``CourseLayout`` ici ; ces briques, déjà validées, restent plus bas dans ce
+fichier mais ne sont plus appelées par ``build_skeleton``).
 
-1. un arbre unique, enraciné au clubhouse, avec exactement deux sous-arbres
-   (front, back) ; croissance alternée au sens où les deux sous-arbres sont
-   tirés depuis le même état global (occupation, halo), seedés, sans retour
-   arrière (aucune cellule n'est jamais revisitée) ;
-2. budget de longueur cible par sous-arbre, halo entre parties non reliées
-   localement, au plus trois feuilles par sous-arbre, branche menant à une
-   feuille d'au moins ``MIN_LEAF_BRANCH_LENGTH`` blocs ;
-3. rejet complet et borné (``MAX_TREE_ATTEMPTS`` tirages dérivés de la seed,
-   zéro boucle non bornée) si un budget ne peut être atteint ;
-4. le contour est le tour (à la manière d'un tour d'Euler) de l'arbre,
-   décalé de ``RIBBON_OFFSET`` sur un seul côté courant (jamais ré-offsetté
-   dans l'autre sens comme un ruban à deux brins indépendants : chaque arête
-   de l'arbre est traversée deux fois par le tour, une fois dans chaque
-   sens, ce qui produit naturellement les deux rives) ; congés en arc
-   centrés sur chaque sommet du tour, cap en demi-cercle aux feuilles (cas
-   particulier d'un virage à 180°) ;
-5. DP de découpage par nine, adaptée de ``golfgen.loop_router._cut_nine``.
+Algorithme révisé :
+
+1. réseau grossier de nœuds, pas ``NODE_PITCH`` (>= halo), 8 voisins
+   (orthogonaux + diagonaux) ;
+2. clubhouse = un nœud du réseau tiré par la seed (pas fixé au centre) ;
+   racine de l'arbre, exactement deux sous-arbres (front, back) ;
+3. croissance ALTERNÉE (une arête front, une arête back, ...) par marche
+   aléatoire biaisée « voyage » (s'éloigner du clubhouse, puis y revenir),
+   budget de longueur par sous-arbre dérivé de ``PAR_SPECS``, au plus trois
+   feuilles par sous-arbre, branche menant à une feuille d'au moins
+   ``MIN_LEAF_BRANCH_LENGTH`` blocs ;
+4. halo GÉNÉRAL : toute paire d'arêtes de l'arbre sans nœud commun doit
+   être à distance segment-segment >= ``HALO_MIN_DIST`` (remplace la
+   fenêtre « localement reliée » du premier essai, qui ne couvrait pas
+   toutes les géométries) ;
+5. rejet complet et borné (``MAX_TREE_ATTEMPTS`` tirages dérivés de la
+   seed, zéro boucle non bornée) si un budget ne peut être atteint ;
+6. contour = tour (à la manière d'un tour d'Euler) de l'arbre, ligne
+   centrale lissée en congés d'arc (pas <= 22°) puis décalée par
+   intersection des bords (onglet) ; cap en demi-cercle aux feuilles. La
+   coupure aux deux passages au clubhouse est déjà le résultat : front et
+   back sont deux arcs clubhouse -> clubhouse indépendants.
 
 Pas de dépendance à ``shapely``. Toutes les longueurs sont en blocs.
 """
@@ -31,90 +42,60 @@ import time
 from bisect import bisect_left, bisect_right
 from dataclasses import dataclass, field
 
-from experiments.elastic_routing.geometry import segments_intersect
+from experiments.elastic_routing.geometry import segment_distance, segments_intersect
 from experiments.elastic_routing.model import (
     PAR_SPECS,
     ControlPoint,
-    CourseLayout,
     ElasticHole,
     NineLayout,
 )
 
 
 Point = tuple[float, float]
-Cell = tuple[int, int]
+Node = tuple[int, int]
 
 
 # ----------------------------------------------------------------------
-# Constantes (voir PLAN.md, paramètres validés le 2026-10-07)
+# Constantes
 # ----------------------------------------------------------------------
 
-GRID_PITCH = 5.0
-GRID_CELLS = 80
-MAP_SIZE = GRID_CELLS * GRID_PITCH  # 400.0
-CLUBHOUSE_CELL: Cell = (GRID_CELLS // 2, GRID_CELLS // 2)  # centre, pas impose par le modele
+# Réseau grossier : 8x8 nœuds à pas 48 (>= halo 47), premier/dernier nœud à
+# 24/360 sur une carte de 400. Marge requise jusqu'au bord : offset du
+# contour (12) + demi-largeur de fairway max (par 5, 18/2 = 9) = 21 ; marge
+# réelle 24 (et 400-360=40) >= 21, donc le contour + la plus grosse moitié
+# de fairway restent toujours en carte.
+MAP_SIZE = 400.0
+NODE_PITCH = 48.0
+NODE_COUNT = 8
+NODE_OFFSET = 24.0
 
 RIBBON_OFFSET = 12.0
 HALO_MARGIN = 23.0
-HALO_MIN_DIST = 2.0 * RIBBON_OFFSET + HALO_MARGIN  # 47.0 blocs (~10 cellules)
-# Exemption de halo pres du clubhouse (cf. near_hub/HUB_RADIUS de
-# loop_router, qui vaut ~2.2x sa propre CLEARANCE_REQUIRED) : le tronc quitte
-# le clubhouse en ligne a peu pres droite puis tourne vite dans la premiere
-# rangee, repassant parfois juste a cote de son propre depart avant d'etre
-# "localement relie" au sens strict (LOCAL_WINDOW_BLOCKS) -- sans cette
-# marge, cette zone immediate produit des faux positifs de halo.
-HUB_RADIUS = 2.2 * HALO_MIN_DIST
-# Fenetre "localement reliee" le long de l'arbre. A un virage a 90 degres
-# (nos rangees en boustrophedon n'en font pas d'autres), deux points a une
-# distance d'arc a et b du coin (a+b = LOCAL_WINDOW_BLOCKS) sont separes
-# d'au moins sqrt(a^2+b^2), minimal (pire cas a=b=W/2) a W/sqrt(2). Pour
-# garantir ce minimum >= HALO_MIN_DIST il faut W >= HALO_MIN_DIST*sqrt(2)
-# (~66.5) ; marge prise a *1.5 pour couvrir aussi les coudes de branche
-# (angle de fourche moins favorable que 90 degres).
-LOCAL_WINDOW_BLOCKS = 1.5 * HALO_MIN_DIST
+HALO_MIN_DIST = 2.0 * RIBBON_OFFSET + HALO_MARGIN  # 47.0 blocs
 
+# ~6 arêtes orthogonales (6*48=288, arrondi à 300 pour rester cohérent avec
+# le budget de longueur, lui aussi en blocs et non en nombre d'arêtes).
 MIN_LEAF_BRANCH_LENGTH = 300.0
 MAX_LEAVES_PER_SUBTREE = 3
 MAX_ARC_STEP_DEG = 22.0
-# Le clubhouse est au centre de la carte (choix de ce module, cf. docstring
-# de build_skeleton) : chaque sous-arbre dispose d'environ moitie moins de
-# place qu'avec un clubhouse de coin (comme loop_router), donc une plus
-# grande fraction des tirages est rejetee (ligne hors carte, collision ou
-# decoupage DP impossible). Mesure empirique (apres troncature du meandre
-# au contact, cf. _grow_boustrophedon) : ~50% des sous-arbres seuls
-# reussissent, mais certaines seeds precises exigent plusieurs centaines de
-# tirages avant qu'un COUPLE front/back + decoupage DP passe. "ex. <= 50" du
-# plan est donc porte a 1500 (verifie < 2 s par seed sur les seeds 1-10,
-# largement sous la cible de 60 s) ; reste une borne fixe, deterministe,
-# sans boucle non bornee.
-MAX_TREE_ATTEMPTS = 1500
 
-# Le squelette est un meandre en boustrophedon (comme la spine de
-# loop_router), rasterise sur la grille : chaque rangee est perpendiculaire
-# a la precedente a ROW_PITCH (>= HALO_MIN_DIST) pres, ce qui satisfait le
-# halo entre rangees PAR CONSTRUCTION plutot que par rejet reactif d'une
-# marche aleatoire (qui se bloque trop souvent au contact du halo, cf.
-# tentative initiale documentee dans le rapport).
-EDGE_MARGIN = 10.0
-ROW_PITCH = HALO_MIN_DIST + 6.0
-ROW_JITTER = 4.0
+# Rendement mesuré après le passage au réseau grossier (pas 48) et au halo
+# général (distance segment-segment, exemption uniquement sur nœud commun) :
+# nettement meilleur qu'au pas 5 (voir historique plus bas). Reste borné et
+# petit comme demandé ; ``build_skeleton`` consigne le taux de rejet réel.
+MAX_TREE_ATTEMPTS = 50
 
-NEIGHBOR_DELTAS: tuple[Cell, ...] = (
+NEIGHBOR_DELTAS: tuple[Node, ...] = (
     (-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1),
 )
 
-CUT_STEP = 3.0
+NINE_PAR_PATTERN = (3, 4, 4, 4, 4, 5, 5, 4, 3)  # 2 par3, 2 par5, 5 par4 (comme synthetic.py)
+
+# Liaisons de construction (DP de découpage, non utilisée par ce round) :
+# conservées ici pour que _subtree_length_range reste identique à l'étape 3
+# initiale (même calcul, mêmes bornes), sans dépendre d'une DP appelée.
 LINK_CONSTRUCTION_MIN = 12.0
 LINK_CONSTRUCTION_MAX = 60.0
-STUB_MAX = 90.0
-LINK_ARC_MAX = 150.0
-MAX_CORNER_DEG = 100.0
-MAX_NET_DEG = 92.0
-SUB_POLYLINE_EPS = 0.75       # aligne sur _sub_polyline/_cut_nine de loop_router
-DOGLEG_MIN_DEVIATION = 3.0    # en dessous, le trou est declare droit (0 dogleg)
-PAR_ORDER_SHUFFLES = 14
-
-NINE_PAR_PATTERN = (3, 4, 4, 4, 4, 5, 5, 4, 3)  # 2 par3, 2 par5, 5 par4 (comme synthetic.py)
 
 
 def _subtree_length_range() -> tuple[float, float]:
@@ -139,19 +120,27 @@ class SkeletonGenerationError(RuntimeError):
 
 
 # ----------------------------------------------------------------------
-# Grille
+# Réseau de nœuds
 # ----------------------------------------------------------------------
 
-def cell_to_world(cell: Cell) -> Point:
-    return (cell[0] * GRID_PITCH, cell[1] * GRID_PITCH)
+def node_to_world(node: Node) -> Point:
+    return (NODE_OFFSET + node[0] * NODE_PITCH, NODE_OFFSET + node[1] * NODE_PITCH)
 
 
-def _edge_length(delta: Cell) -> float:
-    return GRID_PITCH * math.hypot(delta[0], delta[1])
+def _in_grid(node: Node) -> bool:
+    return 0 <= node[0] < NODE_COUNT and 0 <= node[1] < NODE_COUNT
+
+
+def _edge_length(delta: Node) -> float:
+    return NODE_PITCH * math.hypot(delta[0], delta[1])
 
 
 def _wrap_pi(angle: float) -> float:
     return (angle + math.pi) % (2.0 * math.pi) - math.pi
+
+
+def all_nodes() -> list[Node]:
+    return [(x, y) for x in range(NODE_COUNT) for y in range(NODE_COUNT)]
 
 
 # ----------------------------------------------------------------------
@@ -160,264 +149,147 @@ def _wrap_pi(angle: float) -> float:
 
 @dataclass
 class TreeState:
-    parent: dict[Cell, Cell | None] = field(default_factory=dict)
-    arclen: dict[Cell, float] = field(default_factory=dict)
-    children: dict[Cell, list[Cell]] = field(default_factory=dict)
-    buckets: dict[Cell, set[Cell]] = field(default_factory=dict)  # index spatial grossier
+    parent: dict[Node, Node | None] = field(default_factory=dict)
+    arclen: dict[Node, float] = field(default_factory=dict)
+    children: dict[Node, list[Node]] = field(default_factory=dict)
+    edges: list[tuple[Node, Node]] = field(default_factory=list)
 
-    def __post_init__(self) -> None:
-        self.parent[CLUBHOUSE_CELL] = None
-        self.arclen[CLUBHOUSE_CELL] = 0.0
-        self._bucket_add(CLUBHOUSE_CELL)
+    def add_root(self, root: Node) -> None:
+        self.parent[root] = None
+        self.arclen[root] = 0.0
+        self.children.setdefault(root, [])
 
-    def _bucket_key(self, cell: Cell) -> Cell:
-        size = max(1, int(round(HALO_MIN_DIST / GRID_PITCH)))
-        return (cell[0] // size, cell[1] // size)
+    def add(self, node: Node, parent_node: Node) -> None:
+        edge = _edge_length((node[0] - parent_node[0], node[1] - parent_node[1]))
+        self.parent[node] = parent_node
+        self.arclen[node] = self.arclen[parent_node] + edge
+        self.children.setdefault(parent_node, []).append(node)
+        self.children.setdefault(node, [])
+        self.edges.append((parent_node, node))
 
-    def _bucket_add(self, cell: Cell) -> None:
-        self.buckets.setdefault(self._bucket_key(cell), set()).add(cell)
 
-    def nearby(self, cell: Cell) -> list[Cell]:
-        bx, by = self._bucket_key(cell)
-        result: list[Cell] = []
-        for dx in (-1, 0, 1):
-            for dy in (-1, 0, 1):
-                result.extend(self.buckets.get((bx + dx, by + dy), ()))
-        return result
+def _halo_ok(u: Node, v: Node, tree: TreeState) -> bool:
+    """Halo général : toute arête existante sans nœud commun avec (u, v)
 
-    def add(self, cell: Cell, parent_cell: Cell) -> None:
-        edge = _edge_length((cell[0] - parent_cell[0], cell[1] - parent_cell[1]))
-        self.parent[cell] = parent_cell
-        self.arclen[cell] = self.arclen[parent_cell] + edge
-        self.children.setdefault(parent_cell, []).append(cell)
-        self.children.setdefault(cell, [])
-        self._bucket_add(cell)
-
-    def is_locally_connected(self, a: Cell, b: Cell, limit: float = LOCAL_WINDOW_BLOCKS) -> bool:
-        """Distance le long de l'arbre entre ``a`` et ``b`` <= ``limit`` ?
-
-        Marche bornee (par ``limit``) depuis chaque extremite ; ne calcule
-        jamais la distance exacte au-dela du seuil (complexite independante
-        de la taille de l'arbre).
-        """
-        if a == b:
-            return True
-        anc_a = self._bounded_ancestors(a, limit)
-        anc_b = self._bounded_ancestors(b, limit)
-        common = anc_a.keys() & anc_b.keys()
-        if not common:
+    doit être à distance segment-segment >= ``HALO_MIN_DIST``. Couvre à la
+    fois les diagonales qui frôlent un nœud voisin et les diagonales qui se
+    croisent, sans fenêtre « localement reliée » distincte (remplace
+    l'approche du premier essai de l'étape 3, qui se limitait aux parties
+    non reliées le long de l'arbre et ne suffisait pas en général).
+    """
+    world_u, world_v = node_to_world(u), node_to_world(v)
+    for a, b in tree.edges:
+        if a == u or a == v or b == u or b == v:
+            continue
+        if segment_distance(world_u, world_v, node_to_world(a), node_to_world(b)) < HALO_MIN_DIST:
             return False
-        return min(anc_a[c] + anc_b[c] for c in common) <= limit
-
-    def _bounded_ancestors(self, start: Cell, limit: float) -> dict[Cell, float]:
-        out = {start: 0.0}
-        cur, dist = start, 0.0
-        while True:
-            parent_cell = self.parent.get(cur)
-            if parent_cell is None:
-                break
-            edge = self.arclen[cur] - self.arclen[parent_cell]
-            dist += edge
-            if dist > limit:
-                break
-            out[parent_cell] = dist
-            cur = parent_cell
-        return out
-
-
-def _halo_ok(candidate_cell: Cell, candidate_world: Point, parent_cell: Cell,
-            candidate_arclen: float, tree: TreeState) -> bool:
-    clubhouse_world = cell_to_world(CLUBHOUSE_CELL)
-    candidate_near_hub = math.dist(candidate_world, clubhouse_world) < HUB_RADIUS
-    for other in tree.nearby(candidate_cell):
-        if other == parent_cell:
-            continue
-        other_world = cell_to_world(other)
-        if math.dist(candidate_world, other_world) >= HALO_MIN_DIST:
-            continue
-        if candidate_near_hub and math.dist(other_world, clubhouse_world) < HUB_RADIUS:
-            continue
-        # Connexion locale le long de l'arbre : on simule l'ajout du candidat
-        # en l'ajoutant temporairement (retire juste apres).
-        tree.parent[candidate_cell] = parent_cell
-        tree.arclen[candidate_cell] = candidate_arclen
-        try:
-            local = tree.is_locally_connected(candidate_cell, other)
-        finally:
-            del tree.parent[candidate_cell]
-            del tree.arclen[candidate_cell]
-        if local:
-            continue
-        return False
     return True
 
 
 # ----------------------------------------------------------------------
-# Croissance d'une chaîne : méandre en boustrophédon rasterisé sur la grille
+# Croissance : marche aléatoire biaisée « voyage » sur le réseau de nœuds
 # ----------------------------------------------------------------------
 
-def _rect_cap(origin: Point, theta: float) -> float:
-    """Distance max depuis ``origin`` le long de ``theta`` restant en carte."""
-    x, y = origin
-    cos_t, sin_t = math.cos(theta), math.sin(theta)
-    cap = float("inf")
-    if cos_t > 1e-9:
-        cap = min(cap, (MAP_SIZE - EDGE_MARGIN - x) / cos_t)
-    elif cos_t < -1e-9:
-        cap = min(cap, (EDGE_MARGIN - x) / cos_t)
-    if sin_t > 1e-9:
-        cap = min(cap, (MAP_SIZE - EDGE_MARGIN - y) / sin_t)
-    elif sin_t < -1e-9:
-        cap = min(cap, (EDGE_MARGIN - y) / sin_t)
-    return max(cap, 0.0)
+def _walk_steps(rng: random.Random, tree: TreeState, occupied: set[Node], start_node: Node,
+                target_length: float, fallback_angle: float, clubhouse_world: Point):
+    """Générateur : fait croître l'arbre depuis ``start_node``, une arête à la fois.
 
+    Biais « voyage » : score = alignement avec le vecteur clubhouse->nœud
+    courant (s'éloigne) tant que < 60% du budget, puis avec le vecteur
+    nœud courant->clubhouse (revient) au-delà. Au tout premier pas, ce
+    vecteur est nul (le nœud courant EST le clubhouse pour le tronc) :
+    ``fallback_angle`` (différent pour front et back, seedé) lève
+    l'ambiguïté et assure l'asymétrie entre les deux sous-arbres.
 
-def _in_map(point: Point) -> bool:
-    return (EDGE_MARGIN <= point[0] <= MAP_SIZE - EDGE_MARGIN
-            and EDGE_MARGIN <= point[1] <= MAP_SIZE - EDGE_MARGIN)
-
-
-def _boustrophedon_waypoints_signed(rng: random.Random, origin_world: Point, theta: float,
-                                    target_length: float, sign: float,
-                                    max_rows: int = 40) -> list[Point]:
-    """Rangées perpendiculaires à ``theta`` (un seul côté, ``sign`` fixe), espacées de ``ROW_PITCH``.
-
-    Le halo entre rangées voisines est satisfait par construction (le pas
-    perpendiculaire est toujours >= ``HALO_MIN_DIST``), au lieu d'être testé
-    et rejeté après coup sur une marche aléatoire (essai initial abandonné,
-    voir le rapport de l'étape 3).
+    Tronque (s'arrête, sans retour arrière) dès qu'aucun nœud voisin n'est
+    libre et conforme au halo — jamais d'exception ici, l'appelant décide
+    si la longueur obtenue est suffisante.
     """
-    e1 = (math.cos(theta), math.sin(theta))
-    perp = (-e1[1], e1[0])
-    e2 = (sign * perp[0], sign * perp[1])
-
-    points = [origin_world]
-    pos = (origin_world[0] + 1.0 * ROW_PITCH * e2[0], origin_world[1] + 1.0 * ROW_PITCH * e2[1])
-    if _in_map(pos):
-        points.append(pos)
-    else:
-        pos = origin_world
-
-    direction = 1
-    row_margin = ROW_PITCH * 0.5  # marge pour que le connecteur reste en carte
-    for _ in range(max_rows):
-        row_theta = math.atan2(e1[1], e1[0]) if direction > 0 else math.atan2(-e1[1], -e1[0])
-        u_cap = max(0.0, _rect_cap(pos, row_theta) - row_margin - rng.uniform(0.0, ROW_JITTER))
-        end = (pos[0] + direction * u_cap * e1[0], pos[1] + direction * u_cap * e1[1])
-        points.append(end)
-        if _polyline_length(points) >= target_length:
-            break
-        # Connecteur perpendiculaire vers la rangée suivante : même u, v +
-        # pitch (comme loop_router._spine_points), jamais une diagonale qui
-        # pourrait recroiser une rangée déjà posée.
-        next_pos = (end[0] + ROW_PITCH * e2[0], end[1] + ROW_PITCH * e2[1])
-        if not _in_map(next_pos):
-            break
-        points.append(next_pos)
-        pos = next_pos
-        direction *= -1
-    return points
-
-
-def _boustrophedon_waypoints(rng: random.Random, origin_world: Point, theta: float,
-                             target_length: float, max_rows: int = 40) -> list[Point]:
-    """Essaie les deux côtés perpendiculaires à ``theta`` et garde le plus long.
-
-    Le clubhouse est au centre de la carte (pas de coin disponible comme
-    dans loop_router) : un seul côté perpendiculaire choisi par une
-    heuristique de distance au bord (essai initial abandonné, voir le
-    rapport de l'étape 3) se heurtait trop souvent au bord après une seule
-    rangée, pour un angle ``theta`` donné. Construire les deux côtés et
-    garder le résultat le plus long reste déterministe (même ``rng``
-    consommé dans le même ordre pour les deux essais) et borné (``max_rows``
-    de chaque côté), et augmente nettement le rendement du tirage global.
-    """
-    rng_a = random.Random(rng.random())
-    rng_b = random.Random(rng.random())
-    candidate_a = _boustrophedon_waypoints_signed(rng_a, origin_world, theta, target_length, 1.0, max_rows)
-    candidate_b = _boustrophedon_waypoints_signed(rng_b, origin_world, theta, target_length, -1.0, max_rows)
-    if _polyline_length(candidate_a) >= _polyline_length(candidate_b):
-        return candidate_a
-    return candidate_b
-
-
-def _snap_cell(point: Point) -> Cell:
-    cx = max(0, min(GRID_CELLS - 1, round(point[0] / GRID_PITCH)))
-    cy = max(0, min(GRID_CELLS - 1, round(point[1] / GRID_PITCH)))
-    return (cx, cy)
-
-
-def _bresenham(a: Cell, b: Cell) -> list[Cell]:
-    """Ligne numérique 8-connexe de ``a`` à ``b`` (DDA par interpolation entière).
-
-    Préféré à une marche gloutonne « plus proche voisin du but » : cette
-    dernière zigzague sur les segments à pente faible (elle alterne entre
-    deux colonnes pour corriger l'erreur), ce qui allonge artificiellement
-    l'arclength locale et déclenche de faux positifs du halo contre elle
-    même (essai initial abandonné, voir le rapport de l'étape 3).
-    """
-    x0, y0 = a
-    x1, y1 = b
-    dx, dy = x1 - x0, y1 - y0
-    steps = max(abs(dx), abs(dy))
-    if steps == 0:
-        return [a]
-    return [(round(x0 + dx * i / steps), round(y0 + dy * i / steps)) for i in range(steps + 1)]
-
-
-def _rasterize_from(start_cell: Cell, waypoints: list[Point]) -> list[Cell]:
-    """Chemine cellule par cellule de ``start_cell`` vers chaque waypoint (ligne droite)."""
-    cells = [start_cell]
-    current_cell = start_cell
-    for target_world in waypoints[1:]:
-        target_cell = _snap_cell(target_world)
-        segment = _bresenham(current_cell, target_cell)
-        cells.extend(segment[1:])
-        current_cell = target_cell
-    return cells
-
-
-def _grow_boustrophedon(rng: random.Random, tree: TreeState, start_cell: Cell,
-                        theta: float, target_length: float) -> tuple[float, list[Cell]]:
-    """Fait croître l'arbre depuis ``start_cell`` (déjà présent dans ``tree``).
-
-    Tronque (n'ajoute rien de plus, sans retour arrière) dès que la
-    rasterisation entrerait en collision avec l'arbre existant ou le halo —
-    plutôt que de jeter tout le progrès déjà fait (essai initial abandonné :
-    annuler systématiquement tout le sous-arbre dès la première rangée en
-    défaut, souvent après plusieurs rangées valides, faisait chuter le
-    rendement du tirage sous 15 %, voir le rapport de l'étape 3). Lève
-    ``_SubtreeStuck`` seulement si la longueur obtenue reste sous
-    ``MIN_LEAF_BRANCH_LENGTH``.
-    """
-    origin_world = cell_to_world(start_cell)
-    waypoints = _boustrophedon_waypoints(rng, origin_world, theta, target_length)
-
-    raw_cells = _rasterize_from(start_cell, waypoints)
-    cells = [raw_cells[0]]
-    for cell in raw_cells[1:]:
-        if cell != cells[-1]:
-            cells.append(cell)
-
-    current = start_cell
-    total = 0.0
-    out_cells = [start_cell]
-    for cell in cells[1:]:
-        if cell in tree.parent:
-            break  # collision avec une cellule existante : on s'arrete ici
-        edge_len = _edge_length((cell[0] - current[0], cell[1] - current[1]))
-        candidate_arclen = tree.arclen[current] + edge_len
-        if not _halo_ok(cell, cell_to_world(cell), current, candidate_arclen, tree):
-            break  # halo viole : on s'arrete ici, pas de retour arriere
-        tree.add(cell, current)
-        total += edge_len
-        current = cell
-        out_cells.append(cell)
-    if total < MIN_LEAF_BRANCH_LENGTH:
-        raise _SubtreeStuck(
-            f"meandre tronque trop court ({total:.1f} < {MIN_LEAF_BRANCH_LENGTH})"
+    current = start_node
+    grown = 0.0
+    last_delta: Node | None = None
+    yield grown, [current]
+    while grown < target_length:
+        current_world = node_to_world(current)
+        ref_vec = (current_world[0] - clubhouse_world[0], current_world[1] - clubhouse_world[1])
+        if grown >= 0.6 * target_length:
+            ref_vec = (-ref_vec[0], -ref_vec[1])
+        ref_norm = math.hypot(*ref_vec)
+        ref_unit = (ref_vec[0] / ref_norm, ref_vec[1] / ref_norm) if ref_norm > 1e-9 else (
+            math.cos(fallback_angle), math.sin(fallback_angle)
         )
-    return total, out_cells
+
+        candidates = []
+        for delta in NEIGHBOR_DELTAS:
+            if last_delta is not None and delta == (-last_delta[0], -last_delta[1]):
+                continue  # jamais de retour arriere strict sur le pas precedent
+            candidate = (current[0] + delta[0], current[1] + delta[1])
+            if not _in_grid(candidate) or candidate in occupied:
+                continue
+            if not _halo_ok(current, candidate, tree):
+                continue
+            edge_len = _edge_length(delta)
+            candidate_world = node_to_world(candidate)
+            direction = ((candidate_world[0] - current_world[0]) / edge_len,
+                        (candidate_world[1] - current_world[1]) / edge_len)
+            score = direction[0] * ref_unit[0] + direction[1] * ref_unit[1]
+            candidates.append((score, candidate, edge_len, delta))
+
+        if not candidates:
+            return  # troncature : pas de retour arriere, on garde l'acquis
+
+        candidates.sort(key=lambda item: -item[0])
+        if len(candidates) > 1 and rng.random() < 0.4:
+            _, chosen, edge_len, delta = candidates[rng.randrange(1, len(candidates))]
+        else:
+            _, chosen, edge_len, delta = candidates[0]
+
+        tree.add(chosen, current)
+        occupied.add(chosen)
+        grown += edge_len
+        current = chosen
+        last_delta = delta
+        yield grown, _path_from(tree, start_node, current)
+
+
+def _path_from(tree: TreeState, start: Node, end: Node) -> list[Node]:
+    path = [end]
+    cur = end
+    while cur != start:
+        cur = tree.parent[cur]
+        path.append(cur)
+    path.reverse()
+    return path
+
+
+def _grow_alternating(rng: random.Random, tree: TreeState, occupied: set[Node],
+                      front_start: Node, back_start: Node, front_target: float,
+                      back_target: float, front_angle: float, back_angle: float,
+                      clubhouse_world: Point) -> tuple[tuple[float, list[Node]], tuple[float, list[Node]]]:
+    """Fait croître les deux troncs en alternance, une arête à la fois.
+
+    Les deux sous-arbres partagent le même état (``tree``, ``occupied``) :
+    chaque arête ajoutée par l'un est immédiatement visible du halo de
+    l'autre, ce qui évite qu'un sous-arbre occupe toute la carte avant que
+    l'autre ne commence (défaut du premier essai, rejeté à la Porte 3).
+    """
+    gen_front = _walk_steps(rng, tree, occupied, front_start, front_target, front_angle, clubhouse_world)
+    gen_back = _walk_steps(rng, tree, occupied, back_start, back_target, back_angle, clubhouse_world)
+    front_state = next(gen_front)
+    back_state = next(gen_back)
+    front_done = back_done = False
+    while not (front_done and back_done):
+        if not front_done:
+            try:
+                front_state = next(gen_front)
+            except StopIteration:
+                front_done = True
+        if not back_done:
+            try:
+                back_state = next(gen_back)
+            except StopIteration:
+                back_done = True
+    return front_state, back_state
 
 
 # ----------------------------------------------------------------------
@@ -442,134 +314,47 @@ def _choose_leaf_plan(rng: random.Random, target_length: float) -> tuple[int, fl
     return num_leaves, trunk_target, branch_targets
 
 
-def _grow_subtree(rng: random.Random, tree: TreeState, start_angle: float,
-                  target_length: float, clubhouse_world: Point) -> list[Cell]:
-    """Construit un sous-arbre complet (tronc en boustrophédon + branches).
-
-    Lève ``_SubtreeStuck`` si le budget minimal (une seule feuille d'au
-    moins ``MIN_LEAF_BRANCH_LENGTH``) n'est pas atteignable ; le tirage
-    entier est alors abandonné (``MAX_TREE_ATTEMPTS``, pas de retour
-    arrière interne). Retourne la liste des feuilles (cellules) du
-    sous-arbre.
-    """
-    del clubhouse_world  # le pivot de chaque rangee est deja l'origine du tronc/branche
-    num_leaves, trunk_target, branch_targets = _choose_leaf_plan(rng, target_length)
-    trunk_grown, trunk_cells = _grow_boustrophedon(rng, tree, CLUBHOUSE_CELL, start_angle, trunk_target)
-    if trunk_grown < MIN_LEAF_BRANCH_LENGTH:
-        raise _SubtreeStuck(f"tronc trop court ({trunk_grown:.1f} < {MIN_LEAF_BRANCH_LENGTH})")
-
-    leaves = [trunk_cells[-1]]
-
-    for branch_target in branch_targets:
-        branch_point = _pick_branch_point(rng, tree, trunk_cells, branch_target)
-        if branch_point is None:
-            continue  # reduit silencieusement le nombre de feuilles (<=3 reste respecte)
-        fan_angle = start_angle + rng.choice([-1.0, 1.0]) * rng.uniform(math.pi / 3, 2 * math.pi / 3)
-        branch_grown, branch_cells = _grow_boustrophedon(rng, tree, branch_point, fan_angle, branch_target)
-        if branch_grown < MIN_LEAF_BRANCH_LENGTH:
-            raise _SubtreeStuck(f"branche trop courte ({branch_grown:.1f})")
-        leaves.append(branch_cells[-1])
-
-    if len(leaves) > MAX_LEAVES_PER_SUBTREE:
-        raise _SubtreeStuck("trop de feuilles")
-    return leaves
-
-
 class _SubtreeStuck(RuntimeError):
     """Signal interne : ce tirage de sous-arbre echoue, on retire l'arbre entier."""
 
 
-def _pick_branch_point(rng: random.Random, tree: TreeState, trunk_nodes: list[Cell],
-                       branch_target: float) -> Cell | None:
+def _pick_branch_point(rng: random.Random, tree: TreeState, trunk_nodes: list[Node],
+                       branch_target: float) -> Node | None:
     trunk_total = tree.arclen[trunk_nodes[-1]] - tree.arclen[trunk_nodes[0]]
     candidates = [
         node for node in trunk_nodes
-        if HUB_RADIUS <= tree.arclen[node] - tree.arclen[trunk_nodes[0]] <= trunk_total - MIN_LEAF_BRANCH_LENGTH
+        if NODE_PITCH <= tree.arclen[node] - tree.arclen[trunk_nodes[0]] <= trunk_total - MIN_LEAF_BRANCH_LENGTH
     ]
     if not candidates:
         return None
     return rng.choice(candidates)
 
 
+def _grow_branch(rng: random.Random, tree: TreeState, occupied: set[Node], start_node: Node,
+                 branch_target: float, fan_angle: float, clubhouse_world: Point) -> tuple[float, list[Node]]:
+    grown, path = 0.0, [start_node]
+    for grown, path in _walk_steps(rng, tree, occupied, start_node, branch_target, fan_angle, clubhouse_world):
+        pass
+    return grown, path
+
+
 # ----------------------------------------------------------------------
-# Arbre complet (deux sous-arbres)
+# Arbre complet (deux sous-arbres), avec rejet borné
 # ----------------------------------------------------------------------
 
 @dataclass(frozen=True)
 class Skeleton:
+    clubhouse: Node
     tree: TreeState
-    front_root: Cell
-    back_root: Cell
-    front_leaves: tuple[Cell, ...]
-    back_leaves: tuple[Cell, ...]
+    front_root: Node
+    back_root: Node
+    front_leaves: tuple[Node, ...]
+    back_leaves: tuple[Node, ...]
     front_length: float
     back_length: float
 
 
-@dataclass(frozen=True)
-class _SkeletonAttempt:
-    skeleton: Skeleton
-    front_contour: list[Point]
-    back_contour: list[Point]
-    layout: CourseLayout
-
-
-def _build_tree(seed: int) -> _SkeletonAttempt:
-    """Boucle de rejet bornée (``MAX_TREE_ATTEMPTS``) sur le pipeline complet.
-
-    Un tirage n'est accepté que si l'arbre atteint son budget, son contour
-    est simple ET la DP de découpage trouve un decoupage pour les deux
-    nines — un échec à n'importe laquelle de ces étapes retire l'arbre
-    entier (pas de retour arrière interne, pas de boucle non bornée : au
-    plus ``MAX_TREE_ATTEMPTS`` tirages dérivés de la seed).
-    """
-    clubhouse_world = cell_to_world(CLUBHOUSE_CELL)
-    clubhouse = ControlPoint(*clubhouse_world)
-    for attempt in range(MAX_TREE_ATTEMPTS):
-        rng = random.Random(f"elastic_routing_skeleton:{seed}:{attempt}")
-        tree = TreeState()
-        front_angle = rng.uniform(0.0, 2.0 * math.pi)
-        back_angle = front_angle + math.pi + rng.uniform(-0.6, 0.6)
-        front_target = rng.uniform(*SUBTREE_LENGTH_RANGE)
-        back_target = rng.uniform(*SUBTREE_LENGTH_RANGE)
-        try:
-            front_leaves = _grow_subtree(rng, tree, front_angle, front_target, clubhouse_world)
-            back_leaves = _grow_subtree(rng, tree, back_angle, back_target, clubhouse_world)
-        except _SubtreeStuck:
-            continue
-        roots = tree.children[CLUBHOUSE_CELL]
-        if len(roots) != 2:
-            continue
-        front_root, back_root = roots
-        # Le halo et le lissage visent a garantir un contour simple ; on le
-        # verifie numeriquement (comme loop_router verifie sa clairance) et
-        # on retire l'arbre entier si ca echoue malgre tout, plutot que de
-        # produire un contour qui se recoupe.
-        front_contour = build_contour(_full_tour(front_root, tree))
-        back_contour = build_contour(_full_tour(back_root, tree))
-        if not is_simple_polyline(front_contour) or not is_simple_polyline(back_contour):
-            continue
-        front = _build_nine_layout(rng, 1, clubhouse, front_contour)
-        back = _build_nine_layout(rng, 10, clubhouse, back_contour)
-        if front is None or back is None:
-            continue
-        try:
-            layout = CourseLayout(
-                seed=seed, width=MAP_SIZE, height=MAP_SIZE, clubhouse=clubhouse, front=front, back=back,
-            )
-        except (TypeError, ValueError):
-            continue  # quota/structure incoherente issue de la DP : tirage retire
-        front_total = _subtree_total_length(tree, front_root)
-        back_total = _subtree_total_length(tree, back_root)
-        skeleton = Skeleton(tree, front_root, back_root, tuple(front_leaves), tuple(back_leaves),
-                            front_total, back_total)
-        return _SkeletonAttempt(skeleton, front_contour, back_contour, layout)
-    raise SkeletonGenerationError(
-        f"aucun arbre valide apres {MAX_TREE_ATTEMPTS} tirages derives (seed={seed})"
-    )
-
-
-def _subtree_total_length(tree: TreeState, root: Cell) -> float:
+def _subtree_total_length(tree: TreeState, root: Node) -> float:
     total = 0.0
     stack = [root]
     while stack:
@@ -580,26 +365,120 @@ def _subtree_total_length(tree: TreeState, root: Cell) -> float:
     return total
 
 
+@dataclass(frozen=True)
+class _BuildOutcome:
+    skeleton: Skeleton
+    front_contour: list[Point]
+    back_contour: list[Point]
+
+
+def _build_tree(seed: int) -> tuple[_BuildOutcome, int]:
+    """Boucle de rejet bornée (``MAX_TREE_ATTEMPTS``).
+
+    Un tirage n'est accepté que si les deux sous-arbres atteignent leur
+    budget minimal, ont au plus 3 feuilles chacun ET leurs deux contours
+    sont simples — un échec à n'importe laquelle de ces étapes retire le
+    tirage entier (pas de retour arrière interne). Retourne le résultat et
+    le nombre de tentatives consommées (pour rapporter le taux de rejet).
+    """
+    for attempt in range(MAX_TREE_ATTEMPTS):
+        rng = random.Random(f"elastic_routing_skeleton:{seed}:{attempt}")
+        clubhouse = rng.choice(all_nodes())
+        clubhouse_world = node_to_world(clubhouse)
+        tree = TreeState()
+        tree.add_root(clubhouse)
+        occupied = {clubhouse}
+
+        front_angle = rng.uniform(0.0, 2.0 * math.pi)
+        back_angle = front_angle + math.pi + rng.uniform(-0.6, 0.6)
+        front_target_total = rng.uniform(*SUBTREE_LENGTH_RANGE)
+        back_target_total = rng.uniform(*SUBTREE_LENGTH_RANGE)
+        front_leaves_n, front_trunk_target, front_branch_targets = _choose_leaf_plan(rng, front_target_total)
+        back_leaves_n, back_trunk_target, back_branch_targets = _choose_leaf_plan(rng, back_target_total)
+
+        (front_grown, front_trunk_path), (back_grown, back_trunk_path) = _grow_alternating(
+            rng, tree, occupied, clubhouse, clubhouse, front_trunk_target, back_trunk_target,
+            front_angle, back_angle, clubhouse_world,
+        )
+        roots = tree.children[clubhouse]
+        if len(roots) != 2:
+            continue  # l'un des deux troncs n'a pas pu planter sa toute premiere arete
+        front_root, back_root = roots
+        if front_trunk_path[-1] == clubhouse or back_trunk_path[-1] == clubhouse:
+            continue
+
+        try:
+            if front_grown < MIN_LEAF_BRANCH_LENGTH or back_grown < MIN_LEAF_BRANCH_LENGTH:
+                raise _SubtreeStuck("tronc trop court")
+            front_leaves = [front_trunk_path[-1]]
+            for branch_target in front_branch_targets:
+                branch_point = _pick_branch_point(rng, tree, front_trunk_path, branch_target)
+                if branch_point is None:
+                    continue
+                fan_angle = rng.uniform(0.0, 2.0 * math.pi)
+                branch_grown, branch_path = _grow_branch(rng, tree, occupied, branch_point,
+                                                         branch_target, fan_angle, clubhouse_world)
+                if branch_grown < MIN_LEAF_BRANCH_LENGTH:
+                    raise _SubtreeStuck("branche front trop courte")
+                front_leaves.append(branch_path[-1])
+            if len(front_leaves) > MAX_LEAVES_PER_SUBTREE:
+                raise _SubtreeStuck("trop de feuilles front")
+
+            back_leaves = [back_trunk_path[-1]]
+            for branch_target in back_branch_targets:
+                branch_point = _pick_branch_point(rng, tree, back_trunk_path, branch_target)
+                if branch_point is None:
+                    continue
+                fan_angle = rng.uniform(0.0, 2.0 * math.pi)
+                branch_grown, branch_path = _grow_branch(rng, tree, occupied, branch_point,
+                                                         branch_target, fan_angle, clubhouse_world)
+                if branch_grown < MIN_LEAF_BRANCH_LENGTH:
+                    raise _SubtreeStuck("branche back trop courte")
+                back_leaves.append(branch_path[-1])
+            if len(back_leaves) > MAX_LEAVES_PER_SUBTREE:
+                raise _SubtreeStuck("trop de feuilles back")
+        except _SubtreeStuck:
+            continue
+
+        front_contour = build_contour(_full_tour(front_root, tree, clubhouse))
+        back_contour = build_contour(_full_tour(back_root, tree, clubhouse))
+        if not is_simple_polyline(front_contour) or not is_simple_polyline(back_contour):
+            continue
+
+        # arclen[root] = longueur clubhouse->root (premiere arete du sous-arbre) :
+        # a additionner pour que front_length/back_length mesurent bien la
+        # longueur totale depuis le clubhouse (coherent avec MIN_LEAF_BRANCH_LENGTH,
+        # verifie plus haut sur front_grown/back_grown, qui incluent cette arete).
+        front_total = tree.arclen[front_root] + _subtree_total_length(tree, front_root)
+        back_total = tree.arclen[back_root] + _subtree_total_length(tree, back_root)
+        skeleton = Skeleton(clubhouse, tree, front_root, back_root, tuple(front_leaves),
+                            tuple(back_leaves), front_total, back_total)
+        return _BuildOutcome(skeleton, front_contour, back_contour), attempt + 1
+    raise SkeletonGenerationError(
+        f"aucun arbre valide apres {MAX_TREE_ATTEMPTS} tirages derives (seed={seed})"
+    )
+
+
 # ----------------------------------------------------------------------
-# Tour (à la manière d'un tour d'Euler) et contour décalé
+# Tour (à la manière d'un tour d'Euler) et contour décalé — inchangé
 # ----------------------------------------------------------------------
 
 def _angle_between(a: Point, b: Point) -> float:
     return math.atan2(b[1] - a[1], b[0] - a[0])
 
 
-def _tour_nodes(node: Cell, parent: Cell | None, tree: TreeState) -> list[Cell]:
+def _tour_nodes(node: Node, parent: Node | None, tree: TreeState) -> list[Node]:
     kids = [c for c in tree.children.get(node, ()) if c != parent]
     if not kids:
         return [node]
-    node_world = cell_to_world(node)
+    node_world = node_to_world(node)
     if parent is not None:
-        ref = _angle_between(node_world, cell_to_world(parent))
+        ref = _angle_between(node_world, node_to_world(parent))
     else:
         ref = 0.0
     kids_sorted = sorted(
         kids,
-        key=lambda k: (_angle_between(node_world, cell_to_world(k)) - ref) % (2.0 * math.pi),
+        key=lambda k: (_angle_between(node_world, node_to_world(k)) - ref) % (2.0 * math.pi),
     )
     sequence = [node]
     for kid in kids_sorted:
@@ -610,9 +489,9 @@ def _tour_nodes(node: Cell, parent: Cell | None, tree: TreeState) -> list[Cell]:
     return sequence
 
 
-def _full_tour(root_child: Cell, tree: TreeState) -> list[Cell]:
+def _full_tour(root_child: Node, tree: TreeState, clubhouse: Node) -> list[Node]:
     """Tour clubhouse -> ... -> clubhouse pour le sous-arbre débutant à ``root_child``."""
-    return [CLUBHOUSE_CELL] + _tour_nodes(root_child, CLUBHOUSE_CELL, tree) + [CLUBHOUSE_CELL]
+    return [clubhouse] + _tour_nodes(root_child, clubhouse, tree) + [clubhouse]
 
 
 def _point_to_segment_distance(point: Point, a: Point, b: Point) -> float:
@@ -624,17 +503,10 @@ def _point_to_segment_distance(point: Point, a: Point, b: Point) -> float:
     return math.dist(point, (a[0] + ratio * dx, a[1] + ratio * dy))
 
 
-def _simplify_tour_points(points: list[Point], epsilon: float = 1.5 * GRID_PITCH) -> list[Point]:
-    """Douglas-Peucker itératif : lisse le bruit de rasterisation en escalier.
+def _simplify_tour_points(points: list[Point], epsilon: float = 6.0) -> list[Point]:
+    """Douglas-Peucker itératif : fusionne les points quasi colinéaires.
 
-    Chaque rangée du méandre est rasterisée cellule par cellule (pas de 5 ou
-    7.07 blocs) : une pente peu alignée sur les 8 directions produit un
-    escalier dont chaque marche change de direction de ±45°, un angle trop
-    grand pour être filtré par un simple seuil local sur le virage (essai
-    initial abandonné, voir le rapport de l'étape 3). Toutes les marches
-    restent à moins de ``epsilon`` de la corde idéale ; Douglas-Peucker les
-    fusionne sans toucher les vrais virages (feuilles, nœuds de branche).
-    Implémentation itérative (pas de récursion : jusqu'à ~1500 points).
+    Implémentation itérative (pas de récursion).
     """
     n = len(points)
     if n < 3:
@@ -667,18 +539,12 @@ def _round_centerline_corners(points: list[Point], radius: float = CENTERLINE_FI
                               skip_above_deg: float = CENTERLINE_LEAF_SKIP_DEG) -> list[Point]:
     """Remplace chaque virage marqué par un congé en arc (porté de loop_router._round_corners).
 
-    Un décalage uniforme (toujours à gauche du sens de marche) d'une ligne
-    brisée NON lissée se recoupe lui-même du côté concave d'un virage dur :
-    les deux segments adjacents, décalés sans être raccourcis, se croisent
-    à une distance ``radius*tan(virage/2)`` du sommet, souvent bien avant le
-    rayon de décalage lui-même (essai initial abandonné, voir le rapport de
-    l'étape 3). Lisser la LIGNE CENTRALE d'abord (comme la spine de
-    loop_router, ici avec un rayon >= au décalage du ruban) rend ensuite le
-    décalage par arc centré sur chaque sommet sûr, car aucun virage résiduel
+    Lisser la LIGNE CENTRALE d'abord (rayon >= au décalage du ruban) rend
+    ensuite le décalage par onglet/arc centré sûr : aucun virage résiduel
     ne dépasse ``MAX_ARC_STEP_DEG``. Les quasi demi-tours (feuilles) sont
-    volontairement non modifiés ici : la formule en tangente diverge à 180°,
-    et ``build_contour`` leur applique directement l'arc centré exact (cap
-    en demi-cercle), qui n'a pas ce problème de côté concave.
+    volontairement non modifiés ici : la formule en tangente diverge à
+    180°, et ``build_contour`` leur applique directement l'arc centré exact
+    (cap en demi-cercle).
     """
     result = [points[0]]
     for i in range(1, len(points) - 1):
@@ -708,23 +574,16 @@ def _round_centerline_corners(points: list[Point], radius: float = CENTERLINE_FI
     return result
 
 
-def build_contour(tour_cells: list[Cell], radius: float = RIBBON_OFFSET) -> list[Point]:
+def build_contour(tour_nodes: list[Node], radius: float = RIBBON_OFFSET) -> list[Point]:
     """Décale le tour d'un côté courant (la main gauche du sens de marche).
 
     Après le lissage de la ligne centrale (``_round_centerline_corners``,
     qui porte le « congé en arc »), le décalage proprement dit utilise
     l'intersection des deux bords décalés à chaque sommet (onglet, porté de
-    ``golfgen.loop_router._offset_polyline``) : un arc centré séparément sur
-    CHAQUE sommet (essai initial abandonné, voir le rapport de l'étape 3) ne
-    raccourcit jamais les segments adjacents, qui se recoupent alors du
-    côté concave d'un virage, à une distance ``radius*tan(virage/2)`` du
-    sommet — un défaut qui s'aggrave en subdivisant (la somme des tangentes
-    de petits angles dépasse la tangente de l'angle total). L'onglet n'a
-    ce problème que pour un demi-tour (tangente infinie) : les sommets
-    marqués comme virage de feuille (quasi 180°, non lissés plus haut)
-    reçoivent donc directement le cap en demi-cercle centré sur le sommet.
+    ``golfgen.loop_router._offset_polyline``), sauf au cap (demi-tour en
+    feuille) qui reçoit un arc centré exact sur le sommet.
     """
-    points = _round_centerline_corners(_simplify_tour_points([cell_to_world(c) for c in tour_cells]))
+    points = _round_centerline_corners(_simplify_tour_points([node_to_world(n) for n in tour_nodes]))
     n = len(points)
     if n < 2:
         return []
@@ -792,8 +651,115 @@ def is_simple_polyline(points: list[Point]) -> bool:
 
 
 # ----------------------------------------------------------------------
-# Découpage DP (adapté de golfgen.loop_router._cut_nine)
+# Orchestration
 # ----------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class SkeletonResult:
+    seed: int
+    clubhouse: Node
+    skeleton: Skeleton
+    front_contour: tuple[Point, ...]
+    back_contour: tuple[Point, ...]
+    elapsed_seconds: float
+    attempts_used: int
+
+
+def build_skeleton(seed: int) -> SkeletonResult:
+    start = time.perf_counter()
+    outcome, attempts_used = _build_tree(seed)
+    elapsed = time.perf_counter() - start
+    return SkeletonResult(
+        seed=seed,
+        clubhouse=outcome.skeleton.clubhouse,
+        skeleton=outcome.skeleton,
+        front_contour=tuple(outcome.front_contour),
+        back_contour=tuple(outcome.back_contour),
+        elapsed_seconds=elapsed,
+        attempts_used=attempts_used,
+    )
+
+
+# ----------------------------------------------------------------------
+# Rendu SVG du squelette (réseau, arbre, contour, clubhouse)
+# ----------------------------------------------------------------------
+
+def _subtree_nodes(tree: TreeState, root: Node) -> list[Node]:
+    nodes = [root]
+    stack = [root]
+    while stack:
+        node = stack.pop()
+        for child in tree.children.get(node, ()):
+            nodes.append(child)
+            stack.append(child)
+    return nodes
+
+
+def render_skeleton_svg(result: SkeletonResult) -> str:
+    """SVG de diagnostic : réseau de nœuds, arbre par nine, contour, clubhouse."""
+    skeleton = result.skeleton
+    size, padding, footer = 800, 24, 60
+    scale = (size - 2 * padding) / MAP_SIZE
+
+    def point(value: Point) -> Point:
+        return (padding + value[0] * scale, padding + value[1] * scale)
+
+    out = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{size}" height="{size + footer}">',
+        '<rect width="100%" height="100%" fill="#0d1117"/>',
+        (f'<rect x="{padding}" y="{padding}" width="{MAP_SIZE * scale:.1f}" '
+         f'height="{MAP_SIZE * scale:.1f}" fill="#161b22" stroke="#8b949e"/>'),
+        '<style>text{font-family:monospace;fill:#c9d1d9}</style>',
+    ]
+
+    for node in all_nodes():
+        p = point(node_to_world(node))
+        out.append(f'<circle cx="{p[0]:.1f}" cy="{p[1]:.1f}" r="1.0" fill="#3b4049"/>')
+
+    for root, color in ((skeleton.front_root, "#58a6ff"), (skeleton.back_root, "#f2cc60")):
+        for node in _subtree_nodes(skeleton.tree, root):
+            p = point(node_to_world(node))
+            out.append(f'<circle cx="{p[0]:.1f}" cy="{p[1]:.1f}" r="2.6" fill="{color}" fill-opacity="0.85"/>')
+    for a, b in skeleton.tree.edges:
+        pa, pb = point(node_to_world(a)), point(node_to_world(b))
+        out.append(f'<line x1="{pa[0]:.1f}" y1="{pa[1]:.1f}" x2="{pb[0]:.1f}" y2="{pb[1]:.1f}" '
+                   'stroke="#8b949e" stroke-width="1.0" stroke-opacity="0.6"/>')
+
+    for contour, color in ((result.front_contour, "#58a6ff"), (result.back_contour, "#f2cc60")):
+        path = " ".join(f"{point(p)[0]:.1f},{point(p)[1]:.1f}" for p in contour)
+        out.append(f'<polygon points="{path}" fill="none" stroke="{color}" stroke-width="1.4" stroke-opacity="0.9"/>')
+
+    clubhouse = point(node_to_world(result.clubhouse))
+    out.append(
+        f'<circle cx="{clubhouse[0]:.1f}" cy="{clubhouse[1]:.1f}" r="6" fill="#f0f6fc" stroke="#8b949e"/>'
+    )
+    out.extend([
+        (f'<text x="{padding}" y="{size + 24}" font-size="14">seed {result.seed} · '
+         f'clubhouse {result.clubhouse} · {result.attempts_used} tirage(s) · '
+         f'{result.elapsed_seconds * 1000:.0f} ms</text>'),
+        (f'<text x="{padding}" y="{size + 44}" font-size="12">bleu=front '
+         f'({len(skeleton.front_leaves)} feuille(s)) · jaune=back '
+         f'({len(skeleton.back_leaves)} feuille(s)) · blanc=clubhouse</text>'),
+        "</svg>",
+    ])
+    return "\n".join(out) + "\n"
+
+
+# ----------------------------------------------------------------------
+# Découpage DP (adapté de golfgen.loop_router._cut_nine) — NON appelé par
+# build_skeleton dans ce round (voir docstring du module) ; conservé pour
+# le prochain round, une fois la Porte 3 franchie sur le squelette seul.
+# ----------------------------------------------------------------------
+
+CUT_STEP = 3.0
+STUB_MAX = 90.0
+LINK_ARC_MAX = 150.0
+MAX_CORNER_DEG = 100.0
+MAX_NET_DEG = 92.0
+SUB_POLYLINE_EPS = 0.75       # aligne sur _sub_polyline/_cut_nine de loop_router
+DOGLEG_MIN_DEVIATION = 3.0    # en dessous, le trou est declare droit (0 dogleg)
+PAR_ORDER_SHUFFLES = 14
+
 
 def _polyline_length(points: list[Point]) -> float:
     return math.fsum(math.dist(a, b) for a, b in zip(points, points[1:]))
@@ -948,7 +914,7 @@ def cut_nine(rng: random.Random, points: list[Point], pars: list[int]) -> list[d
 
 
 # ----------------------------------------------------------------------
-# Assemblage en ElasticHole / NineLayout / CourseLayout
+# Assemblage en ElasticHole / NineLayout — idem, non appelé ce round
 # ----------------------------------------------------------------------
 
 def _best_single_dogleg(waypoints: list[Point]) -> Point | None:
@@ -983,11 +949,7 @@ def _hole_from_cut(order: int, par: int, waypoints: list[Point]) -> ElasticHole:
 
 def _build_nine_layout(rng: random.Random, start_order: int, clubhouse: ControlPoint,
                        contour: list[Point]) -> NineLayout | None:
-    """``None`` si la DP ne trouve aucun découpage (contour trop court/trop dur) :
-
-    le tirage d'arbre est alors abandonné comme les autres rejets bornés de
-    ``_build_tree``, pas une erreur fatale isolée.
-    """
+    """``None`` si la DP ne trouve aucun découpage (contour trop court/trop dur)."""
     cut = cut_nine(rng, contour, list(NINE_PAR_PATTERN))
     if cut is None:
         return None
@@ -996,92 +958,3 @@ def _build_nine_layout(rng: random.Random, start_order: int, clubhouse: ControlP
         for order, hole in enumerate(cut, start=start_order)
     )
     return NineLayout.from_holes(start_order, clubhouse, holes)
-
-
-# ----------------------------------------------------------------------
-# Orchestration
-# ----------------------------------------------------------------------
-
-@dataclass(frozen=True)
-class SkeletonResult:
-    layout: CourseLayout
-    skeleton: Skeleton
-    front_contour: tuple[Point, ...]
-    back_contour: tuple[Point, ...]
-    front_simple: bool
-    back_simple: bool
-    elapsed_seconds: float
-
-
-def build_skeleton(seed: int) -> SkeletonResult:
-    start = time.perf_counter()
-    attempt = _build_tree(seed)
-    elapsed = time.perf_counter() - start
-    return SkeletonResult(
-        layout=attempt.layout,
-        skeleton=attempt.skeleton,
-        front_contour=tuple(attempt.front_contour),
-        back_contour=tuple(attempt.back_contour),
-        front_simple=True,
-        back_simple=True,
-        elapsed_seconds=elapsed,
-    )
-
-
-# ----------------------------------------------------------------------
-# Rendu SVG du squelette (arbre + contour + coupures), avant tout layout
-# ----------------------------------------------------------------------
-
-def _subtree_cells(tree: TreeState, root: Cell) -> list[Cell]:
-    cells = [root]
-    stack = [root]
-    while stack:
-        node = stack.pop()
-        for child in tree.children.get(node, ()):
-            cells.append(child)
-            stack.append(child)
-    return cells
-
-
-def render_skeleton_svg(result: SkeletonResult) -> str:
-    """SVG de diagnostic : cellules de l'arbre par nine, contour, coupures, clubhouse."""
-    skeleton = result.skeleton
-    size, padding, footer = 800, 24, 60
-    scale = (size - 2 * padding) / MAP_SIZE
-
-    def point(value: Point) -> Point:
-        return (padding + value[0] * scale, padding + value[1] * scale)
-
-    out = [
-        f'<svg xmlns="http://www.w3.org/2000/svg" width="{size}" height="{size + footer}">',
-        '<rect width="100%" height="100%" fill="#0d1117"/>',
-        (f'<rect x="{padding}" y="{padding}" width="{MAP_SIZE * scale:.1f}" '
-         f'height="{MAP_SIZE * scale:.1f}" fill="#161b22" stroke="#8b949e"/>'),
-        '<style>text{font-family:monospace;fill:#c9d1d9}</style>',
-    ]
-
-    for root, color in ((skeleton.front_root, "#58a6ff"), (skeleton.back_root, "#f2cc60")):
-        for cell in _subtree_cells(skeleton.tree, root):
-            p = point(cell_to_world(cell))
-            out.append(f'<circle cx="{p[0]:.1f}" cy="{p[1]:.1f}" r="1.4" fill="{color}" fill-opacity="0.75"/>')
-
-    for contour, color in ((result.front_contour, "#58a6ff"), (result.back_contour, "#f2cc60")):
-        path = " ".join(f"{point(p)[0]:.1f},{point(p)[1]:.1f}" for p in contour)
-        out.append(f'<polygon points="{path}" fill="none" stroke="{color}" stroke-width="1.4" stroke-opacity="0.9"/>')
-
-    for hole in result.layout.holes:
-        tee, green = point((hole.tee.x, hole.tee.y)), point((hole.green.x, hole.green.y))
-        out.append(f'<circle cx="{tee[0]:.1f}" cy="{tee[1]:.1f}" r="3" fill="#f0f6fc"/>')
-        out.append(f'<circle cx="{green[0]:.1f}" cy="{green[1]:.1f}" r="3" fill="#ff2d7a"/>')
-
-    clubhouse = point((result.layout.clubhouse.x, result.layout.clubhouse.y))
-    out.append(
-        f'<circle cx="{clubhouse[0]:.1f}" cy="{clubhouse[1]:.1f}" r="6" fill="#f0f6fc" stroke="#8b949e"/>'
-    )
-    out.extend([
-        (f'<text x="{padding}" y="{size + 24}" font-size="14">seed {result.layout.seed} · '
-         f'{result.elapsed_seconds * 1000:.0f} ms · bleu=front · jaune=back · blanc=tee · '
-         'rose=green</text>'),
-        "</svg>",
-    ])
-    return "\n".join(out) + "\n"

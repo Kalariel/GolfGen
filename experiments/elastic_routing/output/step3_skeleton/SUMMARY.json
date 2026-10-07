@@ -1,77 +1,98 @@
 {
   "reports": [
     {
-      "back_contour_length": 1760.903034095773,
+      "attempts_used": 38,
       "back_leaves": 1,
-      "back_tree_length": 984.116882454316,
-      "construction_violation_counts": {
-        "fairway_gap": 6,
-        "length": 8
-      },
-      "construction_violations_total": 14,
-      "elapsed_seconds": 0.20183640000323066,
-      "final_violation_counts": {
-        "fairway_gap": 6,
-        "length": 8,
-        "link_distance": 10
-      },
-      "final_violations_total": 24,
-      "front_contour_length": 1768.290678672056,
+      "back_tree_length": 576.0,
+      "clubhouse": [
+        1,
+        3
+      ],
+      "elapsed_seconds": 0.0757132869985071,
       "front_leaves": 1,
-      "front_tree_length": 987.4011537017782,
+      "front_tree_length": 643.8822509939085,
+      "rejection_rate": 0.9736842105263158,
       "seed": 1,
       "slow": false,
       "status": "succes"
     },
     {
-      "back_contour_length": 1878.0455393275788,
+      "attempts_used": 18,
       "back_leaves": 1,
-      "back_tree_length": 1016.2741699796961,
-      "construction_violation_counts": {
-        "bounds": 1,
-        "fairway_gap": 6,
-        "length": 9,
-        "link_blocked": 1,
-        "link_distance": 1
-      },
-      "construction_violations_total": 18,
-      "elapsed_seconds": 0.9743648180010496,
-      "final_violation_counts": {
-        "bounds": 1,
-        "fairway_gap": 6,
-        "length": 9,
-        "link_blocked": 1,
-        "link_distance": 9
-      },
-      "final_violations_total": 26,
-      "front_contour_length": 1740.9387034696006,
+      "back_tree_length": 720.0,
+      "clubhouse": [
+        5,
+        4
+      ],
+      "elapsed_seconds": 0.043942106000031345,
       "front_leaves": 1,
-      "front_tree_length": 971.3351365237957,
+      "front_tree_length": 683.6467529817256,
+      "rejection_rate": 0.9444444444444444,
       "seed": 2,
       "slow": false,
       "status": "succes"
     },
     {
-      "back_contour_length": 1746.1866261349014,
+      "attempts_used": 4,
       "back_leaves": 1,
-      "back_tree_length": 976.6904755831231,
-      "construction_violation_counts": {
-        "fairway_gap": 11,
-        "length": 8,
-        "link_distance": 1
-      },
-      "construction_violations_total": 20,
-      "elapsed_seconds": 0.3673632220015861,
-      "final_violation_counts": {
-        "fairway_gap": 11,
-        "length": 8,
-        "link_distance": 8
-      },
-      "final_violations_total": 27,
-      "front_contour_length": 1741.2685230435452,
+      "back_tree_length": 336.0,
+      "clubhouse": [
+        6,
+        2
+      ],
+      "elapsed_seconds": 0.00865933400200447,
       "front_leaves": 1,
-      "front_tree_length": 973.4062043356612,
+      "front_tree_length": 547.8822509939085,
+      "rejection_rate": 0.75,
       "seed": 3,
+      "slow": false,
+      "status": "succes"
+    },
+    {
+      "attempts_used": 35,
+      "back_leaves": 1,
+      "back_tree_length": 336.0,
+      "clubhouse": [
+        6,
+        3
+      ],
+      "elapsed_seconds": 0.08359484099491965,
+      "front_leaves": 1,
+      "front_tree_length": 855.7645019878171,
+      "rejection_rate": 0.9714285714285714,
+      "seed": 4,
+      "slow": false,
+      "status": "succes"
+    },
+    {
+      "attempts_used": 24,
+      "back_leaves": 1,
+      "back_tree_length": 663.7645019878171,
+      "clubhouse": [
+        6,
+        2
+      ],
+      "elapsed_seconds": 0.06784295399847906,
+      "front_leaves": 1,
+      "front_tree_length": 643.8822509939085,
+      "rejection_rate": 0.9583333333333334,
+      "seed": 5,
+      "slow": false,
+      "status": "succes"
+    },
+    {
+      "attempts_used": 22,
+      "back_leaves": 1,
+      "back_tree_length": 655.5290039756342,
+      "clubhouse": [
+        5,
+        0
+      ],
+      "elapsed_seconds": 0.05154580700036604,
+      "front_leaves": 1,
+      "front_tree_length": 615.7645019878171,
+      "rejection_rate": 0.9545454545454546,
+      "seed": 6,
       "slow": false,
       "status": "succes"
     }
@@ -79,7 +100,10 @@
   "seeds": [
     1,
     2,
-    3
+    3,
+    4,
+    5,
+    6
   ],
-  "successes": 3
+  "successes": 6
 }

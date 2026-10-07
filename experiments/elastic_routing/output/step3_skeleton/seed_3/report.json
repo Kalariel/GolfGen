@@ -1,23 +1,15 @@
 {
-  "back_contour_length": 1746.1866261349014,
+  "attempts_used": 4,
   "back_leaves": 1,
-  "back_tree_length": 976.6904755831231,
-  "construction_violation_counts": {
-    "fairway_gap": 11,
-    "length": 8,
-    "link_distance": 1
-  },
-  "construction_violations_total": 20,
-  "elapsed_seconds": 0.3673632220015861,
-  "final_violation_counts": {
-    "fairway_gap": 11,
-    "length": 8,
-    "link_distance": 8
-  },
-  "final_violations_total": 27,
-  "front_contour_length": 1741.2685230435452,
+  "back_tree_length": 336.0,
+  "clubhouse": [
+    6,
+    2
+  ],
+  "elapsed_seconds": 0.00865933400200447,
   "front_leaves": 1,
-  "front_tree_length": 973.4062043356612,
+  "front_tree_length": 547.8822509939085,
+  "rejection_rate": 0.75,
   "seed": 3,
   "slow": false,
   "status": "succes"
