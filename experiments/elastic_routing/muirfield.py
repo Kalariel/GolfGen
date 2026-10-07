@@ -306,6 +306,14 @@ def par_sequence_ok(pars) -> bool:
                    for i in range(len(pars) - 2))
 
 
+NINE_PAR_RANGE = (34, 38)            # règle dure : par d'un nine dans [34, 38] (total 72)
+
+
+def nine_par_ok(pars) -> bool:
+    """Règle dure : le par d'un nine reste dans ``NINE_PAR_RANGE``."""
+    return NINE_PAR_RANGE[0] <= sum(pars) <= NINE_PAR_RANGE[1]
+
+
 def par_sequence_penalty(pars) -> int:
     """Règle souple : éviter deux par 5 consécutifs et un nine qui commence
     par un par 3."""
@@ -315,11 +323,18 @@ def par_sequence_penalty(pars) -> int:
 
 def draw_par_counts(rng: np.random.Generator) -> tuple[tuple[int, int], tuple[int, int]]:
     """(par 3, par 5) du front et du back : quota 4/10/4, chaque nombre par
-    nine dans [1, 3] ; répartition tirée par la seed."""
+    nine dans [1, 3], par de chaque nine dans [34, 38] ; répartition tirée
+    par la seed (pas forcément 36/36)."""
     p3_front = int(rng.integers(1, 4))
     p5_front = int(rng.integers(1, 4))
-    return ((p3_front, p5_front),
-            (GLOBAL_PAR_QUOTA[3] - p3_front, GLOBAL_PAR_QUOTA[5] - p5_front))
+    counts = ((p3_front, p5_front),
+              (GLOBAL_PAR_QUOTA[3] - p3_front, GLOBAL_PAR_QUOTA[5] - p5_front))
+    for p3, p5 in counts:
+        # par du nine = 36 + p5 - p3 ; avec p3, p5 dans [1, 3] il est déjà dans
+        # [34, 38], la vérification explicite verrouille la règle
+        if not nine_par_ok([3] * p3 + [5] * p5 + [4] * (9 - p3 - p5)):
+            raise ValueError(f"par de nine hors {NINE_PAR_RANGE} : {p3} par 3, {p5} par 5")
+    return counts
 
 
 def order_nine(p3: int, p5: int, rng: np.random.Generator, tries: int = 200) -> tuple[int, ...]:

@@ -85,6 +85,7 @@ def test_eighteen_holes_and_par_quotas(results, case):
         assert 1 <= pars.count(3) <= 3
         assert 1 <= pars.count(5) <= 3
         assert mf.par_sequence_ok(pars)
+        assert mf.nine_par_ok(pars)
 
 
 def test_par_sequence_rules():
@@ -371,3 +372,36 @@ def test_check_rejects_parallel_stack():
     assert _partial(*stack).check(fourth, ()) == "parallel_stack"
     # même pile, mais le trou 4 est déjà posé (ancrage) et le 3 arrive en dernier
     assert _partial(stack[0], stack[1], fourth).check(stack[2], ()) == "parallel_stack"
+
+
+# -- round A ---------------------------------------------------------------
+
+def test_nine_par_stays_within_34_38():
+    assert mf.NINE_PAR_RANGE == (34, 38)
+    assert not mf.nine_par_ok((3, 3, 3, 3, 4, 4, 4, 4, 4))     # 32
+    assert not mf.nine_par_ok((5, 5, 5, 5, 4, 4, 4, 4, 3))     # 39
+    assert mf.nine_par_ok((3, 3, 4, 4, 4, 4, 4, 4, 4))         # 34
+    assert mf.nine_par_ok((5, 5, 4, 4, 4, 4, 4, 4, 4))         # 38
+    seen = set()
+    for seed in range(1, 301):
+        front, back = mf.draw_pars(np.random.default_rng([seed, 7]))
+        assert mf.nine_par_ok(front) and mf.nine_par_ok(back)
+        assert sum(front) + sum(back) == 72
+        seen.add(sum(front))
+    assert seen == {34, 35, 36, 37, 38}   # pas forcé à 36/36
+
+
+def test_check_rejects_width():
+    assert _partial().check(_hole(12, (100.0, 300.0), (200.0, 300.0), width=9.0), ()) == "width"
+
+
+def test_check_rejects_link_distance():
+    candidate = _hole(12, (100.0, 300.0), (200.0, 300.0))
+    too_long = PlannedLink((100.0, 250.0), (100.0, 300.0), (11, 12))     # 50 > 45
+    too_short = PlannedLink((100.0, 290.0), (100.0, 300.0), (11, 12))    # 10 < 12
+    ok = PlannedLink((100.0, 270.0), (100.0, 300.0), (11, 12))           # 30
+    assert _partial().check(candidate, (ok,)) is None
+    assert _partial().check(candidate, (too_long,)) == "link_distance"
+    assert _partial().check(candidate, (too_short,)) == "link_distance"
+    # minimum plus strict exigé pour une liaison du clubhouse
+    assert _partial().check(candidate, (ok,), (35.0,)) == "link_distance"
