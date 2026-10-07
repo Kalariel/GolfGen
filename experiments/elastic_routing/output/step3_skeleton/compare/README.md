@@ -29,7 +29,16 @@ côte, 3 par ligne) et les `skeleton.svg` individuels. Généré le
   onglet et les caps mordus qui subsistaient aux virages diagonaux serrés
   près d'une feuille avec les deux approches précédentes (lissage de la
   ligne centrale avec ou sans exception pour le sommet voisin d'une
-  feuille). Identique à
+  feuille). **2e passe, même jour** : front et back sont désormais décalés
+  comme un seul tour COMBINÉ (`_combined_tour_with_owners`), pas deux
+  contours indépendants chacun refermé par un cap au clubhouse — les deux
+  caps (plantés à ~180° l'un de l'autre par construction) se recoupaient
+  systématiquement près du clubhouse (100/100 tirages, seeds 1-50 x offsets
+  12/20, voir le rapport de livraison). `front_contour`/`back_contour` sont
+  maintenant deux ARCS OUVERTS (pas deux boucles fermées), chacun se
+  raccordant à l'autre à ses deux extrémités (rendu en `<polyline>`, un
+  petit espace visuellement visible près du point blanc du clubhouse —
+  normal, ce n'est pas une corde fermée artificielle). Identique à
   `experiments/elastic_routing/output/step3_skeleton/seed_1..6/skeleton.svg`
   (copie, voir note en bas).
 - **`r3_offset20/`** (seeds 1–6, round 3 actuel, offset 20 — réseau à pas
@@ -61,23 +70,23 @@ côte, 3 par ligne) et les `skeleton.svg` individuels. Généré le
 
 | Seed | Tirages | Temps | Clubhouse | Feuilles front/back | Longueur front/back |
 |---|---:|---:|---|---|---|
-| 1 | 8  | 15 ms  | (6, 3) | 3/2 | 760 / 608 |
-| 2 | 69 | 116 ms | (5, 3) | 3/2 | 867 / 644 |
-| 3 | 1  | 13 ms  | (5, 4) | 2/3 | 808 / 788 |
-| 4 | 24 | 52 ms  | (3, 0) | 2/2 | 619 / 568 |
-| 5 | 50 | 91 ms  | (2, 5) | 2/3 | 644 / 780 |
-| 6 | 26 | 40 ms  | (2, 6) | 2/2 | 704 / 839 |
+| 1 | 8  | 16 ms | (6, 3) | 3/2 | 760 / 608 |
+| 2 | 48 | 82 ms | (4, 5) | 3/2 | 712 / 616 |
+| 3 | 1  | 17 ms | (5, 4) | 2/3 | 808 / 788 |
+| 4 | 24 | 54 ms | (3, 0) | 2/2 | 619 / 568 |
+| 5 | 50 | 90 ms | (2, 5) | 2/3 | 644 / 780 |
+| 6 | 26 | 42 ms | (2, 6) | 2/2 | 704 / 839 |
 
 ### offset 20
 
-| Seed | Tirages | Temps  | Clubhouse | Feuilles front/back | Longueur front/back |
+| Seed | Tirages | Temps | Clubhouse | Feuilles front/back | Longueur front/back |
 |---|---:|---:|---|---|---|
-| 1 | 91  | 91 ms  | (4, 4) | 2/2 | 731 / 576 |
-| 2 | 103 | 96 ms  | (2, 4) | 2/2 | 859 / 795 |
-| 3 | 2   | 5 ms   | (1, 4) | 2/2 | 539 / 704 |
-| 4 | 105 | 104 ms | (2, 3) | 3/3 | 667 / 693 |
-| 5 | 23  | 25 ms  | (2, 3) | 2/2 | 640 / 795 |
-| 6 | 32  | 30 ms  | (2, 3) | 2/3 | 720 / 826 |
+| 1 | 91 | 91 ms | (4, 4) | 2/2 | 731 / 576 |
+| 2 | 15 | 21 ms | (1, 2) | 2/2 | 629 / 667 |
+| 3 | 2  | 6 ms  | (1, 4) | 2/2 | 539 / 704 |
+| 4 | 29 | 31 ms | (5, 2) | 2/2 | 923 / 576 |
+| 5 | 23 | 26 ms | (2, 3) | 2/2 | 640 / 795 |
+| 6 | 32 | 32 ms | (2, 3) | 2/3 | 720 / 826 |
 
 Aucun temps > 10 s. Le nombre de tirages dépasse régulièrement la cible
 « ≤ 50 » du plan (voir PLAN.md, non modifié ce round, et le rapport de
@@ -86,17 +95,19 @@ nettement plus dure à satisfaire que le round précédent. `MAX_TREE_ATTEMPTS`
 a été porté à 1500 plutôt que masqué ; le taux de rejet réel reste
 toujours consigné (`attempts_used` dans chaque résultat).
 
-**Régénération du 2026-10-07 (décalage de polyligne standard, voir plus
-bas)** : seeds 1, 3, 4, 5, 6 identiques (mêmes tirages, clubhouse,
-longueurs) aux deux offsets. Seed 2 (offset 12) et seeds 2 et 4 (offset 20)
-changent : le test de rejet `is_simple_polyline` dépend de la forme du
-contour, et l'ancien algorithme acceptait parfois, pour un tirage donné, un
-arbre dont le contour était géométriquement invalide (pointe ou cap mordu)
-sans que le test de simplicité ne le détecte (ce n'est pas un test de
-distance à l'arbre). Le nouvel algorithme rejette ces tirages-là à leur
-tour normal et en accepte un autre, plus tardif — le nombre de tirages, le
-clubhouse et les longueurs en sortent changés pour ces seeds précises, sans
-rien modifier à la génération de l'arbre elle-même.
+**Régénération du 2026-10-07, 2e passe (tour combiné front+back, voir plus
+bas)** : seeds 1, 3, 5, 6 identiques (mêmes tirages, clubhouse, longueurs)
+aux deux offsets. Seed 2 (offset 12) et seeds 2, 4 (offset 20) changent à
+nouveau : la condition de rejet dépend de la forme du contour COMBINÉ
+désormais (un seul passage pour les deux sous-arbres, voir plus bas), donc
+un tirage accepté ou rejeté à un numéro de tirage donné peut différer de la
+1re passe (qui vérifiait chaque sous-arbre indépendamment). Seed 2 revient
+coïncidemment aux valeurs d'avant la 1re passe (48 tirages, (4, 5) /
+712-616 en offset 12 ; 15 tirages, (1, 2) / 629-667 en offset 20) ; seed 4
+(offset 20) prend des valeurs inédites (29 tirages, (5, 2) / 923-576) :
+rien à en déduire sur le mécanisme de croissance de l'arbre lui-même
+(inchangé), seulement sur quel tirage franchit le test de contour en
+premier.
 
 ## Note sur les doublons
 

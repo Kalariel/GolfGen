@@ -34,16 +34,26 @@ Algorithme :
 5. rejet complet et borné (``MAX_TREE_ATTEMPTS`` tirages dérivés de la
    seed, zéro boucle non bornée) si un budget ou la ramification ne peuvent
    être atteints ;
-6. contour = tour (à la manière d'un tour d'Euler) de l'arbre, FERMÉ (le
-   tour part et revient au clubhouse, qui est un sommet du cycle comme les
-   autres, pas un cas particulier laissé ouvert) : décalage de polyligne
-   standard sommet par sommet, SANS lissage préalable de la ligne centrale
+6. contour = tour COMBINÉ (à la manière d'un tour d'Euler) des DEUX
+   sous-arbres à la fois, FERMÉ, via le clubhouse commun
+   (``_combined_tour_with_owners`` : clubhouse -> front -> clubhouse ->
+   back -> clubhouse, un seul cycle, PAS deux tours indépendants chacun
+   refermé par un cap au clubhouse — round précédent, bug : les deux caps
+   se recoupaient systématiquement, les tiges front/back étant plantées à
+   ~180° l'une de l'autre) ; décalage de polyligne standard sommet par
+   sommet sur ce tour combiné, SANS lissage préalable de la ligne centrale
    — côté convexe, jointure ronde (arc de rayon ``offset``, pas <= 22°) ;
    côté concave, intersection des deux segments décalés adjacents (sinon
-   ``ContourOffsetError``, violation de halo explicite). Une feuille (ou le
-   clubhouse) est un demi-tour exact, toujours classé côté convexe : la
-   jointure ronde y produit directement un cap en demi-cercle, sans cas
-   particulier.
+   ``ContourOffsetError``, violation de halo explicite). Une feuille est un
+   demi-tour exact, toujours classé côté convexe : la jointure ronde y
+   produit directement un cap en demi-cercle, sans cas particulier — le
+   clubhouse n'en est PLUS un cas depuis le tour combiné (prev/nxt y sont
+   toujours deux nœuds différents, les racines des deux sous-arbres). Le
+   contour combiné simple (vérifié en un seul passage, garantissant à la
+   fois qu'aucun arc ne se recoupe lui-même ET que les deux arcs ne se
+   recoupent pas l'un l'autre) est ensuite redécoupé en deux ARCS OUVERTS
+   ``front_contour``/``back_contour`` d'après le tag d'origine de chaque
+   point.
 
 Pas de dépendance à ``shapely``. Toutes les longueurs sont en blocs.
 """
@@ -569,7 +579,9 @@ def _build_tree(seed: int, config: SkeletonConfig = DEFAULT_CONFIG) -> tuple[_Bu
     feuilles, respectent la longueur minimale de branche, tombent dans leur
     fenêtre de budget (``config.subtree_length_range``, avec une tolérance
     haute d'un pas de grille pour le dernier pas qui peut dépasser
-    légèrement la cible) ET ont un contour fermé et simple — un échec à
+    légèrement la cible) ET produisent, une fois DÉCALÉ COMME UN TOUT
+    (``_combined_tour_with_owners`` + ``build_contour``, pas deux contours
+    indépendants), un contour combiné fermé et simple — un échec à
     n'importe laquelle de ces étapes retire le tirage entier (pas de retour
     arrière interne).
     """
@@ -600,16 +612,27 @@ def _build_tree(seed: int, config: SkeletonConfig = DEFAULT_CONFIG) -> tuple[_Bu
             continue
 
         front_root, back_root = front_result["root"], back_result["root"]
+        combined_nodes, combined_owners = _combined_tour_with_owners(
+            tree, clubhouse, front_root, back_root, config,
+        )
         try:
-            front_contour = build_contour(config, _full_tour(front_root, tree, clubhouse))
-            back_contour = build_contour(config, _full_tour(back_root, tree, clubhouse))
+            combined_contour, point_owners = build_contour(config, combined_nodes, owners=combined_owners)
         except ContourOffsetError:
             # Violation de halo locale au decalage (jointure concave hors
             # segment) : rejet du tirage, comme tout autre echec geometrique
             # de cette boucle -- pas une exception qui doit remonter a l'appelant.
             continue
-        if not is_simple_polyline(front_contour) or not is_simple_polyline(back_contour):
+        # Un seul contour COMBINE (les deux sous-arbres, via le clubhouse
+        # commun) verifie ici : garantit a la fois qu'aucun des deux arcs ne
+        # se recoupe lui-meme ET qu'ils ne se recoupent pas l'un l'autre
+        # (round precedent, bug : deux contours independants, chacun simple
+        # sur lui-meme, mais se recoupant l'un l'autre pres du clubhouse --
+        # is_simple_polyline(front)/is_simple_polyline(back) ne pouvait pas
+        # le detecter).
+        if not is_simple_polyline(combined_contour):
             continue
+        front_contour = [p for p, owner in zip(combined_contour, point_owners) if owner == "front"]
+        back_contour = [p for p, owner in zip(combined_contour, point_owners) if owner == "back"]
 
         skeleton = Skeleton(clubhouse, tree, front_root, back_root, tuple(front_result["leaves"]),
                             tuple(back_result["leaves"]), front_total, back_total)
@@ -660,6 +683,36 @@ def _full_tour(root_child: Node, tree: TreeState, clubhouse: Node,
     return [clubhouse] + _tour_nodes(config, root_child, clubhouse, tree) + [clubhouse]
 
 
+def _combined_tour_with_owners(tree: TreeState, clubhouse: Node, front_root: Node,
+                               back_root: Node, config: SkeletonConfig) -> tuple[list[Node], list[str]]:
+    """Tour COMBINÉ clubhouse -> (front) -> clubhouse -> (back) -> clubhouse.
+
+    Un seul tour cyclique pour les DEUX sous-arbres, au lieu de deux tours
+    indépendants chacun refermé par un cap au clubhouse (round précédent,
+    bug) : au clubhouse, ``prev`` (dernier nœud du sous-arbre précédent) et
+    ``nxt`` (racine du sous-arbre suivant) sont alors deux nœuds DIFFÉRENTS
+    — jamais un demi-tour — donc ``build_contour`` n'y crée plus jamais de
+    cap indépendant par sous-arbre. Le round précédent décalait chaque
+    sous-arbre séparément avec son propre cap au clubhouse ; les deux caps
+    (chacun bulgant vers le sous-arbre opposé, les deux tiges étant plantées
+    à ~180° l'une de l'autre par construction, voir ``_plant_opposed_stems``)
+    se recoupaient systématiquement près du clubhouse — constaté sur
+    100/100 tirages (seeds 1-50 x offsets 12/20), pas un cas rare.
+
+    Retourne les nœuds (CYCLE FERMÉ, ``nodes[0] == nodes[-1]``, même
+    convention que ``_full_tour``) et un tag parallèle ``'front'``/``'back'``
+    par nœud (même longueur), utilisé par l'appelant pour redécouper le
+    contour combiné décalé en ``front_contour``/``back_contour`` après coup.
+    """
+    front_seq = _tour_nodes(config, front_root, clubhouse, tree)
+    back_seq = _tour_nodes(config, back_root, clubhouse, tree)
+    nodes = [clubhouse] + front_seq + [clubhouse] + back_seq + [clubhouse]
+    owners = (["front"] * (1 + len(front_seq))
+              + ["back"] * (1 + len(back_seq))
+              + ["front"])  # dernier element (duplicata de fermeture) : trim par build_contour
+    return nodes, owners
+
+
 def _point_to_segment_distance(point: Point, a: Point, b: Point) -> float:
     dx, dy = b[0] - a[0], b[1] - a[1]
     length_sq = dx * dx + dy * dy
@@ -669,15 +722,21 @@ def _point_to_segment_distance(point: Point, a: Point, b: Point) -> float:
     return math.dist(point, (a[0] + ratio * dx, a[1] + ratio * dy))
 
 
-def _simplify_tour_points(points: list[Point], epsilon: float = 6.0) -> list[Point]:
+def _simplify_tour_points(points: list[Point], epsilon: float = 6.0,
+                          tags: list | None = None):
     """Douglas-Peucker itératif : fusionne les points quasi colinéaires.
 
     Les deux extrémités (identiques : le clubhouse) sont toujours
     conservées. Implémentation itérative (pas de récursion).
+
+    Si ``tags`` est fourni (même longueur que ``points``), retourne aussi
+    la liste des tags conservés avec le même masque de filtrage :
+    ``(points, tags)``. Sinon, retourne seulement la liste de points
+    (comportement historique).
     """
     n = len(points)
     if n < 3:
-        return list(points)
+        return (list(points), list(tags)) if tags is not None else list(points)
     keep = [False] * n
     keep[0] = keep[-1] = True
     stack = [(0, n - 1)]
@@ -695,13 +754,17 @@ def _simplify_tour_points(points: list[Point], epsilon: float = 6.0) -> list[Poi
             keep[split] = True
             stack.append((start, split))
             stack.append((split, end))
-    return [point for point, kept in zip(points, keep) if kept]
+    kept_points = [point for point, kept in zip(points, keep) if kept]
+    if tags is not None:
+        kept_tags = [tag for tag, kept in zip(tags, keep) if kept]
+        return kept_points, kept_tags
+    return kept_points
 
 
 CONCAVE_JOIN_EPS = 1e-6  # tolerance sur le parametre [0, 1] d'un segment decale
 
 
-def build_contour(config: SkeletonConfig, tour_nodes: list[Node]) -> list[Point]:
+def build_contour(config: SkeletonConfig, tour_nodes: list[Node], owners: list | None = None):
     """Décale le tour (FERMÉ) d'un côté courant (la main gauche du sens de marche).
 
     Décalage de polyligne standard, sommet par sommet, SANS lissage
@@ -730,23 +793,46 @@ def build_contour(config: SkeletonConfig, tour_nodes: list[Node]) -> list[Point]
     historique Git). Ce cas est donc détecté par égalité EXACTE de point
     (``prev == nxt``), pas par un seuil d'angle, et toujours traité côté
     convexe : la jointure ronde y produit alors directement un cap en
-    demi-cercle, sans cas particulier. Le clubhouse, sommet du cycle FERMÉ
-    comme les autres (le tour part et revient à lui via le même nœud
-    enfant), suit exactement la même règle.
+    demi-cercle, sans cas particulier. Le clubhouse n'est PLUS un cas de ce
+    genre : quand ``tour_nodes`` est le tour COMBINÉ des deux sous-arbres
+    (``_combined_tour_with_owners``), le clubhouse y est un sommet ORDINAIRE
+    à deux arêtes distinctes (prev = dernier nœud du sous-arbre précédent,
+    nxt = racine du sous-arbre suivant, deux nœuds différents) — jamais un
+    demi-tour. Round précédent (bug) : chaque sous-arbre était décalé
+    indépendamment, avec son propre cap au clubhouse ; les deux caps, l'un
+    bulgant vers l'autre sous-arbre (tiges front/back à ~180° l'une de
+    l'autre par construction), se recoupaient systématiquement près du
+    clubhouse (constaté sur 100/100 tirages seeds 1-50 x offsets 12/20, pas
+    seulement un cas rare — voir historique Git).
+
+    Si ``owners`` est fourni (même longueur que ``tour_nodes``, un tag par
+    sommet source, typiquement ``'front'``/``'back'``), retourne aussi la
+    liste des propriétaires du contour généré (un tag par point émis, celui
+    du sommet source) : ``(contour, point_owners)``. Sinon, retourne
+    seulement la liste de points (comportement historique).
 
     Boucle cyclique (modulo) : le contour retourné est un polygone fermé
     (pas de point de fermeture dupliqué, le dernier segment revient au
     premier point).
     """
     raw = [node_to_world(config, n) for n in tour_nodes]
-    base = _simplify_tour_points(raw)[:-1]
+    if owners is not None:
+        assert len(owners) == len(tour_nodes)
+        simplified_points, simplified_owners = _simplify_tour_points(raw, tags=owners)
+        base = simplified_points[:-1]
+        base_owners = simplified_owners[:-1]
+    else:
+        base = _simplify_tour_points(raw)[:-1]
+        base_owners = None
     m = len(base)
     if m < 2:
-        return []
+        return ([], []) if owners is not None else []
     radius = config.offset
 
     contour: list[Point] = []
+    contour_owners: list = []
     for i in range(m):
+        _emitted_before = len(contour)
         prev, here, nxt = base[i - 1], base[i], base[(i + 1) % m]
         d1, d2 = math.dist(prev, here), math.dist(here, nxt)
         if d1 < 1e-9 or d2 < 1e-9:
@@ -761,17 +847,22 @@ def build_contour(config: SkeletonConfig, tour_nodes: list[Node]) -> list[Point]
         if abs(turn_deg) < 1e-9:
             # Colineaire (ne devrait plus guere survenir apres simplification).
             contour.append((here[0] + radius * n2[0], here[1] + radius * n2[1]))
+            if base_owners is not None:
+                contour_owners.extend([base_owners[i]] * (len(contour) - _emitted_before))
             continue
 
-        # Cap (feuille OU clubhouse) : demi-tour EXACT, prev et nxt sont le
-        # MEME noeud (traverse dans les deux sens) -- detecte par egalite
-        # exacte de point, pas par un seuil d'angle (voir docstring).
+        # Cap (feuille, jamais le clubhouse depuis que ``tour_nodes`` est le
+        # tour COMBINÉ des deux sous-arbres) : demi-tour EXACT, prev et nxt
+        # sont le MEME noeud (traverse dans les deux sens) -- detecte par
+        # egalite exacte de point, pas par un seuil d'angle (voir docstring).
         # Toujours traite cote convexe, la jointure ronde produit alors
         # directement un cap en demi-cercle.
         if prev == nxt or turn < 0.0:
             # Cote convexe.
             contour.append((here[0] + radius * n1[0], here[1] + radius * n1[1]))
             contour.extend(_corner_arc(here, n1, n2, radius))
+            if base_owners is not None:
+                contour_owners.extend([base_owners[i]] * (len(contour) - _emitted_before))
             continue
 
         # Cote concave : intersection des deux segments adjacents decales
@@ -797,6 +888,10 @@ def build_contour(config: SkeletonConfig, tour_nodes: list[Node]) -> list[Point]
                 f"virage {turn_deg:.1f} deg)"
             )
         contour.append((a1[0] + t * da[0], a1[1] + t * da[1]))
+        if base_owners is not None:
+            contour_owners.extend([base_owners[i]] * (len(contour) - _emitted_before))
+    if owners is not None:
+        return contour, contour_owners
     return contour
 
 
@@ -914,9 +1009,15 @@ def render_skeleton_svg(result: SkeletonResult) -> str:
         out.append(f'<line x1="{pa[0]:.1f}" y1="{pa[1]:.1f}" x2="{pb[0]:.1f}" y2="{pb[1]:.1f}" '
                    'stroke="#8b949e" stroke-width="1.0" stroke-opacity="0.6"/>')
 
+    # polyline (PAS polygon) : front_contour/back_contour sont désormais des
+    # ARCS OUVERTS clubhouse -> clubhouse (deux arcs d'un unique contour
+    # combiné, coupés aux deux passages au clubhouse), pas deux boucles
+    # indépendantes — fermer chacun en polygon dessinerait une corde parasite
+    # entre ses deux extrémités, qui ne sont pas censées se relier directement
+    # l'une à l'autre (chacune se raccorde à l'extrémité de l'AUTRE arc).
     for contour, color in ((result.front_contour, "#58a6ff"), (result.back_contour, "#f2cc60")):
         path = " ".join(f"{point(p)[0]:.1f},{point(p)[1]:.1f}" for p in contour)
-        out.append(f'<polygon points="{path}" fill="none" stroke="{color}" stroke-width="1.4" stroke-opacity="0.9"/>')
+        out.append(f'<polyline points="{path}" fill="none" stroke="{color}" stroke-width="1.4" stroke-opacity="0.9"/>')
 
     clubhouse = point(node_to_world(config, result.clubhouse))
     out.append(

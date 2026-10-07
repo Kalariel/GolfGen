@@ -4,12 +4,23 @@
 fermé (bug d'ouverture corrigé), budget de sous-arbre imposé, 2-3 feuilles
 obligatoires, offset configurable. Toujours sans DP de découpage ni
 ``CourseLayout`` testés ici.
+
+4e round correctif (même date) : les deux sous-arbres sont désormais
+décalés comme un tour COMBINÉ (un seul passage par ``build_contour``, pas
+deux contours indépendants chacun refermé par un cap au clubhouse) — voir
+``_combined_tour_with_owners``. Round précédent (bug) : les deux caps,
+plantés à ~180° l'un de l'autre par construction, se recoupaient
+systématiquement près du clubhouse (100/100 tirages, seeds 1-50 x offsets
+12/20) ; chaque contour était individuellement simple
+(``is_simple_polyline``), donc le test ne le détectait pas.
 """
+
+from functools import lru_cache
 
 import pytest
 
 from experiments.elastic_routing import skeleton as sk
-from experiments.elastic_routing.geometry import segment_distance
+from experiments.elastic_routing.geometry import segment_distance, segments_intersect
 from experiments.elastic_routing.skeleton import (
     SkeletonGenerationError,
     build_skeleton,
@@ -19,6 +30,15 @@ from experiments.elastic_routing.skeleton import (
 
 SEEDS_SMALL = (1, 2, 3, 4, 5, 6)
 SEEDS_20 = tuple(range(1, 21))
+SEEDS_50 = tuple(range(1, 51))
+OFFSETS = (12.0, 20.0)
+
+
+@lru_cache(maxsize=None)
+def _cached_build(seed, offset):
+    """Partagé entre les tests seeds 1-50 x offsets 12/20 (évite de regénérer
+    le même squelette plusieurs fois pour des invariants indépendants)."""
+    return build_skeleton(seed, offset=offset)
 
 
 def test_build_skeleton_is_deterministic_by_seed():
@@ -33,11 +53,18 @@ def test_build_skeleton_is_deterministic_by_seed():
 
 @pytest.mark.parametrize("seed", SEEDS_20)
 def test_contour_is_closed_simple_clubhouse_to_clubhouse(seed):
-    """Chaque arc coupé part du clubhouse et y revient ; le contour fermé est simple.
+    """Le tour brut (nœuds) de chaque sous-arbre part du clubhouse et y revient ;
 
-    Bug du round précédent : le contour n'était jamais refermé au
-    clubhouse (deux extrémités indépendantes, visible comme une fente dans
-    le SVG de la seed 2). Vérifié ici sur les seeds 1 à 20.
+    le contour COMBINÉ décalé (front + back, un seul passage par
+    ``build_contour``) est fermé et simple. Vérifié ici sur les seeds 1 à 20.
+
+    Round précédent (bug, corrigé) : le contour n'était jamais refermé au
+    clubhouse (fente visible dans le SVG). Round d'avant celui-ci (bug,
+    corrigé) : front_contour et back_contour étaient décalés et vérifiés
+    INDÉPENDAMMENT (chacun individuellement simple), ce qui ne détectait pas
+    qu'ils se recoupaient l'un l'autre près du clubhouse (100/100 tirages,
+    voir ``test_front_and_back_contours_never_cross`` plus bas) — remplacé
+    par une vérification du contour combiné unique.
     """
     result = build_skeleton(seed)
     skeleton = result.skeleton
@@ -45,57 +72,117 @@ def test_contour_is_closed_simple_clubhouse_to_clubhouse(seed):
     back_tour = sk._full_tour(skeleton.back_root, skeleton.tree, result.clubhouse, result.config)
     assert front_tour[0] == result.clubhouse and front_tour[-1] == result.clubhouse
     assert back_tour[0] == result.clubhouse and back_tour[-1] == result.clubhouse
-    assert is_simple_polyline(list(result.front_contour))
-    assert is_simple_polyline(list(result.back_contour))
+    combined = list(result.front_contour) + list(result.back_contour)
+    assert is_simple_polyline(combined)
 
 
-def _subtree_edges_world(tree, root, config):
-    """Arêtes (en coordonnées monde) du sous-arbre enraciné à ``root``.
-
-    Inclut l'arête de rattachement au clubhouse : ``root`` lui-même fait
-    partie de ``_subtree_nodes(tree, root)``, donc l'arête ``(clubhouse,
-    root)`` (parent=clubhouse, enfant=root) est couverte.
-    """
-    nodes = set(sk._subtree_nodes(tree, root))
+def _all_tree_edges_world(tree, config):
+    """Toutes les arêtes de l'arbre (les deux sous-arbres), en coordonnées monde."""
     return [
         (sk.node_to_world(config, a), sk.node_to_world(config, b))
         for a, b in tree.edges
-        if b in nodes
     ]
 
 
 @pytest.mark.parametrize("seed", SEEDS_20)
-@pytest.mark.parametrize("offset", (12.0, 20.0))
+@pytest.mark.parametrize("offset", OFFSETS)
 def test_contour_stays_at_offset_distance_from_its_tree_everywhere(seed, offset):
     """Invariant géométrique remplaçant l'ancien test de convexité locale de cap.
 
     Un décalage de polyligne standard (jointure ronde convexe, intersection
     concave vérifiée dans les deux segments) place CHAQUE point du contour à
-    une distance EXACTE de ``offset`` de l'arbre dont il est issu : les
-    jointures rondes sont des arcs de rayon ``offset`` centrés sur un sommet
-    de l'arbre, et les intersections concaves ne sont acceptées (sinon
-    ``ContourOffsetError``) que si elles tombent dans les deux segments
-    décalés, c'est-à-dire dans la zone de projection perpendiculaire valide
-    des deux arêtes réelles adjacentes (donc aussi à distance ``offset``
-    exacte). Pas de pointe (distance > offset + tolérance) ni de morsure
-    (distance < offset - tolérance) nulle part sur le contour. Remplace
-    l'ancien test ad hoc sur la forme du cap d'une feuille (6a61a3d), qui
-    masquait le même symptôme (pointes, caps mordus) sans vérifier
-    directement la distance à l'arbre.
+    une distance EXACTE de ``offset`` de l'arbre ENTIER (les deux
+    sous-arbres : depuis le tour combiné, un point près du clubhouse peut
+    être à distance ``offset`` de l'arête de l'AUTRE sous-arbre, voir
+    ``_combined_tour_with_owners``) : les jointures rondes sont des arcs de
+    rayon ``offset`` centrés sur un sommet de l'arbre, et les intersections
+    concaves ne sont acceptées (sinon ``ContourOffsetError``) que si elles
+    tombent dans les deux segments décalés, c'est-à-dire dans la zone de
+    projection perpendiculaire valide des deux arêtes réelles adjacentes
+    (donc aussi à distance ``offset`` exacte). Pas de pointe (distance >
+    offset + tolérance) ni de morsure (distance < offset - tolérance) nulle
+    part sur le contour. Remplace l'ancien test ad hoc sur la forme du cap
+    d'une feuille (6a61a3d), qui masquait le même symptôme (pointes, caps
+    mordus) sans vérifier directement la distance à l'arbre.
     """
-    result = build_skeleton(seed, offset=offset)
-    skeleton = result.skeleton
+    result = _cached_build(seed, offset)
     config = result.config
     tolerance = 1e-6
-    for contour, root in (
-        (result.front_contour, skeleton.front_root),
-        (result.back_contour, skeleton.back_root),
-    ):
-        edges = _subtree_edges_world(skeleton.tree, root, config)
+    edges = _all_tree_edges_world(result.skeleton.tree, config)
+    for contour in (result.front_contour, result.back_contour):
         for point in contour:
             distance = min(sk._point_to_segment_distance(point, a, b) for a, b in edges)
             assert offset - tolerance <= distance <= offset + tolerance, (
                 seed, offset, point, distance,
+            )
+
+
+@pytest.mark.parametrize("seed", SEEDS_50)
+@pytest.mark.parametrize("offset", OFFSETS)
+def test_tree_has_no_duplicate_or_cross_subtree_node(seed, offset):
+    """(a) L'arbre est un arbre : pas de nœud dupliqué, pas de nœud partagé
+
+    entre les deux sous-arbres (hormis le clubhouse, qui n'appartient à
+    aucun des deux au sens de ``_subtree_nodes``, lequel part de la racine
+    du sous-arbre, pas du clubhouse). Seeds 1-50 x offsets 12/20, demandé
+    après la régression du cap qui se recoupait près du clubhouse (pour
+    écarter l'hypothèse d'un nœud partagé entre sous-arbres).
+    """
+    result = _cached_build(seed, offset)
+    tree = result.skeleton.tree
+    front_nodes = set(sk._subtree_nodes(tree, result.skeleton.front_root))
+    back_nodes = set(sk._subtree_nodes(tree, result.skeleton.back_root))
+    assert len(front_nodes) == len(sk._subtree_nodes(tree, result.skeleton.front_root))
+    assert len(back_nodes) == len(sk._subtree_nodes(tree, result.skeleton.back_root))
+    assert not (front_nodes & back_nodes), (seed, offset, front_nodes & back_nodes)
+    assert result.clubhouse not in front_nodes and result.clubhouse not in back_nodes
+    assert len(tree.parent) == len(front_nodes) + len(back_nodes) + 1
+
+
+@pytest.mark.parametrize("seed", SEEDS_50)
+@pytest.mark.parametrize("offset", OFFSETS)
+def test_no_pair_of_tree_edges_crosses(seed, offset):
+    """(b) Aucune paire d'arêtes de l'arbre (même entre les deux sous-arbres)
+
+    ne se croise, hormis les paires qui partagent un nœud (adjacentes dans
+    l'arbre, exemptées du halo par construction). Seeds 1-50 x offsets
+    12/20.
+    """
+    result = _cached_build(seed, offset)
+    tree = result.skeleton.tree
+    config = result.config
+    edges = tree.edges
+    world = [(sk.node_to_world(config, a), sk.node_to_world(config, b)) for a, b in edges]
+    for i in range(len(edges)):
+        a, b = edges[i]
+        for j in range(i + 1, len(edges)):
+            c, d = edges[j]
+            if a in (c, d) or b in (c, d):
+                continue  # arêtes réellement adjacentes dans l'arbre (nœud partagé)
+            assert not segments_intersect(*world[i], *world[j]), (seed, offset, edges[i], edges[j])
+
+
+@pytest.mark.parametrize("seed", SEEDS_50)
+@pytest.mark.parametrize("offset", OFFSETS)
+def test_front_and_back_contours_never_cross(seed, offset):
+    """(c) Le contour COMPLET (combiné) est simple, ET front_contour ne croise
+
+    jamais back_contour. Reproduit directement la régression rapportée :
+    seed 6, offset 20 montrait un croisement en X entre une diagonale front
+    (bleu) et une diagonale back (jaune) près du clubhouse — les deux
+    contours étaient chacun individuellement simples
+    (``is_simple_polyline``), ce test-ci ne l'était pas. Seeds 1-50 x
+    offsets 12/20 : la régression était systématique (100/100 avant
+    correction), pas un cas isolé.
+    """
+    result = _cached_build(seed, offset)
+    front = list(result.front_contour)
+    back = list(result.back_contour)
+    assert is_simple_polyline(front + back)
+    for i in range(len(front) - 1):
+        for j in range(len(back) - 1):
+            assert not segments_intersect(front[i], front[i + 1], back[j], back[j + 1]), (
+                seed, offset, front[i], front[i + 1], back[j], back[j + 1],
             )
 
 
