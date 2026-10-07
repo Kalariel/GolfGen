@@ -719,7 +719,17 @@ def _round_centerline_corners(points: list[Point], radius: float,
         v2 = ((nxt[0] - here[0]) / d2, (nxt[1] - here[1]) / d2)
         turn = math.atan2(v1[0] * v2[1] - v1[1] * v2[0], v1[0] * v2[0] + v1[1] * v2[1])
         turn_deg = math.degrees(turn)
-        if abs(turn_deg) < 25.0 or abs(turn_deg) >= skip_above_deg:
+        # Un sommet directement voisin d'une feuille (prev ou next est le
+        # point de demi-tour) n'est PAS lissé ici, meme si son propre virage
+        # est modere : son congé (jusqu'a fillet_radius de rayon) peut
+        # s'etendre presque jusqu'a la feuille quand le dernier segment est
+        # court, et se combiner avec le cap en demi-cercle pour creuser une
+        # encoche concave au lieu d'un bout convexe net (constate : feuille
+        # au bout d'une arete diagonale, voir l'historique Git). L'onglet
+        # simple (intersection, pas d'arc) appliqué ensuite par
+        # build_contour reste correct pour un virage modéré isolé.
+        adjacent_to_leaf = base[i - 2] == here or base[(i + 2) % m] == here
+        if abs(turn_deg) < 25.0 or abs(turn_deg) >= skip_above_deg or adjacent_to_leaf:
             result.append(here)
             continue
         half_tan = math.tan(abs(turn) / 2.0)

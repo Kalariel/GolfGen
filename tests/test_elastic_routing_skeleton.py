@@ -6,6 +6,8 @@ obligatoires, offset configurable. Toujours sans DP de découpage ni
 ``CourseLayout`` testés ici.
 """
 
+import math
+
 import pytest
 
 from experiments.elastic_routing import skeleton as sk
@@ -47,6 +49,53 @@ def test_contour_is_closed_simple_clubhouse_to_clubhouse(seed):
     assert back_tour[0] == result.clubhouse and back_tour[-1] == result.clubhouse
     assert is_simple_polyline(list(result.front_contour))
     assert is_simple_polyline(list(result.back_contour))
+
+
+def _cap_region_is_locally_convex(contour, leaf_world, offset, window=1, tolerance=1e-6):
+    """Le cap d'une feuille et son sommet immédiatement voisin (de chaque côté)
+
+    ne doivent jamais creuser une encoche concave. ``is_simple_polyline``
+    vérifie l'absence de croisement, pas la forme du cap : un sommet
+    directement voisin trop arrondi (congé) peut créer une encoche concave
+    juste à côté d'un cap convexe sans qu'aucun segment ne se croise
+    (constaté : seed 2, offset 12, feuille au bout d'une arête diagonale —
+    un « V » suivi d'une morsure concave au lieu d'un bout rond net).
+    ``window=1`` (pas plus) : au-delà du voisin immédiat, des virages
+    concaves sont normaux ailleurs dans un arbre ramifié (ce n'est pas le
+    défaut recherché ici) — une fenêtre plus large fait échouer le test
+    même sur un contour correct.
+    """
+    n = len(contour)
+    arc_idx = [i for i, p in enumerate(contour) if abs(math.dist(p, leaf_world) - offset) < tolerance]
+    assert arc_idx, "feuille introuvable sur le contour (cap absent ?)"
+    lo, hi = min(arc_idx), max(arc_idx)
+    indices = [(i) % n for i in range(lo - window, hi + window + 1)]
+    pts = [contour[i] for i in indices]
+    signs = set()
+    for i in range(1, len(pts) - 1):
+        a, b, c = pts[i - 1], pts[i], pts[i + 1]
+        cross = (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0])
+        if abs(cross) > tolerance:
+            signs.add(cross > 0)
+    return len(signs) <= 1
+
+
+@pytest.mark.parametrize("seed", SEEDS_20)
+@pytest.mark.parametrize("offset", (12.0, 20.0))
+def test_leaf_caps_render_as_a_single_continuous_convex_curve(seed, offset):
+    """Reproduit et empêche la régression seed 2 / offset 12 (cap diagonal mordu)."""
+    result = build_skeleton(seed, offset=offset)
+    skeleton = result.skeleton
+    config = result.config
+    for contour, leaves in (
+        (list(result.front_contour), skeleton.front_leaves),
+        (list(result.back_contour), skeleton.back_leaves),
+    ):
+        for leaf in leaves:
+            leaf_world = sk.node_to_world(config, leaf)
+            assert _cap_region_is_locally_convex(contour, leaf_world, config.offset), (
+                seed, offset, leaf,
+            )
 
 
 @pytest.mark.parametrize("seed", SEEDS_20)
