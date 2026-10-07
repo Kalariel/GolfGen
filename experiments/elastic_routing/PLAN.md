@@ -734,6 +734,8 @@ Le plan détaillé du round Muirfield sera rédigé et validé avant tout code.
   faisabilité de retour au clubhouse (le trou k doit laisser au trou 9/18
   une distance atteignable), relances bon marché (plan d'anneau, puis
   clubhouse).
+- **R2b — anti-hélice** : forme du patron (reportée pour isoler l'effet de
+  la carte rectangulaire testé en R2).
 - **R3 — recuit** avec composantes souples (cibles, qualité des sites,
   variété de directions), en ne gardant que des états valides.
 
@@ -804,6 +806,112 @@ retour au clubhouse dès le trou 6–7, demi-côté de l'anneau intérieur à
 ajuster au nine attendu (ou p plus faible), et un couloir explicite pour
 10/18 qui interdit au front d'y entrer par l'axe, pas seulement par les
 sites.
+
+#### Tableau des règles (étape M)
+
+| règle | nature | où |
+|---|---|---|
+| longueur par par (`PAR_SPECS` : 45–70 / 100–145 / 145–185) | dure | oracle `length`, contrôle en ligne |
+| largeur par par (10–15 / 11–17 / 12–18) | dure | oracle `width`, contrôle en ligne |
+| quota global 4 par 3 / 10 par 4 / 4 par 5 | dure | `CourseLayout`, tirage |
+| par 3 et par 5 par nine dans [1, 3], répartition entre nines tirée par la seed | dure | oracle `par3/5_per_nine`, tirage |
+| **jamais 3 par 5 consécutifs ni 3 par 3 consécutifs dans un nine** | dure | `muirfield.par_sequence_ok`, tirage |
+| **éviter 2 par 5 consécutifs ; éviter qu'un nine commence par un par 3** | souple (tirage) | `muirfield.par_sequence_penalty` |
+| liaisons 12–45 (18–45 depuis/vers le clubhouse) | dure | oracle `link_distance`, contrôle en ligne |
+| liaison non bloquée par un fairway | dure | oracle `link_blocked`, contrôle en ligne |
+| croisement d'axes, écart fairway ≥ 5 (tous trous, deux nines) | dure | oracle, contrôle en ligne |
+| cœur ≥ 1 du bord, ≥ 10 du clubhouse | dure | oracle `bounds`, `clubhouse_clear` |
+| pas de série de plus de 3 trous consécutifs en pile parallèle | dure | oracle `parallel_stack`, contrôle en ligne |
+| 1/9 le long du bord de part et d'autre, 10/18 entre eux (cônes disjoints) | dure (construction) | `muirfield.anchor_bounds` |
+
+La règle de séquence des pars n'est pas (encore) une famille de l'oracle :
+elle est garantie par le tirage (`draw_pars` / `order_nine` : permutations
+seedées, la première qui respecte la règle dure avec pénalité souple nulle,
+sinon la moins pénalisée).
+
+#### R2 — mécanisme (2026-10-08)
+
+Une seule famille : la validité, plus deux paramètres simples (règle des
+pars, carte rectangulaire). L'anti-hélice (forme du patron) est reportée à
+R2b pour isoler l'effet de la carte rectangulaire.
+
+- `partial_checks.py` : `PartialLayout.check(trou, liaisons)` rejette un
+  candidat sur la première famille violée — longueur/largeur, liaison hors
+  plage, bords, clubhouse dégagé, croisement d'axes et écart fairway avec
+  TOUS les trous posés (des deux nines), liaison bloquée dans les deux sens,
+  pile parallèle (toute fenêtre de 4 trous consécutifs posés contenant le
+  candidat). Mêmes prédicats et epsilons que l'oracle (fonctions de
+  `geometry.py`), pré-filtre par boîtes englobantes. Pré-filtres vectorisés
+  (`Obstacles`) : conditions NÉCESSAIRES (un cœur contient la somme de
+  Minkowski axe ⊕ disque de demi-largeur), testées par propriété.
+- Secteur du clubhouse : repère local (normale entrante, tangente orientée
+  vers le trou 1), cônes disjoints φ ≥ 58° (trou 1), φ ≤ −58° (trou 9),
+  [−32°, −1°] (trou 10), [1°, 32°] (trou 18) ; tout l'axe d'un trou
+  d'ancrage est dans son cône, donc 1/9/10/18 et leurs liaisons au
+  clubhouse ne peuvent pas se croiser. Les sites du front sont exclus du
+  couloir du back (|φ| < 45° jusqu'à l'anneau intérieur + 30).
+- Recherche : DFS par nine dans l'ordre premier trou → DERNIER trou ancré
+  (green à 18–45 du clubhouse, tee visé vers la cible du green 8) → trous 2
+  à 8, le trou 8 devant finir à liaison du tee 9. Borne de faisabilité de
+  retour pour les trous 6–7 (15–16) : green à moins de Σ(45 + longueur max)
+  des trous restants + 45 du tee ancré. k = 3 enfants valides par niveau,
+  au plus 150 candidats contrôlés par niveau, budgets 1500 contrôles et 300
+  nœuds par nine et par tentative. Relances : 3 angles de départ × 3
+  permutations de pars × 3 positions de clubhouse (27 tentatives au plus),
+  aucune règle assouplie, `MuirfieldRoutingError` sinon.
+- Ancrer le dernier trou AVANT les trous 2–8 a été décisif : sans ancrage
+  (premier essai, DFS chronologique 1→9, greens espacés de 18, budget 3000
+  contrôles), 7 cas sur 18 (400², 300×400, 350×400) échouaient après les 27
+  tentatives, presque toujours dans le back, pour jusqu'à 61 s par seed ;
+  avec ancrage (même espacement), 3 échecs avec des cônes 48°/[4°, 40°],
+  puis 5 avec 58°/[1°, 32°] — cônes écartés parce qu'à 48°/40° le green 18
+  et le tee 1 (tous deux à 18–45 du clubhouse) étaient trop proches pour
+  l'écart fairway ; échecs dus au manque de sites dans les cônes (point
+  suivant).
+- **Écart au plan R1 (paramètre)** : espacement des greens 18 → 12. À 18,
+  le cône d'ancrage (liaison 18–45, ~31° d'ouverture) ne contient que 0 à 2
+  sites de green : 400²/s6, 300×400/s1, s3, s6 et 350×400/s1 échouaient sur
+  toutes les relances (0 ou 1 green atteignable au trou 9 ou 18). À 12 :
+  18/18 (400² compris, non publié en planche).
+- Carte rectangulaire de bout en bout : relief `load_terrain(seed, w, h)`
+  (cache par format), sites, anneaux superellipse à demi-axes (w/2 − 34,
+  h/2 − 34) et intérieur −78, `ValidationRules(width, height)`, rendu.
+
+#### R2 — résultat (2026-10-08)
+
+`python -m experiments.elastic_routing.run_muirfield` →
+`output/muirfield/r2_300x400/` et `output/muirfield/r2_350x400/` (svg/png
+par seed, `planche.png`, `report.json`) ; `output/muirfield/r1/` conservé.
+
+| format | seed | bord | violations | relances | front par / blocs | back par / blocs | doglegs | ms |
+|---|---|---|---|---|---|---|---|---|
+| 300x400 | 1 | S | 0 | 23 | 37 / 1337 | 35 / 1210 | 11 | 2035 |
+| 300x400 | 2 | S | 0 | 3 | 38 / 1382 | 34 / 1159 | 10 | 3643 |
+| 300x400 | 3 | S | 0 | 0 | 36 / 1248 | 36 / 1265 | 12 | 203 |
+| 300x400 | 4 | W | 0 | 0 | 34 / 1178 | 38 / 1356 | 11 | 221 |
+| 300x400 | 5 | E | 0 | 3 | 36 / 1226 | 36 / 1248 | 9 | 2478 |
+| 300x400 | 6 | E | 0 | 12 | 37 / 1286 | 35 / 1220 | 13 | 8632 |
+| 350x400 | 1 | S | 0 | 21 | 37 / 1334 | 35 / 1249 | 9 | 635 |
+| 350x400 | 2 | S | 0 | 0 | 38 / 1275 | 34 / 1162 | 14 | 221 |
+| 350x400 | 3 | S | 0 | 0 | 36 / 1333 | 36 / 1293 | 9 | 206 |
+| 350x400 | 4 | W | 0 | 0 | 34 / 1272 | 38 / 1359 | 10 | 303 |
+| 350x400 | 5 | W | 0 | 9 | 36 / 1259 | 36 / 1280 | 11 | 495 |
+| 350x400 | 6 | W | 0 | 0 | 37 / 1332 | 35 / 1170 | 7 | 203 |
+
+Zéro violation `validate()` sur les 12 cas. Objectif < 2 s/seed hors
+relief **non atteint** pour 4 cas sur 12, tous en 300×400 (2.0, 2.5, 3.6 et
+8.6 s) : chaque tentative dont le back échoue consomme son budget complet
+(~0.3–1 s) ; budgets non relevés. Les 350×400 restent sous 0.7 s.
+
+Lecture des planches :
+- Le nœud au clubhouse a disparu : 1 et 9 longent le bord de part et
+  d'autre, 10 et 18 plongent entre eux, aucun croisement.
+- La forme reste une hélice : le back s'enroule vers le centre, et le
+  rectangle ne la casse pas (l'anneau intérieur 300×400 fait 76 blocs de
+  large, le back y zigzague) — c'est l'objet de R2b.
+- Ce qui reste moche : grappes de trous quasi parallèles à l'écart minimal
+  de 5 au centre et près du clubhouse (10/11/18), quelques longs par 5
+  rectilignes le long du bord, liaisons parfois longues en diagonale.
 
 ### Étape 4 — trous élastiques et mutations locales
 
