@@ -16,10 +16,11 @@ import numpy as np
 import pytest
 
 from experiments.elastic_routing import muirfield as mf
-from experiments.elastic_routing.geometry import ValidationRules, validate
+from experiments.elastic_routing.geometry import ValidationRules, Violation, validate
 from experiments.elastic_routing.model import GLOBAL_PAR_QUOTA, PAR_SPECS, ControlPoint, ElasticHole
 from experiments.elastic_routing.partial_checks import Obstacles, PartialLayout, PlannedLink
 from experiments.elastic_routing.render_readable import render_readable_svg
+from experiments.elastic_routing import sites as sites_module
 from experiments.elastic_routing.sites import (
     GREEN_SPACING,
     TEE_SPACING,
@@ -141,10 +142,11 @@ def test_anchor_holes_leave_and_return_near_the_clubhouse(results, case):
     result = results[case]
     layout = result.layout
     ch = (layout.clubhouse.x, layout.clubhouse.y)
+    bounds = mf.link_bounds(ValidationRules(width=layout.width, height=layout.height))
     for nine in (layout.front, layout.back):
         tee, green = nine.holes[0].tee, nine.holes[-1].green
-        assert mf.CLUBHOUSE_LINK_MIN <= math.dist(ch, (tee.x, tee.y)) <= mf.LINK_MAX
-        assert mf.CLUBHOUSE_LINK_MIN <= math.dist(ch, (green.x, green.y)) <= mf.LINK_MAX
+        assert bounds.clubhouse_min <= math.dist(ch, (tee.x, tee.y)) <= bounds.maximum
+        assert bounds.clubhouse_min <= math.dist(ch, (green.x, green.y)) <= bounds.maximum
 
 
 @pytest.mark.parametrize("case", CASES, ids=lambda c: f"{c[0]}x{c[1]}-s{c[2]}")
@@ -237,3 +239,135 @@ def test_readable_render_numbers_every_hole(results):
     assert svg.startswith("<svg") and svg.rstrip().endswith("</svg>")
     for order in range(1, 19):
         assert f'text-anchor="middle">{order}</text>' in svg
+
+
+# ----------------------------------------------------------------------
+# Revue R1+R2
+# ----------------------------------------------------------------------
+
+def test_default_square_map_is_valid():
+    result = mf.build_muirfield(1)
+    assert (result.width, result.height) == (400.0, 400.0)
+    assert result.violations == ()
+    assert validate(result.layout) == []
+
+
+def test_layout_rejected_by_the_oracle_is_never_returned(monkeypatch):
+    real = mf.validate
+    calls = []
+
+    def first_call_fails(layout, rules):
+        calls.append(1)
+        if len(calls) == 1:
+            return [Violation("fairway_gap", (1, 2), "injectée")]
+        return real(layout, rules)
+
+    monkeypatch.setattr(mf, "validate", first_call_fails)
+    result = mf.build_muirfield(3, width=350, height=400)
+    assert result.attempts[0]["status"] == "echec_validate"
+    assert result.attempts[-1]["status"] == "succes"
+    assert result.violations == ()
+
+    monkeypatch.setattr(mf, "validate",
+                        lambda layout, rules: [Violation("length", (1,), "injectée")])
+    monkeypatch.setattr(mf, "CLUBHOUSE_POSITIONS", 1)
+    monkeypatch.setattr(mf, "PAR_PERMUTATIONS", 1)
+    with pytest.raises(mf.MuirfieldRoutingError) as info:
+        mf.build_muirfield(3, width=350, height=400)
+    assert {a["status"] for a in info.value.attempts} == {"echec_validate"}
+
+
+def test_link_bounds_are_derived_from_rules():
+    default = mf.link_bounds(ValidationRules())
+    assert (default.minimum, default.maximum, default.clubhouse_min) == (12.0, 45.0, 18.0)
+    custom = mf.link_bounds(ValidationRules(link_min=15.0, link_max=40.0, clubhouse_clear_radius=25.0))
+    assert (custom.minimum, custom.maximum, custom.clubhouse_min) == (15.0, 40.0, 33.0)
+    with pytest.raises(ValueError):
+        mf.link_bounds(ValidationRules(link_max=30.0, clubhouse_clear_radius=25.0))
+
+
+def test_custom_link_rules_are_honoured():
+    rules = ValidationRules(width=350, height=400, link_min=14.0, link_max=40.0)
+    result = mf.build_muirfield(3, width=350, height=400, rules=rules)
+    assert validate(result.layout, rules) == []
+    assert all(14.0 - 1e-9 <= link.length <= 40.0 + 1e-9 for link in result.layout.links)
+
+
+def test_terrain_cache_key_tracks_terrain_config(tmp_path):
+    from golfgen.config import TerrainConfig
+    assert sites_module.terrain_cache_tag() == sites_module.terrain_cache_tag(TerrainConfig())
+    assert sites_module.terrain_cache_tag() != sites_module.terrain_cache_tag(TerrainConfig(octaves=5))
+    small = sites_module.load_terrain(9, 40, 30, cache_dir=tmp_path)
+    files = list(tmp_path.iterdir())
+    assert len(files) == 1 and sites_module.terrain_cache_tag() in files[0].name
+    assert np.array_equal(sites_module.load_terrain(9, 40, 30, cache_dir=tmp_path), small)
+
+
+# -- PartialLayout.check : un cas minimal rejeté par famille ---------------
+
+RULES = ValidationRules(width=400.0, height=400.0)
+CLUBHOUSE = (200.0, 395.0)
+
+
+def _hole(order, tee, green, par=4, width=11.0):
+    return ElasticHole(order=order, par=par, tee=ControlPoint(*tee), green=ControlPoint(*green),
+                       width=width)
+
+
+def _partial(*holes, links=()):
+    partial = PartialLayout(RULES, CLUBHOUSE)
+    for hole in holes:
+        partial.push(hole, ())
+    for link in links:
+        partial.push(_hole(17, (380.0, 20.0), (380.0, 120.0)), (link,))
+    return partial
+
+
+H1 = _hole(1, (100.0, 200.0), (200.0, 200.0))
+
+
+def test_check_accepts_a_clean_candidate():
+    assert _partial(H1).check(_hole(12, (100.0, 300.0), (200.0, 300.0)), ()) is None
+
+
+def test_check_rejects_length():
+    assert _partial().check(_hole(12, (100.0, 300.0), (200.0, 300.0), par=3), ()) == "length"
+
+
+def test_check_rejects_bounds():
+    assert _partial().check(_hole(12, (0.5, 100.0), (0.5, 200.0)), ()) == "bounds"
+
+
+def test_check_rejects_clubhouse_clear():
+    assert _partial().check(_hole(12, (150.0, 388.0), (250.0, 388.0)), ()) == "clubhouse_clear"
+
+
+def test_check_rejects_axis_crossing():
+    assert _partial(H1).check(_hole(12, (150.0, 150.0), (150.0, 250.0)), ()) == "axis_crossing"
+
+
+def test_check_rejects_fairway_gap():
+    assert _partial(H1).check(_hole(12, (100.0, 214.0), (200.0, 214.0)), ()) == "fairway_gap"
+
+
+def test_check_rejects_new_link_crossing_a_placed_fairway():
+    candidate = _hole(12, (140.0, 222.0), (140.0, 322.0))
+    link = PlannedLink((140.0, 178.0), (140.0, 222.0), (11, 12))
+    assert _partial(H1).check(candidate, ()) is None
+    assert _partial(H1).check(candidate, (link,)) == "link_blocked"
+
+
+def test_check_rejects_placed_link_crossing_the_new_fairway():
+    placed_link = PlannedLink((150.0, 280.0), (150.0, 320.0), (16, 17))
+    candidate = _hole(12, (100.0, 300.0), (200.0, 300.0))
+    assert _partial().check(candidate, ()) is None
+    assert _partial(links=(placed_link,)).check(candidate, ()) == "link_blocked"
+
+
+def test_check_rejects_parallel_stack():
+    stack = [_hole(order, (100.0, y), (200.0, y)) for order, y in ((1, 100.0), (2, 116.0), (3, 132.0))]
+    fourth = _hole(4, (100.0, 148.0), (200.0, 148.0))
+    assert _partial(*stack[:2]).check(stack[2], ()) is None
+    assert _partial(*stack).check(fourth, ()) == "parallel_stack"
+    # même pile, mais le trou 4 est déjà posé (ancrage) et le 3 arrive en dernier
+    assert _partial(stack[0], stack[1], fourth).check(stack[2], ()) == "parallel_stack"

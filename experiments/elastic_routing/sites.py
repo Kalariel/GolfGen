@@ -16,13 +16,15 @@ Le relief (7 s par seed en 400×400) est mis en cache sur disque, hors git.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
+import hashlib
+import json
 import math
 from pathlib import Path
 
 import numpy as np
 
-from golfgen.config import CourseConfig
+from golfgen.config import CourseConfig, TerrainConfig
 from golfgen.terrain import TerrainGenerator
 
 
@@ -58,12 +60,23 @@ class Sites:
         return len(self.points)
 
 
+TERRAIN_CACHE_VERSION = 1      # à incrémenter si TerrainGenerator change d'algorithme
+
+
+def terrain_cache_tag(terrain: TerrainConfig | None = None) -> str:
+    """Empreinte de la configuration de relief : version + hash de ``TerrainConfig``.
+    Toute modification des paramètres de relief invalide donc le cache."""
+    payload = json.dumps({"version": TERRAIN_CACHE_VERSION,
+                          "terrain": asdict(terrain or TerrainConfig())}, sort_keys=True)
+    return hashlib.sha1(payload.encode("utf-8")).hexdigest()[:12]
+
+
 def load_terrain(seed: int, width: int = 400, height: int = 400,
                  cache_dir: Path | None = CACHE_DIR) -> np.ndarray:
     """Relief de ``TerrainGenerator`` pour la seed, mis en cache en ``.npy``."""
     path = None
     if cache_dir is not None:
-        path = Path(cache_dir) / f"terrain_s{seed}_{width}x{height}.npy"
+        path = Path(cache_dir) / f"terrain_s{seed}_{width}x{height}_{terrain_cache_tag()}.npy"
         if path.exists():
             return np.load(path)
     heightmap = TerrainGenerator(CourseConfig(width=width, height=height, seed=seed)).generate()

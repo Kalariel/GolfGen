@@ -29,7 +29,8 @@ Construction (R2) : pour chaque nine, recherche en profondeur trou par trou,
 dans l'ordre premier trou, DERNIER trou (ancré : green à liaison du
 clubhouse), puis trous 2 à 8 qui doivent relier le premier green au tee du
 dernier trou. À chaque niveau, les couples (tee, green) faisables — tee à 12–45 du point
-courant (18–45 depuis le clubhouse), longueur dans la plage du par (tir
+courant (18–45 depuis le clubhouse ; plages dérivées des ``ValidationRules``
+par ``link_bounds``), longueur dans la plage du par (tir
 droit ou 1 dogleg ≤ 55°) — sont triés par score (distance à la cible −
 qualité des sites − nouveauté de direction) puis passés aux contrôles en
 ligne de ``partial_checks`` contre TOUS les trous déjà posés ; au plus
@@ -93,8 +94,7 @@ ANCHOR_BACK_MAX_DEG = 32.0
 CORRIDOR_HALF_DEG = 45.0
 CORRIDOR_EXTRA = 30.0               # le couloir dépasse l'anneau intérieur de 30 blocs
 
-LINK_MIN, LINK_MAX = 12.0, 45.0
-CLUBHOUSE_LINK_MIN = 18.0           # > rayon dégagé (10) + demi-fairway
+CLUBHOUSE_LINK_MARGIN = 2.0        # liaison clubhouse ≥ rayon dégagé + demi-fairway max + 2
 LINK_NOMINAL = 25.0                 # liaison nominale pour les fractions cibles
 USED_POINT_CLEARANCE = 10.0         # un site trop près d'un tee/green déjà posé est consommé
 DOGLEG_MAX_DEG = 55.0
@@ -361,14 +361,36 @@ def green_targets(path: list[Point], pars: tuple[int, ...]) -> list[Point]:
     return targets
 
 
-def return_reach(pars: tuple[int, ...], index: int) -> float:
+@dataclass(frozen=True, slots=True)
+class LinkBounds:
+    """Plages de liaison dérivées des ``ValidationRules`` (jamais codées en dur) :
+    ``minimum``–``maximum`` entre trous ; ``clubhouse_min``–``maximum`` pour
+    les liaisons du clubhouse, assez longues pour que le cœur du trou reste
+    hors du rayon dégagé."""
+
+    minimum: float
+    maximum: float
+    clubhouse_min: float
+
+
+def link_bounds(rules: ValidationRules) -> LinkBounds:
+    half_width = max(spec.width_min for spec in PAR_SPECS.values()) / 2.0
+    clear = rules.clubhouse_clear_radius or 0.0
+    clubhouse_min = max(rules.link_min, clear + half_width + CLUBHOUSE_LINK_MARGIN)
+    if clubhouse_min > rules.link_max:
+        raise ValueError(f"liaison clubhouse ≥ {clubhouse_min:g} incompatible avec "
+                         f"link_max = {rules.link_max:g}")
+    return LinkBounds(rules.link_min, rules.link_max, clubhouse_min)
+
+
+def return_reach(pars: tuple[int, ...], index: int, link_max: float) -> float:
     """Borne de faisabilité de retour : distance maximale entre le green du
     trou ``index`` et le tee (déjà ancré) du dernier trou du nine, encore
     rattrapable par les trous intermédiaires restants (liaisons et longueurs
     maximales mises bout à bout en ligne droite)."""
     last = len(pars) - 1
-    return (math.fsum(LINK_MAX + PAR_SPECS[par].length_max for par in pars[index + 1:last])
-            + LINK_MAX)
+    return (math.fsum(link_max + PAR_SPECS[par].length_max for par in pars[index + 1:last])
+            + link_max)
 
 
 # ----------------------------------------------------------------------
@@ -442,6 +464,7 @@ class _Search:
     partial: PartialLayout
     front_tee_ok: np.ndarray
     front_green_ok: np.ndarray
+    links: LinkBounds
     checks_limit: int = 0
     nodes_limit: int = 0
     nodes: int = 0
@@ -488,7 +511,7 @@ class _Search:
         tee_ok &= self._in_anchor(order, self.tees.points)
         if level.start is not None:
             link = np.hypot(*(self.tees.points - level.start).T)
-            tee_ok &= (link >= level.start_min) & (link <= LINK_MAX)
+            tee_ok &= (link >= level.start_min) & (link <= self.links.maximum)
         tee_idx = np.flatnonzero(tee_ok)
         if len(tee_idx):
             pts = self.tees.points[tee_idx]
@@ -502,7 +525,7 @@ class _Search:
         green_ok &= self._in_anchor(order, self.greens.points)
         if level.end is not None:
             link = np.hypot(*(self.greens.points - level.end).T)
-            green_ok &= (link >= level.end_min) & (link <= LINK_MAX)
+            green_ok &= (link >= level.end_min) & (link <= self.links.maximum)
         if level.reach_point is not None:
             green_ok &= np.hypot(*(self.greens.points - level.reach_point).T) <= level.reach
         green_idx = np.flatnonzero(green_ok)
@@ -584,23 +607,23 @@ class _Search:
         def level_for(index: int) -> _Level:
             order = start_order + index
             start = start_owner = end = end_owner = reach_point = heading = target_tee = None
-            start_min = end_min = LINK_MIN
+            start_min = end_min = self.links.minimum
             reach = math.inf
             if index == 0:
-                start, start_min = ch, CLUBHOUSE_LINK_MIN
+                start, start_min = ch, self.links.clubhouse_min
             elif index != last:
                 before = placed[index - 1]
                 start, start_owner = point(before.green), order - 1
                 tail = point(before.axis[-2])
                 heading = math.atan2(start[1] - tail[1], start[0] - tail[0])
             if index == last:
-                end, end_min = ch, CLUBHOUSE_LINK_MIN
+                end, end_min = ch, self.links.clubhouse_min
                 target_tee = targets[last - 1]
             elif index == last - 1:
                 end, end_owner = point(placed[last].tee), order + 1
             elif index >= RETURN_BOUND_FROM:
                 reach_point = point(placed[last].tee)
-                reach = return_reach(pars, index)
+                reach = return_reach(pars, index, self.links.maximum)
             return _Level(order, index, start, start_min, start_owner, end, end_min, end_owner,
                           reach_point, reach, heading, targets[index], target_tee)
 
@@ -681,7 +704,10 @@ def iter_plans(seed: int, width: float = MAP_WIDTH, height: float = MAP_HEIGHT) 
 def build_muirfield(seed: int, heightmap: np.ndarray | None = None, *,
                     width: float = MAP_WIDTH, height: float = MAP_HEIGHT,
                     rules: ValidationRules | None = None) -> MuirfieldResult:
-    """Parcours Muirfield valide pour la seed, ou ``MuirfieldRoutingError``."""
+    """Parcours Muirfield valide pour la seed, ou ``MuirfieldRoutingError``.
+
+    Le résultat renvoyé a TOUJOURS zéro violation ``validate(layout, rules)`` ;
+    les plages de liaison sont dérivées de ``rules`` (``link_bounds``)."""
     started = time.perf_counter()
     timings: dict[str, float] = {}
     if heightmap is None:
@@ -690,6 +716,7 @@ def build_muirfield(seed: int, heightmap: np.ndarray | None = None, *,
         raise ValueError(f"relief {heightmap.shape}, carte attendue {int(height)}×{int(width)}")
     timings["terrain"] = time.perf_counter() - started
     rules = rules or ValidationRules(width=width, height=height)
+    links = link_bounds(rules)
 
     t0 = time.perf_counter()
     green_sites = build_sites(heightmap, seed, "green")
@@ -707,30 +734,38 @@ def build_muirfield(seed: int, heightmap: np.ndarray | None = None, *,
             partial=PartialLayout(rules, plan.clubhouse),
             front_tee_ok=~frame.in_corridor(tee_sites.points),
             front_green_ok=~frame.in_corridor(green_sites.points),
+            links=links,
         )
         front = search.route_nine(1, plan.front_pars, front_path)
         back = search.route_nine(10, plan.back_pars, back_path) if front is not None else None
+        layout = violations = None
+        if back is not None:
+            ch = ControlPoint(*plan.clubhouse)
+            layout = CourseLayout(
+                seed=seed, width=width, height=height, clubhouse=ch,
+                front=NineLayout.from_holes(1, ch, tuple(front)),
+                back=NineLayout.from_holes(10, ch, tuple(back)),
+            )
+            t1 = time.perf_counter()
+            violations = tuple(validate(layout, rules))
+            timings["validate"] = time.perf_counter() - t1
+        if back is None:
+            status = "echec_back" if front is not None else "echec_front"
+        else:
+            # filet de sécurité : un layout que l'oracle refuse n'est jamais
+            # renvoyé, on passe au plan suivant
+            status = "succes" if not violations else "echec_validate"
         attempts.append({
             "clubhouse_index": plan.clubhouse_index, "permutation_index": plan.permutation_index,
-            "angle_index": plan.angle_index, "edge": plan.edge,
-            "status": "succes" if back is not None else ("echec_back" if front is not None
-                                                          else "echec_front"),
+            "angle_index": plan.angle_index, "edge": plan.edge, "status": status,
             "checks": search.partial.checks, "nodes": search.nodes,
             "rejections": dict(sorted(search.rejections.items())),
             "deepest": dict(search.deepest),
+            "violations": dict(sorted(Counter(v.kind for v in violations or ()).items())),
         })
-        if back is None:
+        if status != "succes":
             continue
-        timings["routing"] = time.perf_counter() - t0
-        ch = ControlPoint(*plan.clubhouse)
-        layout = CourseLayout(
-            seed=seed, width=width, height=height, clubhouse=ch,
-            front=NineLayout.from_holes(1, ch, tuple(front)),
-            back=NineLayout.from_holes(10, ch, tuple(back)),
-        )
-        t1 = time.perf_counter()
-        violations = tuple(validate(layout, rules))
-        timings["validate"] = time.perf_counter() - t1
+        timings["routing"] = time.perf_counter() - t0      # validations comprises
         return MuirfieldResult(
             seed=seed, width=width, height=height, layout=layout, violations=violations,
             plan=plan, outer_ring=tuple(outer), inner_ring=tuple(inner),
