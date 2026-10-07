@@ -112,7 +112,7 @@ NINE_PAR_PATTERN = (3, 4, 4, 4, 4, 5, 5, 4, 3)  # 2 par3, 2 par5, 5 par4 (comme 
 LINK_CONSTRUCTION_MIN = 12.0
 LINK_CONSTRUCTION_MAX = 60.0
 
-RIBBON_OFFSET = 12.0  # offset par defaut (round 2), conserve pour compatibilite du module DP
+RIBBON_OFFSET = 12.0  # offset par defaut (round 2) ; reste la valeur par defaut de build_skeleton/make_config
 
 
 class SkeletonGenerationError(RuntimeError):
@@ -1034,9 +1034,14 @@ def render_skeleton_svg(result: SkeletonResult) -> str:
 
 
 # ----------------------------------------------------------------------
-# Découpage DP (adapté de golfgen.loop_router._cut_nine) — NON appelé par
-# build_skeleton dans ce round (voir docstring du module) ; conservé pour
-# le prochain round, une fois la Porte 3 franchie sur le squelette seul.
+# Découpage DP (adapté de golfgen.loop_router._cut_nine) — NON BRANCHÉ
+# DEPUIS r2 (round 2, marche aléatoire sur réseau grossier) : ce code
+# découpait encore le contour simplifié d'une marche aléatoire brute, pas
+# les arcs produits par le tour d'Euler combiné + décalage standard de r3
+# (``build_skeleton`` / ``_split_combined_contour``). À ADAPTER aux arcs du
+# contour (``front_contour``/``back_contour``) au prochain round, une fois
+# la Porte 3 franchie sur le squelette seul — conservé tel quel ici dans
+# l'intervalle, pas appelé par ``build_skeleton``.
 # ----------------------------------------------------------------------
 
 CUT_STEP = 3.0

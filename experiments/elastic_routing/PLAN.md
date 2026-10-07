@@ -559,100 +559,60 @@ n'existe qu'entre voisins immédiats. D'où la redéfinition ci-dessus.
   construction).
 - [x] Couper le contour à ses deux passages au clubhouse pour obtenir les
   deux arcs clubhouse→clubhouse (front et back).
-- [x] Appliquer la DP de découpage sur chaque arc, inspirée de `_cut_nine()`
-  de `golfgen/loop_router.py`.
-- [x] Rendre le squelette (arbre, contour et découpage) dans un SVG dédié.
+- [ ] Appliquer la DP de découpage sur chaque arc, inspirée de `_cut_nine()`
+  de `golfgen/loop_router.py`. Reporté au round suivant (après la Porte 3) :
+  le code existe dans `skeleton.py` (non branché depuis r2, à adapter aux
+  arcs `front_contour`/`back_contour` de r3) mais n'est pas appelé par
+  `build_skeleton`.
+- [x] Rendre le squelette (arbre et contour, sans découpage) dans un SVG
+  dédié.
 
-**Résultat du 2026-10-07** : implémentation dans `experiments/elastic_routing/skeleton.py`
-(≈1000 lignes), runner `run_step3_skeleton.py` → `output/step3_skeleton/seed_<n>/`
-(`layout.json`, `report.json`, `REPORT.md`, `skeleton.svg`, `layout.svg`) pour
-les seeds 1, 2 et 3, plus `tests/test_elastic_routing_skeleton.py` (23 tests,
-suite ciblée `elastic_routing` → 70/70).
+**Résultat du 2026-10-07** : implémentation dans `experiments/elastic_routing/skeleton.py`,
+runner `run_step3_skeleton.py` → `output/step3_skeleton/seed_<n>/` (`skeleton.svg`,
+`report.json`, pas de `layout.json`/`layout.svg`/`REPORT.md` : pas de DP de
+découpage ni de `CourseLayout` à ce stade, voir plus bas) pour les seeds 1 à
+6, plus `tests/test_elastic_routing_skeleton.py` (suite ciblée
+`elastic_routing` → 772/772). Trois versions successives, conservées côte à
+côte pour comparaison dans `output/step3_skeleton/compare/` :
 
-Choix de conception effectifs, certains différents des hypothèses initiales
-du plan — consignés ici plutôt que silencieusement :
-
-- **Clubhouse** : le modèle (`model.py`) n'impose aucune position ; choisi
-  au **centre de la carte** (200, 200), comme `synthetic.py`, et non dans un
-  coin (`golfgen/clubhouse.py`). Conséquence mesurée : chaque sous-arbre
-  dispose d'environ moitié moins de place qu'un clubhouse de coin (rayon
-  ≈ 190–280 blocs selon la direction, contre jusqu'à ≈ 565 en diagonale
-  depuis un coin) — paramètre à revisiter si un clubhouse de coin est
-  préféré après inspection visuelle.
-- **Grille et pas** : 80×80 cellules à pas 5 blocs (400×400), 8 voisins,
-  conforme au plan.
-- **Offset du contour** : 12 blocs, halo = 2×12+23 = 47 blocs (~10
-  cellules), conformes aux paramètres validés le 2026-10-07 (voir Porte 2b
-  plus haut). Fenêtre « localement reliée » le long de l'arbre portée à
-  1,5×halo (≈70,5 blocs, pas les 5×offset ≈60 initialement prévus) : à un
-  virage à 90°, deux points espacés de *a* et *b* le long de l'arbre
-  (*a*+*b* = fenêtre) restent à `sqrt(a²+b²)`, minimal (*a*=*b*) à
-  fenêtre/√2 — 60 ne suffisait pas à garantir ce minimum ≥ 47.
-- **Longueur d'arbre par sous-arbre** : calculée depuis `PAR_SPECS` et le
-  patron de pars (voir ci-dessous), pas figée en dur : ≈ 610–1082 blocs par
-  sous-arbre (contre 550–950 suggéré, écart de reconstitution mineur lié au
-  nombre de liaisons de construction comptées).
-- **Méandre** : contrairement à l'intuition initiale (marche aléatoire
-  cellule à cellule, biais « voyage » = score de direction), le squelette
-  est un **méandre en boustrophédon** (rangées perpendiculaires espacées
-  d'au moins le halo, comme la spine de `loop_router`), rasterisé sur la
-  grille par interpolation entière (pas de Bresenham complet). La marche
-  aléatoire directe se bloquait presque toujours contre son propre halo en
-  tentant de « revenir » vers le clubhouse (biais voyage tel que décrit) ;
-  le retour est maintenant un effet de bord du tour d'Euler (chaque arête
-  est parcourue deux fois, une fois dans chaque sens), pas une marche
-  explicite vers le clubhouse.
-- **Contour** : tour d'Euler de l'arbre (parcours récursif des enfants dans
-  l'ordre angulaire), décalé une seule fois sur le côté courant (gauche du
-  sens de marche), **après lissage de la ligne centrale** (congés en arc
-  tangents, pas ≤ 22°, rayon 2×offset) pour tous les virages sauf les
-  quasi-demi-tours (feuilles, ≥ 150°) qui reçoivent directement un cap en
-  demi-cercle centré sur le sommet. Un décalage par arc centré sur chaque
-  sommet SANS lisser d'abord la ligne centrale (premier essai) recoupe les
-  segments adjacents du côté concave d'un virage dur, à une distance
-  `offset·tan(virage/2)` du sommet — défaut qui s'aggrave en subdivisant
-  (découvert en diagnostiquant un contour non simple). Le contour final
-  utilise l'intersection des bords décalés (onglet, porté de
-  `loop_router._offset_polyline`), pas un arc séparé, sauf au cap.
-  Vérification numérique systématique (`is_simple_polyline`), dans la
-  boucle de rejet bornée.
-- **Rejet borné** : les trois vérifications (atteinte du budget minimal,
-  contour simple, découpage DP réussi pour les deux nines) sont dans la
-  **même** boucle bornée. `MAX_TREE_ATTEMPTS` porté de l'exemple « ≤ 50 » du
-  plan à **1500** : mesure empirique après troncature du méandre au contact
-  (plutôt que rejet complet du sous-arbre dès la première rangée en défaut)
-  — rendement solo d'un sous-arbre ≈ 50 %, mais le couple front+back+DP
-  reste parfois rare pour une seed précise (seeds 5, 6, 8, 10 testées hors
-  de la liste requise ont demandé plusieurs centaines de tirages). Reste
-  une borne fixe, déterministe, sans boucle non bornée. Testé explicitement
-  (`test_rejection_is_bounded_and_explicit_for_an_impossible_budget`) avec
-  une `MIN_LEAF_BRANCH_LENGTH` plus grande que la carte.
-- **Patron de pars par nine** : 2 par 3 + 5 par 4 + 2 par 5 (comme
-  `synthetic.py`), identique pour front et back ; ordre permutable par la
-  DP (`PAR_ORDER_SHUFFLES = 14`, porté de `loop_router`).
-- **Feuilles observées** : les 3 seeds produisent chacune 1 feuille par
-  sous-arbre (chemin simple, sans branche secondaire) — le code supporte
-  jusqu'à 3 feuilles (`_choose_leaf_plan`, branches secondaires via
-  `_pick_branch_point`), mais la probabilité de tirer un budget assez
-  généreux pour 2–3 feuilles n'a pas été favorisée ; à revisiter si la Porte
-  3 demande plus de variété topologique.
-
-**Temps et violations par seed** (règles finales, liaisons 12–45 ; les
-violations de liaison de construction, 12–60, sont nettement moins
-nombreuses — voir `report.json`) :
-
-| Seed | Temps | Feuilles (front/back) | Violations finales | Détail |
-|---|---:|---|---:|---|
-| 1 | 0,202 s | 1/1 | 24 | `length` 8, `fairway_gap` 6, `link_distance` 10 |
-| 2 | 0,974 s | 1/1 | 26 | `length` 9, `bounds` 1, `fairway_gap` 6, `link_distance` 9, `link_blocked` 1 |
-| 3 | 0,367 s | 1/1 | 27 | `length` 8, `fairway_gap` 11, `link_distance` 8 |
-
-Aucun temps > 10 s à signaler. Les violations restantes sont attendues à ce
-stade (largeurs/longueurs finales et marges non visées par le squelette,
-conformément au périmètre de l'étape) ; aucune itération n'a été menée pour
-les faire disparaître — zéro violation `parallel_stack`, `par3_per_nine` ou
-`par5_per_nine` dans les trois seeds (quota et alignement de patron
-corrects par construction).
+- **r1** (`r1_boustrophedon/`) : premier essai, méandre en boustrophédon
+  (rangées perpendiculaires espacées d'au moins le halo), clubhouse fixé au
+  centre de la carte. **Refusé à la Porte 3** : chaque nine devient un
+  serpentin parallèle en S, les deux nines se font face autour du clubhouse
+  central, la moitié de la carte reste vide.
+- **r2** (`r2_offset12_1feuille/`) : remplace le boustrophédon par une
+  marche aléatoire biaisée sur un réseau grossier (pas = halo arrondi au
+  prochain entier pair, 8 voisins orthogonaux + diagonaux), clubhouse tiré
+  par la seed. **Accepté sur le mécanisme, refusé sur le résultat** : une
+  seule feuille par sous-arbre (jamais 2 ou 3), chaque nine reste un unique
+  « doigt » replié, carte sous-occupée.
+- **r3** (`r3_offset12/`, `r3_offset20/`) : version actuelle. 2 ou 3
+  feuilles imposées par sous-arbre (jamais 1), budget de longueur par
+  sous-arbre imposé (rejet si hors fenêtre), halo vérifié par PAIRE
+  d'arêtes sans nœud commun sur l'arbre entier (pas de fenêtre « localement
+  reliée » distincte). Contour = décalage de polyligne standard (jointure
+  ronde de rayon `offset` côté convexe, intersection des deux segments
+  décalés vérifiée dans les deux segments côté concave, sinon
+  `ContourOffsetError` explicite) appliqué à un tour d'Euler UNIQUE couvrant
+  les DEUX sous-arbres à la fois (`_combined_tour`), puis coupé PAR INDICE
+  (`_split_combined_contour`) à ses deux passages au clubhouse pour produire
+  les arcs `front_contour`/`back_contour` — pas deux contours indépendants
+  décalés puis vérifiés séparément. Trois bugs corrigés en cours de route
+  sur cette version, chacun invisible à l'inspection ou aux tests de la
+  passe précédente : un cap mordu aux feuilles en bout d'arête diagonale ;
+  un croisement front/back systématique près du clubhouse (deux contours
+  décalés indépendamment, chacun refermé par son propre cap au clubhouse,
+  les deux caps plantés à ~180° l'un de l'autre bulgant chacun vers le
+  territoire de l'autre) ; des extrémités d'arc pendantes loin du clubhouse
+  (le contour combiné bien formé, mais mal redécoupé en front/back — un
+  groupe de points de coupure entier assigné à un seul arc au lieu des
+  deux). `MAX_TREE_ATTEMPTS` porté de la cible « ≤ 50 » du plan à **1500**
+  (pire cas mesuré empiriquement, pas une marge arbitraire). Longueur
+  minimale d'une branche menant à une feuille ≈ 0,3 × (budget bas de la
+  fenêtre de longueur − pas de grille), facteur 0,3 retenu après balayage
+  empirique (0,2 à 0,45) sur les seeds 1–5. **Offset du contour** : 12 et 20
+  blocs comparés côte à côte dans `compare/r3_offset12/` et
+  `compare/r3_offset20/` — question ouverte, soumise à l'utilisateur.
 
 **Livrable** : un squelette 18 trous complet produit rapidement, même s'il ne
 respecte pas encore les largeurs finales.
