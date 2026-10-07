@@ -1,0 +1,1062 @@
+{
+  "height": 350,
+  "reports": [
+    {
+      "attempts": [
+        {
+          "angle_index": 0,
+          "checks": 60,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 8,
+            "10": 8
+          },
+          "edge": "W",
+          "nodes": 18,
+          "permutation_index": 0,
+          "rejections": {
+            "axis_crossing": 5,
+            "fairway_gap": 37
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        6.0,
+        191.32
+      ],
+      "clubhouse_edge": "W",
+      "doglegs": 11,
+      "elapsed_seconds": 0.2082,
+      "front_direction": -1,
+      "hole_lengths": [
+        147.0,
+        45.2,
+        141.6,
+        112.7,
+        147.0,
+        102.0,
+        57.3,
+        102.0,
+        147.0,
+        102.0,
+        45.3,
+        147.0,
+        47.0,
+        102.0,
+        102.0,
+        102.0,
+        102.0,
+        102.0
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 851.3,
+          "links": 339.9,
+          "par": 35,
+          "total": 1191.2
+        },
+        "front": {
+          "holes": 1001.8,
+          "links": 295.5,
+          "par": 37,
+          "total": 1297.4
+        }
+      },
+      "pars": {
+        "back": [
+          4,
+          3,
+          5,
+          3,
+          4,
+          4,
+          4,
+          4,
+          4
+        ],
+        "front": [
+          5,
+          3,
+          4,
+          4,
+          5,
+          4,
+          3,
+          4,
+          5
+        ]
+      },
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 0,
+        "permutation_index": 0
+      },
+      "relaunches": 0,
+      "seed": 1,
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 6.136,
+      "timings": {
+        "routing": 0.0975,
+        "sites": 0.1107,
+        "terrain": 0.0,
+        "validate": 0.0123
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "angle_index": 0,
+          "checks": 1513,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 8,
+            "10": 8
+          },
+          "edge": "S",
+          "nodes": 221,
+          "permutation_index": 0,
+          "rejections": {
+            "axis_crossing": 360,
+            "fairway_gap": 933
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "angle_index": 1,
+          "checks": 1511,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 8,
+            "10": 8
+          },
+          "edge": "S",
+          "nodes": 229,
+          "permutation_index": 0,
+          "rejections": {
+            "axis_crossing": 258,
+            "fairway_gap": 1025
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "angle_index": 2,
+          "checks": 1514,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 8,
+            "10": 8
+          },
+          "edge": "S",
+          "nodes": 295,
+          "permutation_index": 0,
+          "rejections": {
+            "axis_crossing": 206,
+            "fairway_gap": 1013
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "angle_index": 0,
+          "checks": 35,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 8,
+            "10": 8
+          },
+          "edge": "S",
+          "nodes": 18,
+          "permutation_index": 1,
+          "rejections": {
+            "axis_crossing": 4,
+            "fairway_gap": 13
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        241.13,
+        344.0
+      ],
+      "clubhouse_edge": "S",
+      "doglegs": 10,
+      "elapsed_seconds": 4.7864,
+      "front_direction": -1,
+      "hole_lengths": [
+        102.0,
+        159.9,
+        55.6,
+        100.1,
+        100.1,
+        102.0,
+        147.0,
+        102.0,
+        147.0,
+        147.0,
+        47.0,
+        55.8,
+        120.1,
+        102.0,
+        102.0,
+        102.0,
+        100.6,
+        45.2
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 821.7,
+          "links": 334.5,
+          "par": 34,
+          "total": 1156.2
+        },
+        "front": {
+          "holes": 1015.7,
+          "links": 347.5,
+          "par": 38,
+          "total": 1363.2
+        }
+      },
+      "pars": {
+        "back": [
+          5,
+          3,
+          3,
+          4,
+          4,
+          4,
+          4,
+          4,
+          3
+        ],
+        "front": [
+          4,
+          5,
+          3,
+          4,
+          4,
+          4,
+          5,
+          4,
+          5
+        ]
+      },
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 0,
+        "permutation_index": 1
+      },
+      "relaunches": 3,
+      "seed": 2,
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 6.204,
+      "timings": {
+        "routing": 4.6734,
+        "sites": 0.113,
+        "terrain": 0.0,
+        "validate": 0.0119
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "angle_index": 0,
+          "checks": 14,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 8,
+            "10": 1
+          },
+          "edge": "S",
+          "nodes": 13,
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 2
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "angle_index": 1,
+          "checks": 14,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 8,
+            "10": 1
+          },
+          "edge": "S",
+          "nodes": 13,
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 2
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "angle_index": 2,
+          "checks": 14,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 8,
+            "10": 1
+          },
+          "edge": "S",
+          "nodes": 13,
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 2
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "angle_index": 0,
+          "checks": 12,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 8,
+            "10": 1
+          },
+          "edge": "S",
+          "nodes": 13,
+          "permutation_index": 1,
+          "rejections": {},
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "angle_index": 1,
+          "checks": 12,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 8,
+            "10": 1
+          },
+          "edge": "S",
+          "nodes": 13,
+          "permutation_index": 1,
+          "rejections": {},
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "angle_index": 2,
+          "checks": 12,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 8,
+            "10": 1
+          },
+          "edge": "S",
+          "nodes": 13,
+          "permutation_index": 1,
+          "rejections": {},
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "angle_index": 0,
+          "checks": 12,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 8,
+            "10": 1
+          },
+          "edge": "S",
+          "nodes": 13,
+          "permutation_index": 2,
+          "rejections": {},
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "angle_index": 1,
+          "checks": 12,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 8,
+            "10": 1
+          },
+          "edge": "S",
+          "nodes": 13,
+          "permutation_index": 2,
+          "rejections": {},
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "angle_index": 2,
+          "checks": 12,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 8,
+            "10": 1
+          },
+          "edge": "S",
+          "nodes": 13,
+          "permutation_index": 2,
+          "rejections": {},
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "angle_index": 0,
+          "checks": 366,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 8,
+            "10": 8
+          },
+          "edge": "S",
+          "nodes": 39,
+          "permutation_index": 0,
+          "rejections": {
+            "axis_crossing": 135,
+            "fairway_gap": 192
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        264.05,
+        344.0
+      ],
+      "clubhouse_edge": "S",
+      "doglegs": 9,
+      "elapsed_seconds": 0.5924,
+      "front_direction": -1,
+      "hole_lengths": [
+        102.0,
+        47.0,
+        146.8,
+        66.1,
+        175.8,
+        60.9,
+        159.5,
+        101.6,
+        124.9,
+        102.0,
+        102.0,
+        106.1,
+        49.7,
+        147.0,
+        102.0,
+        102.0,
+        102.0,
+        102.0
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 914.8,
+          "links": 356.2,
+          "par": 36,
+          "total": 1271.0
+        },
+        "front": {
+          "holes": 984.6,
+          "links": 326.7,
+          "par": 36,
+          "total": 1311.3
+        }
+      },
+      "pars": {
+        "back": [
+          4,
+          4,
+          4,
+          3,
+          5,
+          4,
+          4,
+          4,
+          4
+        ],
+        "front": [
+          4,
+          3,
+          5,
+          3,
+          5,
+          3,
+          5,
+          4,
+          4
+        ]
+      },
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 1,
+        "permutation_index": 0
+      },
+      "relaunches": 9,
+      "seed": 3,
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 6.158,
+      "timings": {
+        "routing": 0.4818,
+        "sites": 0.1106,
+        "terrain": 0.0,
+        "validate": 0.0115
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "angle_index": 0,
+          "checks": 115,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 8,
+            "10": 8
+          },
+          "edge": "W",
+          "nodes": 27,
+          "permutation_index": 0,
+          "rejections": {
+            "axis_crossing": 10,
+            "fairway_gap": 78
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        6.0,
+        153.63
+      ],
+      "clubhouse_edge": "W",
+      "doglegs": 10,
+      "elapsed_seconds": 0.2496,
+      "front_direction": 1,
+      "hole_lengths": [
+        102.0,
+        59.8,
+        133.4,
+        55.1,
+        113.8,
+        147.0,
+        139.3,
+        124.2,
+        62.2,
+        102.0,
+        102.0,
+        147.0,
+        102.0,
+        102.0,
+        147.0,
+        111.3,
+        47.0,
+        147.0
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 1007.3,
+          "links": 334.7,
+          "par": 38,
+          "total": 1342.1
+        },
+        "front": {
+          "holes": 936.9,
+          "links": 340.9,
+          "par": 34,
+          "total": 1277.8
+        }
+      },
+      "pars": {
+        "back": [
+          4,
+          4,
+          5,
+          4,
+          4,
+          5,
+          4,
+          3,
+          5
+        ],
+        "front": [
+          4,
+          3,
+          4,
+          3,
+          4,
+          5,
+          4,
+          4,
+          3
+        ]
+      },
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 0,
+        "permutation_index": 0
+      },
+      "relaunches": 0,
+      "seed": 4,
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 6.149,
+      "timings": {
+        "routing": 0.138,
+        "sites": 0.1115,
+        "terrain": 0.0,
+        "validate": 0.0118
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "angle_index": 0,
+          "checks": 0,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 0
+          },
+          "edge": "E",
+          "nodes": 1,
+          "permutation_index": 0,
+          "rejections": {},
+          "status": "echec_front",
+          "violations": {}
+        },
+        {
+          "angle_index": 1,
+          "checks": 0,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 0
+          },
+          "edge": "E",
+          "nodes": 1,
+          "permutation_index": 0,
+          "rejections": {},
+          "status": "echec_front",
+          "violations": {}
+        },
+        {
+          "angle_index": 2,
+          "checks": 0,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 0
+          },
+          "edge": "E",
+          "nodes": 1,
+          "permutation_index": 0,
+          "rejections": {},
+          "status": "echec_front",
+          "violations": {}
+        },
+        {
+          "angle_index": 0,
+          "checks": 0,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 0
+          },
+          "edge": "E",
+          "nodes": 1,
+          "permutation_index": 1,
+          "rejections": {},
+          "status": "echec_front",
+          "violations": {}
+        },
+        {
+          "angle_index": 1,
+          "checks": 0,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 0
+          },
+          "edge": "E",
+          "nodes": 1,
+          "permutation_index": 1,
+          "rejections": {},
+          "status": "echec_front",
+          "violations": {}
+        },
+        {
+          "angle_index": 2,
+          "checks": 0,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 0
+          },
+          "edge": "E",
+          "nodes": 1,
+          "permutation_index": 1,
+          "rejections": {},
+          "status": "echec_front",
+          "violations": {}
+        },
+        {
+          "angle_index": 0,
+          "checks": 41,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 8,
+            "10": 8
+          },
+          "edge": "E",
+          "nodes": 19,
+          "permutation_index": 2,
+          "rejections": {
+            "axis_crossing": 6,
+            "fairway_gap": 16
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        394.0,
+        145.92
+      ],
+      "clubhouse_edge": "E",
+      "doglegs": 9,
+      "elapsed_seconds": 0.2254,
+      "front_direction": -1,
+      "hole_lengths": [
+        109.6,
+        147.0,
+        50.3,
+        122.0,
+        51.6,
+        147.0,
+        102.0,
+        102.0,
+        109.1,
+        102.0,
+        50.2,
+        147.0,
+        103.7,
+        125.3,
+        102.0,
+        101.0,
+        47.0,
+        147.0
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 925.2,
+          "links": 377.6,
+          "par": 36,
+          "total": 1302.8
+        },
+        "front": {
+          "holes": 940.5,
+          "links": 328.3,
+          "par": 36,
+          "total": 1268.7
+        }
+      },
+      "pars": {
+        "back": [
+          4,
+          3,
+          5,
+          4,
+          4,
+          4,
+          4,
+          3,
+          5
+        ],
+        "front": [
+          4,
+          5,
+          3,
+          4,
+          3,
+          5,
+          4,
+          4,
+          4
+        ]
+      },
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 0,
+        "permutation_index": 2
+      },
+      "relaunches": 6,
+      "seed": 5,
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 6.073,
+      "timings": {
+        "routing": 0.1159,
+        "sites": 0.1094,
+        "terrain": 0.0,
+        "validate": 0.0115
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "angle_index": 0,
+          "checks": 0,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 0
+          },
+          "edge": "W",
+          "nodes": 1,
+          "permutation_index": 0,
+          "rejections": {},
+          "status": "echec_front",
+          "violations": {}
+        },
+        {
+          "angle_index": 1,
+          "checks": 0,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 0
+          },
+          "edge": "W",
+          "nodes": 1,
+          "permutation_index": 0,
+          "rejections": {},
+          "status": "echec_front",
+          "violations": {}
+        },
+        {
+          "angle_index": 2,
+          "checks": 0,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 0
+          },
+          "edge": "W",
+          "nodes": 1,
+          "permutation_index": 0,
+          "rejections": {},
+          "status": "echec_front",
+          "violations": {}
+        },
+        {
+          "angle_index": 0,
+          "checks": 0,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 0
+          },
+          "edge": "W",
+          "nodes": 1,
+          "permutation_index": 1,
+          "rejections": {},
+          "status": "echec_front",
+          "violations": {}
+        },
+        {
+          "angle_index": 1,
+          "checks": 0,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 0
+          },
+          "edge": "W",
+          "nodes": 1,
+          "permutation_index": 1,
+          "rejections": {},
+          "status": "echec_front",
+          "violations": {}
+        },
+        {
+          "angle_index": 2,
+          "checks": 0,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 0
+          },
+          "edge": "W",
+          "nodes": 1,
+          "permutation_index": 1,
+          "rejections": {},
+          "status": "echec_front",
+          "violations": {}
+        },
+        {
+          "angle_index": 0,
+          "checks": 0,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 0
+          },
+          "edge": "W",
+          "nodes": 1,
+          "permutation_index": 2,
+          "rejections": {},
+          "status": "echec_front",
+          "violations": {}
+        },
+        {
+          "angle_index": 1,
+          "checks": 0,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 0
+          },
+          "edge": "W",
+          "nodes": 1,
+          "permutation_index": 2,
+          "rejections": {},
+          "status": "echec_front",
+          "violations": {}
+        },
+        {
+          "angle_index": 2,
+          "checks": 0,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 0
+          },
+          "edge": "W",
+          "nodes": 1,
+          "permutation_index": 2,
+          "rejections": {},
+          "status": "echec_front",
+          "violations": {}
+        },
+        {
+          "angle_index": 0,
+          "checks": 148,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 8,
+            "10": 8
+          },
+          "edge": "E",
+          "nodes": 28,
+          "permutation_index": 0,
+          "rejections": {
+            "axis_crossing": 38,
+            "fairway_gap": 82
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        394.0,
+        136.45
+      ],
+      "clubhouse_edge": "E",
+      "doglegs": 9,
+      "elapsed_seconds": 0.2839,
+      "front_direction": 1,
+      "hole_lengths": [
+        106.5,
+        147.0,
+        68.6,
+        112.9,
+        147.0,
+        112.5,
+        102.0,
+        102.1,
+        105.0,
+        147.0,
+        55.1,
+        102.0,
+        102.0,
+        49.1,
+        102.0,
+        102.0,
+        147.0,
+        49.3
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 855.5,
+          "links": 362.5,
+          "par": 35,
+          "total": 1218.0
+        },
+        "front": {
+          "holes": 1003.6,
+          "links": 306.1,
+          "par": 37,
+          "total": 1309.6
+        }
+      },
+      "pars": {
+        "back": [
+          5,
+          3,
+          4,
+          4,
+          3,
+          4,
+          4,
+          5,
+          3
+        ],
+        "front": [
+          4,
+          5,
+          3,
+          4,
+          5,
+          4,
+          4,
+          4,
+          4
+        ]
+      },
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 1,
+        "permutation_index": 0
+      },
+      "relaunches": 9,
+      "seed": 6,
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 6.116,
+      "timings": {
+        "routing": 0.1721,
+        "sites": 0.1117,
+        "terrain": 0.0,
+        "validate": 0.0113
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    }
+  ],
+  "round": "RA",
+  "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "stats": {
+    "failures": [],
+    "relaunches_total": 27,
+    "seconds_max": 4.786,
+    "seconds_median": 0.267,
+    "seconds_p90": 2.689,
+    "seeds_over_2s": [
+      2
+    ],
+    "successes": 6,
+    "violations_total": 0
+  },
+  "width": 400
+}
