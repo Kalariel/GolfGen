@@ -4,6 +4,7 @@ import math
 import pytest
 
 from experiments.elastic_routing.model import (
+    LEGACY_PAR_SPECS,
     PAR_SPECS,
     ControlPoint,
     CourseLayout,
@@ -50,9 +51,12 @@ def test_validated_specs_match_decisions():
               spec.coarse_max_doglegs, spec.final_max_doglegs)
         for par, spec in PAR_SPECS.items()
     } == {
-        3: (75.0, 110.0, 10.0, 15.0, 1, 2),
-        4: (120.0, 175.0, 11.0, 17.0, 1, 2),
-        5: (175.0, 235.0, 12.0, 18.0, 1, 2),
+        3: (45.0, 70.0, 10.0, 15.0, 1, 2),
+        4: (100.0, 145.0, 11.0, 17.0, 1, 2),
+        5: (145.0, 185.0, 12.0, 18.0, 1, 2),
+    }
+    assert {par: (spec.length_min, spec.length_max) for par, spec in LEGACY_PAR_SPECS.items()} == {
+        3: (75.0, 110.0), 4: (120.0, 175.0), 5: (175.0, 235.0),
     }
 
     with pytest.raises(TypeError, match="doglegs"):
@@ -70,13 +74,13 @@ def test_elastic_hole_exposes_axis_length_and_final_dimension_status():
         order=1,
         par=3,
         tee=ControlPoint(0.0, 0.0),
-        doglegs=(ControlPoint(30.0, 40.0),),
-        green=ControlPoint(60.0, 40.0),
+        doglegs=(ControlPoint(18.0, 24.0),),
+        green=ControlPoint(48.0, 24.0),
         width=10.0,
     )
 
     assert item.axis == (item.tee, *item.doglegs, item.green)
-    assert item.length == 80.0
+    assert item.length == 60.0
     assert item.dimensions_are_final is True
 
     # Une dimension provisoire hors plage reste représentable pour permettre

@@ -57,7 +57,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from experiments.elastic_routing.geometry import segments_intersect
-from experiments.elastic_routing.model import PAR_SPECS
+from experiments.elastic_routing.model import LEGACY_PAR_SPECS
 from experiments.elastic_routing.skeleton import (
     LINK_CONSTRUCTION_MAX,
     LINK_CONSTRUCTION_MIN,
@@ -77,7 +77,7 @@ Cell = tuple[int, int]
 CELL = 21.0
 INSET = 9.0
 FAIRWAY_GAP = 23.0                 # largeur max de fairway (18) + écart (5)
-HALF_FAIRWAY_MAX = max(spec.width_max for spec in PAR_SPECS.values()) / 2.0
+HALF_FAIRWAY_MAX = max(spec.width_max for spec in LEGACY_PAR_SPECS.values()) / 2.0
 OPENING_HALF_GAP = 8.0             # arc retiré de part et d'autre du coin clubhouse
 CLEARANCE_ARC_EXEMPT = 60.0        # portions voisines le long de l'arc : exemptées
 SAMPLE_STEP = 3.0
@@ -121,8 +121,8 @@ def nine_length_window() -> tuple[float, float]:
     """Fenêtre de longueur d'un nine : 9 trous (``NINE_PAR_PATTERN``) + 8 liaisons
     + 2 stubs, comptés comme 10 tronçons de construction 12–60 (comme
     ``skeleton.make_config``)."""
-    low = sum(PAR_SPECS[par].length_min for par in NINE_PAR_PATTERN) + 10 * LINK_CONSTRUCTION_MIN
-    high = sum(PAR_SPECS[par].length_max for par in NINE_PAR_PATTERN) + 10 * LINK_CONSTRUCTION_MAX
+    low = sum(LEGACY_PAR_SPECS[par].length_min for par in NINE_PAR_PATTERN) + 10 * LINK_CONSTRUCTION_MIN
+    high = sum(LEGACY_PAR_SPECS[par].length_max for par in NINE_PAR_PATTERN) + 10 * LINK_CONSTRUCTION_MAX
     return (float(low), float(high))
 
 

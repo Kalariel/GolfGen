@@ -1,6 +1,7 @@
 """Prototype de routage global à trous élastiques."""
 
 from experiments.elastic_routing.model import (
+    LEGACY_PAR_SPECS,
     PAR_SPECS,
     SCHEMA_VERSION,
     ControlPoint,
@@ -20,6 +21,7 @@ from experiments.elastic_routing.geometry import (
 from experiments.elastic_routing.render import render_svg
 
 __all__ = [
+    "LEGACY_PAR_SPECS",
     "PAR_SPECS",
     "SCHEMA_VERSION",
     "ControlPoint",

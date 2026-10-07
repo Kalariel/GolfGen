@@ -165,8 +165,8 @@ def test_surrogate_margin_can_over_report_a_near_threshold_fairway_gap():
     ci-dessous pour une mesure du taux de faux positifs sur un échantillon.
     """
     layout = build_synthetic_layout()
-    broken = _replace_hole(layout, 1, tee=ControlPoint(140.0, 200.0), green=ControlPoint(140.0, 290.0), width=10.0)
-    broken = _replace_hole(broken, 10, tee=ControlPoint(155.3, 200.0), green=ControlPoint(155.3, 290.0), width=10.0)
+    broken = _replace_hole(layout, 1, tee=ControlPoint(140.0, 200.0), green=ControlPoint(140.0, 260.0), width=10.0)
+    broken = _replace_hole(broken, 10, tee=ControlPoint(155.3, 200.0), green=ControlPoint(155.3, 260.0), width=10.0)
 
     assert validate(broken, PERMISSIVE) == []  # l'oracle juge ce layout valide
 

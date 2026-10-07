@@ -25,7 +25,7 @@ Algorithme :
 3. croissance ALTERNÉE au niveau de l'ARÊTE (tronc puis branches, front et
    back entrelacés) par marche aléatoire biaisée « voyage » (s'éloigner du
    clubhouse, puis y revenir) ; budget de longueur par sous-arbre dérivé de
-   ``PAR_SPECS`` (et de l'offset, via les caps) et IMPOSÉ (rejet si sous le
+   ``LEGACY_PAR_SPECS`` (et de l'offset, via les caps) et IMPOSÉ (rejet si sous le
    minimum) ; 2 ou 3 feuilles par sous-arbre (jamais 1), chaque branche
    menant à une feuille d'au moins ``min_leaf_branch_length`` blocs (valeur
    recalculée depuis le budget, voir ``make_config``) ;
@@ -68,7 +68,7 @@ from dataclasses import dataclass, field
 
 from experiments.elastic_routing.geometry import segment_distance, segments_intersect
 from experiments.elastic_routing.model import (
-    PAR_SPECS,
+    LEGACY_PAR_SPECS,
     ControlPoint,
     ElasticHole,
     NineLayout,
@@ -164,7 +164,7 @@ def make_config(offset: float = RIBBON_OFFSET, avg_leaves: float = 2.5) -> Skele
       moins cette marge ET au moins un demi-pas, des deux côtés de la
       carte.
     - budget d'arbre par sous-arbre = (longueur de contour visée par nine
-      d'après ``PAR_SPECS`` moins les caps aux feuilles) / 2. Chaque
+      d'après ``LEGACY_PAR_SPECS`` moins les caps aux feuilles) / 2. Chaque
       feuille ajoute un cap d'arc ≈ π·offset ; ``avg_leaves`` (2,5, le
       milieu de la plage imposée 2-3) sert d'estimation représentative
       avant que le nombre réel de feuilles ne soit tiré.
@@ -177,15 +177,15 @@ def make_config(offset: float = RIBBON_OFFSET, avg_leaves: float = 2.5) -> Skele
     """
     halo = 2.0 * offset + HALO_MARGIN
     pitch = _node_pitch(halo)
-    half_fairway_max = max(spec.width_max for spec in PAR_SPECS.values()) / 2.0
+    half_fairway_max = max(spec.width_max for spec in LEGACY_PAR_SPECS.values()) / 2.0
     margin_needed = offset + half_fairway_max
     node_margin = max(margin_needed, pitch / 2.0)
     node_count = 1
     while node_margin + node_count * pitch <= MAP_SIZE - margin_needed:
         node_count += 1
 
-    contour_low = sum(PAR_SPECS[par].length_min for par in NINE_PAR_PATTERN) + 10 * LINK_CONSTRUCTION_MIN
-    contour_high = sum(PAR_SPECS[par].length_max for par in NINE_PAR_PATTERN) + 10 * LINK_CONSTRUCTION_MAX
+    contour_low = sum(LEGACY_PAR_SPECS[par].length_min for par in NINE_PAR_PATTERN) + 10 * LINK_CONSTRUCTION_MIN
+    contour_high = sum(LEGACY_PAR_SPECS[par].length_max for par in NINE_PAR_PATTERN) + 10 * LINK_CONSTRUCTION_MAX
     caps = avg_leaves * math.pi * offset
     low = (contour_low - caps) / 2.0
     high = (contour_high - caps) / 2.0
@@ -1127,7 +1127,7 @@ def _corners(points: list[Point]) -> list[tuple[float, float]]:
 
 
 def _hole_length_range(par: int) -> tuple[float, float]:
-    spec = PAR_SPECS[par]
+    spec = LEGACY_PAR_SPECS[par]
     return spec.length_min, spec.length_max
 
 
@@ -1247,7 +1247,7 @@ def _hole_from_cut(order: int, par: int, waypoints: list[Point]) -> ElasticHole:
         tee=ControlPoint(tee[0], tee[1]),
         green=ControlPoint(green[0], green[1]),
         doglegs=doglegs,
-        width=PAR_SPECS[par].width_min,
+        width=LEGACY_PAR_SPECS[par].width_min,
     )
 
 

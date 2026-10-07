@@ -381,7 +381,7 @@ def test_offset_configurable_grid_and_halo(offset):
     config = sk.make_config(offset)
     assert config.halo_min_dist == 2.0 * offset + sk.HALO_MARGIN
     assert config.node_pitch >= config.halo_min_dist
-    half_fairway_max = max(spec.width_max for spec in sk.PAR_SPECS.values()) / 2.0
+    half_fairway_max = max(spec.width_max for spec in sk.LEGACY_PAR_SPECS.values()) / 2.0
     margin_needed = offset + half_fairway_max
     assert config.node_margin >= margin_needed
     last_coord = config.node_margin + (config.node_count - 1) * config.node_pitch

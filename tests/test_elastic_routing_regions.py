@@ -15,7 +15,7 @@ import numpy as np
 import pytest
 
 from experiments.elastic_routing.geometry import segments_intersect
-from experiments.elastic_routing.model import PAR_SPECS
+from experiments.elastic_routing.model import LEGACY_PAR_SPECS
 from experiments.elastic_routing.regions import (
     CELL_BY_W_MIN,
     ENDPOINT_MAX_DIST,
@@ -98,8 +98,8 @@ def _dist_to_polygon(point, polygon) -> float:
 # ----------------------------------------------------------------------
 
 def test_length_window_derived_from_par_specs():
-    low = sum(PAR_SPECS[p].length_min for p in NINE_PAR_PATTERN) + 10 * 12
-    high = sum(PAR_SPECS[p].length_max for p in NINE_PAR_PATTERN) + 10 * 60
+    low = sum(LEGACY_PAR_SPECS[p].length_min for p in NINE_PAR_PATTERN) + 10 * 12
+    high = sum(LEGACY_PAR_SPECS[p].length_max for p in NINE_PAR_PATTERN) + 10 * 60
     assert nine_length_window() == (low, high) == (1220.0, 2165.0)
 
 
