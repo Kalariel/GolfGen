@@ -543,32 +543,124 @@ n'existe qu'entre voisins immédiats. D'où la redéfinition ci-dessus.
 
 ### Étape 3 — squelette global grossier (contour d'un arbre aléatoire)
 
-- [ ] Construire l'arbre enraciné au clubhouse à deux sous-arbres (un par
+- [x] Construire l'arbre enraciné au clubhouse à deux sous-arbres (un par
   nine), croissance alternée et seedée, sans retour arrière.
-- [ ] Appliquer le halo interdisant tout contact entre arêtes/cellules non
+- [x] Appliquer le halo interdisant tout contact entre arêtes/cellules non
   voisines dans l'arbre, y compris entre les deux sous-arbres racines.
-- [ ] Appliquer le budget de longueur cible par sous-arbre et le nombre
+- [x] Appliquer le budget de longueur cible par sous-arbre et le nombre
   maximal de feuilles par sous-arbre (une feuille = une épingle).
-- [ ] Imposer une longueur minimale de branche (≥ ~2 trous portés par côté) :
+- [x] Imposer une longueur minimale de branche (≥ ~2 trous portés par côté) :
   une branche trop courte force le contour à faire un aller-retour sur
   place, ce qui produit exactement les séries de trous consécutifs côte à
   côte (zigzags) que l'objectif « voyage » pénalise.
-- [ ] Rejeter complètement et de façon déterministe tout arbre qui ne peut
+- [x] Rejeter complètement et de façon déterministe tout arbre qui ne peut
   atteindre son budget, sans retour arrière interne.
-- [ ] Épaissir l'arbre puis extraire son contour (courbe simple par
+- [x] Épaissir l'arbre puis extraire son contour (courbe simple par
   construction).
-- [ ] Couper le contour à ses deux passages au clubhouse pour obtenir les
+- [x] Couper le contour à ses deux passages au clubhouse pour obtenir les
   deux arcs clubhouse→clubhouse (front et back).
-- [ ] Appliquer la DP de découpage sur chaque arc, inspirée de `_cut_nine()`
+- [x] Appliquer la DP de découpage sur chaque arc, inspirée de `_cut_nine()`
   de `golfgen/loop_router.py`.
-- [ ] Rendre le squelette (arbre, contour et découpage) dans un SVG dédié.
+- [x] Rendre le squelette (arbre, contour et découpage) dans un SVG dédié.
+
+**Résultat du 2026-10-07** : implémentation dans `experiments/elastic_routing/skeleton.py`
+(≈1000 lignes), runner `run_step3_skeleton.py` → `output/step3_skeleton/seed_<n>/`
+(`layout.json`, `report.json`, `REPORT.md`, `skeleton.svg`, `layout.svg`) pour
+les seeds 1, 2 et 3, plus `tests/test_elastic_routing_skeleton.py` (23 tests,
+suite ciblée `elastic_routing` → 70/70).
+
+Choix de conception effectifs, certains différents des hypothèses initiales
+du plan — consignés ici plutôt que silencieusement :
+
+- **Clubhouse** : le modèle (`model.py`) n'impose aucune position ; choisi
+  au **centre de la carte** (200, 200), comme `synthetic.py`, et non dans un
+  coin (`golfgen/clubhouse.py`). Conséquence mesurée : chaque sous-arbre
+  dispose d'environ moitié moins de place qu'un clubhouse de coin (rayon
+  ≈ 190–280 blocs selon la direction, contre jusqu'à ≈ 565 en diagonale
+  depuis un coin) — paramètre à revisiter si un clubhouse de coin est
+  préféré après inspection visuelle.
+- **Grille et pas** : 80×80 cellules à pas 5 blocs (400×400), 8 voisins,
+  conforme au plan.
+- **Offset du contour** : 12 blocs, halo = 2×12+23 = 47 blocs (~10
+  cellules), conformes aux paramètres validés le 2026-10-07 (voir Porte 2b
+  plus haut). Fenêtre « localement reliée » le long de l'arbre portée à
+  1,5×halo (≈70,5 blocs, pas les 5×offset ≈60 initialement prévus) : à un
+  virage à 90°, deux points espacés de *a* et *b* le long de l'arbre
+  (*a*+*b* = fenêtre) restent à `sqrt(a²+b²)`, minimal (*a*=*b*) à
+  fenêtre/√2 — 60 ne suffisait pas à garantir ce minimum ≥ 47.
+- **Longueur d'arbre par sous-arbre** : calculée depuis `PAR_SPECS` et le
+  patron de pars (voir ci-dessous), pas figée en dur : ≈ 610–1082 blocs par
+  sous-arbre (contre 550–950 suggéré, écart de reconstitution mineur lié au
+  nombre de liaisons de construction comptées).
+- **Méandre** : contrairement à l'intuition initiale (marche aléatoire
+  cellule à cellule, biais « voyage » = score de direction), le squelette
+  est un **méandre en boustrophédon** (rangées perpendiculaires espacées
+  d'au moins le halo, comme la spine de `loop_router`), rasterisé sur la
+  grille par interpolation entière (pas de Bresenham complet). La marche
+  aléatoire directe se bloquait presque toujours contre son propre halo en
+  tentant de « revenir » vers le clubhouse (biais voyage tel que décrit) ;
+  le retour est maintenant un effet de bord du tour d'Euler (chaque arête
+  est parcourue deux fois, une fois dans chaque sens), pas une marche
+  explicite vers le clubhouse.
+- **Contour** : tour d'Euler de l'arbre (parcours récursif des enfants dans
+  l'ordre angulaire), décalé une seule fois sur le côté courant (gauche du
+  sens de marche), **après lissage de la ligne centrale** (congés en arc
+  tangents, pas ≤ 22°, rayon 2×offset) pour tous les virages sauf les
+  quasi-demi-tours (feuilles, ≥ 150°) qui reçoivent directement un cap en
+  demi-cercle centré sur le sommet. Un décalage par arc centré sur chaque
+  sommet SANS lisser d'abord la ligne centrale (premier essai) recoupe les
+  segments adjacents du côté concave d'un virage dur, à une distance
+  `offset·tan(virage/2)` du sommet — défaut qui s'aggrave en subdivisant
+  (découvert en diagnostiquant un contour non simple). Le contour final
+  utilise l'intersection des bords décalés (onglet, porté de
+  `loop_router._offset_polyline`), pas un arc séparé, sauf au cap.
+  Vérification numérique systématique (`is_simple_polyline`), dans la
+  boucle de rejet bornée.
+- **Rejet borné** : les trois vérifications (atteinte du budget minimal,
+  contour simple, découpage DP réussi pour les deux nines) sont dans la
+  **même** boucle bornée. `MAX_TREE_ATTEMPTS` porté de l'exemple « ≤ 50 » du
+  plan à **1500** : mesure empirique après troncature du méandre au contact
+  (plutôt que rejet complet du sous-arbre dès la première rangée en défaut)
+  — rendement solo d'un sous-arbre ≈ 50 %, mais le couple front+back+DP
+  reste parfois rare pour une seed précise (seeds 5, 6, 8, 10 testées hors
+  de la liste requise ont demandé plusieurs centaines de tirages). Reste
+  une borne fixe, déterministe, sans boucle non bornée. Testé explicitement
+  (`test_rejection_is_bounded_and_explicit_for_an_impossible_budget`) avec
+  une `MIN_LEAF_BRANCH_LENGTH` plus grande que la carte.
+- **Patron de pars par nine** : 2 par 3 + 5 par 4 + 2 par 5 (comme
+  `synthetic.py`), identique pour front et back ; ordre permutable par la
+  DP (`PAR_ORDER_SHUFFLES = 14`, porté de `loop_router`).
+- **Feuilles observées** : les 3 seeds produisent chacune 1 feuille par
+  sous-arbre (chemin simple, sans branche secondaire) — le code supporte
+  jusqu'à 3 feuilles (`_choose_leaf_plan`, branches secondaires via
+  `_pick_branch_point`), mais la probabilité de tirer un budget assez
+  généreux pour 2–3 feuilles n'a pas été favorisée ; à revisiter si la Porte
+  3 demande plus de variété topologique.
+
+**Temps et violations par seed** (règles finales, liaisons 12–45 ; les
+violations de liaison de construction, 12–60, sont nettement moins
+nombreuses — voir `report.json`) :
+
+| Seed | Temps | Feuilles (front/back) | Violations finales | Détail |
+|---|---:|---|---:|---|
+| 1 | 0,202 s | 1/1 | 24 | `length` 8, `fairway_gap` 6, `link_distance` 10 |
+| 2 | 0,974 s | 1/1 | 26 | `length` 9, `bounds` 1, `fairway_gap` 6, `link_distance` 9, `link_blocked` 1 |
+| 3 | 0,367 s | 1/1 | 27 | `length` 8, `fairway_gap` 11, `link_distance` 8 |
+
+Aucun temps > 10 s à signaler. Les violations restantes sont attendues à ce
+stade (largeurs/longueurs finales et marges non visées par le squelette,
+conformément au périmètre de l'étape) ; aucune itération n'a été menée pour
+les faire disparaître — zéro violation `parallel_stack`, `par3_per_nine` ou
+`par5_per_nine` dans les trois seeds (quota et alignement de patron
+corrects par construction).
 
 **Livrable** : un squelette 18 trous complet produit rapidement, même s'il ne
 respecte pas encore les largeurs finales.
 
-**Porte 3** : inspection visuelle obligatoire. Rejeter les deux anneaux, la
-symétrie excessive, les liaisons incohérentes et toute pile de 4 trous ou
-plus avant de poursuivre.
+**Porte 3** : prête pour validation (**pas franchie** — inspection visuelle
+de l'utilisateur requise). Rejeter les deux anneaux, la symétrie excessive,
+les liaisons incohérentes et toute pile de 4 trous ou plus avant de
+poursuivre.
 
 ### Étape 4 — trous élastiques et mutations locales
 
