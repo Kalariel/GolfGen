@@ -451,6 +451,34 @@ seule géométrie — voir « Décision d'architecture avant l'étape 3 », poin
 - [x] Vérifier le cas synthétique de l'étape 2 : le décompte (4
   `parallel_stack`) reste cohérent, ou est explicitement actualisé.
 
+**Porte 2b — franchie le 2026-10-07** : SVG revu par l'utilisateur, 4 séries
+détectées (cohérent avec le décompte de 4 `parallel_stack` ci-dessous).
+
+#### Paramètres validés le 2026-10-07 pour l'étape 3
+
+- **Offset du contour** = 12 blocs (les fairways aller/retour d'une même
+  branche sont alors à 24 blocs centre à centre, ≥ 18 + 5 requis) ; à
+  réajuster si le rendu est moyen.
+- **Halo** : deux parties de l'arbre non reliées localement doivent être à
+  ≥ 2×12 + 23 = 47 blocs (≈ 10 cellules à pas 5), y compris entre les deux
+  sous-arbres racines et près du clubhouse.
+- **Longueur d'arbre visée par sous-arbre** ≈ 550–950 blocs (contour ≈ 2 ×
+  arbre + caps ; nine ≈ 1220–2015 blocs avec liaisons de construction
+  12–60) — plage à recalculer précisément dans le code depuis `PAR_SPECS`
+  plutôt que figée en dur.
+- Au plus 3 feuilles par sous-arbre ; branche menant à une feuille
+  ≥ ~300 blocs (≈ 2 trous par côté).
+- Grille à pas de 5 blocs, 8 voisins.
+- Pas de `shapely` : le contour est le tour (d'Euler) de l'arbre décalé
+  d'un côté, congés en arc, caps en demi-cercle, comme le ruban de
+  `golfgen/loop_router.py`.
+- Biais de croissance « voyage » : ~60 % du budget vers l'extérieur du
+  clubhouse, puis vers le clubhouse ; asymétrie seedée par nine.
+
+Ces paramètres corrigent les erreurs du tout premier brouillon (offset 9,
+halo à 5 cellules, arbre visé 1300–1400 blocs), qui ne doivent pas
+réapparaître dans le code ou la documentation.
+
 **Porte 2b** : revue des tests et du nouveau décompte avant l'étape 3 — prête
 pour validation (pas franchie, l'utilisateur valide).
 
