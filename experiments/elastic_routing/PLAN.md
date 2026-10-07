@@ -560,7 +560,7 @@ n'existe qu'entre voisins immédiats. D'où la redéfinition ci-dessus.
 - [x] Couper le contour à ses deux passages au clubhouse pour obtenir les
   deux arcs clubhouse→clubhouse (front et back).
 - [ ] Appliquer la DP de découpage sur chaque arc, inspirée de `_cut_nine()`
-  de `golfgen/loop_router.py`. Reporté au round suivant (après la Porte 3) :
+  de `golfgen/loop_router.py`. Abandonné avec l'approche (Porte 3 refusée, voir plus bas) :
   le code existe dans `skeleton.py` (non branché depuis r2, à adapter aux
   arcs `front_contour`/`back_contour` de r3) mais n'est pas appelé par
   `build_skeleton`.
