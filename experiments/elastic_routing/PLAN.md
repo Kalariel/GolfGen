@@ -613,16 +613,89 @@ côte pour comparaison dans `output/step3_skeleton/compare/` :
   empirique (0,2 à 0,45) sur les seeds 1–5. **Offset du contour** : 12 et 20
   blocs comparés côte à côte dans `compare/r3_offset12/` et
   `compare/r3_offset20/` — question ouverte, soumise à l'utilisateur.
+- **r4** (`r4_regions_w2/`, `r4_regions_w3/`, `r4_regions_w4/`) : module
+  `regions.py`, runner `run_step3_regions.py`, tests
+  `tests/test_elastic_routing_regions.py` (seeds 1–30 × w_min 2/3/4).
+  Objectif : supprimer l'« effet jumeau » de r3, où chaque branche devenait
+  un aller-retour de deux traits parallèles. Ici chaque nine suit le BORD
+  d'une RÉGION (tache de cellules) au lieu du contour d'un arbre. Grille de
+  cellules de c blocs, clubhouse sur un coin tiré par la seed. Les deux
+  régions grandissent en alternance, un bloc w_min×w_min entier par ajout,
+  appuyé sur la région par un côté entier. Chaque région reste sans trou ni
+  pincement, avec un couloir d'au moins une cellule entre front et back,
+  sauf au clubhouse. Parcours = bord décalé vers l'intérieur de d = 9
+  (`offset_closed_polyline`, extrait de `skeleton.py`), ouvert au coin
+  clubhouse. La croissance s'arrête dès que le parcours entre dans la
+  fenêtre 1220–2165. Valeur de c : 21 pour w_min 2 et 3 ; 19 pour w_min 4,
+  car à c = 21 aucune seed n'aboutit (0/30 en 200 tirages). Tirages au pire
+  sur les seeds 1–30 : 2 / 13 / 51, en moins de 0,1 s par seed. Ce qu'on
+  voit sur les planches : aucun chevauchement, chaque nine part du
+  clubhouse et y revient. Avec w3, l'aller et le retour ont des formes
+  différentes ; c'est la meilleure variante. Avec w2, les lobes fins
+  redonnent des jumeaux et les encoches donnent des peignes. Avec w4, le
+  retour passe trop loin de l'aller : le parcours fait le tour d'un terrain
+  vide. Dans tous les cas, l'esthétique reste celle d'une grille (angles
+  droits arrondis, bord de carte longé) et les longueurs restent au bas de
+  la fenêtre.
 
 **Livrable** : un squelette 18 trous complet produit rapidement, même s'il ne
 respecte pas encore les largeurs finales.
 
-**Porte 3** : prête pour validation (**pas franchie** — inspection visuelle
-de l'utilisateur requise). Rejeter les deux anneaux, la symétrie excessive,
-les liaisons incohérentes et toute pile de 4 trous ou plus avant de
-poursuivre.
+**Porte 3** : critères prévus — rejeter les deux anneaux, la symétrie
+excessive, les liaisons incohérentes et toute pile de 4 trous ou plus avant
+de poursuivre.
+
+**Porte 3 — refusée, approche abandonnée (2026-10-07).** Que la forme soit
+un arbre (r1–r3) ou une région (r4), un parcours qui « fait le tour d'une
+forme » produit structurellement trois défauts :
+
+- (a) un territoire par nine, donc deux demi-cartes ;
+- (b) un rapport aller/retour fixé par l'épaisseur de la forme : des jumeaux
+  si la forme est mince, un circuit autour d'un terrain vide si elle est
+  large, des encoches en peigne entre les deux ;
+- (c) un effet de grille.
+
+Le code reste comme archive et comme source de primitives réutilisables :
+`skeleton.py`, `regions.py`, le décalage de polyligne robuste
+(`offset_closed_polyline`) et les tests d'invariants. Les planches de
+`output/step3_skeleton/compare/` restent aussi.
+
+### Nouvelle direction (2026-10-07)
+
+**Constat de l'utilisateur** : l'aléatoire seul ne « fait pas vrai ». Un
+vrai parcours est intentionnel : un architecte l'a conçu selon un patron.
+
+**Principe retenu** : de l'aléatoire contraint par un patron d'architecte.
+
+**Premier patron : Muirfield.** Deux boucles concentriques parcourues en sens
+opposés : le front sur la boucle extérieure, le back sur la boucle
+intérieure. Les deux boucles passent par le clubhouse.
+
+**Inspiration** : le dépôt `addisonolmsted/procedural-golf-course-generator`
+(Rust). Il n'a pas de licence : on en reprend seulement des idées, aucun
+code.
+
+- Sites candidats tirés du terrain, puis amincis.
+- Cible de position douce : pour chaque trou, une fraction de la longueur
+  cumulée le long d'une boucle.
+- Construction trou par trou, avec un retour arrière borné et des relances
+  bon marché (d'abord le plan de boucle, puis le clubhouse).
+- Recuit qui ne garde que des états valides.
+
+**Risque connu** : les derniers trous peuvent se retrouver bloqués (cf.
+`bean_paving`). Parades : les relances, et une réparation élastique
+(le score incrémental de l'étape 4 est déjà prêt).
+
+**Piste future** : calibrer le recuit sur des statistiques de vrais
+parcours tirées d'OpenStreetMap (`golf=hole`).
+
+Le plan détaillé du round Muirfield sera rédigé et validé avant tout code.
 
 ### Étape 4 — trous élastiques et mutations locales
+
+Note (2026-10-07) : cette étape reste valable (score incrémental), mais la
+conversion des corridors dépendra du nouveau niveau 1 (voir « Nouvelle
+direction »).
 
 - [x] Implémenter le cache incrémental et la chaîne boîtes → distance d'axes
   → oracle.
