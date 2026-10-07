@@ -8,13 +8,28 @@ obligatoires, offset configurable. Toujours sans DP de découpage ni
 4e round correctif (même date) : les deux sous-arbres sont désormais
 décalés comme un tour COMBINÉ (un seul passage par ``build_contour``, pas
 deux contours indépendants chacun refermé par un cap au clubhouse) — voir
-``_combined_tour_with_owners``. Round précédent (bug) : les deux caps,
-plantés à ~180° l'un de l'autre par construction, se recoupaient
-systématiquement près du clubhouse (100/100 tirages, seeds 1-50 x offsets
-12/20) ; chaque contour était individuellement simple
-(``is_simple_polyline``), donc le test ne le détectait pas.
+``_combined_tour``. Round précédent (bug) : les deux caps, plantés à ~180°
+l'un de l'autre par construction, se recoupaient systématiquement près du
+clubhouse (100/100 tirages, seeds 1-50 x offsets 12/20) ; chaque contour
+était individuellement simple (``is_simple_polyline``), donc le test ne le
+détectait pas.
+
+5e round correctif (même date) : la 1re version du tour combiné répartissait
+chaque point du contour décalé à UN SEUL des deux arcs via un tag
+``'front'``/``'back'`` par sommet source. Bug : au sommet du clubhouse où la
+jointure est CONVEXE (un arc de plusieurs points, pas un point unique), tout
+l'arc était assigné à un seul côté — l'autre arc n'avait alors plus son
+point de retour au clubhouse et se refermait n'importe où au milieu de la
+carte (bouts pendants, seed 1 offset 20 à ~48 blocs du clubhouse au lieu de
+~offset). Remplacé par un découpage par INDICE (``_split_combined_contour``,
+``build_contour(..., return_source_index=True)``) : chaque groupe de points
+produit aux deux occurrences du clubhouse est inclus EN ENTIER dans les DEUX
+arcs (ils partagent ces deux groupes à leurs extrémités, ce ne sont pas deux
+boucles indépendantes mais deux portions d'un même contour fermé coupé à ses
+deux passages au clubhouse — la coupure prévue par le plan initial).
 """
 
+import math
 from functools import lru_cache
 
 import pytest
@@ -41,6 +56,36 @@ def _cached_build(seed, offset):
     return build_skeleton(seed, offset=offset)
 
 
+def _recompute_combined(result):
+    """Reconstruit le contour COMBINÉ (front + back, un seul passage) et les
+    indices de coupure, à partir de ``result`` seul (pas d'accès à l'état
+    interne de ``_build_tree`` : seulement ``skeleton``/``config``, exposés
+    publiquement sur ``SkeletonResult``). Fonction pure, même résultat que
+    celui produit par ``_build_tree`` pour ce tirage (mêmes arguments).
+    """
+    skeleton = result.skeleton
+    config = result.config
+    nodes, mid_index = sk._combined_tour(
+        skeleton.tree, result.clubhouse, skeleton.front_root, skeleton.back_root, config,
+    )
+    combined, source_index = sk.build_contour(config, nodes, return_source_index=True)
+    return combined, source_index, mid_index
+
+
+def _cut_boundaries(source_index, mid_index):
+    """Les deux groupes de points partagés (un par passage au clubhouse) :
+
+    ``(end0, start_mid, end_mid)`` tels que ``combined[0:end0]`` est le
+    premier groupe (sommet d'index 0) et ``combined[start_mid:end_mid]`` le
+    second (sommet d'index ``mid_index``). Voir ``_split_combined_contour``.
+    """
+    end0 = next(k for k, v in enumerate(source_index) if v != 0)
+    start_mid = next(k for k, v in enumerate(source_index) if v == mid_index)
+    end_mid = next((k for k in range(start_mid, len(source_index)) if source_index[k] != mid_index),
+                   len(source_index))
+    return end0, start_mid, end_mid
+
+
 def test_build_skeleton_is_deterministic_by_seed():
     first = build_skeleton(7)
     second = build_skeleton(7)
@@ -55,16 +100,20 @@ def test_build_skeleton_is_deterministic_by_seed():
 def test_contour_is_closed_simple_clubhouse_to_clubhouse(seed):
     """Le tour brut (nœuds) de chaque sous-arbre part du clubhouse et y revient ;
 
-    le contour COMBINÉ décalé (front + back, un seul passage par
-    ``build_contour``) est fermé et simple. Vérifié ici sur les seeds 1 à 20.
+    le contour COMBINÉ décalé (``_combined_tour`` + ``build_contour``, un
+    seul passage) est fermé et simple. Vérifié ici sur les seeds 1 à 20.
 
     Round précédent (bug, corrigé) : le contour n'était jamais refermé au
     clubhouse (fente visible dans le SVG). Round d'avant celui-ci (bug,
     corrigé) : front_contour et back_contour étaient décalés et vérifiés
     INDÉPENDAMMENT (chacun individuellement simple), ce qui ne détectait pas
-    qu'ils se recoupaient l'un l'autre près du clubhouse (100/100 tirages,
-    voir ``test_front_and_back_contours_never_cross`` plus bas) — remplacé
-    par une vérification du contour combiné unique.
+    qu'ils se recoupaient l'un l'autre près du clubhouse (100/100 tirages) —
+    remplacé par une vérification du contour combiné unique. NE PAS tester
+    ``front_contour + back_contour`` avec ``is_simple_polyline`` : les deux
+    arcs partagent leurs deux groupes de points de coupure (voir
+    ``test_arcs_reconstruct_the_combined_contour``), donc leur simple
+    concaténation contient des segments dupliqués que
+    ``is_simple_polyline`` signale à tort comme un croisement.
     """
     result = build_skeleton(seed)
     skeleton = result.skeleton
@@ -72,7 +121,7 @@ def test_contour_is_closed_simple_clubhouse_to_clubhouse(seed):
     back_tour = sk._full_tour(skeleton.back_root, skeleton.tree, result.clubhouse, result.config)
     assert front_tour[0] == result.clubhouse and front_tour[-1] == result.clubhouse
     assert back_tour[0] == result.clubhouse and back_tour[-1] == result.clubhouse
-    combined = list(result.front_contour) + list(result.back_contour)
+    combined, _, _ = _recompute_combined(result)
     assert is_simple_polyline(combined)
 
 
@@ -164,26 +213,90 @@ def test_no_pair_of_tree_edges_crosses(seed, offset):
 
 @pytest.mark.parametrize("seed", SEEDS_50)
 @pytest.mark.parametrize("offset", OFFSETS)
-def test_front_and_back_contours_never_cross(seed, offset):
-    """(c) Le contour COMPLET (combiné) est simple, ET front_contour ne croise
+def test_combined_contour_is_simple(seed, offset):
+    """(c), 1/2 : le contour COMPLET (combiné, un seul passage par
 
-    jamais back_contour. Reproduit directement la régression rapportée :
-    seed 6, offset 20 montrait un croisement en X entre une diagonale front
-    (bleu) et une diagonale back (jaune) près du clubhouse — les deux
-    contours étaient chacun individuellement simples
-    (``is_simple_polyline``), ce test-ci ne l'était pas. Seeds 1-50 x
-    offsets 12/20 : la régression était systématique (100/100 avant
-    correction), pas un cas isolé.
+    ``build_contour``) est fermé et simple — garantit à la fois qu'aucun des
+    deux arcs ne se recoupe lui-même ET qu'ils ne se recoupent pas l'un
+    l'autre (sauf à leurs deux groupes de points de coupure communs, qui ne
+    comptent pas comme un croisement : ce sont les mêmes points, pas deux
+    segments distincts qui se recoupent). Seeds 1-50 x offsets 12/20.
     """
     result = _cached_build(seed, offset)
-    front = list(result.front_contour)
-    back = list(result.back_contour)
-    assert is_simple_polyline(front + back)
-    for i in range(len(front) - 1):
-        for j in range(len(back) - 1):
-            assert not segments_intersect(front[i], front[i + 1], back[j], back[j + 1]), (
-                seed, offset, front[i], front[i + 1], back[j], back[j + 1],
-            )
+    combined, _, _ = _recompute_combined(result)
+    assert is_simple_polyline(combined)
+
+
+@pytest.mark.parametrize("seed", SEEDS_50)
+@pytest.mark.parametrize("offset", OFFSETS)
+def test_front_and_back_only_meet_at_shared_cut_points(seed, offset):
+    """(c), 2/2 : en dehors de leurs deux groupes de points de coupure
+
+    COMMUNS (partagés tels quels par les deux arcs, voir
+    ``_split_combined_contour``), front_contour et back_contour ne se
+    touchent ni ne se croisent nulle part. Reproduit directement la
+    régression rapportée : seed 6, offset 20 montrait un croisement en X
+    entre une diagonale front (bleu) et une diagonale back (jaune) près du
+    clubhouse — les deux contours étaient chacun individuellement simples,
+    ce test-ci ne l'était pas. Seeds 1-50 x offsets 12/20 : la régression
+    était systématique (100/100 avant correction), pas un cas isolé.
+    """
+    result = _cached_build(seed, offset)
+    combined, source_index, mid_index = _recompute_combined(result)
+    end0, start_mid, end_mid = _cut_boundaries(source_index, mid_index)
+    front = combined[0:end_mid]
+    back = combined[start_mid:] + combined[0:end0]
+    # Portions STRICTEMENT internes à chaque sous-arbre (hors des deux
+    # groupes de coupure partagés, inclus aux deux extrémités de chaque arc).
+    front_pure = front[end0:start_mid]
+    back_pure = back[(end_mid - start_mid):(len(combined) - start_mid)]
+    for i in range(len(front_pure) - 1):
+        for j in range(len(back_pure) - 1):
+            assert not segments_intersect(
+                front_pure[i], front_pure[i + 1], back_pure[j], back_pure[j + 1],
+            ), (seed, offset, front_pure[i], front_pure[i + 1], back_pure[j], back_pure[j + 1])
+
+
+@pytest.mark.parametrize("seed", SEEDS_50)
+@pytest.mark.parametrize("offset", OFFSETS)
+def test_arcs_reconstruct_the_combined_contour(seed, offset):
+    """front ∪ back = contour complet : la somme des longueurs des deux arcs
+
+    OUVERTS (``front_contour``, ``back_contour``) égale la longueur du
+    contour combiné FERMÉ, plus deux fois la longueur de chacun des deux
+    groupes de points de coupure (chaque groupe est parcouru une fois par
+    CHAQUE arc, voir ``_split_combined_contour``). Seeds 1-50 x offsets
+    12/20.
+    """
+    result = _cached_build(seed, offset)
+    combined, source_index, mid_index = _recompute_combined(result)
+    end0, start_mid, end_mid = _cut_boundaries(source_index, mid_index)
+    front_len = sk._polyline_length(list(result.front_contour))
+    back_len = sk._polyline_length(list(result.back_contour))
+    combined_closed_len = sk._polyline_length(combined) + math.dist(combined[-1], combined[0])
+    cluster0_len = sk._polyline_length(combined[0:end0])
+    cluster_mid_len = sk._polyline_length(combined[start_mid:end_mid])
+    assert abs((front_len + back_len)
+               - (combined_closed_len + cluster0_len + cluster_mid_len)) < 1e-6, (seed, offset)
+
+
+@pytest.mark.parametrize("seed", SEEDS_50)
+@pytest.mark.parametrize("offset", OFFSETS)
+def test_arc_endpoints_stay_near_the_clubhouse(seed, offset):
+    """Les deux extrémités de chaque arc sont à distance <= offset*sqrt(2) + eps
+
+    du clubhouse : reproduit directement la régression rapportée (bouts
+    pendants loin du clubhouse, ex. seed 1 offset 20 à ~48 blocs au lieu de
+    ~20-28). sqrt(2) couvre le pire cas d'une jointure à 90° exacte (grille à
+    8 voisins). Seeds 1-50 x offsets 12/20.
+    """
+    result = _cached_build(seed, offset)
+    clubhouse_world = sk.node_to_world(result.config, result.clubhouse)
+    bound = offset * math.sqrt(2.0) + 1e-6
+    for contour in (result.front_contour, result.back_contour):
+        for point in (contour[0], contour[-1]):
+            distance = math.dist(point, clubhouse_world)
+            assert distance <= bound, (seed, offset, point, distance, bound)
 
 
 @pytest.mark.parametrize("seed", SEEDS_20)

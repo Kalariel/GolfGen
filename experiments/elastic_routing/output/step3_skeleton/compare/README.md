@@ -30,15 +30,23 @@ côte, 3 par ligne) et les `skeleton.svg` individuels. Généré le
   près d'une feuille avec les deux approches précédentes (lissage de la
   ligne centrale avec ou sans exception pour le sommet voisin d'une
   feuille). **2e passe, même jour** : front et back sont désormais décalés
-  comme un seul tour COMBINÉ (`_combined_tour_with_owners`), pas deux
-  contours indépendants chacun refermé par un cap au clubhouse — les deux
-  caps (plantés à ~180° l'un de l'autre par construction) se recoupaient
+  comme un seul tour COMBINÉ (`_combined_tour`), pas deux contours
+  indépendants chacun refermé par un cap au clubhouse — les deux caps
+  (plantés à ~180° l'un de l'autre par construction) se recoupaient
   systématiquement près du clubhouse (100/100 tirages, seeds 1-50 x offsets
-  12/20, voir le rapport de livraison). `front_contour`/`back_contour` sont
-  maintenant deux ARCS OUVERTS (pas deux boucles fermées), chacun se
-  raccordant à l'autre à ses deux extrémités (rendu en `<polyline>`, un
-  petit espace visuellement visible près du point blanc du clubhouse —
-  normal, ce n'est pas une corde fermée artificielle). Identique à
+  12/20, voir le rapport de livraison). **3e passe, même jour** : la 2e
+  passe assignait chaque groupe de points de coupure à UN SEUL des deux
+  arcs (tag `'front'`/`'back'` par sommet) — quand la jointure au clubhouse
+  est convexe (plusieurs points, pas un seul), l'arc qui ne récupérait pas
+  ce groupe perdait son point de retour au clubhouse et se refermait en
+  plein milieu de la carte (bout pendant, ex. seed 1 offset 20 à ~48 blocs
+  du clubhouse). Corrigé par découpage par INDICE
+  (`_split_combined_contour`) : les deux groupes de coupure sont désormais
+  inclus EN ENTIER dans les DEUX arcs, qui les partagent à leurs
+  extrémités. `front_contour`/`back_contour` sont des ARCS OUVERTS (pas
+  deux boucles fermées indépendantes), rendus en `<polyline>`, qui se
+  rejoignent maintenant exactement au clubhouse (plus de bout pendant ni
+  d'espace visuel artificiel). Identique à
   `experiments/elastic_routing/output/step3_skeleton/seed_1..6/skeleton.svg`
   (copie, voir note en bas).
 - **`r3_offset20/`** (seeds 1–6, round 3 actuel, offset 20 — réseau à pas

@@ -36,7 +36,7 @@ Algorithme :
    être atteints ;
 6. contour = tour COMBINÉ (à la manière d'un tour d'Euler) des DEUX
    sous-arbres à la fois, FERMÉ, via le clubhouse commun
-   (``_combined_tour_with_owners`` : clubhouse -> front -> clubhouse ->
+   (``_combined_tour`` : clubhouse -> front -> clubhouse ->
    back -> clubhouse, un seul cycle, PAS deux tours indépendants chacun
    refermé par un cap au clubhouse — round précédent, bug : les deux caps
    se recoupaient systématiquement, les tiges front/back étant plantées à
@@ -580,7 +580,7 @@ def _build_tree(seed: int, config: SkeletonConfig = DEFAULT_CONFIG) -> tuple[_Bu
     fenêtre de budget (``config.subtree_length_range``, avec une tolérance
     haute d'un pas de grille pour le dernier pas qui peut dépasser
     légèrement la cible) ET produisent, une fois DÉCALÉ COMME UN TOUT
-    (``_combined_tour_with_owners`` + ``build_contour``, pas deux contours
+    (``_combined_tour`` + ``build_contour``, pas deux contours
     indépendants), un contour combiné fermé et simple — un échec à
     n'importe laquelle de ces étapes retire le tirage entier (pas de retour
     arrière interne).
@@ -612,11 +612,9 @@ def _build_tree(seed: int, config: SkeletonConfig = DEFAULT_CONFIG) -> tuple[_Bu
             continue
 
         front_root, back_root = front_result["root"], back_result["root"]
-        combined_nodes, combined_owners = _combined_tour_with_owners(
-            tree, clubhouse, front_root, back_root, config,
-        )
+        combined_nodes, mid_index = _combined_tour(tree, clubhouse, front_root, back_root, config)
         try:
-            combined_contour, point_owners = build_contour(config, combined_nodes, owners=combined_owners)
+            combined_contour, source_index = build_contour(config, combined_nodes, return_source_index=True)
         except ContourOffsetError:
             # Violation de halo locale au decalage (jointure concave hors
             # segment) : rejet du tirage, comme tout autre echec geometrique
@@ -631,8 +629,7 @@ def _build_tree(seed: int, config: SkeletonConfig = DEFAULT_CONFIG) -> tuple[_Bu
         # le detecter).
         if not is_simple_polyline(combined_contour):
             continue
-        front_contour = [p for p, owner in zip(combined_contour, point_owners) if owner == "front"]
-        back_contour = [p for p, owner in zip(combined_contour, point_owners) if owner == "back"]
+        front_contour, back_contour = _split_combined_contour(combined_contour, source_index, mid_index)
 
         skeleton = Skeleton(clubhouse, tree, front_root, back_root, tuple(front_result["leaves"]),
                             tuple(back_result["leaves"]), front_total, back_total)
@@ -683,8 +680,8 @@ def _full_tour(root_child: Node, tree: TreeState, clubhouse: Node,
     return [clubhouse] + _tour_nodes(config, root_child, clubhouse, tree) + [clubhouse]
 
 
-def _combined_tour_with_owners(tree: TreeState, clubhouse: Node, front_root: Node,
-                               back_root: Node, config: SkeletonConfig) -> tuple[list[Node], list[str]]:
+def _combined_tour(tree: TreeState, clubhouse: Node, front_root: Node,
+                   back_root: Node, config: SkeletonConfig) -> tuple[list[Node], int]:
     """Tour COMBINÉ clubhouse -> (front) -> clubhouse -> (back) -> clubhouse.
 
     Un seul tour cyclique pour les DEUX sous-arbres, au lieu de deux tours
@@ -700,17 +697,51 @@ def _combined_tour_with_owners(tree: TreeState, clubhouse: Node, front_root: Nod
     100/100 tirages (seeds 1-50 x offsets 12/20), pas un cas rare.
 
     Retourne les nœuds (CYCLE FERMÉ, ``nodes[0] == nodes[-1]``, même
-    convention que ``_full_tour``) et un tag parallèle ``'front'``/``'back'``
-    par nœud (même longueur), utilisé par l'appelant pour redécouper le
-    contour combiné décalé en ``front_contour``/``back_contour`` après coup.
+    convention que ``_full_tour``) et l'index (dans ``nodes``) de la
+    SECONDE occurrence du clubhouse (``nodes[0]`` est la première) : les
+    deux occurrences sont les deux « passages » au clubhouse où
+    ``_split_combined_contour`` doit couper le contour décalé en
+    ``front_contour``/``back_contour``.
     """
     front_seq = _tour_nodes(config, front_root, clubhouse, tree)
     back_seq = _tour_nodes(config, back_root, clubhouse, tree)
     nodes = [clubhouse] + front_seq + [clubhouse] + back_seq + [clubhouse]
-    owners = (["front"] * (1 + len(front_seq))
-              + ["back"] * (1 + len(back_seq))
-              + ["front"])  # dernier element (duplicata de fermeture) : trim par build_contour
-    return nodes, owners
+    mid_index = 1 + len(front_seq)
+    assert nodes[0] == clubhouse and nodes[mid_index] == clubhouse and nodes[-1] == clubhouse
+    return nodes, mid_index
+
+
+def _split_combined_contour(combined_contour: list[Point], source_index: list[int],
+                            mid_index: int) -> tuple[list[Point], list[Point]]:
+    """Découpe le contour combiné (décalé en un seul passage) en deux ARCS.
+
+    ``source_index[k]`` donne, pour chaque point ``combined_contour[k]``,
+    l'index du sommet du tour combiné qui l'a produit (voir
+    ``build_contour(..., return_source_index=True)``). Le sommet d'index 0
+    et le sommet d'index ``mid_index`` sont les deux occurrences du
+    clubhouse (voir ``_combined_tour``) : chacune produit un petit groupe de
+    points contigu (un seul point, ou un arc si la jointure y est convexe).
+
+    Les deux arcs retournés PARTAGENT ces deux groupes de points à leurs
+    extrémités (``front_contour`` se termine exactement là où
+    ``back_contour`` commence, et inversement) : ce ne sont pas deux boucles
+    indépendantes mais deux portions d'un même contour fermé, coupé à ses
+    deux passages au clubhouse — exactement la coupure prévue par le plan
+    initial de l'étape 3 (point 8 de l'algorithme, section « Niveau 1 »).
+
+    Round précédent (bug) : chaque groupe de points était assigné à UN SEUL
+    des deux arcs (via un tag ``'front'``/``'back'`` par sommet), pas aux
+    deux — l'arc qui ne récupérait pas un groupe se retrouvait sans son
+    point de retour au clubhouse, visible comme un bout pendant loin du
+    clubhouse dans le SVG (constaté sur toutes les seeds testées).
+    """
+    end0 = next(k for k, v in enumerate(source_index) if v != 0)
+    start_mid = next(k for k, v in enumerate(source_index) if v == mid_index)
+    end_mid = next((k for k in range(start_mid, len(source_index)) if source_index[k] != mid_index),
+                   len(source_index))
+    front_contour = combined_contour[0:end_mid]
+    back_contour = combined_contour[start_mid:] + combined_contour[0:end0]
+    return front_contour, back_contour
 
 
 def _point_to_segment_distance(point: Point, a: Point, b: Point) -> float:
@@ -722,49 +753,10 @@ def _point_to_segment_distance(point: Point, a: Point, b: Point) -> float:
     return math.dist(point, (a[0] + ratio * dx, a[1] + ratio * dy))
 
 
-def _simplify_tour_points(points: list[Point], epsilon: float = 6.0,
-                          tags: list | None = None):
-    """Douglas-Peucker itératif : fusionne les points quasi colinéaires.
-
-    Les deux extrémités (identiques : le clubhouse) sont toujours
-    conservées. Implémentation itérative (pas de récursion).
-
-    Si ``tags`` est fourni (même longueur que ``points``), retourne aussi
-    la liste des tags conservés avec le même masque de filtrage :
-    ``(points, tags)``. Sinon, retourne seulement la liste de points
-    (comportement historique).
-    """
-    n = len(points)
-    if n < 3:
-        return (list(points), list(tags)) if tags is not None else list(points)
-    keep = [False] * n
-    keep[0] = keep[-1] = True
-    stack = [(0, n - 1)]
-    while stack:
-        start, end = stack.pop()
-        if end <= start + 1:
-            continue
-        a, b = points[start], points[end]
-        max_dist, split = 0.0, None
-        for i in range(start + 1, end):
-            d = _point_to_segment_distance(points[i], a, b)
-            if d > max_dist:
-                max_dist, split = d, i
-        if split is not None and max_dist > epsilon:
-            keep[split] = True
-            stack.append((start, split))
-            stack.append((split, end))
-    kept_points = [point for point, kept in zip(points, keep) if kept]
-    if tags is not None:
-        kept_tags = [tag for tag, kept in zip(tags, keep) if kept]
-        return kept_points, kept_tags
-    return kept_points
-
-
 CONCAVE_JOIN_EPS = 1e-6  # tolerance sur le parametre [0, 1] d'un segment decale
 
 
-def build_contour(config: SkeletonConfig, tour_nodes: list[Node], owners: list | None = None):
+def build_contour(config: SkeletonConfig, tour_nodes: list[Node], return_source_index: bool = False):
     """Décale le tour (FERMÉ) d'un côté courant (la main gauche du sens de marche).
 
     Décalage de polyligne standard, sommet par sommet, SANS lissage
@@ -795,7 +787,7 @@ def build_contour(config: SkeletonConfig, tour_nodes: list[Node], owners: list |
     convexe : la jointure ronde y produit alors directement un cap en
     demi-cercle, sans cas particulier. Le clubhouse n'est PLUS un cas de ce
     genre : quand ``tour_nodes`` est le tour COMBINÉ des deux sous-arbres
-    (``_combined_tour_with_owners``), le clubhouse y est un sommet ORDINAIRE
+    (``_combined_tour``), le clubhouse y est un sommet ORDINAIRE
     à deux arêtes distinctes (prev = dernier nœud du sous-arbre précédent,
     nxt = racine du sous-arbre suivant, deux nœuds différents) — jamais un
     demi-tour. Round précédent (bug) : chaque sous-arbre était décalé
@@ -805,32 +797,37 @@ def build_contour(config: SkeletonConfig, tour_nodes: list[Node], owners: list |
     clubhouse (constaté sur 100/100 tirages seeds 1-50 x offsets 12/20, pas
     seulement un cas rare — voir historique Git).
 
-    Si ``owners`` est fourni (même longueur que ``tour_nodes``, un tag par
-    sommet source, typiquement ``'front'``/``'back'``), retourne aussi la
-    liste des propriétaires du contour généré (un tag par point émis, celui
-    du sommet source) : ``(contour, point_owners)``. Sinon, retourne
-    seulement la liste de points (comportement historique).
+    Si ``return_source_index`` est vrai, retourne aussi, pour chaque point
+    émis, l'index (dans ``tour_nodes``, 0-based) du sommet qui l'a produit :
+    ``(contour, source_index)``. Sert à l'appelant (``_build_tree``) à
+    localiser précisément, dans le contour combiné, les points produits aux
+    deux occurrences du clubhouse (voir ``_split_combined_contour``), sans
+    dépendre d'un seuil de distance. Sinon, retourne seulement la liste de
+    points (comportement historique).
+
+    AUCUNE simplification des points du tour avant décalage (round
+    précédent, bug : un filtrage Douglas-Peucker — ``_simplify_tour_points``,
+    supprimé — pouvait juger l'un des DEUX passages au clubhouse « quasi
+    colinéaire » avec ses voisins et le retirer silencieusement de la
+    séquence, ce qui faisait sauter le décalage par-dessus l'un des deux
+    points de coupure front/back : les arcs recoupés ressortaient avec des
+    bouts pendants loin du clubhouse au lieu de s'y refermer — constaté sur
+    toutes les seeds testées). Chaque sommet du tour, y compris les deux
+    occurrences du clubhouse, est donc toujours traité individuellement.
 
     Boucle cyclique (modulo) : le contour retourné est un polygone fermé
     (pas de point de fermeture dupliqué, le dernier segment revient au
     premier point).
     """
     raw = [node_to_world(config, n) for n in tour_nodes]
-    if owners is not None:
-        assert len(owners) == len(tour_nodes)
-        simplified_points, simplified_owners = _simplify_tour_points(raw, tags=owners)
-        base = simplified_points[:-1]
-        base_owners = simplified_owners[:-1]
-    else:
-        base = _simplify_tour_points(raw)[:-1]
-        base_owners = None
+    base = raw[:-1]
     m = len(base)
     if m < 2:
-        return ([], []) if owners is not None else []
+        return ([], []) if return_source_index else []
     radius = config.offset
 
     contour: list[Point] = []
-    contour_owners: list = []
+    source_index: list[int] = []
     for i in range(m):
         _emitted_before = len(contour)
         prev, here, nxt = base[i - 1], base[i], base[(i + 1) % m]
@@ -847,8 +844,8 @@ def build_contour(config: SkeletonConfig, tour_nodes: list[Node], owners: list |
         if abs(turn_deg) < 1e-9:
             # Colineaire (ne devrait plus guere survenir apres simplification).
             contour.append((here[0] + radius * n2[0], here[1] + radius * n2[1]))
-            if base_owners is not None:
-                contour_owners.extend([base_owners[i]] * (len(contour) - _emitted_before))
+            if return_source_index:
+                source_index.extend([i] * (len(contour) - _emitted_before))
             continue
 
         # Cap (feuille, jamais le clubhouse depuis que ``tour_nodes`` est le
@@ -861,8 +858,8 @@ def build_contour(config: SkeletonConfig, tour_nodes: list[Node], owners: list |
             # Cote convexe.
             contour.append((here[0] + radius * n1[0], here[1] + radius * n1[1]))
             contour.extend(_corner_arc(here, n1, n2, radius))
-            if base_owners is not None:
-                contour_owners.extend([base_owners[i]] * (len(contour) - _emitted_before))
+            if return_source_index:
+                source_index.extend([i] * (len(contour) - _emitted_before))
             continue
 
         # Cote concave : intersection des deux segments adjacents decales
@@ -888,10 +885,10 @@ def build_contour(config: SkeletonConfig, tour_nodes: list[Node], owners: list |
                 f"virage {turn_deg:.1f} deg)"
             )
         contour.append((a1[0] + t * da[0], a1[1] + t * da[1]))
-        if base_owners is not None:
-            contour_owners.extend([base_owners[i]] * (len(contour) - _emitted_before))
-    if owners is not None:
-        return contour, contour_owners
+        if return_source_index:
+            source_index.extend([i] * (len(contour) - _emitted_before))
+    if return_source_index:
+        return contour, source_index
     return contour
 
 
