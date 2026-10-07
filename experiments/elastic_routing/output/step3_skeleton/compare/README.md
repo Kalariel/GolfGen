@@ -124,3 +124,66 @@ premier.
 `compare/r3_offset12/seed_*_skeleton.svg` sont des copies identiques
 (offset 12 par défaut) : le dossier `compare/` est autonome pour la revue,
 le dossier racine reste la sortie "courante" du runner.
+
+## r4 — squelette par RÉGIONS (`r4_regions_w2/`, `r4_regions_w3/`, `r4_regions_w4/`)
+
+Module `experiments/elastic_routing/regions.py`, runner
+`run_step3_regions.py`, tests `tests/test_elastic_routing_regions.py`.
+`skeleton.py` (r3) inchangé, sauf la factorisation de
+`offset_closed_polyline`, sans changement de comportement. Pas de découpage
+en trous ni de `CourseLayout`.
+
+Idée : chaque nine longe le BORD d'une région (tache de cellules) au lieu du
+contour d'un arbre. La largeur de la tache sépare l'aller du retour, et
+ceux-ci n'ont plus la même forme (fin de l'« effet jumeau » de r3, où
+chaque branche devenait deux traits parallèles à 24 blocs).
+
+### Paramètres
+
+- **d = 9** (décalage vers l'intérieur) : c'est le minimum pour que le
+  parcours garde un demi-fairway (9) de marge quand la région touche le
+  bord de la carte.
+- **c = 21** pour w_min 2 et 3 : c'est la contrainte (a) la plus dure, avec
+  w_min = 2 : 2c − 18 ≥ 23 ⇒ c ≥ 20,5. Grille 19×19 (399 blocs, marge 0,5).
+  (b) couloir : c + 2d = 39 ≥ 23 ; au clubhouse : 2√2·d = 25,5 ≥ 23.
+- **c = 19 pour w_min = 4** (grille 21×21) : avec c = 21, une région fait au
+  moins 84 blocs de large et aucun tirage n'aboutit (0/30 seeds en 200
+  tirages, tous en impasse : deux régions aussi larges ne trouvent pas
+  1220 blocs de bord chacune dans une carte de 400). Avec c = 19 (76 blocs),
+  30/30 seeds aboutissent. **Les trois variantes n'ont donc pas toutes le
+  même c.**
+- Largeur minimale de région (w_min·c) : 42 / 63 / 76 blocs. Écart minimal
+  entre l'aller et le retour (axe à axe) : 24 / 45 / 58 blocs.
+- Fenêtre d'un nine, calculée depuis `PAR_SPECS` (9 trous + 10 tronçons de
+  12 à 60) : **1220–2165 blocs**. La croissance s'arrête dès que le parcours
+  entre dans la fenêtre, donc toutes les longueurs tombent entre 1225 et 1336.
+
+### Tirages et temps (seeds 1–6, borne 200)
+
+| w_min (c) | tirages s1..s6 | temps s1..s6 (ms) | longueurs front/back |
+|---|---|---|---|
+| 2 (21) | 1 1 1 1 1 1 | 54 31 30 31 33 28 | 1225–1301 |
+| 3 (21) | 3 2 1 4 1 1 | 38 26 25 45 23 24 | 1225–1309 |
+| 4 (19) | 10 18 13 4 6 3 | 63 92 98 37 42 39 | 1249–1336 |
+
+Sur les seeds 1–30 (tests), le pire cas est de 2 tirages pour w2, 13 pour
+w3 et 51 pour w4. Le détail par seed et les motifs de rejet sont dans
+`report.json`.
+
+### Ce qu'il faut regarder
+
+- La bande verte (14 blocs, fairway moyen) montre le parcours. Le bord bleu
+  correspond au front (trous 1–9), le bord jaune au back (trous 10–18). Les
+  flèches, tous les 60 blocs, donnent le sens de jeu. Les étiquettes
+  « départ 1 / retour 9 / départ 10 / retour 18 » sont au losange rouge
+  (clubhouse). Le remplissage pâle montre la région, comme échafaudage.
+- **Aller et retour** : avec w3 et w4, les deux côtés d'un même lobe ont des
+  formes différentes. Avec w2, les lobes fins (42 blocs) redonnent par
+  endroits deux bandes parallèles proches, donc encore un effet jumeau.
+- **Encoches** : une encoche d'une cellule entre deux lobes de la même
+  région produit deux bandes parallèles à 39 blocs. C'est un nouvel effet
+  jumeau, côté extérieur (par exemple w3 seed 4 et w4 seeds 4/5, en peigne).
+- **Esthétique en grille** : tous les virages sont des angles droits
+  arrondis, et le parcours longe souvent le bord de la carte.
+- **Occupation** : les nines restent au bas de la fenêtre de longueur, et une
+  partie de la carte reste vide, surtout avec w2.
