@@ -9,7 +9,7 @@ trois temps :
    relief est trop plat pour départager les candidats ;
 3. amincissement glouton par score décroissant : un candidat n'est retenu que
    s'il est à au moins ``spacing`` blocs de tous les sites déjà retenus
-   (~18 entre greens, ~12 entre tees).
+   (12 entre greens — 18 en R1 —, 12 entre tees).
 
 Le relief (7 s par seed en 400×400) est mis en cache sur disque, hors git.
 """
@@ -32,7 +32,10 @@ WATER_LEVEL = 60.0             # sous ce niveau : eau (~1 % de la carte, seeds 1
 GRID_STEP = 3.0                # pas de la grille fine de candidats
 GRID_JITTER = 1.2              # amplitude du bruit seedé sur la grille
 EDGE_MARGIN = 12.0             # un site reste à distance du bord (cœur dans la carte)
-GREEN_SPACING = 18.0
+# 18 en R1 ; ramené à 12 en R2 : à 18, le cône d'ancrage du clubhouse
+# (liaison 18–45, ~30° d'ouverture) ne contient que 0 à 2 sites de green et
+# 3 cas sur 12 (seeds × formats rectangulaires) échouaient sur le trou 9/18.
+GREEN_SPACING = 12.0
 TEE_SPACING = 12.0
 PLANARITY_RADIUS = 4           # fenêtre (2r+1)² de pente moyenne
 PROMINENCE_RADIUS = 20         # fenêtre (2r+1)² du relief moyen environnant
