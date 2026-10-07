@@ -19,13 +19,17 @@ côte, 3 par ligne) et les `skeleton.svg` individuels. Généré le
   reste sous-occupée.
 - **`r3_offset12/`** (seeds 1–6, round 3 actuel, offset 12 — identique au
   réseau de `r2`) — correction complète : contour refermé au clubhouse
-  (le bug d'ouverture de la seed 2 du round précédent est corrigé), cap de
-  feuille rendu comme une courbe convexe continue (correction d'une
-  régression : un sommet voisin trop arrondi pouvait creuser une encoche
-  concave juste à côté d'un cap, repérée visuellement sur la seed 2 à une
-  feuille diagonale), budget de sous-arbre imposé (rejet si en dessous du
-  minimum), 2 ou 3 épingles par nine obligatoires, épingles et tiges
-  poussées en alternance entre les deux nines. Identique à
+  (le bug d'ouverture de la seed 2 du round précédent est corrigé), budget
+  de sous-arbre imposé (rejet si en dessous du minimum), 2 ou 3 épingles
+  par nine obligatoires, épingles et tiges poussées en alternance entre les
+  deux nines. Décalage du contour (`build_contour`) remplacé le 2026-10-07
+  par un décalage de polyligne standard (jointure ronde côté convexe par
+  arc centré sur le sommet, intersection vérifiée des deux segments
+  décalés côté concave, sinon rejet explicite) : élimine les pointes en
+  onglet et les caps mordus qui subsistaient aux virages diagonaux serrés
+  près d'une feuille avec les deux approches précédentes (lissage de la
+  ligne centrale avec ou sans exception pour le sommet voisin d'une
+  feuille). Identique à
   `experiments/elastic_routing/output/step3_skeleton/seed_1..6/skeleton.svg`
   (copie, voir note en bas).
 - **`r3_offset20/`** (seeds 1–6, round 3 actuel, offset 20 — réseau à pas
@@ -57,23 +61,23 @@ côte, 3 par ligne) et les `skeleton.svg` individuels. Généré le
 
 | Seed | Tirages | Temps | Clubhouse | Feuilles front/back | Longueur front/back |
 |---|---:|---:|---|---|---|
-| 1 | 8  | 15 ms | (6, 3) | 3/2 | 760 / 608 |
-| 2 | 48 | 81 ms | (4, 5) | 3/2 | 712 / 616 |
-| 3 | 1  | 17 ms | (5, 4) | 2/3 | 808 / 788 |
-| 4 | 24 | 53 ms | (3, 0) | 2/2 | 619 / 568 |
-| 5 | 50 | 87 ms | (2, 5) | 2/3 | 644 / 780 |
-| 6 | 26 | 42 ms | (2, 6) | 2/2 | 704 / 839 |
+| 1 | 8  | 15 ms  | (6, 3) | 3/2 | 760 / 608 |
+| 2 | 69 | 116 ms | (5, 3) | 3/2 | 867 / 644 |
+| 3 | 1  | 13 ms  | (5, 4) | 2/3 | 808 / 788 |
+| 4 | 24 | 52 ms  | (3, 0) | 2/2 | 619 / 568 |
+| 5 | 50 | 91 ms  | (2, 5) | 2/3 | 644 / 780 |
+| 6 | 26 | 40 ms  | (2, 6) | 2/2 | 704 / 839 |
 
 ### offset 20
 
-| Seed | Tirages | Temps | Clubhouse | Feuilles front/back | Longueur front/back |
+| Seed | Tirages | Temps  | Clubhouse | Feuilles front/back | Longueur front/back |
 |---|---:|---:|---|---|---|
-| 1 | 91 | 93 ms | (4, 4) | 2/2 | 731 / 576 |
-| 2 | 15 | 20 ms | (1, 2) | 2/2 | 629 / 667 |
-| 3 | 2  | 5 ms  | (1, 4) | 2/2 | 539 / 704 |
-| 4 | 31 | 35 ms | (3, 0) | 2/2 | 693 / 565 |
-| 5 | 23 | 25 ms | (2, 3) | 2/2 | 640 / 795 |
-| 6 | 32 | 30 ms | (2, 3) | 2/3 | 720 / 826 |
+| 1 | 91  | 91 ms  | (4, 4) | 2/2 | 731 / 576 |
+| 2 | 103 | 96 ms  | (2, 4) | 2/2 | 859 / 795 |
+| 3 | 2   | 5 ms   | (1, 4) | 2/2 | 539 / 704 |
+| 4 | 105 | 104 ms | (2, 3) | 3/3 | 667 / 693 |
+| 5 | 23  | 25 ms  | (2, 3) | 2/2 | 640 / 795 |
+| 6 | 32  | 30 ms  | (2, 3) | 2/3 | 720 / 826 |
 
 Aucun temps > 10 s. Le nombre de tirages dépasse régulièrement la cible
 « ≤ 50 » du plan (voir PLAN.md, non modifié ce round, et le rapport de
@@ -81,6 +85,18 @@ livraison) : la combinaison budget imposé + 2-3 feuilles obligatoires est
 nettement plus dure à satisfaire que le round précédent. `MAX_TREE_ATTEMPTS`
 a été porté à 1500 plutôt que masqué ; le taux de rejet réel reste
 toujours consigné (`attempts_used` dans chaque résultat).
+
+**Régénération du 2026-10-07 (décalage de polyligne standard, voir plus
+bas)** : seeds 1, 3, 4, 5, 6 identiques (mêmes tirages, clubhouse,
+longueurs) aux deux offsets. Seed 2 (offset 12) et seeds 2 et 4 (offset 20)
+changent : le test de rejet `is_simple_polyline` dépend de la forme du
+contour, et l'ancien algorithme acceptait parfois, pour un tirage donné, un
+arbre dont le contour était géométriquement invalide (pointe ou cap mordu)
+sans que le test de simplicité ne le détecte (ce n'est pas un test de
+distance à l'arbre). Le nouvel algorithme rejette ces tirages-là à leur
+tour normal et en accepte un autre, plus tardif — le nombre de tirages, le
+clubhouse et les longueurs en sortent changés pour ces seeds précises, sans
+rien modifier à la génération de l'arbre elle-même.
 
 ## Note sur les doublons
 

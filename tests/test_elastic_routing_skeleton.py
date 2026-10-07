@@ -6,8 +6,6 @@ obligatoires, offset configurable. Toujours sans DP de découpage ni
 ``CourseLayout`` testés ici.
 """
 
-import math
-
 import pytest
 
 from experiments.elastic_routing import skeleton as sk
@@ -51,50 +49,53 @@ def test_contour_is_closed_simple_clubhouse_to_clubhouse(seed):
     assert is_simple_polyline(list(result.back_contour))
 
 
-def _cap_region_is_locally_convex(contour, leaf_world, offset, window=1, tolerance=1e-6):
-    """Le cap d'une feuille et son sommet immédiatement voisin (de chaque côté)
+def _subtree_edges_world(tree, root, config):
+    """Arêtes (en coordonnées monde) du sous-arbre enraciné à ``root``.
 
-    ne doivent jamais creuser une encoche concave. ``is_simple_polyline``
-    vérifie l'absence de croisement, pas la forme du cap : un sommet
-    directement voisin trop arrondi (congé) peut créer une encoche concave
-    juste à côté d'un cap convexe sans qu'aucun segment ne se croise
-    (constaté : seed 2, offset 12, feuille au bout d'une arête diagonale —
-    un « V » suivi d'une morsure concave au lieu d'un bout rond net).
-    ``window=1`` (pas plus) : au-delà du voisin immédiat, des virages
-    concaves sont normaux ailleurs dans un arbre ramifié (ce n'est pas le
-    défaut recherché ici) — une fenêtre plus large fait échouer le test
-    même sur un contour correct.
+    Inclut l'arête de rattachement au clubhouse : ``root`` lui-même fait
+    partie de ``_subtree_nodes(tree, root)``, donc l'arête ``(clubhouse,
+    root)`` (parent=clubhouse, enfant=root) est couverte.
     """
-    n = len(contour)
-    arc_idx = [i for i, p in enumerate(contour) if abs(math.dist(p, leaf_world) - offset) < tolerance]
-    assert arc_idx, "feuille introuvable sur le contour (cap absent ?)"
-    lo, hi = min(arc_idx), max(arc_idx)
-    indices = [(i) % n for i in range(lo - window, hi + window + 1)]
-    pts = [contour[i] for i in indices]
-    signs = set()
-    for i in range(1, len(pts) - 1):
-        a, b, c = pts[i - 1], pts[i], pts[i + 1]
-        cross = (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0])
-        if abs(cross) > tolerance:
-            signs.add(cross > 0)
-    return len(signs) <= 1
+    nodes = set(sk._subtree_nodes(tree, root))
+    return [
+        (sk.node_to_world(config, a), sk.node_to_world(config, b))
+        for a, b in tree.edges
+        if b in nodes
+    ]
 
 
 @pytest.mark.parametrize("seed", SEEDS_20)
 @pytest.mark.parametrize("offset", (12.0, 20.0))
-def test_leaf_caps_render_as_a_single_continuous_convex_curve(seed, offset):
-    """Reproduit et empêche la régression seed 2 / offset 12 (cap diagonal mordu)."""
+def test_contour_stays_at_offset_distance_from_its_tree_everywhere(seed, offset):
+    """Invariant géométrique remplaçant l'ancien test de convexité locale de cap.
+
+    Un décalage de polyligne standard (jointure ronde convexe, intersection
+    concave vérifiée dans les deux segments) place CHAQUE point du contour à
+    une distance EXACTE de ``offset`` de l'arbre dont il est issu : les
+    jointures rondes sont des arcs de rayon ``offset`` centrés sur un sommet
+    de l'arbre, et les intersections concaves ne sont acceptées (sinon
+    ``ContourOffsetError``) que si elles tombent dans les deux segments
+    décalés, c'est-à-dire dans la zone de projection perpendiculaire valide
+    des deux arêtes réelles adjacentes (donc aussi à distance ``offset``
+    exacte). Pas de pointe (distance > offset + tolérance) ni de morsure
+    (distance < offset - tolérance) nulle part sur le contour. Remplace
+    l'ancien test ad hoc sur la forme du cap d'une feuille (6a61a3d), qui
+    masquait le même symptôme (pointes, caps mordus) sans vérifier
+    directement la distance à l'arbre.
+    """
     result = build_skeleton(seed, offset=offset)
     skeleton = result.skeleton
     config = result.config
-    for contour, leaves in (
-        (list(result.front_contour), skeleton.front_leaves),
-        (list(result.back_contour), skeleton.back_leaves),
+    tolerance = 1e-6
+    for contour, root in (
+        (result.front_contour, skeleton.front_root),
+        (result.back_contour, skeleton.back_root),
     ):
-        for leaf in leaves:
-            leaf_world = sk.node_to_world(config, leaf)
-            assert _cap_region_is_locally_convex(contour, leaf_world, config.offset), (
-                seed, offset, leaf,
+        edges = _subtree_edges_world(skeleton.tree, root, config)
+        for point in contour:
+            distance = min(sk._point_to_segment_distance(point, a, b) for a, b in edges)
+            assert offset - tolerance <= distance <= offset + tolerance, (
+                seed, offset, point, distance,
             )
 
 

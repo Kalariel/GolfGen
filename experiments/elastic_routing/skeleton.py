@@ -36,10 +36,14 @@ Algorithme :
    être atteints ;
 6. contour = tour (à la manière d'un tour d'Euler) de l'arbre, FERMÉ (le
    tour part et revient au clubhouse, qui est un sommet du cycle comme les
-   autres, pas un cas particulier laissé ouvert) : ligne centrale lissée en
-   congés d'arc (pas <= 22°) puis décalée par intersection des bords
-   (onglet) ; cap en demi-cercle aux feuilles ET au clubhouse si son propre
-   virage est un quasi demi-tour.
+   autres, pas un cas particulier laissé ouvert) : décalage de polyligne
+   standard sommet par sommet, SANS lissage préalable de la ligne centrale
+   — côté convexe, jointure ronde (arc de rayon ``offset``, pas <= 22°) ;
+   côté concave, intersection des deux segments décalés adjacents (sinon
+   ``ContourOffsetError``, violation de halo explicite). Une feuille (ou le
+   clubhouse) est un demi-tour exact, toujours classé côté convexe : la
+   jointure ronde y produit directement un cap en demi-cercle, sans cas
+   particulier.
 
 Pas de dépendance à ``shapely``. Toutes les longueurs sont en blocs.
 """
@@ -73,7 +77,6 @@ MAP_SIZE = 400.0
 HALO_MARGIN = 23.0
 MAX_LEAVES_PER_SUBTREE = 3
 MAX_ARC_STEP_DEG = 22.0
-CENTERLINE_LEAF_SKIP_DEG = 150.0  # au-dela, le virage est un demi-tour (feuille), traite a part
 BRANCH_JITTER = 60.0              # marge de longueur au-dessus du minimum pour une branche
 
 # Mesuré sur les seeds 1-20 (offset 12) : la combinaison 2-3 feuilles +
@@ -106,6 +109,17 @@ class SkeletonGenerationError(RuntimeError):
     """Levee quand aucun arbre valide n'a ete trouve en MAX_TREE_ATTEMPTS tirages."""
 
 
+class ContourOffsetError(SkeletonGenerationError):
+    """Jointure concave du contour hors des deux segments decales adjacents.
+
+    Signale une violation de halo (deux parties de l'arbre trop proches l'une
+    de l'autre pour que le decalage standard reste valide a ce sommet) :
+    volontairement explicite, jamais masquee par un clampage silencieux.
+    Capturee par la boucle de rejet de ``_build_tree`` comme n'importe quel
+    autre tirage invalide.
+    """
+
+
 # ----------------------------------------------------------------------
 # Configuration dépendant de l'offset (décalage du contour)
 # ----------------------------------------------------------------------
@@ -114,7 +128,6 @@ class SkeletonGenerationError(RuntimeError):
 class SkeletonConfig:
     offset: float
     halo_min_dist: float
-    fillet_radius: float
     node_pitch: float
     node_count: int
     node_margin: float          # = position du premier noeud = marge de bord reelle
@@ -183,7 +196,7 @@ def make_config(offset: float = RIBBON_OFFSET, avg_leaves: float = 2.5) -> Skele
     min_leaf = max(min_leaf, 2.0 * pitch)  # jamais sous ~2 aretes, garde-fou de bon sens
 
     return SkeletonConfig(
-        offset=offset, halo_min_dist=halo, fillet_radius=2.0 * offset, node_pitch=pitch,
+        offset=offset, halo_min_dist=halo, node_pitch=pitch,
         node_count=node_count, node_margin=node_margin, min_leaf_branch_length=min_leaf,
         subtree_length_range=(low, high),
     )
@@ -587,8 +600,14 @@ def _build_tree(seed: int, config: SkeletonConfig = DEFAULT_CONFIG) -> tuple[_Bu
             continue
 
         front_root, back_root = front_result["root"], back_result["root"]
-        front_contour = build_contour(config, _full_tour(front_root, tree, clubhouse))
-        back_contour = build_contour(config, _full_tour(back_root, tree, clubhouse))
+        try:
+            front_contour = build_contour(config, _full_tour(front_root, tree, clubhouse))
+            back_contour = build_contour(config, _full_tour(back_root, tree, clubhouse))
+        except ContourOffsetError:
+            # Violation de halo locale au decalage (jointure concave hors
+            # segment) : rejet du tirage, comme tout autre echec geometrique
+            # de cette boucle -- pas une exception qui doit remonter a l'appelant.
+            continue
         if not is_simple_polyline(front_contour) or not is_simple_polyline(back_contour):
             continue
 
@@ -679,37 +698,54 @@ def _simplify_tour_points(points: list[Point], epsilon: float = 6.0) -> list[Poi
     return [point for point, kept in zip(points, keep) if kept]
 
 
-def _round_centerline_corners(points: list[Point], radius: float,
-                              skip_above_deg: float = CENTERLINE_LEAF_SKIP_DEG) -> list[Point]:
-    """Remplace chaque virage marqué par un congé en arc (porté de loop_router._round_corners).
+CONCAVE_JOIN_EPS = 1e-6  # tolerance sur le parametre [0, 1] d'un segment decale
 
-    ``points`` est un tour FERMÉ (``points[0] == points[-1]``, le
-    clubhouse) : le doublon de fermeture est retiré, et le sommet de
-    fermeture (entre le dernier et le premier segment du cycle) est traité
-    comme n'importe quel autre, PAS laissé tel quel. Round précédent
-    (bug) : le clubhouse n'était jamais lissé ni même reconnecté à
-    lui-même dans l'étape de décalage (``build_contour`` traitait les deux
-    extrémités comme deux points libres indépendants au lieu d'un unique
-    sommet de cycle) — le contour en sortait ouvert, visible comme une
-    fente dans le SVG (seed 2 du round précédent). Un décalage uniforme
-    d'une ligne NON lissée se recoupe aussi du côté concave d'un virage
-    dur : les deux segments adjacents, décalés sans être raccourcis, se
-    croisent à une distance ``radius*tan(virage/2)`` du sommet (diagnostiqué
-    au round précédent sur un virage interne, voir historique Git). Lisser
-    la ligne centrale au rayon de décalage rend ensuite ce décalage sûr.
-    Les quasi demi-tours (feuilles OU clubhouse si son virage est proche
-    de 180°) sont volontairement non modifiés ici : la formule en tangente
-    diverge à 180°, et ``build_contour`` leur applique directement l'arc
-    centré exact (cap en demi-cercle).
 
-    Retourne un CYCLE de points sans doublon de fermeture (dernier point
-    implicitement relié au premier).
+def build_contour(config: SkeletonConfig, tour_nodes: list[Node]) -> list[Point]:
+    """Décale le tour (FERMÉ) d'un côté courant (la main gauche du sens de marche).
+
+    Décalage de polyligne standard, sommet par sommet, SANS lissage
+    préalable de la ligne centrale (abandonné : devenu inutile une fois le
+    décalage traité correctement à chaque sommet, voir plus bas — un
+    lissage préalable risquait lui-même de recouper les segments
+    adjacents). À chaque sommet du tour :
+
+    - côté CONVEXE (le tour tourne à droite dans le sens de la marche, pour
+      un décalage à gauche) : jointure ronde, arc de rayon ``offset`` centré
+      sur le sommet, pas angulaire <= ``MAX_ARC_STEP_DEG`` ;
+    - côté CONCAVE (le tour tourne à gauche) : intersection des deux
+      segments adjacents décalés. Le paramètre de l'intersection est vérifié
+      dans les DEUX segments (pas seulement sur les droites infinies) ;
+      hors de ces bornes, ``ContourOffsetError`` est levée explicitement
+      (violation de halo : deux parties de l'arbre trop proches pour ce
+      sommet), jamais masquée par un clampage silencieux.
+
+    Une feuille est un demi-tour EXACT (le nœud suivant et le nœud précédent
+    du tour sont le MÊME nœud, traversé dans les deux sens) : ``v1`` et
+    ``v2`` y sont alors des vecteurs exactement opposés, donc le signe du
+    virage calculé par ``atan2`` sur un produit vectoriel nul n'est qu'un
+    artefact de convention flottante, PAS une classification convexe/concave
+    valide (classer par signe seul y envoie à tort côté concave, avec des
+    segments décalés strictement parallèles — échec systématique, voir
+    historique Git). Ce cas est donc détecté par égalité EXACTE de point
+    (``prev == nxt``), pas par un seuil d'angle, et toujours traité côté
+    convexe : la jointure ronde y produit alors directement un cap en
+    demi-cercle, sans cas particulier. Le clubhouse, sommet du cycle FERMÉ
+    comme les autres (le tour part et revient à lui via le même nœud
+    enfant), suit exactement la même règle.
+
+    Boucle cyclique (modulo) : le contour retourné est un polygone fermé
+    (pas de point de fermeture dupliqué, le dernier segment revient au
+    premier point).
     """
-    base = points[:-1]
+    raw = [node_to_world(config, n) for n in tour_nodes]
+    base = _simplify_tour_points(raw)[:-1]
     m = len(base)
-    if m < 3:
-        return base
-    result = []
+    if m < 2:
+        return []
+    radius = config.offset
+
+    contour: list[Point] = []
     for i in range(m):
         prev, here, nxt = base[i - 1], base[i], base[(i + 1) % m]
         d1, d2 = math.dist(prev, here), math.dist(here, nxt)
@@ -717,82 +753,50 @@ def _round_centerline_corners(points: list[Point], radius: float,
             continue
         v1 = ((here[0] - prev[0]) / d1, (here[1] - prev[1]) / d1)
         v2 = ((nxt[0] - here[0]) / d2, (nxt[1] - here[1]) / d2)
+        n1 = (-v1[1], v1[0])
+        n2 = (-v2[1], v2[0])
         turn = math.atan2(v1[0] * v2[1] - v1[1] * v2[0], v1[0] * v2[0] + v1[1] * v2[1])
         turn_deg = math.degrees(turn)
-        # Un sommet directement voisin d'une feuille (prev ou next est le
-        # point de demi-tour) n'est PAS lissé ici, meme si son propre virage
-        # est modere : son congé (jusqu'a fillet_radius de rayon) peut
-        # s'etendre presque jusqu'a la feuille quand le dernier segment est
-        # court, et se combiner avec le cap en demi-cercle pour creuser une
-        # encoche concave au lieu d'un bout convexe net (constate : feuille
-        # au bout d'une arete diagonale, voir l'historique Git). L'onglet
-        # simple (intersection, pas d'arc) appliqué ensuite par
-        # build_contour reste correct pour un virage modéré isolé.
-        adjacent_to_leaf = base[i - 2] == here or base[(i + 2) % m] == here
-        if abs(turn_deg) < 25.0 or abs(turn_deg) >= skip_above_deg or adjacent_to_leaf:
-            result.append(here)
-            continue
-        half_tan = math.tan(abs(turn) / 2.0)
-        tangent = min(radius * half_tan, 0.42 * d1, 0.42 * d2)
-        r_eff = tangent / half_tan
-        p_in = (here[0] - v1[0] * tangent, here[1] - v1[1] * tangent)
-        side = 1.0 if turn > 0 else -1.0
-        center = (p_in[0] - v1[1] * r_eff * side, p_in[1] + v1[0] * r_eff * side)
-        phi = math.atan2(p_in[1] - center[1], p_in[0] - center[0])
-        n_sub = max(2, int(math.ceil(abs(turn_deg) / MAX_ARC_STEP_DEG)))
-        for j in range(n_sub + 1):
-            angle = phi + turn * j / n_sub
-            result.append((center[0] + r_eff * math.cos(angle), center[1] + r_eff * math.sin(angle)))
-    return result
 
-
-def build_contour(config: SkeletonConfig, tour_nodes: list[Node]) -> list[Point]:
-    """Décale le tour (FERMÉ) d'un côté courant (la main gauche du sens de marche).
-
-    Après le lissage de la ligne centrale (``_round_centerline_corners``,
-    qui porte le « congé en arc » et referme le sommet clubhouse), le
-    décalage utilise l'intersection des deux bords décalés à chaque sommet
-    (onglet, porté de ``golfgen.loop_router._offset_polyline``), SAUF au
-    cap (demi-tour en feuille ou au clubhouse) qui reçoit un arc centré
-    exact sur le sommet. Boucle cyclique (modulo) : aucune extrémité n'est
-    traitée à part, le contour retourné est un polygone fermé (pas de point
-    de fermeture dupliqué, le dernier segment revient au premier point).
-    """
-    raw = [node_to_world(config, n) for n in tour_nodes]
-    base = _round_centerline_corners(_simplify_tour_points(raw), config.fillet_radius)
-    m = len(base)
-    if m < 2:
-        return []
-    radius = config.offset
-    normals = []
-    for i in range(m):
-        a, b = base[i], base[(i + 1) % m]
-        d = (b[0] - a[0], b[1] - a[1])
-        norm = math.hypot(*d)
-        normals.append((-d[1] / norm, d[0] / norm))
-
-    contour: list[Point] = []
-    for i in range(m):
-        prev, here, nxt = base[i - 1], base[i], base[(i + 1) % m]
-        n_prev, n_next = normals[i - 1], normals[i]
-        if abs(n_next[0] - n_prev[0]) < 1e-9 and abs(n_next[1] - n_prev[1]) < 1e-9:
-            contour.append((here[0] + radius * n_next[0], here[1] + radius * n_next[1]))
+        if abs(turn_deg) < 1e-9:
+            # Colineaire (ne devrait plus guere survenir apres simplification).
+            contour.append((here[0] + radius * n2[0], here[1] + radius * n2[1]))
             continue
-        turn = _wrap_pi(math.atan2(n_next[1], n_next[0]) - math.atan2(n_prev[1], n_prev[0]))
-        if abs(math.degrees(turn)) >= CENTERLINE_LEAF_SKIP_DEG:
-            contour.append((here[0] + radius * n_prev[0], here[1] + radius * n_prev[1]))
-            contour.extend(_corner_arc(here, n_prev, n_next, radius))
+
+        # Cap (feuille OU clubhouse) : demi-tour EXACT, prev et nxt sont le
+        # MEME noeud (traverse dans les deux sens) -- detecte par egalite
+        # exacte de point, pas par un seuil d'angle (voir docstring).
+        # Toujours traite cote convexe, la jointure ronde produit alors
+        # directement un cap en demi-cercle.
+        if prev == nxt or turn < 0.0:
+            # Cote convexe.
+            contour.append((here[0] + radius * n1[0], here[1] + radius * n1[1]))
+            contour.extend(_corner_arc(here, n1, n2, radius))
             continue
-        d_prev = (here[0] - prev[0], here[1] - prev[1])
-        d_next = (nxt[0] - here[0], nxt[1] - here[1])
-        a1 = (prev[0] + radius * n_prev[0], prev[1] + radius * n_prev[1])
-        a2 = (here[0] + radius * n_next[0], here[1] + radius * n_next[1])
-        cross = d_prev[0] * d_next[1] - d_prev[1] * d_next[0]
-        if abs(cross) < 1e-9:
-            contour.append(a2)
-            continue
-        t = ((a2[0] - a1[0]) * d_next[1] - (a2[1] - a1[1]) * d_next[0]) / cross
-        contour.append((a1[0] + d_prev[0] * t, a1[1] + d_prev[1] * t))
+
+        # Cote concave : intersection des deux segments adjacents decales
+        # (translation du segment reel le long de sa propre normale).
+        a1 = (prev[0] + radius * n1[0], prev[1] + radius * n1[1])
+        a2 = (here[0] + radius * n1[0], here[1] + radius * n1[1])
+        b1 = (here[0] + radius * n2[0], here[1] + radius * n2[1])
+        b2 = (nxt[0] + radius * n2[0], nxt[1] + radius * n2[1])
+        da = (a2[0] - a1[0], a2[1] - a1[1])
+        db = (b2[0] - b1[0], b2[1] - b1[1])
+        denom = da[0] * db[1] - da[1] * db[0]
+        if abs(denom) < 1e-9:
+            raise ContourOffsetError(
+                f"segments decales paralleles au sommet {here} (virage {turn_deg:.1f} deg)"
+            )
+        diff = (b1[0] - a1[0], b1[1] - a1[1])
+        t = (diff[0] * db[1] - diff[1] * db[0]) / denom
+        s = (diff[0] * da[1] - diff[1] * da[0]) / denom
+        if not (-CONCAVE_JOIN_EPS <= t <= 1.0 + CONCAVE_JOIN_EPS
+                and -CONCAVE_JOIN_EPS <= s <= 1.0 + CONCAVE_JOIN_EPS):
+            raise ContourOffsetError(
+                f"intersection hors segment au sommet {here} (t={t:.3f}, s={s:.3f}, "
+                f"virage {turn_deg:.1f} deg)"
+            )
+        contour.append((a1[0] + t * da[0], a1[1] + t * da[1]))
     return contour
 
 
