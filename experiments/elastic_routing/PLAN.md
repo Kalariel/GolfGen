@@ -815,6 +815,7 @@ sites.
 | largeur par par (10–15 / 11–17 / 12–18) | dure | oracle `width`, contrôle en ligne |
 | quota global 4 par 3 / 10 par 4 / 4 par 5 | dure | `CourseLayout`, tirage |
 | par 3 et par 5 par nine dans [1, 3], répartition entre nines tirée par la seed | dure | oracle `par3/5_per_nine`, tirage |
+| **par d'un nine dans [34, 38]** (total 72, pas forcé à 36/36 — décision du 2026-10-08) | dure | `muirfield.nine_par_ok`, `draw_par_counts` |
 | **jamais 3 par 5 consécutifs ni 3 par 3 consécutifs dans un nine** | dure | `muirfield.par_sequence_ok`, tirage |
 | **éviter 2 par 5 consécutifs ; éviter qu'un nine commence par un par 3** | souple (tirage) | `muirfield.par_sequence_penalty` |
 | liaisons 12–45 (18–45 depuis/vers le clubhouse) | dure | oracle `link_distance`, contrôle en ligne |
@@ -928,16 +929,60 @@ Lecture des planches :
   r1/r2 ; les png/svg par seed (~180 Ko chacun) sont ignorés et régénérés
   par `run_muirfield` (ils restent dans l'historique des commits R1/R2).
 
-**Questions ouvertes, soumises à l'utilisateur :**
+**Questions ouvertes — FERMÉES le 2026-10-08 par l'utilisateur :**
 
-1. **Par par nine pas forcément 36/36.** Avec le quota 4/10/4 et par 3/par 5
-   par nine dans [1, 3] tirés librement, un nine fait de 34 à 38 (total
-   toujours 72) : sur les planches R2, 34/38, 35/37, 36/36 et 38/34
-   apparaissent. Faut-il imposer 36/36 (autant de par 3 que de par 5 dans
-   chaque nine) ou garder cette liberté ?
-2. **Espacement des greens 18 → 12** (écart au plan R1, en attente de
-   validation) : nécessaire pour avoir des greens candidats dans les cônes
-   d'ancrage du clubhouse ; voir « R2 — mécanisme ».
+1. **Par par nine** : pas forcé à 36/36, mais règle dure 34 ≤ par d'un nine
+   ≤ 38 (total 72). Avec par 3 et par 5 par nine dans [1, 3], le par d'un
+   nine vaut 36 + (par 5 − par 3), donc déjà dans [34, 38] ; la règle est
+   désormais explicite (`nine_par_ok`, vérifiée au tirage, testée).
+2. **Espacement des greens à 12** : validé.
+
+Également décidé : les grappes de trous parallèles (ex. 16-17-18, seed 3)
+restent telles quelles ; patron Muirfield inchangé.
+
+#### Round A (2026-10-08) — formats paysage et robustesse
+
+Aucun mécanisme ni budget modifié (1500 contrôles / 300 nœuds par nine,
+27 tentatives au plus). Runner : `python -m
+experiments.elastic_routing.run_muirfield --round ra` (paysage) et
+`--round ra-30` (robustesse). Versionnés : `planche.png` + `report.json`.
+
+**Paysage 400×300 et 400×350, seeds 1–6** (`output/muirfield/ra_400x300/`,
+`output/muirfield/ra_400x350/`) : 12/12 réussis, 0 violation.
+
+| format | relances (s1…s6) | médiane | p90 | max | > 2 s |
+|---|---|---|---|---|---|
+| 400×300 | 3, 24, 2, 2, 6, 18 | 0.71 s | 4.7 s | 7.6 s (s2) | s2 |
+| 400×350 | 0, 3, 9, 0, 6, 9 | 0.27 s | 2.7 s | 4.8 s (s2) | s2 |
+
+Lecture : même lecture que les portraits — front le long du bord, 1/9 et
+10/18 sans croisement au clubhouse, back enroulé au centre (hélice). En
+paysage, le back se range plutôt en faisceaux de trous parallèles
+nord-sud ou est-ouest dans la bande centrale (400×300 s3 : 11/15/17/18
+côte à côte). Le rendu laisse une bande vide sous la carte (cadre carré
+800 px), purement cosmétique.
+
+**Robustesse 300×400, seeds 1–30** (`output/muirfield/ra_300x400_30seeds/`,
+planche 6×5 réduite des 25 réussites) : **25/30 réussis**, 0 violation sur
+les réussites ; 322 relances au total ; temps hors relief médiane 2.0 s,
+p90 8.5 s, max 20.2 s (s8, échec) ; 15 seeds au-dessus de 2 s.
+
+Échecs explicites (`MuirfieldRoutingError`, 27 tentatives chacun) :
+
+- **seeds 19 et 28 — front, clubhouse** : les trois positions de clubhouse
+  tirées sont sur un bord COURT (N/S, 300 blocs) et le trou 1 est un par 5
+  dans toutes les permutations. Le cône d'ancrage (φ ≥ 58°, axe à moins de
+  32° du bord) n'offre pas 145–185 blocs entre le tee et le mur latéral :
+  aucun candidat pour le trou 1 ou le trou 9 (échec en < 0.2 s).
+- **seeds 8, 25, 27 — back** : budget de 1500 contrôles épuisé au trou
+  17/18 dans la plupart des tentatives (le back n'arrive pas à rejoindre le
+  tee 18 ancré dans l'anneau intérieur de 76 blocs de large), ou aucun
+  candidat pour le trou 18 dans son cône (tentatives à ~13 nœuds). Seed 25
+  a aussi 3 échecs du front.
+
+Pistes (non appliquées, à valider) : interdire un par 5 aux trous 1/9 quand
+le clubhouse est sur un bord court ou placer le clubhouse sur un bord long
+en 300×400 ; anneau intérieur plus large en portrait étroit (R2b).
 
 ### Étape 4 — trous élastiques et mutations locales
 
