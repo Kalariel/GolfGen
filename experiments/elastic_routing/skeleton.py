@@ -820,11 +820,22 @@ def build_contour(config: SkeletonConfig, tour_nodes: list[Node], return_source_
     premier point).
     """
     raw = [node_to_world(config, n) for n in tour_nodes]
-    base = raw[:-1]
+    return offset_closed_polyline(raw[:-1], config.offset, return_source_index)
+
+
+def offset_closed_polyline(base: list[Point], radius: float, return_source_index: bool = False):
+    """Décale un polygone FERMÉ (sans point dupliqué) de ``radius`` vers sa GAUCHE.
+
+    Cœur générique de ``build_contour`` (factorisé pour ``regions.py``,
+    comportement inchangé) : jointure ronde côté convexe (le parcours tourne
+    à droite), intersection vérifiée des deux segments décalés côté concave
+    (sinon ``ContourOffsetError``), demi-tour exact (``prev == nxt``)
+    toujours traité côté convexe. Pour un polygone parcouru intérieur à
+    gauche, c'est un décalage VERS L'INTÉRIEUR.
+    """
     m = len(base)
     if m < 2:
         return ([], []) if return_source_index else []
-    radius = config.offset
 
     contour: list[Point] = []
     source_index: list[int] = []
