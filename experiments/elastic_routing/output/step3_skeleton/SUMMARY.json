@@ -1,0 +1,85 @@
+{
+  "reports": [
+    {
+      "back_contour_length": 1760.903034095773,
+      "back_leaves": 1,
+      "back_tree_length": 984.116882454316,
+      "construction_violation_counts": {
+        "fairway_gap": 6,
+        "length": 8
+      },
+      "construction_violations_total": 14,
+      "elapsed_seconds": 0.20183640000323066,
+      "final_violation_counts": {
+        "fairway_gap": 6,
+        "length": 8,
+        "link_distance": 10
+      },
+      "final_violations_total": 24,
+      "front_contour_length": 1768.290678672056,
+      "front_leaves": 1,
+      "front_tree_length": 987.4011537017782,
+      "seed": 1,
+      "slow": false,
+      "status": "succes"
+    },
+    {
+      "back_contour_length": 1878.0455393275788,
+      "back_leaves": 1,
+      "back_tree_length": 1016.2741699796961,
+      "construction_violation_counts": {
+        "bounds": 1,
+        "fairway_gap": 6,
+        "length": 9,
+        "link_blocked": 1,
+        "link_distance": 1
+      },
+      "construction_violations_total": 18,
+      "elapsed_seconds": 0.9743648180010496,
+      "final_violation_counts": {
+        "bounds": 1,
+        "fairway_gap": 6,
+        "length": 9,
+        "link_blocked": 1,
+        "link_distance": 9
+      },
+      "final_violations_total": 26,
+      "front_contour_length": 1740.9387034696006,
+      "front_leaves": 1,
+      "front_tree_length": 971.3351365237957,
+      "seed": 2,
+      "slow": false,
+      "status": "succes"
+    },
+    {
+      "back_contour_length": 1746.1866261349014,
+      "back_leaves": 1,
+      "back_tree_length": 976.6904755831231,
+      "construction_violation_counts": {
+        "fairway_gap": 11,
+        "length": 8,
+        "link_distance": 1
+      },
+      "construction_violations_total": 20,
+      "elapsed_seconds": 0.3673632220015861,
+      "final_violation_counts": {
+        "fairway_gap": 11,
+        "length": 8,
+        "link_distance": 8
+      },
+      "final_violations_total": 27,
+      "front_contour_length": 1741.2685230435452,
+      "front_leaves": 1,
+      "front_tree_length": 973.4062043356612,
+      "seed": 3,
+      "slow": false,
+      "status": "succes"
+    }
+  ],
+  "seeds": [
+    1,
+    2,
+    3
+  ],
+  "successes": 3
+}

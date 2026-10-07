@@ -1,0 +1,28 @@
+{
+  "back_contour_length": 1878.0455393275788,
+  "back_leaves": 1,
+  "back_tree_length": 1016.2741699796961,
+  "construction_violation_counts": {
+    "bounds": 1,
+    "fairway_gap": 6,
+    "length": 9,
+    "link_blocked": 1,
+    "link_distance": 1
+  },
+  "construction_violations_total": 18,
+  "elapsed_seconds": 0.9743648180010496,
+  "final_violation_counts": {
+    "bounds": 1,
+    "fairway_gap": 6,
+    "length": 9,
+    "link_blocked": 1,
+    "link_distance": 9
+  },
+  "final_violations_total": 26,
+  "front_contour_length": 1740.9387034696006,
+  "front_leaves": 1,
+  "front_tree_length": 971.3351365237957,
+  "seed": 2,
+  "slow": false,
+  "status": "succes"
+}
