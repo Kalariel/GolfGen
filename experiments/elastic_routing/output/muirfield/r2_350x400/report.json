@@ -18,7 +18,8 @@
             "fairway_gap": 10,
             "link_blocked": 23
           },
-          "status": "echec_back"
+          "status": "echec_back",
+          "violations": {}
         },
         {
           "angle_index": 1,
@@ -36,7 +37,8 @@
             "fairway_gap": 14,
             "link_blocked": 23
           },
-          "status": "echec_back"
+          "status": "echec_back",
+          "violations": {}
         },
         {
           "angle_index": 2,
@@ -53,7 +55,8 @@
             "fairway_gap": 10,
             "link_blocked": 23
           },
-          "status": "echec_back"
+          "status": "echec_back",
+          "violations": {}
         },
         {
           "angle_index": 0,
@@ -70,7 +73,8 @@
             "fairway_gap": 14,
             "link_blocked": 23
           },
-          "status": "echec_back"
+          "status": "echec_back",
+          "violations": {}
         },
         {
           "angle_index": 1,
@@ -87,7 +91,8 @@
             "fairway_gap": 12,
             "link_blocked": 23
           },
-          "status": "echec_back"
+          "status": "echec_back",
+          "violations": {}
         },
         {
           "angle_index": 2,
@@ -104,7 +109,8 @@
             "fairway_gap": 14,
             "link_blocked": 23
           },
-          "status": "echec_back"
+          "status": "echec_back",
+          "violations": {}
         },
         {
           "angle_index": 0,
@@ -121,7 +127,8 @@
             "fairway_gap": 10,
             "link_blocked": 23
           },
-          "status": "echec_back"
+          "status": "echec_back",
+          "violations": {}
         },
         {
           "angle_index": 1,
@@ -139,7 +146,8 @@
             "fairway_gap": 14,
             "link_blocked": 23
           },
-          "status": "echec_back"
+          "status": "echec_back",
+          "violations": {}
         },
         {
           "angle_index": 2,
@@ -156,7 +164,8 @@
             "fairway_gap": 10,
             "link_blocked": 23
           },
-          "status": "echec_back"
+          "status": "echec_back",
+          "violations": {}
         },
         {
           "angle_index": 0,
@@ -169,7 +178,8 @@
           "nodes": 1,
           "permutation_index": 0,
           "rejections": {},
-          "status": "echec_front"
+          "status": "echec_front",
+          "violations": {}
         },
         {
           "angle_index": 1,
@@ -182,7 +192,8 @@
           "nodes": 1,
           "permutation_index": 0,
           "rejections": {},
-          "status": "echec_front"
+          "status": "echec_front",
+          "violations": {}
         },
         {
           "angle_index": 2,
@@ -195,7 +206,8 @@
           "nodes": 1,
           "permutation_index": 0,
           "rejections": {},
-          "status": "echec_front"
+          "status": "echec_front",
+          "violations": {}
         },
         {
           "angle_index": 0,
@@ -208,7 +220,8 @@
           "nodes": 1,
           "permutation_index": 1,
           "rejections": {},
-          "status": "echec_front"
+          "status": "echec_front",
+          "violations": {}
         },
         {
           "angle_index": 1,
@@ -221,7 +234,8 @@
           "nodes": 1,
           "permutation_index": 1,
           "rejections": {},
-          "status": "echec_front"
+          "status": "echec_front",
+          "violations": {}
         },
         {
           "angle_index": 2,
@@ -234,7 +248,8 @@
           "nodes": 1,
           "permutation_index": 1,
           "rejections": {},
-          "status": "echec_front"
+          "status": "echec_front",
+          "violations": {}
         },
         {
           "angle_index": 0,
@@ -247,7 +262,8 @@
           "nodes": 1,
           "permutation_index": 2,
           "rejections": {},
-          "status": "echec_front"
+          "status": "echec_front",
+          "violations": {}
         },
         {
           "angle_index": 1,
@@ -260,7 +276,8 @@
           "nodes": 1,
           "permutation_index": 2,
           "rejections": {},
-          "status": "echec_front"
+          "status": "echec_front",
+          "violations": {}
         },
         {
           "angle_index": 2,
@@ -273,7 +290,8 @@
           "nodes": 1,
           "permutation_index": 2,
           "rejections": {},
-          "status": "echec_front"
+          "status": "echec_front",
+          "violations": {}
         },
         {
           "angle_index": 0,
@@ -286,7 +304,8 @@
           "nodes": 4,
           "permutation_index": 0,
           "rejections": {},
-          "status": "echec_front"
+          "status": "echec_front",
+          "violations": {}
         },
         {
           "angle_index": 1,
@@ -299,7 +318,8 @@
           "nodes": 4,
           "permutation_index": 0,
           "rejections": {},
-          "status": "echec_front"
+          "status": "echec_front",
+          "violations": {}
         },
         {
           "angle_index": 2,
@@ -312,7 +332,8 @@
           "nodes": 4,
           "permutation_index": 0,
           "rejections": {},
-          "status": "echec_front"
+          "status": "echec_front",
+          "violations": {}
         },
         {
           "angle_index": 0,
@@ -329,7 +350,8 @@
             "axis_crossing": 136,
             "fairway_gap": 106
           },
-          "status": "succes"
+          "status": "succes",
+          "violations": {}
         }
       ],
       "clubhouse": [
@@ -338,7 +360,7 @@
       ],
       "clubhouse_edge": "S",
       "doglegs": 9,
-      "elapsed_seconds": 0.6348,
+      "elapsed_seconds": 0.62,
       "front_direction": -1,
       "hole_lengths": [
         102.0,
@@ -408,10 +430,10 @@
       "status": "succes",
       "terrain_seconds_cached_or_built": 0.0,
       "timings": {
-        "routing": 0.5103,
-        "sites": 0.1125,
+        "routing": 0.508,
+        "sites": 0.112,
         "terrain": 0.0,
-        "validate": 0.0118
+        "validate": 0.0116
       },
       "violations_by_kind": {},
       "violations_total": 0
@@ -433,7 +455,8 @@
             "axis_crossing": 4,
             "fairway_gap": 14
           },
-          "status": "succes"
+          "status": "succes",
+          "violations": {}
         }
       ],
       "clubhouse": [
@@ -442,7 +465,7 @@
       ],
       "clubhouse_edge": "S",
       "doglegs": 14,
-      "elapsed_seconds": 0.2211,
+      "elapsed_seconds": 0.2142,
       "front_direction": -1,
       "hole_lengths": [
         102.0,
@@ -512,8 +535,8 @@
       "status": "succes",
       "terrain_seconds_cached_or_built": 0.0,
       "timings": {
-        "routing": 0.0915,
-        "sites": 0.1157,
+        "routing": 0.1029,
+        "sites": 0.1112,
         "terrain": 0.0,
         "validate": 0.0137
       },
@@ -537,7 +560,8 @@
             "axis_crossing": 1,
             "fairway_gap": 4
           },
-          "status": "succes"
+          "status": "succes",
+          "violations": {}
         }
       ],
       "clubhouse": [
@@ -546,7 +570,7 @@
       ],
       "clubhouse_edge": "S",
       "doglegs": 9,
-      "elapsed_seconds": 0.2061,
+      "elapsed_seconds": 0.2038,
       "front_direction": -1,
       "hole_lengths": [
         120.0,
@@ -616,10 +640,10 @@
       "status": "succes",
       "terrain_seconds_cached_or_built": 0.0,
       "timings": {
-        "routing": 0.0827,
-        "sites": 0.1116,
+        "routing": 0.0932,
+        "sites": 0.1105,
         "terrain": 0.0,
-        "validate": 0.0117
+        "validate": 0.0114
       },
       "violations_by_kind": {},
       "violations_total": 0
@@ -641,7 +665,8 @@
             "axis_crossing": 129,
             "fairway_gap": 101
           },
-          "status": "succes"
+          "status": "succes",
+          "violations": {}
         }
       ],
       "clubhouse": [
@@ -650,7 +675,7 @@
       ],
       "clubhouse_edge": "W",
       "doglegs": 10,
-      "elapsed_seconds": 0.3026,
+      "elapsed_seconds": 0.3013,
       "front_direction": 1,
       "hole_lengths": [
         102.0,
@@ -720,10 +745,10 @@
       "status": "succes",
       "terrain_seconds_cached_or_built": 0.0,
       "timings": {
-        "routing": 0.1773,
-        "sites": 0.113,
+        "routing": 0.1892,
+        "sites": 0.112,
         "terrain": 0.0,
-        "validate": 0.0121
+        "validate": 0.0119
       },
       "violations_by_kind": {},
       "violations_total": 0
@@ -744,7 +769,8 @@
           "rejections": {
             "fairway_gap": 13
           },
-          "status": "echec_back"
+          "status": "echec_back",
+          "violations": {}
         },
         {
           "angle_index": 1,
@@ -760,7 +786,8 @@
           "rejections": {
             "fairway_gap": 15
           },
-          "status": "echec_back"
+          "status": "echec_back",
+          "violations": {}
         },
         {
           "angle_index": 2,
@@ -776,7 +803,8 @@
           "rejections": {
             "fairway_gap": 12
           },
-          "status": "echec_back"
+          "status": "echec_back",
+          "violations": {}
         },
         {
           "angle_index": 0,
@@ -792,7 +820,8 @@
           "rejections": {
             "fairway_gap": 9
           },
-          "status": "echec_back"
+          "status": "echec_back",
+          "violations": {}
         },
         {
           "angle_index": 1,
@@ -808,7 +837,8 @@
           "rejections": {
             "fairway_gap": 16
           },
-          "status": "echec_back"
+          "status": "echec_back",
+          "violations": {}
         },
         {
           "angle_index": 2,
@@ -824,7 +854,8 @@
           "rejections": {
             "fairway_gap": 9
           },
-          "status": "echec_back"
+          "status": "echec_back",
+          "violations": {}
         },
         {
           "angle_index": 0,
@@ -840,7 +871,8 @@
           "rejections": {
             "fairway_gap": 13
           },
-          "status": "echec_back"
+          "status": "echec_back",
+          "violations": {}
         },
         {
           "angle_index": 1,
@@ -856,7 +888,8 @@
           "rejections": {
             "fairway_gap": 13
           },
-          "status": "echec_back"
+          "status": "echec_back",
+          "violations": {}
         },
         {
           "angle_index": 2,
@@ -872,7 +905,8 @@
           "rejections": {
             "fairway_gap": 13
           },
-          "status": "echec_back"
+          "status": "echec_back",
+          "violations": {}
         },
         {
           "angle_index": 0,
@@ -889,7 +923,8 @@
             "axis_crossing": 1,
             "fairway_gap": 1
           },
-          "status": "succes"
+          "status": "succes",
+          "violations": {}
         }
       ],
       "clubhouse": [
@@ -898,7 +933,7 @@
       ],
       "clubhouse_edge": "W",
       "doglegs": 11,
-      "elapsed_seconds": 0.4946,
+      "elapsed_seconds": 0.487,
       "front_direction": -1,
       "hole_lengths": [
         147.0,
@@ -968,10 +1003,10 @@
       "status": "succes",
       "terrain_seconds_cached_or_built": 0.0,
       "timings": {
-        "routing": 0.3698,
-        "sites": 0.1121,
+        "routing": 0.3756,
+        "sites": 0.1114,
         "terrain": 0.0,
-        "validate": 0.0126
+        "validate": 0.0129
       },
       "violations_by_kind": {},
       "violations_total": 0
@@ -993,7 +1028,8 @@
             "axis_crossing": 1,
             "fairway_gap": 8
           },
-          "status": "succes"
+          "status": "succes",
+          "violations": {}
         }
       ],
       "clubhouse": [
@@ -1002,7 +1038,7 @@
       ],
       "clubhouse_edge": "W",
       "doglegs": 7,
-      "elapsed_seconds": 0.2033,
+      "elapsed_seconds": 0.1991,
       "front_direction": 1,
       "hole_lengths": [
         100.5,
@@ -1072,10 +1108,10 @@
       "status": "succes",
       "terrain_seconds_cached_or_built": 0.0,
       "timings": {
-        "routing": 0.0791,
-        "sites": 0.1134,
+        "routing": 0.088,
+        "sites": 0.1111,
         "terrain": 0.0,
-        "validate": 0.0107
+        "validate": 0.0106
       },
       "violations_by_kind": {},
       "violations_total": 0
