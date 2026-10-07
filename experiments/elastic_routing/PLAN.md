@@ -691,6 +691,120 @@ parcours tirées d'OpenStreetMap (`golf=hole`).
 
 Le plan détaillé du round Muirfield sera rédigé et validé avant tout code.
 
+### Étape M — routage Muirfield
+
+#### Décisions validées par l'utilisateur (2026-10-07)
+
+1. **Longueurs de trous réalistes** (1 bloc = 3 m). Les plages d'origine
+   (décision 1 de « Décisions validées avant implémentation ») étaient
+   30–60 % trop longues. Nouveau défaut de `PAR_SPECS` : par 3 45–70, par 4
+   100–145, par 5 145–185 blocs ; largeurs inchangées (10–15, 11–17, 12–18).
+   Solution retenue pour la compatibilité : les anciennes plages sont figées
+   dans `LEGACY_PAR_SPECS` et épinglées explicitement par les seuls modules
+   historiques de l'étape 3 (`skeleton.py`, `regions.py`, abandonnés) pour
+   que leurs fenêtres de longueur et les résultats consignés plus haut
+   restent reproductibles ; tout le reste (modèle, oracle `validate`,
+   surrogate `incremental`, layout synthétique) suit le nouveau défaut. Deux
+   tests construisaient à la main un par 3 de 80–90 blocs : ils ont été
+   ramenés à 60.
+2. **Patron Muirfield, clubhouse sur un BORD de carte** (bord et position le
+   long du bord tirés par la seed) : front = boucle extérieure dans un sens,
+   back = boucle intérieure en sens inverse, tous deux partant du clubhouse
+   et y revenant. Le front part le long du bord d'un côté (trou 1) et revient
+   le long du bord de l'autre côté (trou 9) ; le back sort du clubhouse vers
+   l'intérieur ENTRE les trous 1 et 9 (secteur angulaire réservé au
+   clubhouse) et y revient.
+3. **Anneaux en carré arrondi** (superellipse, p ≈ 4–6) qui suivent la forme
+   de la carte : cible extérieure pour le front, intérieure pour le back.
+4. **Longueur d'un nine = conséquence**, pas une règle dure. La répartition
+   des pars entre les deux nines est LIBRE (quota global 4/10/4, par 3 et
+   par 5 par nine dans [1, 3]) et tirée par la seed comme le reste — aucun
+   nine n'est imposé comme le plus court (correction de l'utilisateur sur une
+   première formulation « combinaison la plus courte au back »). Recuit
+   reporté au round R3. Relief mis en cache sur disque, hors git
+   (`output/.cache/`, ajouté à `.gitignore`).
+
+#### Découpage
+
+- **R1 — visuel glouton** : sites, géométrie du patron, construction trou
+  par trou sans retour arrière, rendu numéroté. Violations tolérées et
+  affichées ; ce n'est pas une porte de validité.
+- **R2 — zéro violation** : contrôles en ligne (collisions, écarts, liaisons
+  bloquées) pendant la construction, retour arrière borné avec une borne de
+  faisabilité de retour au clubhouse (le trou k doit laisser au trou 9/18
+  une distance atteignable), relances bon marché (plan d'anneau, puis
+  clubhouse).
+- **R3 — recuit** avec composantes souples (cibles, qualité des sites,
+  variété de directions), en ne gardant que des états valides.
+
+#### R1 — mécanisme (2026-10-07)
+
+- `sites.py` : grille fine (pas 3, bruit seedé ±1.2), marge de bord 12, eau
+  exclue (`WATER_LEVEL` = 60, ~1 % de la carte) ; score green = 0.6 ×
+  planéité + 0.4 × proéminence modérée (gaussienne centrée +1 bloc), score
+  tee = planéité ; si le relief est plat (écart p90–p10 de pente < 0.02),
+  score aléatoire seedé ; amincissement glouton à 18 blocs (greens) et 12
+  (tees). ~310 greens et ~665 tees par seed.
+- `muirfield.py` : clubhouse à 6 blocs de son bord, à 30–70 % de sa
+  longueur ; anneaux superellipse p = 5 centrés sur la carte, demi-côté 166
+  (extérieur) et 88 (intérieur) ; secteur réservé ±9° autour de l'angle du
+  clubhouse (aucun tee/green du front dedans) ; le back sort vers l'anneau
+  intérieur à −18° côté trou 9 et revient à +18° côté trou 1. Pars tirés
+  par la seed (répartition et ordre). Cible douce du green k = point du
+  chemin clubhouse → anneau → clubhouse à la fraction de longueur nominale
+  cumulée (milieu de plage + liaison 25). Glouton : tees à 12–45 du point
+  courant (18–45 depuis le clubhouse), greens à longueur de par (droit, ou
+  1 dogleg à 60 % de la corde, ≤ 55°, longueur visée `length_min` + 2),
+  score = écart à la cible / 25 − 0.5 × (qualité tee + green) − 0.5 ×
+  min(virage, 90°)/90° ; dernier green d'un nine pris parmi les sites à
+  18–45 du clubhouse s'il en existe un atteignable. Largeur = `width_min`.
+- `render_readable.py` : bandes de fairway par par, rough, flèche de sens,
+  tee (carré), green (disque + drapeau), numéro dans un cercle derrière le
+  tee, liaisons pointillées, anneaux en pointillés légers, relief en fond
+  (cases de 8 blocs, eau en bleu), violations en rose.
+
+#### R1 — résultat (2026-10-07)
+
+`python -m experiments.elastic_routing.run_muirfield` →
+`output/muirfield/r1/seed_<n>.svg|png`, `planche.png`, `report.json`.
+
+| seed | bord | violations | familles | front par / blocs | back par / blocs | doglegs | ms |
+|---|---|---|---|---|---|---|---|
+| 1 | W | 14 | axis_crossing 2, fairway_gap 9, link_blocked 3 | 37 / 1363 | 35 / 1224 | 8 | 238 |
+| 2 | S | 17 | axis_crossing 4, fairway_gap 9, link_blocked 4 | 38 / 1448 | 34 / 1224 | 5 | 220 |
+| 3 | S | 16 | axis_crossing 3, fairway_gap 8, link_blocked 5 | 36 / 1431 | 36 / 1275 | 7 | 216 |
+| 4 | W | 12 | axis_crossing 2, fairway_gap 7, link_blocked 2, link_distance 1 | 34 / 1299 | 38 / 1368 | 7 | 218 |
+| 5 | E | 14 | axis_crossing 4, fairway_gap 7, link_blocked 2, link_distance 1 | 36 / 1438 | 36 / 1267 | 5 | 217 |
+| 6 | W | 21 | axis_crossing 4, fairway_gap 11, link_blocked 6 | 37 / 1422 | 35 / 1268 | 5 | 213 |
+
+Temps : ~0.22 s par seed relief en cache (sites 0.13 s, glouton 0.08 s,
+oracle 0.01 s) ; le relief seul coûte 7 s par seed au premier passage.
+Toutes les longueurs de trous sont dans les nouvelles `PAR_SPECS` ; quotas
+de pars et bornes par nine respectés ; tees 1 et 10 à 18–45 du clubhouse.
+
+Lecture de la planche : le patron se lit. Le front fait le tour du bord, le
+back une boucle intérieure en sens inverse, numéros et sens de jeu
+lisibles. Défauts visibles :
+- **Nœud au clubhouse** : les trous 1, 9, 10 et 18 convergent dans le même
+  petit secteur et s'y croisent ou se frôlent (seeds 1, 2, 6 surtout) — c'est
+  la majorité des `axis_crossing`.
+- **Retour au clubhouse** : sans retour arrière, le trou 9 ne trouve aucun
+  green à liaison du clubhouse pour les seeds 4 (liaison 50) et 5 (67)
+  → `link_distance` ; test `xfail` strict jusqu'à R2.
+- **Back qui déborde** sur la bande du front (anneau intérieur trop petit
+  pour ~1250 blocs de nine : les trous zigzaguent et touchent le front) →
+  la plupart des `fairway_gap` et `link_blocked`.
+- Le trou 1 n'a souvent qu'un ou deux tees candidats (secteur réservé +
+  marge de bord) : choix contraint, pas de variété.
+- Front plus long que le back dans 5 seeds sur 6 (+139 à +224 blocs ;
+  seed 4 : −69), l'anneau extérieur étant plus long que le chemin du back.
+
+Leçons pour R2 : contrôles d'écart et de croisement en ligne, borne de
+retour au clubhouse dès le trou 6–7, demi-côté de l'anneau intérieur à
+ajuster au nine attendu (ou p plus faible), et un couloir explicite pour
+10/18 qui interdit au front d'y entrer par l'axe, pas seulement par les
+sites.
+
 ### Étape 4 — trous élastiques et mutations locales
 
 Note (2026-10-07) : cette étape reste valable (score incrémental), mais la
@@ -876,6 +990,8 @@ Décisions approuvées le 2026-10-06 :
 1. **Dimensions** : reprendre les plages de `bean_paving` — par 3 de 75 à
    110 blocs et largeur de 10 à 15 ; par 4 de 120 à 175 et largeur de 11 à
    17 ; par 5 de 175 à 235 et largeur de 12 à 18.
+   *Remplacée le 2026-10-07* (étape M) : par 3 45–70, par 4 100–145,
+   par 5 145–185 ; les anciennes plages restent dans `LEGACY_PAR_SPECS`.
 2. **Grille** : pas de 5 blocs pour le squelette grossier.
 3. **Liaisons** : plage assouplie de 12 à 60 blocs pendant la construction,
    resserrée progressivement à 12–45 pour la validation finale.
