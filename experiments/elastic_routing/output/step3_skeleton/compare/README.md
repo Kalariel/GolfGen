@@ -19,10 +19,14 @@ côte, 3 par ligne) et les `skeleton.svg` individuels. Généré le
   reste sous-occupée.
 - **`r3_offset12/`** (seeds 1–6, round 3 actuel, offset 12 — identique au
   réseau de `r2`) — correction complète : contour refermé au clubhouse
-  (le bug d'ouverture de la seed 2 du round précédent est corrigé), budget
-  de sous-arbre imposé (rejet si en dessous du minimum), 2 ou 3 épingles
-  par nine obligatoires, épingles et tiges poussées en alternance entre
-  les deux nines. Identique à `experiments/elastic_routing/output/step3_skeleton/seed_1..6/skeleton.svg`
+  (le bug d'ouverture de la seed 2 du round précédent est corrigé), cap de
+  feuille rendu comme une courbe convexe continue (correction d'une
+  régression : un sommet voisin trop arrondi pouvait creuser une encoche
+  concave juste à côté d'un cap, repérée visuellement sur la seed 2 à une
+  feuille diagonale), budget de sous-arbre imposé (rejet si en dessous du
+  minimum), 2 ou 3 épingles par nine obligatoires, épingles et tiges
+  poussées en alternance entre les deux nines. Identique à
+  `experiments/elastic_routing/output/step3_skeleton/seed_1..6/skeleton.svg`
   (copie, voir note en bas).
 - **`r3_offset20/`** (seeds 1–6, round 3 actuel, offset 20 — réseau à pas
   64 au lieu de 48) — même algorithme que `r3_offset12`, pour juger
@@ -53,23 +57,23 @@ côte, 3 par ligne) et les `skeleton.svg` individuels. Généré le
 
 | Seed | Tirages | Temps | Clubhouse | Feuilles front/back | Longueur front/back |
 |---|---:|---:|---|---|---|
-| 1 | 19  | 53 ms   | (4, 0) | 2/2 | 816 / 644 |
-| 2 | 69  | 132 ms  | (5, 3) | 3/2 | 867 / 644 |
-| 3 | 176 | 402 ms  | (3, 3) | 2/2 | 788 / 672 |
-| 4 | 89  | 190 ms  | (3, 7) | 2/2 | 596 / 712 |
-| 5 | 180 | 350 ms  | (3, 5) | 2/3 | 800 / 768 |
-| 6 | 581 | 1140 ms | (2, 0) | 2/2 | 768 / 896 |
+| 1 | 8  | 15 ms | (6, 3) | 3/2 | 760 / 608 |
+| 2 | 48 | 81 ms | (4, 5) | 3/2 | 712 / 616 |
+| 3 | 1  | 17 ms | (5, 4) | 2/3 | 808 / 788 |
+| 4 | 24 | 53 ms | (3, 0) | 2/2 | 619 / 568 |
+| 5 | 50 | 87 ms | (2, 5) | 2/3 | 644 / 780 |
+| 6 | 26 | 42 ms | (2, 6) | 2/2 | 704 / 839 |
 
 ### offset 20
 
 | Seed | Tirages | Temps | Clubhouse | Feuilles front/back | Longueur front/back |
 |---|---:|---:|---|---|---|
-| 1 | 103 | 112 ms | (2, 0) | 2/2 | 832 / 667 |
-| 2 | 168 | 177 ms | (2, 4) | 2/2 | 832 / 704 |
-| 3 | 187 | 200 ms | (3, 2) | 2/2 | 768 / 821 |
-| 4 | 134 | 149 ms | (3, 2) | 2/3 | 554 / 693 |
-| 5 | 102 | 115 ms | (3, 1) | 2/2 | 693 / 731 |
-| 6 | 81  | 90 ms  | (3, 2) | 3/2 | 731 / 757 |
+| 1 | 91 | 93 ms | (4, 4) | 2/2 | 731 / 576 |
+| 2 | 15 | 20 ms | (1, 2) | 2/2 | 629 / 667 |
+| 3 | 2  | 5 ms  | (1, 4) | 2/2 | 539 / 704 |
+| 4 | 31 | 35 ms | (3, 0) | 2/2 | 693 / 565 |
+| 5 | 23 | 25 ms | (2, 3) | 2/2 | 640 / 795 |
+| 6 | 32 | 30 ms | (2, 3) | 2/3 | 720 / 826 |
 
 Aucun temps > 10 s. Le nombre de tirages dépasse régulièrement la cible
 « ≤ 50 » du plan (voir PLAN.md, non modifié ce round, et le rapport de
