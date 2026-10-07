@@ -913,6 +913,32 @@ Lecture des planches :
   de 5 au centre et près du clubhouse (10/11/18), quelques longs par 5
   rectilignes le long du bord, liaisons parfois longues en diagonale.
 
+#### Revue R1+R2 (2026-10-08) — corrections et points ouverts
+
+- `build_muirfield` ne renvoie jamais un layout refusé par `validate()` : une
+  tentative dont le layout a une violation est notée `echec_validate` et l'on
+  passe au plan suivant, puis `MuirfieldRoutingError` (filet de sécurité ; il
+  ne s'est jamais déclenché sur les 18 cas).
+- Plages de liaison dérivées des `ValidationRules` (`link_bounds`) : entre
+  trous `[link_min, link_max]`, clubhouse `[max(link_min, rayon dégagé +
+  demi-fairway max + 2), link_max]` (18–45 par défaut).
+- Cache du relief : clé = seed + taille + empreinte (version + hash de
+  `TerrainConfig`).
+- Artefacts : seuls `planche.png` et `report.json` sont versionnés pour
+  r1/r2 ; les png/svg par seed (~180 Ko chacun) sont ignorés et régénérés
+  par `run_muirfield` (ils restent dans l'historique des commits R1/R2).
+
+**Questions ouvertes, soumises à l'utilisateur :**
+
+1. **Par par nine pas forcément 36/36.** Avec le quota 4/10/4 et par 3/par 5
+   par nine dans [1, 3] tirés librement, un nine fait de 34 à 38 (total
+   toujours 72) : sur les planches R2, 34/38, 35/37, 36/36 et 38/34
+   apparaissent. Faut-il imposer 36/36 (autant de par 3 que de par 5 dans
+   chaque nine) ou garder cette liberté ?
+2. **Espacement des greens 18 → 12** (écart au plan R1, en attente de
+   validation) : nécessaire pour avoir des greens candidats dans les cônes
+   d'ancrage du clubhouse ; voir « R2 — mécanisme ».
+
 ### Étape 4 — trous élastiques et mutations locales
 
 Note (2026-10-07) : cette étape reste valable (score incrémental), mais la
