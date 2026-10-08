@@ -1248,9 +1248,9 @@ vient donc de la forme des chemins cibles (anneaux concentriques, anneau
 intérieur trop petit : ~470 blocs de tour pour un nine de ~1500 blocs), pas
 du rythme des cibles.
 
-**Décision (utilisateur, 2026-10-08).** M1 est conservé comme mode
-optionnel, `uniform` par défaut (sans effet sur l'empreinte) ; pas de
-réglage du jitter. Prochaine étape : M2, chemin cible déformé, décentré ou
+**Décision (utilisateur, 2026-10-08).** M1 est d'abord conservé comme mode
+optionnel, puis retiré du code (voir « R2b — Conclusion et retrait du
+code ») ; pas de réglage du jitter. Prochaine étape : M2, chemin cible déformé, décentré ou
 agrandi. M3 (variété dans le score) n'est plus qu'un palliatif éventuel.
 
 #### R2b — Round 2 (M2, chemin intérieur à lobes) : résultat négatif
@@ -1288,12 +1288,59 @@ Muirfield.
 l'hélice s'atténue (planches 6 seeds).
 
 **Décision.**
-- M2 est conservé en mode optionnel, `ring` par défaut (sans effet sur
-  l'empreinte) ;
+- M2 est d'abord conservé en mode optionnel, puis retiré du code (voir
+  « R2b — Conclusion et retrait du code ») ;
 - validation du 400×300 sur 30 seeds (rounds `land` et `land-30`) ;
 - puis M3 (pénalité d'enroulement dans le score) en 300×400 et 400×300 ;
 - si tout est validé, le spike devient le routage par défaut, avec à terme
   le pattern, l'orientation et la taille paramétrables par l'utilisateur.
+
+#### R2b — Round 3 (M3, pénalité d'enroulement) : résultat négatif
+
+**Formule.** Terme de score sur le nine intérieur, phase B (index 1-7) :
+- C : cumul signé des caps de corde ;
+- E = max(0, |C| − 40°·(index − 1)), excès d'enroulement ;
+- terme + 1.0·sign(C)·clip(δ, ±90°)/90°·min(1, E/90°).
+
+**r2b3** (6 seeds, 2 patrons × {300×400, 400×300}) : 48/48 réussis,
+0 violation, temps identiques à `off`. Seuls 1 ou 2 seeds sur 6 changent
+par configuration ; les métriques du nine intérieur varient dans les deux
+sens ; le nine extérieur est identique.
+
+Médianes de `heading_turns` du nine intérieur, `off` → `anti_coil` :
+
+| configuration | off → anti_coil |
+|---|---|
+| muirfield 300×400 | 2,198 → 2,198 |
+| muirfield 400×300 | 2,294 → 2,172 |
+| muirfield_inverse 300×400 | 2,630 → 2,678 |
+| muirfield_inverse 400×300 | 2,311 → 2,698 |
+
+**Cause.** Le nine intérieur ne s'enroule pas en net : son `net_turns`
+médian vaut ≈ 0,5 tour pour 2,2-2,6 tours de `heading_turns`. Il zigzague,
+et le facteur M3 est presque toujours nul. L'impression d'hélice est un
+effet d'ensemble (boucle extérieure + trous intérieurs orientés en tous
+sens) qu'aucune des trois pistes ne capte.
+
+M3 n'a jamais été fusionné (code archivé dans le tag `archive/r2b-m3`).
+
+#### R2b — Conclusion et retrait du code (2026-10-08)
+
+- **Bilan.** Aucun gain substantiel pour M1, M2 et M3. Décision de
+  l'utilisateur : le code est retiré pour alléger la base. Il reste
+  récupérable via les tags `archive/r2b-m1-m2` (0c521a1) et
+  `archive/r2b-m3` (cec1e25). Les rounds `r2b1*` et `r2b2*` et leurs
+  sorties sont retirés avec lui. Le comportement par défaut est inchangé
+  (`rc-30`, `land-30` et `land` régénérés à l'identique).
+- **Acquis conservés :**
+  - la déduplication des tentatives (30/30 en `rc-30` et `land-30` sur
+    les deux patrons) ;
+  - le paysage 400×300 (rounds `land`) ;
+  - le rendu paysage sans bande vide ;
+  - `shape_metrics.py`, sans l'obliquité mesurée sur l'anneau.
+- **Suite décidée.** Le routeur Muirfield devient le routage par défaut ;
+  à terme, le patron, l'orientation et la taille (min/max) seront
+  paramétrables par l'utilisateur.
 
 ### Étape 4 — trous élastiques et mutations locales
 
