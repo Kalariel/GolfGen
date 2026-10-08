@@ -18,9 +18,11 @@ Rounds disponibles (``--round``), sorties sous ``tools/muirfield/output/`` :
   ``calib_phase1/summary.json`` et ``summary.md`` reconstruits à partir de
   TOUS les report.json présents (les morceaux se fusionnent seuls). Filtres
   pour découper la grille : ``--calib-short 240,260``, ``--calib-long 400``,
-  ``--calib-orientation portrait``. Une ``ValueError`` levée pour la taille
-  (géométrie trop petite) y est enregistrée en ``taille_invalide`` au lieu
-  d'interrompre le round ; les autres rounds ne capturent rien de plus.
+  ``--calib-orientation portrait``. Une taille refusée par la géométrie du
+  cœur (``ring_semi_axes`` : carte trop petite pour deux anneaux), validée
+  AVANT ``build_course``, y est enregistrée en ``taille_invalide`` au lieu
+  d'interrompre le round ; toute autre exception (``ValueError`` comprise)
+  remonte, et les autres rounds ne capturent rien de plus.
 - ``calib2`` : calibration des tailles (phase 2), même mécanique sur les
   4 coins et le centre du rectangle retenu (petit 300–350 × grand 400–500),
   2 orientations × 2 patrons × seeds 1–30 → ``calib_phase2/``. Critère de
@@ -61,6 +63,7 @@ from golfgen.routing.muirfield import (
     MuirfieldRoutingError,
     build_course,
     outer_start,
+    ring_semi_axes,
 )
 from tools.muirfield.render_readable import render_readable_svg
 from tools.muirfield.shape_metrics import shape_metrics
@@ -134,6 +137,19 @@ def _nine_shape_stats(reports: list[dict]) -> dict:
     return stats
 
 
+def _size_error(width: int, height: int) -> ValueError | None:
+    """Refus de taille par la règle du cœur (``ring_semi_axes``), ou ``None``.
+
+    Seul point de capture d'une ``ValueError`` dans les rounds ``calib*`` :
+    l'appel ne fait que la géométrie des anneaux, donc l'erreur ne peut venir
+    que de la taille de carte."""
+    try:
+        ring_semi_axes(width, height)
+    except ValueError as error:
+        return error
+    return None
+
+
 def _size_error_report(seed: int, stage: str, error: ValueError, elapsed: float) -> dict:
     """Entrée de rapport d'une seed dont la taille est refusée (round calib)."""
     return {"seed": seed, "status": "taille_invalide", "stage": stage,
@@ -158,22 +174,27 @@ def _run_format(width: int, height: int, *, seeds: tuple[int, ...] = SEEDS,
     """Route ``seeds`` sur une taille et écrit ``report.json``.
 
     ``render=False`` saute SVG/PNG (et donc la planche). ``size_errors=True``
-    (round ``calib`` seulement) enregistre une ``ValueError`` de relief ou de
-    routage en statut ``taille_invalide`` au lieu de la laisser remonter ;
-    toute autre exception remonte. ``extra`` est fusionné dans le rapport.
+    (rounds ``calib*`` seulement) valide la taille AVANT relief et routage
+    avec la règle du cœur (``ring_semi_axes``) et enregistre un refus en
+    statut ``taille_invalide`` ; rien n'est capturé autour de ``load_terrain``
+    ni de ``build_course``, donc toute autre exception — y compris une
+    ``ValueError`` d'invariant, qui trahit un bug — remonte. ``extra`` est
+    fusionné dans le rapport.
     """
     out_dir = OUTPUT_ROOT / (out_name or f"{label}_{width}x{height}")
     out_dir.mkdir(parents=True, exist_ok=True)
     reports, pngs = [], []
-    caught = (ValueError,) if size_errors else ()
     for seed in seeds:
+        if size_errors:
+            t0 = time.perf_counter()
+            size_error = _size_error(width, height)
+            if size_error is not None:
+                reports.append(_size_error_report(seed, "routage", size_error,
+                                                  time.perf_counter() - t0))
+                print(f"{width}x{height} seed {seed}: TAILLE INVALIDE (routage) {size_error}")
+                continue
         t0 = time.perf_counter()
-        try:
-            heightmap = load_terrain(seed, width, height)
-        except caught as error:
-            reports.append(_size_error_report(seed, "relief", error, time.perf_counter() - t0))
-            print(f"{width}x{height} seed {seed}: TAILLE INVALIDE (relief) {error}")
-            continue
+        heightmap = load_terrain(seed, width, height)
         terrain_seconds = time.perf_counter() - t0
         # mesure homogène succès/échec : même chronomètre autour de
         # build_course (sites + recherche + oracle, relief en cache exclu)
@@ -192,13 +213,6 @@ def _run_format(width: int, height: int, *, seeds: tuple[int, ...] = SEEDS,
             print(f"{width}x{height} seed {seed}: ECHEC après {len(error.attempts)} tentative(s) "
                   f"{stages} · {len(error.skipped)} variante(s) sautée(s) · "
                   f"{elapsed * 1000:.0f} ms")
-            continue
-        except caught as error:
-            elapsed = time.perf_counter() - t1
-            report = _size_error_report(seed, "routage", error, elapsed)
-            report["terrain_seconds_cached_or_built"] = round(terrain_seconds, 3)
-            reports.append(report)
-            print(f"{width}x{height} seed {seed}: TAILLE INVALIDE (routage) {error}")
             continue
         lengths = result.nine_lengths()
         kinds = dict(sorted(Counter(v.kind for v in result.violations).items()))
@@ -295,13 +309,26 @@ def _run_format(width: int, height: int, *, seeds: tuple[int, ...] = SEEDS,
 # --- calibration des tailles (rounds ``calib`` et ``calib2``) ---------------
 
 class CalibPhase(NamedTuple):
-    """Paramètres d'une phase de calibration : grille, dossier, critère."""
+    """Paramètres d'une phase de calibration : grille, dossier, critère.
+
+    Critère de lecture (affiché, ne filtre rien) : ``ok_p90_seconds`` et
+    ``ok_max_seconds``, temps de routage HORS relief. Le max de 30 s de la
+    phase 1 (``CALIB_OK_MAX_SECONDS``, à côté d'un p90 de 10 s) est VOULU :
+    il borne la pire seed acceptable, pas le temps typique, et ne doit pas
+    être resserré sans décision explicite.
+
+    ``seeds`` est la liste attendue : une taille dont un patron a moins de
+    seeds mesurées sort en KO (« seeds incomplètes »). ``width_mode`` est le
+    mode de largeurs unique de la phase : ``run_calib`` refuse d'en lancer un
+    autre et la synthèse rejette tout rapport mesuré dans un autre mode.
+    """
     number: int
     directory: str
     couples: tuple[tuple[int, int], ...]     # (petit, grand), petit < grand
     seeds: tuple[int, ...]
     ok_p90_seconds: float
     ok_max_seconds: float
+    width_mode: str = "variable"
 
 
 CALIB_PHASE1 = CalibPhase(1, CALIB_DIR,
@@ -347,7 +374,14 @@ def calib_out_name(pattern: str, width: int, height: int,
 def run_calib(sizes: list[CalibSize], *, patterns=CALIB_PATTERNS, seeds=SEEDS,
               width_mode: str = "variable", phase: CalibPhase = CALIB_PHASE1) -> dict:
     """Route chaque (taille, patron) séquentiellement, puis reconstruit la
-    synthèse à partir de tous les report.json présents."""
+    synthèse à partir de tous les report.json présents.
+
+    ``width_mode`` doit être celui de la phase : un autre mode mélangerait
+    silencieusement deux mesures dans le même dossier (refus avant tout
+    routage)."""
+    if width_mode != phase.width_mode:
+        raise ValueError(f"width_mode {width_mode!r} : la phase {phase.number} est calibrée en "
+                         f"{phase.width_mode!r}")
     for size in sizes:
         for pattern in patterns:
             label = "calib" if phase.number == 1 else f"calib{phase.number}"
@@ -394,6 +428,8 @@ def _calib_stats(reports: list[dict]) -> dict:
 def _calib_verdict(stats: dict, phase: CalibPhase = CALIB_PHASE1) -> list[str]:
     """Raisons de KO selon le critère de lecture de la phase (liste vide : OK)."""
     reasons = []
+    if stats["seeds"] < len(phase.seeds):
+        reasons.append(f"seeds incomplètes {stats['seeds']}/{len(phase.seeds)}")
     if stats["statuses"].get("taille_invalide"):
         reasons.append("taille_invalide")
     if stats["successes"] < stats["seeds"]:
@@ -410,7 +446,15 @@ def _calib_verdict(stats: dict, phase: CalibPhase = CALIB_PHASE1) -> list[str]:
 def build_calib_summary(reports: list[dict], phase: CalibPhase = CALIB_PHASE1) -> dict:
     """Synthèse : une ligne par (petit, grand, orientation, patron), plus une
     ligne agrégée par (petit, grand, orientation), patrons poolés. Le verdict
-    agrégé est OK si chaque patron présent est OK ET que les deux sont là."""
+    agrégé est OK si chaque patron présent est OK ET que les deux sont là.
+
+    Tous les rapports doivent avoir le ``width_mode`` de la phase : sinon
+    ``ValueError`` (deux modes ne se poolent pas en silence)."""
+    mixed = sorted(f"{r['pattern']}_{r['width']}x{r['height']} ({r['width_mode']})"
+                   for r in reports if r["width_mode"] != phase.width_mode)
+    if mixed:
+        raise ValueError(f"rapports hors width_mode {phase.width_mode!r} de la phase "
+                         f"{phase.number} : {', '.join(mixed)}")
     order = {name: i for i, name in enumerate(CALIB_ORIENTATIONS)}
 
     def key(report):

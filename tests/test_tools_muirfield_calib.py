@@ -78,6 +78,40 @@ def test_calib_does_not_swallow_unexpected_errors(flat_output, monkeypatch):
                      seeds=(1,))
 
 
+def test_calib_does_not_swallow_other_value_errors(flat_output, monkeypatch):
+    """Une ``ValueError`` d'une autre origine que la taille (invariant du
+    modèle, donc bug) remonte au lieu d'être classée ``taille_invalide``."""
+    def other(*args, **kwargs):
+        raise ValueError("autre")
+
+    monkeypatch.setattr(rm, "build_course", other)
+    with pytest.raises(ValueError, match="autre"):
+        rm.run_calib([CalibSize(300, 400, "portrait", 300, 400)], patterns=("muirfield",),
+                     seeds=(1,))
+    assert not (flat_output / rm.CALIB_DIR / "muirfield_300x400" / "report.json").exists()
+
+
+def test_calib_does_not_swallow_relief_value_errors(flat_output, monkeypatch):
+    def other(seed, width, height):
+        raise ValueError("relief")
+
+    monkeypatch.setattr(rm, "load_terrain", other)
+    with pytest.raises(ValueError, match="relief"):
+        rm.run_calib([CalibSize(300, 400, "portrait", 300, 400)], patterns=("muirfield",),
+                     seeds=(1,))
+
+
+def test_calib_size_check_runs_before_relief_and_routing(flat_output, monkeypatch):
+    def forbidden(*args, **kwargs):
+        raise AssertionError("ne doit pas être appelé pour une taille refusée")
+
+    monkeypatch.setattr(rm, "load_terrain", forbidden)
+    monkeypatch.setattr(rm, "build_course", forbidden)
+    summary = rm.run_calib([CalibSize(200, 400, "portrait", 200, 400)],
+                           patterns=("muirfield",), seeds=(1,))
+    assert summary["rows"][0]["statuses"] == {"taille_invalide": 1}
+
+
 def _seed(seed, status="succes", elapsed=1.0, terrain=5.0, violations=0, **extra):
     report = {"seed": seed, "status": status, "elapsed_seconds": elapsed,
               "terrain_seconds_cached_or_built": terrain, "relaunches": 0,
@@ -154,7 +188,7 @@ def test_calib_phase1_unchanged_by_phase_parameter():
 
 
 def test_calib_phase2_verdict_uses_revised_p90():
-    seeds = [_seed(i, elapsed=12.0) for i in range(1, 11)]
+    seeds = [_seed(i, elapsed=12.0) for i in range(1, 31)]
     reports = [_report(p, 300, 400, "portrait", seeds) for p in rm.CALIB_PATTERNS]
     phase1 = rm.build_calib_summary(reports)
     phase2 = rm.build_calib_summary(reports, rm.CALIB_PHASE2)
@@ -172,4 +206,38 @@ def test_run_calib_phase2_writes_under_its_own_directory(flat_output):
     summary = json.loads((flat_output / "calib_phase2" / "summary.json").read_text(
         encoding="utf-8"))
     assert summary["phase"] == 2
+    assert not (flat_output / rm.CALIB_DIR).exists()
+
+
+def test_calib_verdict_flags_incomplete_seeds():
+    full = [_seed(i) for i in range(1, 7)]
+    partial = [_seed(i) for i in range(1, 4)]
+    reports = [_report("muirfield", 300, 400, "portrait", full),
+               _report("muirfield_inverse", 300, 400, "portrait", partial)]
+    summary = rm.build_calib_summary(reports)
+    rows = {r["pattern"]: r for r in summary["rows"]}
+    assert rows["muirfield"]["ok"]
+    assert not rows["muirfield_inverse"]["ok"]
+    assert rows["muirfield_inverse"]["ko_reasons"] == ["seeds incomplètes 3/6"]
+    aggregated = summary["aggregated"][0]
+    assert not aggregated["ok"]
+    assert "muirfield_inverse : seeds incomplètes 3/6" in aggregated["ko_reasons"]
+    phase2 = rm.build_calib_summary([_report(p, 300, 400, "portrait", full)
+                                     for p in rm.CALIB_PATTERNS], rm.CALIB_PHASE2)
+    assert "seeds incomplètes 6/30" in phase2["rows"][0]["ko_reasons"]
+
+
+def test_build_calib_summary_rejects_mixed_width_modes():
+    seeds = [_seed(i) for i in range(1, 7)]
+    other = _report("muirfield", 400, 300, "paysage", seeds)
+    other["width_mode"] = "min"
+    reports = [_report("muirfield", 300, 400, "portrait", seeds), other]
+    with pytest.raises(ValueError, match="muirfield_400x300 \\(min\\)"):
+        rm.build_calib_summary(reports)
+
+
+def test_run_calib_refuses_width_mode_of_another_phase(flat_output):
+    with pytest.raises(ValueError, match="width_mode 'min'"):
+        rm.run_calib([CalibSize(300, 400, "portrait", 300, 400)], patterns=("muirfield",),
+                     seeds=(1,), width_mode="min")
     assert not (flat_output / rm.CALIB_DIR).exists()
