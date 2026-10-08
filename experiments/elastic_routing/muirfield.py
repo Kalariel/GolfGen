@@ -511,10 +511,15 @@ def green_targets(path: list[Point], pars: tuple[int, ...],
             running += LINK_NOMINAL + _nominal_length(par)
             targets.append(point_at(path, cumulative, running / total * cumulative[-1]))
         return targets
+    factors = np.asarray(factors, dtype=float)
+    if len(factors) != len(pars):
+        raise ValueError(f"{len(factors)} facteurs pour {len(pars)} trous")
     nominal = np.array([LINK_NOMINAL + _nominal_length(par) for par in pars])
-    steps = nominal * np.asarray(factors, dtype=float)[:len(pars)]
+    steps = nominal * factors
     runnings = np.cumsum(steps) * (nominal.sum() / steps.sum())
-    runnings[-1] = sum(LINK_NOMINAL + _nominal_length(par) for par in pars)   # exacte
+    # dernière cible exacte : les longueurs nominales sont des multiples de
+    # 0,5, la somme numpy est donc identique à l'octet à la somme Python
+    runnings[-1] = nominal.sum()
     return [point_at(path, cumulative, float(r) / total * cumulative[-1]) for r in runnings]
 
 

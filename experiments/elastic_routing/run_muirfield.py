@@ -96,6 +96,24 @@ def _shape_stats(reports: list[dict]) -> dict:
     return stats
 
 
+def _planche_title(result, label: str, width: int, height: int, seed: int,
+                   outer_nine: str, side: str) -> str:
+    """Titre de vignette. Rounds r2b* : version abrégée (« s<seed> »,
+    « ext. ») suivie du mode de cibles, sinon elle dépasse la vignette de
+    l'inversé. Autres rounds : titre d'avant R2b, à l'identique ; le mode
+    de cibles n'y est ajouté que s'il n'est pas celui par défaut (round
+    custom)."""
+    if label.startswith("r2b"):
+        return (f"{result.pattern} {label.upper()} · {width}×{height} · s{seed} · bord "
+                f"{result.clubhouse_edge} · {outer_nine} ext. {side} · cibles "
+                f"{result.target_mode}")
+    title = (f"{result.pattern} {label.upper()} · {width}×{height} · seed {seed} · bord "
+             f"{result.clubhouse_edge} · {outer_nine} extérieur {side}")
+    if result.target_mode != "uniform":
+        title += f" · cibles {result.target_mode}"
+    return title
+
+
 # Rounds r2…rb : largeur minimale (``width_mode="min"``, défaut ici, pour
 # rester reproductibles) ; rc et custom passent ``--width-mode`` (défaut
 # variable).
@@ -136,11 +154,7 @@ def _run_format(width: int, height: int, *, seeds: tuple[int, ...] = SEEDS,
         svg = render_readable_svg(
             result.layout, result.violations, heightmap=heightmap, water_level=WATER_LEVEL,
             rings=(result.outer_ring, result.inner_ring),
-            # titre abrégé (« s<seed> », « ext. ») : avec le mode de cibles, la
-            # version longue dépassait la largeur de la vignette pour l'inversé
-            title=(f"{result.pattern} {label.upper()} · {width}×{height} · s{seed} · bord "
-                   f"{result.clubhouse_edge} · {outer_nine} ext. {side} · cibles "
-                   f"{result.target_mode}"),
+            title=_planche_title(result, label, width, height, seed, outer_nine, side),
             subtitle=(f"front par {lengths['front']['par']} · {lengths['front']['total']:.0f} blocs  |  "
                       f"back par {lengths['back']['par']} · {lengths['back']['total']:.0f} blocs  |  "
                       f"{result.relaunches} relance(s) · {elapsed * 1000:.0f} ms"),

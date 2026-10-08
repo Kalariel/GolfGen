@@ -9,7 +9,7 @@ import pytest
 
 from experiments.elastic_routing.model import ControlPoint, CourseLayout, ElasticHole, NineLayout
 from experiments.elastic_routing import muirfield as mf
-from experiments.elastic_routing.run_muirfield import _shape_stats
+from experiments.elastic_routing.run_muirfield import _planche_title, _shape_stats
 from experiments.elastic_routing.shape_metrics import (
     CV_MIN_PROGRESS,
     angular_step_cv,
@@ -296,6 +296,18 @@ def test_shape_stats_skip_failures_and_missing_values():
     assert stats["direction_entropy"] == {"median": 0.65, "min": 0.5, "max": 0.8}
     assert stats["radial_alignment_R"] == {"median": 0.5, "min": 0.1, "max": 0.9}
     assert _shape_stats([{"status": "echec"}, ok(None, 0.3, 0.3)])["angular_step_cv"] is None
+
+
+def test_planche_title_keeps_the_legacy_form_outside_r2b_rounds():
+    from types import SimpleNamespace
+    result = SimpleNamespace(pattern="muirfield", clubhouse_edge="N", target_mode="uniform")
+    legacy = "muirfield RC · 300×400 · seed 3 · bord N · front extérieur horaire"
+    assert _planche_title(result, "rc", 300, 400, 3, "front", "horaire") == legacy
+    r2b = _planche_title(result, "r2b1", 300, 400, 3, "front", "horaire")
+    assert r2b == "muirfield R2B1 · 300×400 · s3 · bord N · front ext. horaire · cibles uniform"
+    irregular = SimpleNamespace(pattern="muirfield", clubhouse_edge="N", target_mode="irregular")
+    assert _planche_title(irregular, "custom", 300, 400, 3, "front", "horaire").endswith(
+        "extérieur horaire · cibles irregular")
 
 
 # -- métriques figées sur un vrai parcours -------------------------------------

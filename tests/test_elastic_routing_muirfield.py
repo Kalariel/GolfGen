@@ -750,12 +750,27 @@ def test_irregular_targets_are_deterministic_and_seed_dependent():
 @pytest.mark.parametrize("seed", range(1, 21))
 def test_irregular_targets_are_strictly_increasing_and_keep_the_total(seed):
     uniform = mf.green_targets(M1_PATH, M1_PARS)
+    nominal = np.array([mf.LINK_NOMINAL + mf._nominal_length(par) for par in M1_PARS])
+    total = nominal.sum() + mf.LINK_NOMINAL
+    to_path = mf._polyline_cumulative(M1_PATH)[-1] / total      # blocs nominaux → chemin
     for start in (1, 10):
-        irregular = mf.green_targets(M1_PATH, M1_PARS, mf.target_jitter_factors(seed)[start])
+        factors = mf.target_jitter_factors(seed)[start]
+        irregular = mf.green_targets(M1_PATH, M1_PARS, factors)
         along = _along(M1_PATH, irregular)
         assert len(along) == 9 and all(b > a for a, b in zip(along, along[1:]))
         assert along[0] > 0.0
         assert irregular[-1] == uniform[-1]            # dernière cible et retour inchangés
+        # chaque pas reste dans [1 - a, 1 + a] × nominal × renormalisation
+        renorm = nominal.sum() / (nominal * factors).sum()
+        steps = np.diff([0.0, *along])
+        low = (1.0 - mf.TARGET_JITTER) * nominal * renorm * to_path
+        high = (1.0 + mf.TARGET_JITTER) * nominal * renorm * to_path
+        assert np.all(steps >= low - 1e-9) and np.all(steps <= high + 1e-9)
+
+
+def test_green_targets_reject_a_factor_count_mismatch():
+    with pytest.raises(ValueError, match="facteurs"):
+        mf.green_targets(M1_PATH, M1_PARS, np.ones(len(M1_PARS) + 1))
 
 
 @pytest.mark.parametrize("factor", (1.0 - mf.TARGET_JITTER, 1.0 + mf.TARGET_JITTER))
