@@ -15,6 +15,9 @@ Rounds disponibles (``--round``) :
 - ``rb-30`` / ``rb-check`` : robustesse 30 seeds (300×400) et non-régression
   (350×400, 400×300, 400×350, seeds 1–6) pour chaque patron (ou celui de
   ``--pattern``) → ``rb_<patron>_300x400_30seeds/``, ``rb_check_<patron>_<w>x<h>/`` ;
+- ``rc`` / ``rc-30`` : largeurs variables (C1, ``--width-mode``) — planche
+  6 seeds muirfield 300×400 → ``rc_<patron>_300x400/`` ; 30 seeds par
+  patron → ``rc_<patron>_300x400_30seeds/`` ;
 - ``custom`` : ``--pattern``, ``--size LxH``, ``--seeds 1-6`` →
   ``custom_<patron>_<w>x<h>/``.
 
@@ -75,10 +78,13 @@ def _percentile(values: list[float], q: float) -> float:
     return ordered[low] + (ordered[high] - ordered[low]) * (rank - low)
 
 
+# Rounds r2…rb : largeur minimale (``width_mode="min"``, défaut ici, pour
+# rester reproductibles) ; rc et custom passent ``--width-mode`` (défaut
+# variable).
 def _run_format(width: int, height: int, *, seeds: tuple[int, ...] = SEEDS,
                 label: str = "r2", out_name: str | None = None, tile: str = "3x",
                 thumb: str | None = None, planche: bool = True,
-                pattern: str = "muirfield") -> dict:
+                pattern: str = "muirfield", width_mode: str = "min") -> dict:
     out_dir = OUTPUT_ROOT / (out_name or f"{label}_{width}x{height}")
     out_dir.mkdir(parents=True, exist_ok=True)
     reports, pngs = [], []
@@ -90,7 +96,8 @@ def _run_format(width: int, height: int, *, seeds: tuple[int, ...] = SEEDS,
         # build_course (sites + recherche + oracle, relief en cache exclu)
         t1 = time.perf_counter()
         try:
-            result = build_course(seed, pattern, heightmap, width=width, height=height)
+            result = build_course(seed, pattern, heightmap, width=width, height=height,
+                                  width_mode=width_mode)
             elapsed = time.perf_counter() - t1
         except MuirfieldRoutingError as error:
             elapsed = time.perf_counter() - t1
@@ -137,6 +144,7 @@ def _run_format(width: int, height: int, *, seeds: tuple[int, ...] = SEEDS,
             "nine_lengths": lengths,
             "hole_lengths": [round(h.length, 1) for h in result.layout.holes],
             "doglegs": sum(1 for h in result.layout.holes if h.doglegs),
+            "hole_widths": [h.width for h in result.layout.holes],
             "violations_total": len(result.violations),
             "violations_by_kind": kinds,
             "relaunches": result.relaunches,
@@ -160,7 +168,8 @@ def _run_format(width: int, height: int, *, seeds: tuple[int, ...] = SEEDS,
     times = [r["elapsed_seconds"] for r in reports]
     succeeded = [r for r in reports if r["status"] == "succes"]
     summary = {
-        "round": label.upper(), "pattern": pattern, "width": width, "height": height,
+        "round": label.upper(), "pattern": pattern, "width_mode": width_mode,
+        "width": width, "height": height,
         "seeds": list(seeds),
         "stats": {
             "successes": len(succeeded),
@@ -183,10 +192,12 @@ def _run_format(width: int, height: int, *, seeds: tuple[int, ...] = SEEDS,
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--round", choices=("r2", "ra", "ra-30", "ra2-30", "ra2-check",
-                                            "rb", "rb-30", "rb-check", "custom"),
+                                            "rb", "rb-30", "rb-check", "rc", "rc-30", "custom"),
                         default="r2")
     parser.add_argument("--pattern", choices=PATTERN_CHOICES, default=None,
                         help="patron explicite (défaut : muirfield ; rb-30/rb-check : les deux)")
+    parser.add_argument("--width-mode", choices=("variable", "min"), default="variable",
+                        help="largeurs de fairway (C1 : variable ; rounds A–B : min)")
     parser.add_argument("--size", default="300x400", help="format LxH (round custom)")
     parser.add_argument("--seeds", default="1-6", help="ex. 1-6 ou 3,7 (round custom)")
     args = parser.parse_args()
@@ -209,16 +220,26 @@ def main() -> None:
                         planche=False)
     elif args.round == "rb":
         _run_format(300, 400, label="rb", out_name="rb_inverse_300x400",
-                    pattern=args.pattern or "muirfield_inverse")
+                    pattern=args.pattern or "muirfield_inverse", width_mode="min")
+    elif args.round == "rc":
+        pattern = args.pattern or "muirfield"
+        _run_format(300, 400, label="rc", out_name=f"rc_{pattern}_300x400", pattern=pattern,
+                    width_mode=args.width_mode)
+    elif args.round == "rc-30":
+        for pattern in patterns:
+            _run_format(300, 400, seeds=ROBUSTNESS_SEEDS, label="rc", planche=False,
+                        out_name=f"rc_{pattern}_300x400_30seeds", pattern=pattern,
+                        width_mode=args.width_mode)
     elif args.round == "rb-30":
         for pattern in patterns:
             _run_format(300, 400, seeds=ROBUSTNESS_SEEDS, label="rb",
-                        out_name=f"rb_{pattern}_300x400_30seeds", planche=False, pattern=pattern)
+                        out_name=f"rb_{pattern}_300x400_30seeds", planche=False, pattern=pattern,
+                        width_mode="min")
     elif args.round == "rb-check":
         for pattern in patterns:
             for width, height in ((350, 400), *LANDSCAPE_FORMATS):
                 _run_format(width, height, label="rb", planche=False, pattern=pattern,
-                            out_name=f"rb_check_{pattern}_{width}x{height}")
+                            out_name=f"rb_check_{pattern}_{width}x{height}", width_mode="min")
     else:
         width, height = (int(v) for v in args.size.lower().split("x"))
         if "-" in args.seeds:
@@ -228,7 +249,7 @@ def main() -> None:
             seeds = tuple(int(v) for v in args.seeds.split(","))
         pattern = args.pattern or "muirfield"
         _run_format(width, height, seeds=seeds, label="custom", pattern=pattern,
-                    out_name=f"custom_{pattern}_{width}x{height}")
+                    out_name=f"custom_{pattern}_{width}x{height}", width_mode=args.width_mode)
 
 
 if __name__ == "__main__":
