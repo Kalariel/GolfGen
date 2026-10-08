@@ -1,0 +1,389 @@
+{
+ "counts": {
+  "echecs": 3,
+  "rattrapees": 114,
+  "comparaison": 50,
+  "groupe_echec": 123,
+  "groupe_succes": 164
+ },
+ "edge_check": {
+  "checked": 283,
+  "mismatches": []
+ },
+ "forced_sanity": [
+  [
+   "('muirfield', 300, 400, 1)",
+   "0",
+   "echec",
+   "attendu echec"
+  ],
+  [
+   "('muirfield', 300, 400, 1)",
+   "1",
+   "succes",
+   "attendu succes"
+  ],
+  [
+   "('muirfield', 300, 400, 10)",
+   "0",
+   "echec",
+   "attendu echec"
+  ],
+  [
+   "('muirfield', 300, 400, 10)",
+   "1",
+   "succes",
+   "attendu succes"
+  ],
+  [
+   "('muirfield', 300, 400, 11)",
+   "0",
+   "echec",
+   "attendu echec"
+  ],
+  [
+   "('muirfield', 300, 400, 11)",
+   "1",
+   "succes",
+   "attendu succes"
+  ]
+ ],
+ "stats": {
+  "score_min": {
+   "echec": {
+    "n": 123,
+    "min": 1.0,
+    "p25": 3.0,
+    "median": 4.0,
+    "p75": 4.0,
+    "max": 5.0
+   },
+   "succes": {
+    "n": 164,
+    "min": 2.0,
+    "p25": 3.0,
+    "median": 4.0,
+    "p75": 4.0,
+    "max": 6.0
+   },
+   "auc": 0.63,
+   "best": {
+    "threshold_succes_si_ge": 4.0,
+    "accuracy": 0.606,
+    "balanced_accuracy": 0.589,
+    "tpr_succes": 0.707,
+    "tnr_echec": 0.472
+   },
+   "paired_rescued": {
+    "gagnant_plus_haut": 53,
+    "egal": 35,
+    "gagnant_plus_bas": 26
+   }
+  },
+  "score_sum": {
+   "echec": {
+    "n": 123,
+    "min": 3.0,
+    "p25": 7.0,
+    "median": 8.0,
+    "p75": 9.0,
+    "max": 11.0
+   },
+   "succes": {
+    "n": 164,
+    "min": 6.0,
+    "p25": 8.0,
+    "median": 9.0,
+    "p75": 10.0,
+    "max": 13.0
+   },
+   "auc": 0.717,
+   "best": {
+    "threshold_succes_si_ge": 9.0,
+    "accuracy": 0.662,
+    "balanced_accuracy": 0.669,
+    "tpr_succes": 0.622,
+    "tnr_echec": 0.715
+   },
+   "paired_rescued": {
+    "gagnant_plus_haut": 69,
+    "egal": 23,
+    "gagnant_plus_bas": 22
+   }
+  },
+  "inner_cones_min": {
+   "echec": {
+    "n": 123,
+    "min": 0.0,
+    "p25": 1.0,
+    "median": 1.0,
+    "p75": 2.0,
+    "max": 2.0
+   },
+   "succes": {
+    "n": 164,
+    "min": 1.0,
+    "p25": 1.0,
+    "median": 1.0,
+    "p75": 2.0,
+    "max": 3.0
+   },
+   "auc": 0.565,
+   "best": {
+    "threshold_succes_si_ge": 2.0,
+    "accuracy": 0.53,
+    "balanced_accuracy": 0.551,
+    "tpr_succes": 0.402,
+    "tnr_echec": 0.699
+   },
+   "paired_rescued": {
+    "gagnant_plus_haut": 42,
+    "egal": 47,
+    "gagnant_plus_bas": 25
+   }
+  },
+  "inner_pair_best": {
+   "echec": {
+    "n": 123,
+    "min": 0.0,
+    "p25": 2.0,
+    "median": 2.0,
+    "p75": 2.0,
+    "max": 3.0
+   },
+   "succes": {
+    "n": 164,
+    "min": 1.0,
+    "p25": 2.0,
+    "median": 2.0,
+    "p75": 2.0,
+    "max": 4.0
+   },
+   "auc": 0.607,
+   "best": {
+    "threshold_succes_si_ge": 2.0,
+    "accuracy": 0.624,
+    "balanced_accuracy": 0.576,
+    "tpr_succes": 0.909,
+    "tnr_echec": 0.244
+   },
+   "paired_rescued": {
+    "gagnant_plus_haut": 37,
+    "egal": 66,
+    "gagnant_plus_bas": 11
+   }
+  },
+  "inner_pair_worst": {
+   "echec": {
+    "n": 123,
+    "min": 0.0,
+    "p25": 1.0,
+    "median": 1.0,
+    "p75": 2.0,
+    "max": 2.0
+   },
+   "succes": {
+    "n": 164,
+    "min": 1.0,
+    "p25": 1.0,
+    "median": 1.0,
+    "p75": 2.0,
+    "max": 3.0
+   },
+   "auc": 0.565,
+   "best": {
+    "threshold_succes_si_ge": 2.0,
+    "accuracy": 0.53,
+    "balanced_accuracy": 0.551,
+    "tpr_succes": 0.402,
+    "tnr_echec": 0.699
+   },
+   "paired_rescued": {
+    "gagnant_plus_haut": 42,
+    "egal": 47,
+    "gagnant_plus_bas": 25
+   }
+  },
+  "outer_cones_min": {
+   "echec": {
+    "n": 123,
+    "min": 0.0,
+    "p25": 1.0,
+    "median": 1.0,
+    "p75": 2.0,
+    "max": 2.0
+   },
+   "succes": {
+    "n": 164,
+    "min": 1.0,
+    "p25": 1.0,
+    "median": 1.0,
+    "p75": 2.0,
+    "max": 3.0
+   },
+   "auc": 0.566,
+   "best": {
+    "threshold_succes_si_ge": 1.0,
+    "accuracy": 0.61,
+    "balanced_accuracy": 0.545,
+    "tpr_succes": 1.0,
+    "tnr_echec": 0.089
+   },
+   "paired_rescued": {
+    "gagnant_plus_haut": 37,
+    "egal": 56,
+    "gagnant_plus_bas": 21
+   }
+  }
+ },
+ "argmax": {
+  "score_min": {
+   "succes_connu": 41,
+   "echec_connu": 52,
+   "succes_rejeu": 21,
+   "echec_rejeu": 0,
+   "inconnu": 0,
+   "choix_0": 47,
+   "choix_gagnant": 41
+  },
+  "score_sum": {
+   "succes_connu": 55,
+   "echec_connu": 35,
+   "succes_rejeu": 23,
+   "echec_rejeu": 1,
+   "inconnu": 0,
+   "choix_0": 30,
+   "choix_gagnant": 55
+  },
+  "inner_cones_min": {
+   "succes_connu": 38,
+   "echec_connu": 58,
+   "succes_rejeu": 17,
+   "echec_rejeu": 1,
+   "inconnu": 0,
+   "choix_0": 56,
+   "choix_gagnant": 38
+  },
+  "inner_pair_best": {
+   "succes_connu": 29,
+   "echec_connu": 65,
+   "succes_rejeu": 0,
+   "echec_rejeu": 0,
+   "inconnu": 20,
+   "choix_0": 61,
+   "choix_gagnant": 29
+  },
+  "inner_pair_worst": {
+   "succes_connu": 38,
+   "echec_connu": 58,
+   "succes_rejeu": 17,
+   "echec_rejeu": 1,
+   "inconnu": 0,
+   "choix_0": 56,
+   "choix_gagnant": 38
+  },
+  "outer_cones_min": {
+   "succes_connu": 33,
+   "echec_connu": 63,
+   "succes_rejeu": 0,
+   "echec_rejeu": 0,
+   "inconnu": 18,
+   "choix_0": 60,
+   "choix_gagnant": 33
+  }
+ },
+ "point4": {
+  "echec_tous": {
+   "n": 124,
+   "petit_cote": 61,
+   "part": 0.492
+  },
+  "echec_ratio_lt_075": {
+   "n": 73,
+   "petit_cote": 32,
+   "part": 0.438
+  },
+  "echec_ratio_ge_075": {
+   "n": 51,
+   "petit_cote": 29,
+   "part": 0.569
+  },
+  "succes_tous": {
+   "n": 164,
+   "petit_cote": 92,
+   "part": 0.561
+  },
+  "succes_ratio_lt_075": {
+   "n": 96,
+   "petit_cote": 56,
+   "part": 0.583
+  },
+  "succes_ratio_ge_075": {
+   "n": 68,
+   "petit_cote": 36,
+   "part": 0.529
+  },
+  "par_ratio": {
+   "0.6": {
+    "echec": {
+     "n": 29,
+     "petit_cote": 15,
+     "part": 0.517
+    },
+    "succes": {
+     "n": 36,
+     "petit_cote": 22,
+     "part": 0.611
+    }
+   },
+   "0.7": {
+    "echec": {
+     "n": 26,
+     "petit_cote": 10,
+     "part": 0.385
+    },
+    "succes": {
+     "n": 36,
+     "petit_cote": 17,
+     "part": 0.472
+    }
+   },
+   "0.722": {
+    "echec": {
+     "n": 18,
+     "petit_cote": 7,
+     "part": 0.389
+    },
+    "succes": {
+     "n": 24,
+     "petit_cote": 17,
+     "part": 0.708
+    }
+   },
+   "0.75": {
+    "echec": {
+     "n": 30,
+     "petit_cote": 17,
+     "part": 0.567
+    },
+    "succes": {
+     "n": 40,
+     "petit_cote": 23,
+     "part": 0.575
+    }
+   },
+   "0.875": {
+    "echec": {
+     "n": 21,
+     "petit_cote": 12,
+     "part": 0.571
+    },
+    "succes": {
+     "n": 28,
+     "petit_cote": 13,
+     "part": 0.464
+    }
+   }
+  }
+ }
+}
