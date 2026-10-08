@@ -52,6 +52,7 @@ from experiments.elastic_routing.muirfield import (
     PATTERNS,
     MuirfieldRoutingError,
     build_course,
+    outer_start,
 )
 from experiments.elastic_routing.render_readable import render_readable_svg
 from experiments.elastic_routing.sites import WATER_LEVEL, load_terrain
@@ -102,12 +103,15 @@ def _run_format(width: int, height: int, *, seeds: tuple[int, ...] = SEEDS,
             continue
         lengths = result.nine_lengths()
         kinds = dict(sorted(Counter(v.kind for v in result.violations).items()))
+        # ``direction`` est le sens du nine EXTÉRIEUR (front pour muirfield,
+        # back pour muirfield_inverse) ; le nine intérieur tourne en sens inverse
         side = "horaire" if result.direction > 0 else "anti-horaire"
+        outer_nine = "front" if outer_start(result.pattern) == 1 else "back"
         svg = render_readable_svg(
             result.layout, result.violations, heightmap=heightmap, water_level=WATER_LEVEL,
             rings=(result.outer_ring, result.inner_ring),
             title=(f"{result.pattern} {label.upper()} · {width}×{height} · seed {seed} · bord "
-                   f"{result.clubhouse_edge} · front {side}"),
+                   f"{result.clubhouse_edge} · {outer_nine} extérieur {side}"),
             subtitle=(f"front par {lengths['front']['par']} · {lengths['front']['total']:.0f} blocs  |  "
                       f"back par {lengths['back']['par']} · {lengths['back']['total']:.0f} blocs  |  "
                       f"{result.relaunches} relance(s) · {elapsed * 1000:.0f} ms"),
@@ -123,7 +127,9 @@ def _run_format(width: int, height: int, *, seeds: tuple[int, ...] = SEEDS,
             "status": "succes",
             "clubhouse": [round(result.layout.clubhouse.x, 2), round(result.layout.clubhouse.y, 2)],
             "clubhouse_edge": plan.edge,
-            "front_direction": plan.direction,
+            "pattern": result.pattern,
+            "outer_nine": outer_nine,
+            "outer_direction": plan.direction,
             "plan": {"clubhouse_index": plan.clubhouse_index,
                      "permutation_index": plan.permutation_index,
                      "angle_index": plan.angle_index},

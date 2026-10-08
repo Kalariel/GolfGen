@@ -1,0 +1,670 @@
+{
+  "height": 350,
+  "pattern": "muirfield",
+  "reports": [
+    {
+      "attempts": [
+        {
+          "angle_index": 0,
+          "checks": 38,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 17
+          },
+          "edge": "W",
+          "nodes": 18,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 20
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        6.0,
+        191.32
+      ],
+      "clubhouse_edge": "W",
+      "doglegs": 11,
+      "elapsed_seconds": 0.3261,
+      "hole_lengths": [
+        147.0,
+        45.2,
+        141.6,
+        112.7,
+        147.0,
+        102.0,
+        57.3,
+        102.0,
+        147.0,
+        102.0,
+        45.3,
+        147.0,
+        47.0,
+        102.0,
+        102.0,
+        102.0,
+        102.0,
+        102.0
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 851.3,
+          "links": 339.9,
+          "par": 35,
+          "total": 1191.2
+        },
+        "front": {
+          "holes": 1001.8,
+          "links": 295.5,
+          "par": 37,
+          "total": 1297.4
+        }
+      },
+      "outer_direction": -1,
+      "outer_nine": "front",
+      "pars": {
+        "back": [
+          4,
+          3,
+          5,
+          3,
+          4,
+          4,
+          4,
+          4,
+          4
+        ],
+        "front": [
+          5,
+          3,
+          4,
+          4,
+          5,
+          4,
+          3,
+          4,
+          5
+        ]
+      },
+      "pattern": "muirfield",
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 0,
+        "permutation_index": 0
+      },
+      "relaunches": 0,
+      "seed": 1,
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 0.0,
+      "timings": {
+        "routing": 0.2159,
+        "sites": 0.1101,
+        "terrain": 0.0,
+        "validate": 0.0126
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "angle_index": 0,
+          "checks": 60,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 17
+          },
+          "edge": "S",
+          "nodes": 18,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "bridge_lookahead": 33,
+            "fairway_gap": 9
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        241.13,
+        344.0
+      ],
+      "clubhouse_edge": "S",
+      "doglegs": 10,
+      "elapsed_seconds": 0.4143,
+      "hole_lengths": [
+        102.0,
+        125.0,
+        155.9,
+        63.9,
+        147.0,
+        102.0,
+        132.4,
+        102.0,
+        147.0,
+        102.0,
+        50.4,
+        102.0,
+        46.2,
+        63.1,
+        123.0,
+        102.0,
+        147.0,
+        102.0
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 837.7,
+          "links": 358.4,
+          "par": 34,
+          "total": 1196.1
+        },
+        "front": {
+          "holes": 1077.1,
+          "links": 360.4,
+          "par": 38,
+          "total": 1437.6
+        }
+      },
+      "outer_direction": -1,
+      "outer_nine": "front",
+      "pars": {
+        "back": [
+          4,
+          3,
+          4,
+          3,
+          3,
+          4,
+          4,
+          5,
+          4
+        ],
+        "front": [
+          4,
+          4,
+          5,
+          3,
+          5,
+          4,
+          4,
+          4,
+          5
+        ]
+      },
+      "pattern": "muirfield",
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 0,
+        "permutation_index": 0
+      },
+      "relaunches": 0,
+      "seed": 2,
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 0.0,
+      "timings": {
+        "routing": 0.3025,
+        "sites": 0.1115,
+        "terrain": 0.0,
+        "validate": 0.0124
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "angle_index": 0,
+          "checks": 27,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 17
+          },
+          "edge": "S",
+          "nodes": 18,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "anchor_lookahead": 5,
+            "fairway_gap": 4
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        216.02,
+        344.0
+      ],
+      "clubhouse_edge": "S",
+      "doglegs": 8,
+      "elapsed_seconds": 0.3265,
+      "hole_lengths": [
+        102.3,
+        60.3,
+        181.1,
+        47.0,
+        183.6,
+        47.3,
+        175.9,
+        102.0,
+        110.6,
+        102.0,
+        102.0,
+        102.0,
+        50.7,
+        147.0,
+        112.0,
+        102.0,
+        106.0,
+        102.0
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 925.6,
+          "links": 349.1,
+          "par": 36,
+          "total": 1274.7
+        },
+        "front": {
+          "holes": 1010.1,
+          "links": 316.5,
+          "par": 36,
+          "total": 1326.6
+        }
+      },
+      "outer_direction": -1,
+      "outer_nine": "front",
+      "pars": {
+        "back": [
+          4,
+          4,
+          4,
+          3,
+          5,
+          4,
+          4,
+          4,
+          4
+        ],
+        "front": [
+          4,
+          3,
+          5,
+          3,
+          5,
+          3,
+          5,
+          4,
+          4
+        ]
+      },
+      "pattern": "muirfield",
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 0,
+        "permutation_index": 0
+      },
+      "relaunches": 0,
+      "seed": 3,
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 0.0,
+      "timings": {
+        "routing": 0.214,
+        "sites": 0.1122,
+        "terrain": 0.0,
+        "validate": 0.0113
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "angle_index": 0,
+          "checks": 64,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 17
+          },
+          "edge": "W",
+          "nodes": 27,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 37
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        6.0,
+        153.63
+      ],
+      "clubhouse_edge": "W",
+      "doglegs": 10,
+      "elapsed_seconds": 0.3963,
+      "hole_lengths": [
+        102.0,
+        59.8,
+        133.4,
+        55.1,
+        113.8,
+        147.0,
+        139.3,
+        124.2,
+        62.2,
+        102.0,
+        102.0,
+        147.0,
+        102.0,
+        102.0,
+        147.0,
+        111.3,
+        47.0,
+        147.0
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 1007.3,
+          "links": 334.7,
+          "par": 38,
+          "total": 1342.1
+        },
+        "front": {
+          "holes": 936.9,
+          "links": 340.9,
+          "par": 34,
+          "total": 1277.8
+        }
+      },
+      "outer_direction": 1,
+      "outer_nine": "front",
+      "pars": {
+        "back": [
+          4,
+          4,
+          5,
+          4,
+          4,
+          5,
+          4,
+          3,
+          5
+        ],
+        "front": [
+          4,
+          3,
+          4,
+          3,
+          4,
+          5,
+          4,
+          4,
+          3
+        ]
+      },
+      "pattern": "muirfield",
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 0,
+        "permutation_index": 0
+      },
+      "relaunches": 0,
+      "seed": 4,
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 0.0,
+      "timings": {
+        "routing": 0.2841,
+        "sites": 0.1119,
+        "terrain": 0.0,
+        "validate": 0.012
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "angle_index": 0,
+          "checks": 27,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 17
+          },
+          "edge": "E",
+          "nodes": 19,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 8
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        394.0,
+        145.92
+      ],
+      "clubhouse_edge": "E",
+      "doglegs": 11,
+      "elapsed_seconds": 0.3681,
+      "hole_lengths": [
+        109.6,
+        147.0,
+        102.0,
+        132.3,
+        147.0,
+        100.6,
+        102.0,
+        47.0,
+        57.0,
+        102.0,
+        147.0,
+        62.0,
+        102.0,
+        147.0,
+        109.5,
+        62.9,
+        102.0,
+        102.0
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 936.4,
+          "links": 362.1,
+          "par": 36,
+          "total": 1298.5
+        },
+        "front": {
+          "holes": 944.5,
+          "links": 316.6,
+          "par": 36,
+          "total": 1261.0
+        }
+      },
+      "outer_direction": -1,
+      "outer_nine": "front",
+      "pars": {
+        "back": [
+          4,
+          5,
+          3,
+          4,
+          5,
+          4,
+          3,
+          4,
+          4
+        ],
+        "front": [
+          4,
+          5,
+          4,
+          4,
+          5,
+          4,
+          4,
+          3,
+          3
+        ]
+      },
+      "pattern": "muirfield",
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 0,
+        "permutation_index": 0
+      },
+      "relaunches": 0,
+      "seed": 5,
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 0.0,
+      "timings": {
+        "routing": 0.255,
+        "sites": 0.1128,
+        "terrain": 0.0,
+        "validate": 0.0126
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "angle_index": 0,
+          "checks": 20,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 17
+          },
+          "edge": "W",
+          "nodes": 18,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 2
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        6.0,
+        107.9
+      ],
+      "clubhouse_edge": "W",
+      "doglegs": 11,
+      "elapsed_seconds": 0.332,
+      "hole_lengths": [
+        49.3,
+        107.4,
+        147.0,
+        134.9,
+        106.5,
+        147.0,
+        102.5,
+        102.0,
+        112.6,
+        102.0,
+        47.0,
+        102.0,
+        102.0,
+        147.0,
+        47.0,
+        102.0,
+        49.7,
+        147.0
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 845.7,
+          "links": 338.7,
+          "par": 35,
+          "total": 1184.4
+        },
+        "front": {
+          "holes": 1009.2,
+          "links": 302.6,
+          "par": 37,
+          "total": 1311.8
+        }
+      },
+      "outer_direction": 1,
+      "outer_nine": "front",
+      "pars": {
+        "back": [
+          4,
+          3,
+          4,
+          4,
+          5,
+          3,
+          4,
+          3,
+          5
+        ],
+        "front": [
+          3,
+          4,
+          5,
+          4,
+          4,
+          5,
+          4,
+          4,
+          4
+        ]
+      },
+      "pattern": "muirfield",
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 0,
+        "permutation_index": 0
+      },
+      "relaunches": 0,
+      "seed": 6,
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 0.0,
+      "timings": {
+        "routing": 0.2216,
+        "sites": 0.1101,
+        "terrain": 0.0,
+        "validate": 0.0125
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    }
+  ],
+  "round": "RB",
+  "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "stats": {
+    "failures": [],
+    "relaunches_total": 0,
+    "seconds_max": 0.414,
+    "seconds_median": 0.35,
+    "seconds_p90": 0.405,
+    "seeds_over_2s": [],
+    "successes": 6,
+    "violations_total": 0
+  },
+  "width": 400
+}
