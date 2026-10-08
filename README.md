@@ -12,6 +12,7 @@ golfgen/routing/                routeur « Muirfield » : model, geometry, parti
 viewer/                         viewer : ouvrir viewer/index.html (charge output/course.json)
 tools/muirfield/                runner de planches, rendu lisible, métriques de forme ; sorties dans output/
 docs/muirfield-spike.md         historique du spike Muirfield (chemins historiques)
+docs/calibration-tailles.md     calibration des tailles de terrain (R3, R3b) et pistes ouvertes
 tests/                          tests pytest (pipeline, cœur test_routing_*, outils test_tools_*)
 ```
 

@@ -3,6 +3,7 @@
 > Historique du spike (2026-09/10). Les chemins cités sont historiques : le
 > cœur est dans `golfgen/routing/`, les outils dans `tools/muirfield/`, et le
 > code des étapes abandonnées est récupérable via les tags git `archive/*`.
+> Calibration des tailles de terrain (R3, R3b) : `docs/calibration-tailles.md`.
 
 ## Décision
 
