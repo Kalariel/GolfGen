@@ -84,15 +84,6 @@ PAR_SPECS: Mapping[int, HoleClassSpec] = MappingProxyType({
     5: HoleClassSpec(5, 145.0, 185.0, 12.0, 18.0),
 })
 
-# Plages d'origine (30–60 % trop longues), figées pour les expériences
-# historiques de l'étape 3 (``skeleton``, ``regions``) afin que leurs fenêtres
-# de longueur et résultats consignés dans PLAN.md restent reproductibles.
-LEGACY_PAR_SPECS: Mapping[int, HoleClassSpec] = MappingProxyType({
-    3: HoleClassSpec(3, 75.0, 110.0, 10.0, 15.0),
-    4: HoleClassSpec(4, 120.0, 175.0, 11.0, 17.0),
-    5: HoleClassSpec(5, 175.0, 235.0, 12.0, 18.0),
-})
-
 
 @dataclass(frozen=True, slots=True)
 class ControlPoint:

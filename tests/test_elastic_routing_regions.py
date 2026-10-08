@@ -15,7 +15,6 @@ import numpy as np
 import pytest
 
 from golfgen.routing.geometry import segments_intersect
-from golfgen.routing.model import LEGACY_PAR_SPECS
 from experiments.elastic_routing.regions import (
     CELL_BY_W_MIN,
     ENDPOINT_MAX_DIST,
@@ -31,7 +30,7 @@ from experiments.elastic_routing.regions import (
     nine_length_window,
     render_regions_svg,
 )
-from experiments.elastic_routing.skeleton import MAP_SIZE, NINE_PAR_PATTERN, is_simple_polyline
+from experiments.elastic_routing.skeleton import LEGACY_PAR_SPECS, MAP_SIZE, NINE_PAR_PATTERN, is_simple_polyline
 
 
 SEEDS = range(1, 31)
