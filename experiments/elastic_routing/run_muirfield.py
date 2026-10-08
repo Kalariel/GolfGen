@@ -187,9 +187,10 @@ def _run_format(width: int, height: int, *, seeds: tuple[int, ...] = SEEDS,
             stages = dict(sorted(Counter(a["status"] for a in error.attempts).items()))
             reports.append({"seed": seed, "status": "echec", "elapsed_seconds": round(elapsed, 4),
                             "relaunches": len(error.attempts), "failure_stages": stages,
-                            "attempts": error.attempts})
+                            "attempts": error.attempts, "skipped": error.skipped})
             print(f"{width}x{height} seed {seed}: ECHEC après {len(error.attempts)} tentative(s) "
-                  f"{stages} · {elapsed * 1000:.0f} ms")
+                  f"{stages} · {len(error.skipped)} variante(s) sautée(s) · "
+                  f"{elapsed * 1000:.0f} ms")
             continue
         lengths = result.nine_lengths()
         kinds = dict(sorted(Counter(v.kind for v in result.violations).items()))
@@ -243,6 +244,8 @@ def _run_format(width: int, height: int, *, seeds: tuple[int, ...] = SEEDS,
             "violations_by_kind": kinds,
             "relaunches": result.relaunches,
             "attempts": list(result.attempts),
+            # variantes sautées (échec déjà prouvé), hors de ``attempts``
+            "skipped": list(result.skipped),
             "terrain_seconds_cached_or_built": round(terrain_seconds, 3),
             "elapsed_seconds": round(elapsed, 4),
             "timings": {k: round(v, 4) for k, v in result.timings.items()},
@@ -271,6 +274,9 @@ def _run_format(width: int, height: int, *, seeds: tuple[int, ...] = SEEDS,
             "failures": [r["seed"] for r in reports if r["status"] != "succes"],
             "violations_total": sum(r.get("violations_total", 0) for r in succeeded),
             "relaunches_total": sum(r["relaunches"] for r in reports),
+            "attempts_mean": (round(sum(len(r["attempts"]) for r in reports) / len(reports), 3)
+                              if reports else None),
+            "skipped_total": sum(len(r["skipped"]) for r in reports),
             "seconds_median": round(_percentile(times, 0.5), 3),
             "seconds_p90": round(_percentile(times, 0.9), 3),
             "seconds_max": round(max(times), 3) if times else None,
