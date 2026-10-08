@@ -64,8 +64,8 @@ rendu lisible et les métriques de forme sont dans `tools/muirfield/`.
 Options : `--round` (rc, rc-30, land, land-30, custom), `--pattern`,
 `--width-mode {variable,min}`, `--size LxH`, `--seeds 1-6|3,7`. Sorties :
 `tools/muirfield/output/<round>_<patron>_<w>x<h>[_30seeds]/` (SVG/PNG par seed,
-`planche.png`, `report.json`). Le relief est mis en cache dans
-`output/.cache/routing/`. Détail : section « Étape M » de `docs/muirfield-spike.md`
+`planche.png`, `report.json`). Le relief (pipeline et runner) est mis en cache dans
+`output/.cache/terrain/`. Détail : section « Étape M » de `docs/muirfield-spike.md`
 (les chemins de modules qui y sont cités sont historiques).
 
 ## État et prochaines étapes

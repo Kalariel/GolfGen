@@ -1,4 +1,4 @@
-"""Contrats immuables du spike ``elastic_routing``.
+"""Contrats immuables du routage Muirfield (historique : ``docs/muirfield-spike.md``).
 
 Ce module décrit un parcours et ses liaisons sans contenir de solveur ni
 d'oracle géométrique. Les invariants structurels sont vérifiés immédiatement ;
