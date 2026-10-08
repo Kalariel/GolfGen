@@ -690,3 +690,92 @@ def test_variable_widths_are_used_and_valid(results, seed):
     assert widths == [mf.hole_width(h.par, fractions[h.order]) for h in result.layout.holes]
     assert len(set(widths)) > 3
     assert result.violations == ()
+
+
+# -- round R2b M1 : cibles irrégulières ------------------------------------------
+
+M1_PARS = (4, 3, 5, 4, 4, 3, 4, 5, 4)
+M1_PATH = [(0.0, 0.0), (400.0, 0.0), (400.0, 300.0), (0.0, 300.0)]   # 1 100 blocs
+
+
+def _legacy_green_targets(path, pars):
+    """Calcul d'avant M1 (pas réguliers), recopié tel quel."""
+    cumulative = mf._polyline_cumulative(path)
+    total = sum(mf.LINK_NOMINAL + mf._nominal_length(par) for par in pars) + mf.LINK_NOMINAL
+    running, targets = 0.0, []
+    for par in pars:
+        running += mf.LINK_NOMINAL + mf._nominal_length(par)
+        targets.append(mf.point_at(path, cumulative, running / total * cumulative[-1]))
+    return targets
+
+
+def _along(path, targets):
+    """Abscisse curviligne de chaque cible (chemin en U sans retour)."""
+    cumulative = mf._polyline_cumulative(path)
+    out = []
+    for x, y in targets:
+        for i, (a, b) in enumerate(zip(path, path[1:])):
+            if (min(a[0], b[0]) - 1e-9 <= x <= max(a[0], b[0]) + 1e-9
+                    and min(a[1], b[1]) - 1e-9 <= y <= max(a[1], b[1]) + 1e-9):
+                out.append(cumulative[i] + math.hypot(x - a[0], y - a[1]))
+                break
+    return out
+
+
+def test_uniform_targets_match_the_legacy_computation():
+    legacy = _legacy_green_targets(M1_PATH, M1_PARS)
+    assert mf.green_targets(M1_PATH, M1_PARS) == legacy
+    assert mf.green_targets(M1_PATH, M1_PARS, None) == legacy
+
+
+def test_irregular_factors_are_seeded_within_jitter():
+    a, b = mf.target_jitter_factors(5), mf.target_jitter_factors(6)
+    assert set(a) == {1, 10} and all(len(v) == 9 for v in a.values())
+    for start in (1, 10):
+        assert np.array_equal(a[start], mf.target_jitter_factors(5)[start])
+        assert not np.array_equal(a[start], b[start])
+        assert np.all(a[start] >= 1.0 - mf.TARGET_JITTER)
+        assert np.all(a[start] <= 1.0 + mf.TARGET_JITTER)
+    assert not np.array_equal(a[1], a[10])
+
+
+def test_irregular_targets_are_deterministic_and_seed_dependent():
+    def targets(seed):
+        return mf.green_targets(M1_PATH, M1_PARS, mf.target_jitter_factors(seed)[1])
+    assert targets(3) == targets(3)
+    assert targets(3) != targets(4)
+    assert targets(3) != mf.green_targets(M1_PATH, M1_PARS)
+
+
+@pytest.mark.parametrize("seed", range(1, 21))
+def test_irregular_targets_are_strictly_increasing_and_keep_the_total(seed):
+    uniform = mf.green_targets(M1_PATH, M1_PARS)
+    for start in (1, 10):
+        irregular = mf.green_targets(M1_PATH, M1_PARS, mf.target_jitter_factors(seed)[start])
+        along = _along(M1_PATH, irregular)
+        assert len(along) == 9 and all(b > a for a, b in zip(along, along[1:]))
+        assert along[0] > 0.0
+        assert irregular[-1] == uniform[-1]            # dernière cible et retour inchangés
+
+
+@pytest.mark.parametrize("factor", (1.0 - mf.TARGET_JITTER, 1.0 + mf.TARGET_JITTER))
+def test_constant_factors_give_the_uniform_targets(factor):
+    irregular = mf.green_targets(M1_PATH, M1_PARS, np.full(9, factor))
+    assert irregular == pytest.approx(mf.green_targets(M1_PATH, M1_PARS))
+
+
+def test_unknown_target_mode_raises():
+    with pytest.raises(ValueError, match="target_mode"):
+        mf.build_course(1, "muirfield", width=300, height=400, target_mode="chaos")
+    with pytest.raises(ValueError, match="target_mode"):
+        mf.build_muirfield(1, width=300, height=400, target_mode="chaos")
+
+
+def test_irregular_mode_is_valid_and_reported():
+    result = mf.build_course(1, "muirfield", width=300, height=400, width_mode="min",
+                             target_mode="irregular")
+    assert result.target_mode == "irregular"
+    assert result.violations == ()
+    uniform = mf.build_course(1, "muirfield", width=300, height=400, width_mode="min")
+    assert uniform.target_mode == "uniform"
+    assert result.layout.to_json() != uniform.layout.to_json()

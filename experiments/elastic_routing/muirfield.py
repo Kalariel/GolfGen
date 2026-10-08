@@ -124,6 +124,8 @@ NODE_BUDGET_PER_NINE = 300          # nœuds de recherche au plus par nine et pa
 
 
 WIDTH_MODES = ("variable", "min")
+TARGET_MODES = ("uniform", "irregular")
+TARGET_JITTER = 0.5                 # M1 : facteur de pas tiré dans [1 - a, 1 + a]
 WIDTH_STEP = 0.5                    # largeurs arrondies au demi-bloc
 
 
@@ -220,6 +222,7 @@ class MuirfieldResult:
     timings: dict[str, float] = field(default_factory=dict)
     requested_pattern: str = "muirfield"
     width_mode: str = "variable"
+    target_mode: str = "uniform"
 
     @property
     def pattern(self) -> str:
@@ -482,15 +485,37 @@ def _nominal_length(par: int) -> float:
     return (spec.length_min + spec.length_max) / 2.0
 
 
-def green_targets(path: list[Point], pars: tuple[int, ...]) -> list[Point]:
-    """Cible douce de chaque green : fraction de longueur nominale cumulée."""
+def target_jitter_factors(seed: int) -> dict[int, np.ndarray]:
+    """Round R2b M1 : facteurs de pas des cibles, tirés une fois par seed
+    (flux ``[seed, 37]``, indépendants des relances et du patron) ; clé =
+    premier ordre du nine (1 ou 10), 9 facteurs dans
+    [1 - TARGET_JITTER, 1 + TARGET_JITTER]."""
+    factors = np.random.default_rng([seed, 37]).uniform(
+        1.0 - TARGET_JITTER, 1.0 + TARGET_JITTER, size=18)
+    return {1: factors[:9], 10: factors[9:]}
+
+
+def green_targets(path: list[Point], pars: tuple[int, ...],
+                  factors: np.ndarray | None = None) -> list[Point]:
+    """Cible douce de chaque green : fraction de longueur nominale cumulée.
+
+    ``factors`` (mode ``irregular``) multiplie chaque pas nominal (liaison +
+    trou), puis les pas sont renormalisés à leur somme nominale : la dernière
+    cible et la liaison de retour ne bougent pas, les fractions restent
+    strictement croissantes (facteurs > 0). ``None`` : pas réguliers."""
     cumulative = _polyline_cumulative(path)
     total = sum(LINK_NOMINAL + _nominal_length(par) for par in pars) + LINK_NOMINAL
     running, targets = 0.0, []
-    for par in pars:
-        running += LINK_NOMINAL + _nominal_length(par)
-        targets.append(point_at(path, cumulative, running / total * cumulative[-1]))
-    return targets
+    if factors is None:
+        for par in pars:
+            running += LINK_NOMINAL + _nominal_length(par)
+            targets.append(point_at(path, cumulative, running / total * cumulative[-1]))
+        return targets
+    nominal = np.array([LINK_NOMINAL + _nominal_length(par) for par in pars])
+    steps = nominal * np.asarray(factors, dtype=float)[:len(pars)]
+    runnings = np.cumsum(steps) * (nominal.sum() / steps.sum())
+    runnings[-1] = sum(LINK_NOMINAL + _nominal_length(par) for par in pars)   # exacte
+    return [point_at(path, cumulative, float(r) / total * cumulative[-1]) for r in runnings]
 
 
 @dataclass(frozen=True, slots=True)
@@ -602,6 +627,7 @@ class _Search:
     budget_used: tuple[dict[int, int], dict[int, int]] = field(default_factory=lambda: ({}, {}))
     pattern: str = "muirfield"
     width_fractions: dict[int, float] | None = None
+    target_factors: dict[int, np.ndarray] | None = None
     anchors_done: bool = False
     outer_done: bool = False
 
@@ -833,10 +859,13 @@ class _Search:
         intérieur. Un échec de la phase B termine la tentative (pas de retour
         dans le nine extérieur). Chaque nine garde son propre budget.
         """
+        factors = self.target_factors or {}
         nines = {
-            1: (front_pars, [np.asarray(t) for t in green_targets(front_path, front_pars)],
+            1: (front_pars, [np.asarray(t) for t in green_targets(front_path, front_pars,
+                                                                 factors.get(1))],
                 np.asarray(front_path)),
-            10: (back_pars, [np.asarray(t) for t in green_targets(back_path, back_pars)],
+            10: (back_pars, [np.asarray(t) for t in green_targets(back_path, back_pars,
+                                                                 factors.get(10))],
                  np.asarray(back_path)),
         }
         ch = self.clubhouse
@@ -1035,16 +1064,18 @@ def iter_plans(seed: int, width: float = MAP_WIDTH, height: float = MAP_HEIGHT,
 def build_muirfield(seed: int, heightmap: np.ndarray | None = None, *,
                     width: float = MAP_WIDTH, height: float = MAP_HEIGHT,
                     rules: ValidationRules | None = None,
-                    pattern: str = "muirfield", width_mode: str = "variable") -> MuirfieldResult:
+                    pattern: str = "muirfield", width_mode: str = "variable",
+                    target_mode: str = "uniform") -> MuirfieldResult:
     """Alias historique de ``build_course`` (patron ``muirfield`` par défaut)."""
     return build_course(seed, pattern, heightmap, width=width, height=height, rules=rules,
-                        width_mode=width_mode)
+                        width_mode=width_mode, target_mode=target_mode)
 
 
 def build_course(seed: int, pattern: str = "muirfield", heightmap: np.ndarray | None = None, *,
                  width: float = MAP_WIDTH, height: float = MAP_HEIGHT,
                  rules: ValidationRules | None = None,
-                 width_mode: str = "variable") -> MuirfieldResult:
+                 width_mode: str = "variable",
+                 target_mode: str = "uniform") -> MuirfieldResult:
     """Parcours valide pour (seed, patron), ou ``MuirfieldRoutingError``.
 
     ``pattern`` est un paramètre explicite, au même titre que la seed :
@@ -1056,6 +1087,11 @@ def build_course(seed: int, pattern: str = "muirfield", heightmap: np.ndarray | 
     largeur dans la plage de son par (``hole_width_fractions``) ; ``min`` —
     largeur minimale du par, comportement des rounds A–B.
 
+    ``target_mode`` : ``uniform`` (défaut) — cibles des greens à pas
+    nominal régulier le long de l'anneau ; ``irregular`` (round R2b M1) —
+    chaque pas multiplié par un facteur seedé (``target_jitter_factors``),
+    total conservé.
+
     Le résultat renvoyé a TOUJOURS zéro violation ``validate(layout, rules)`` ;
     les plages de liaison sont dérivées de ``rules`` (``link_bounds``)."""
     requested = pattern
@@ -1063,6 +1099,10 @@ def build_course(seed: int, pattern: str = "muirfield", heightmap: np.ndarray | 
     if width_mode not in WIDTH_MODES:
         raise ValueError(f"width_mode inconnu : {width_mode!r} (attendu : {', '.join(WIDTH_MODES)})")
     fractions = hole_width_fractions(seed) if width_mode == "variable" else None
+    if target_mode not in TARGET_MODES:
+        raise ValueError(f"target_mode inconnu : {target_mode!r} "
+                         f"(attendu : {', '.join(TARGET_MODES)})")
+    target_factors = target_jitter_factors(seed) if target_mode == "irregular" else None
     started = time.perf_counter()
     timings: dict[str, float] = {}
     if heightmap is None:
@@ -1090,6 +1130,7 @@ def build_course(seed: int, pattern: str = "muirfield", heightmap: np.ndarray | 
             outer_tee_ok=~frame.in_corridor(tee_sites.points),
             outer_green_ok=~frame.in_corridor(green_sites.points),
             links=links, pattern=pattern, width_fractions=fractions,
+            target_factors=target_factors,
         )
 
     def capacity(edge: str, clubhouse: Point, direction: int) -> AnchorCapacity:
@@ -1154,5 +1195,6 @@ def build_course(seed: int, pattern: str = "muirfield", heightmap: np.ndarray | 
             front_path=tuple(front_path), back_path=tuple(back_path),
             attempts=tuple(attempts), elapsed_seconds=time.perf_counter() - started,
             timings=timings, requested_pattern=requested, width_mode=width_mode,
+            target_mode=target_mode,
         )
     raise MuirfieldRoutingError(seed, attempts)
