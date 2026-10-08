@@ -7,7 +7,7 @@ import time
 from pathlib import Path
 
 from golfgen.config import CourseConfig
-from golfgen.terrain import TerrainGenerator
+from golfgen.terrain import load_or_generate, terrain_cache_path
 from golfgen.exporter import JSONExporter
 
 
@@ -23,22 +23,14 @@ def run_pipeline(config: CourseConfig, stage: str, output: Path) -> None:
     print(f"Pipeline: {' -> '.join(STAGES[:stage_idx + 1])}")
     print()
 
-    # --- Terrain (cached by seed) ---
+    # --- Terrain (cache unique, clé seed + taille + config de relief) ---
     t0 = time.time()
-    cache_dir = Path("output/.cache")
-    cache_dir.mkdir(parents=True, exist_ok=True)
-    terrain_cache = cache_dir / f"terrain_s{config.seed}_{config.width}x{config.height}.npy"
-    
-    import numpy as np
-    if terrain_cache.exists():
+    if terrain_cache_path(config).exists():
         print("1/2  Terrain (cached)...")
-        heightmap = np.load(terrain_cache)
     else:
         print("1/2  Terrain (Perlin noise)...")
-        terrain_gen = TerrainGenerator(config)
-        heightmap = terrain_gen.generate()
-        np.save(terrain_cache, heightmap)
-    
+    heightmap = load_or_generate(config)
+
     exporter.add_terrain(heightmap)
     print(f"     Heightmap {heightmap.shape[1]}x{heightmap.shape[0]}, "
           f"elev [{heightmap.min():.1f}, {heightmap.max():.1f}]  "
