@@ -13,6 +13,7 @@ violation surlignés en rose. Relief en fond (niveaux de gris, eau en bleu).
 from __future__ import annotations
 
 from html import escape
+import math
 from collections.abc import Sequence
 
 import numpy as np
@@ -61,6 +62,10 @@ def render_readable_svg(layout: CourseLayout, violations: Sequence[Violation] = 
                         title: str = "", subtitle: str = "") -> str:
     size, padding, footer = 800, 24, 88
     scale = (size - 2 * padding) / max(layout.width, layout.height)
+    # hauteur de la zone carte : ``size`` en portrait et au carré (rendu
+    # inchangé) ; en paysage, rognée à la carte pour éviter une bande vide
+    # au-dessus du pied (et dans les planches assemblées par montage)
+    top = min(size, math.ceil(2 * padding + layout.height * scale - 1e-6))
 
     def pt(value: Point) -> tuple[float, float]:
         return (padding + value[0] * scale, padding + value[1] * scale)
@@ -76,7 +81,7 @@ def render_readable_svg(layout: CourseLayout, violations: Sequence[Violation] = 
                  for v in violations if v.kind == "link_distance"}
 
     out = [
-        f'<svg xmlns="http://www.w3.org/2000/svg" width="{size}" height="{size + footer}">',
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{size}" height="{top + footer}">',
         '<rect width="100%" height="100%" fill="#0d1117"/>',
         ('<style>text{font-family:monospace;fill:#f0f6fc}'
          '.num{font-weight:bold;fill:#0d1117}</style>'),
@@ -145,7 +150,7 @@ def render_readable_svg(layout: CourseLayout, violations: Sequence[Violation] = 
         _, (tx, ty) = _point_and_tangent([(p.x, p.y) for p in hole.axis], 0.0)
         label = pt((tee[0] - tx * LABEL_BACKOFF, tee[1] - ty * LABEL_BACKOFF))
         label = (min(max(label[0], padding + 10), size - padding - 10),
-                 min(max(label[1], padding + 10), size - padding - 10))
+                 min(max(label[1], padding + 10), top - padding - 10))
         ring_color = VIOLATION_COLOR if hole.order in hole_kinds else "#0d1117"
         out.append(f'<circle cx="{label[0]:.1f}" cy="{label[1]:.1f}" r="10" fill="{color}" '
                    f'stroke="{ring_color}" stroke-width="2"/>')
@@ -163,11 +168,11 @@ def render_readable_svg(layout: CourseLayout, violations: Sequence[Violation] = 
         counts[violation.kind] = counts.get(violation.kind, 0) + 1
     summary = ", ".join(f"{kind}:{count}" for kind, count in counts.items()) or "aucune"
     out.extend([
-        f'<text x="{padding}" y="{size + 18}" font-size="14">{escape(title)}</text>',
-        f'<text x="{padding}" y="{size + 38}" font-size="11">{escape(subtitle)}</text>',
-        (f'<text x="{padding}" y="{size + 56}" font-size="11">violations {len(violations)} · '
+        f'<text x="{padding}" y="{top + 18}" font-size="14">{escape(title)}</text>',
+        f'<text x="{padding}" y="{top + 38}" font-size="11">{escape(subtitle)}</text>',
+        (f'<text x="{padding}" y="{top + 56}" font-size="11">violations {len(violations)} · '
          f'{escape(summary)}</text>'),
-        (f'<text x="{padding}" y="{size + 76}" font-size="11">bleu=par3 · vert=par4 · jaune=par5 · '
+        (f'<text x="{padding}" y="{top + 76}" font-size="11">bleu=par3 · vert=par4 · jaune=par5 · '
          '□ tee · ● green · pointillés = liaisons · rose = violation</text>'),
         "</svg>",
     ])
