@@ -1,11 +1,11 @@
 {
   "height": 300,
-  "path_mode": "ring",
   "pattern": "muirfield",
   "reports": [
     {
       "attempts": [
         {
+          "anchor_truncated": false,
           "angle_index": 0,
           "checks": 32,
           "clubhouse_index": 0,
@@ -31,7 +31,7 @@
       ],
       "clubhouse_edge": "W",
       "doglegs": 13,
-      "elapsed_seconds": 0.2866,
+      "elapsed_seconds": 0.2864,
       "hole_lengths": [
         102.0,
         147.9,
@@ -72,7 +72,6 @@
         11.0,
         11.5
       ],
-      "lobes": null,
       "nine_lengths": {
         "back": {
           "holes": 866.9,
@@ -113,7 +112,6 @@
           4
         ]
       },
-      "path_mode": "ring",
       "pattern": "muirfield",
       "plan": {
         "angle_index": 0,
@@ -130,9 +128,7 @@
           "heading_turns": 2.5156,
           "hull_ratio": 0.4036,
           "obliquity_abs": 0.4523,
-          "obliquity_abs_ring": 0.4523,
           "obliquity_signed": -0.1355,
-          "obliquity_signed_ring": -0.1355,
           "path_to_nine_length": 0.4996,
           "radial_alignment_R": 0.5628
         },
@@ -148,20 +144,19 @@
           "heading_turns": 1.1581,
           "hull_ratio": 1.0794,
           "obliquity_abs": 0.2905,
-          "obliquity_abs_ring": 0.2905,
           "obliquity_signed": 0.1372,
-          "obliquity_signed_ring": 0.1372,
           "path_to_nine_length": 0.7714,
           "radial_alignment_R": 0.4818
         }
       },
+      "skipped": [],
       "status": "succes",
       "terrain_seconds_cached_or_built": 0.0,
       "timings": {
-        "routing": 0.1799,
-        "sites": 0.1031,
+        "routing": 0.178,
+        "sites": 0.1047,
         "terrain": 0.0,
-        "validate": 0.0133
+        "validate": 0.0134
       },
       "violations_by_kind": {},
       "violations_total": 0
@@ -169,6 +164,7 @@
     {
       "attempts": [
         {
+          "anchor_truncated": false,
           "angle_index": 0,
           "checks": 1509,
           "clubhouse_index": 0,
@@ -189,6 +185,7 @@
           "violations": {}
         },
         {
+          "anchor_truncated": false,
           "angle_index": 1,
           "checks": 1509,
           "clubhouse_index": 0,
@@ -209,6 +206,7 @@
           "violations": {}
         },
         {
+          "anchor_truncated": false,
           "angle_index": 2,
           "checks": 1509,
           "clubhouse_index": 0,
@@ -229,6 +227,7 @@
           "violations": {}
         },
         {
+          "anchor_truncated": false,
           "angle_index": 0,
           "checks": 37,
           "clubhouse_index": 0,
@@ -254,7 +253,7 @@
       ],
       "clubhouse_edge": "S",
       "doglegs": 13,
-      "elapsed_seconds": 10.5542,
+      "elapsed_seconds": 10.4254,
       "hole_lengths": [
         102.0,
         147.0,
@@ -295,7 +294,6 @@
         12.5,
         14.0
       ],
-      "lobes": null,
       "nine_lengths": {
         "back": {
           "holes": 832.2,
@@ -336,7 +334,6 @@
           5
         ]
       },
-      "path_mode": "ring",
       "pattern": "muirfield",
       "plan": {
         "angle_index": 0,
@@ -353,9 +350,7 @@
           "heading_turns": 2.0703,
           "hull_ratio": 0.4591,
           "obliquity_abs": 0.3949,
-          "obliquity_abs_ring": 0.3949,
           "obliquity_signed": 0.0813,
-          "obliquity_signed_ring": 0.0813,
           "path_to_nine_length": 0.5449,
           "radial_alignment_R": 0.1742
         },
@@ -371,20 +366,19 @@
           "heading_turns": 1.3029,
           "hull_ratio": 1.189,
           "obliquity_abs": 0.3283,
-          "obliquity_abs_ring": 0.3283,
           "obliquity_signed": -0.0632,
-          "obliquity_signed_ring": -0.0632,
           "path_to_nine_length": 0.74,
           "radial_alignment_R": 0.431
         }
       },
+      "skipped": [],
       "status": "succes",
-      "terrain_seconds_cached_or_built": 0.0,
+      "terrain_seconds_cached_or_built": 5.305,
       "timings": {
-        "routing": 10.4581,
-        "sites": 0.0958,
+        "routing": 10.3287,
+        "sites": 0.0964,
         "terrain": 0.0,
-        "validate": 0.0134
+        "validate": 0.0132
       },
       "violations_by_kind": {},
       "violations_total": 0
@@ -392,6 +386,7 @@
     {
       "attempts": [
         {
+          "anchor_truncated": false,
           "angle_index": 0,
           "checks": 346,
           "clubhouse_index": 0,
@@ -417,7 +412,7 @@
       ],
       "clubhouse_edge": "S",
       "doglegs": 10,
-      "elapsed_seconds": 0.9073,
+      "elapsed_seconds": 0.9055,
       "hole_lengths": [
         102.0,
         60.2,
@@ -458,7 +453,6 @@
         15.5,
         12.5
       ],
-      "lobes": null,
       "nine_lengths": {
         "back": {
           "holes": 908.4,
@@ -499,7 +493,6 @@
           4
         ]
       },
-      "path_mode": "ring",
       "pattern": "muirfield",
       "plan": {
         "angle_index": 0,
@@ -516,9 +509,7 @@
           "heading_turns": 1.4186,
           "hull_ratio": 0.4016,
           "obliquity_abs": 0.4475,
-          "obliquity_abs_ring": 0.4475,
           "obliquity_signed": 0.0712,
-          "obliquity_signed_ring": 0.0712,
           "path_to_nine_length": 0.488,
           "radial_alignment_R": 0.1137
         },
@@ -534,18 +525,17 @@
           "heading_turns": 1.2163,
           "hull_ratio": 1.0573,
           "obliquity_abs": 0.4054,
-          "obliquity_abs_ring": 0.4054,
           "obliquity_signed": -0.0268,
-          "obliquity_signed_ring": -0.0268,
           "path_to_nine_length": 0.815,
           "radial_alignment_R": 0.5299
         }
       },
+      "skipped": [],
       "status": "succes",
-      "terrain_seconds_cached_or_built": 0.0,
+      "terrain_seconds_cached_or_built": 5.301,
       "timings": {
-        "routing": 0.8103,
-        "sites": 0.0967,
+        "routing": 0.8066,
+        "sites": 0.0986,
         "terrain": 0.0,
         "validate": 0.0119
       },
@@ -555,6 +545,7 @@
     {
       "attempts": [
         {
+          "anchor_truncated": false,
           "angle_index": 0,
           "checks": 465,
           "clubhouse_index": 0,
@@ -574,6 +565,7 @@
           "violations": {}
         },
         {
+          "anchor_truncated": false,
           "angle_index": 1,
           "checks": 356,
           "clubhouse_index": 0,
@@ -592,6 +584,7 @@
           "violations": {}
         },
         {
+          "anchor_truncated": false,
           "angle_index": 2,
           "checks": 259,
           "clubhouse_index": 0,
@@ -617,7 +610,7 @@
       ],
       "clubhouse_edge": "W",
       "doglegs": 12,
-      "elapsed_seconds": 4.8094,
+      "elapsed_seconds": 4.7319,
       "hole_lengths": [
         102.0,
         62.2,
@@ -658,7 +651,6 @@
         14.5,
         17.5
       ],
-      "lobes": null,
       "nine_lengths": {
         "back": {
           "holes": 1018.5,
@@ -699,7 +691,6 @@
           3
         ]
       },
-      "path_mode": "ring",
       "pattern": "muirfield",
       "plan": {
         "angle_index": 2,
@@ -716,9 +707,7 @@
           "heading_turns": 2.4719,
           "hull_ratio": 0.4106,
           "obliquity_abs": 0.3288,
-          "obliquity_abs_ring": 0.3288,
           "obliquity_signed": 0.0157,
-          "obliquity_signed_ring": 0.0157,
           "path_to_nine_length": 0.4533,
           "radial_alignment_R": 0.6185
         },
@@ -734,18 +723,17 @@
           "heading_turns": 1.0908,
           "hull_ratio": 1.1367,
           "obliquity_abs": 0.25,
-          "obliquity_abs_ring": 0.25,
           "obliquity_signed": -0.0126,
-          "obliquity_signed_ring": -0.0126,
           "path_to_nine_length": 0.876,
           "radial_alignment_R": 0.6718
         }
       },
+      "skipped": [],
       "status": "succes",
-      "terrain_seconds_cached_or_built": 0.0,
+      "terrain_seconds_cached_or_built": 5.29,
       "timings": {
-        "routing": 4.7135,
-        "sites": 0.0957,
+        "routing": 4.6367,
+        "sites": 0.0948,
         "terrain": 0.0,
         "validate": 0.013
       },
@@ -755,6 +743,7 @@
     {
       "attempts": [
         {
+          "anchor_truncated": true,
           "angle_index": 0,
           "checks": 140,
           "clubhouse_index": 0,
@@ -773,6 +762,7 @@
           "violations": {}
         },
         {
+          "anchor_truncated": true,
           "angle_index": 1,
           "checks": 140,
           "clubhouse_index": 0,
@@ -791,6 +781,7 @@
           "violations": {}
         },
         {
+          "anchor_truncated": true,
           "angle_index": 2,
           "checks": 140,
           "clubhouse_index": 0,
@@ -809,6 +800,7 @@
           "violations": {}
         },
         {
+          "anchor_truncated": true,
           "angle_index": 0,
           "checks": 164,
           "clubhouse_index": 0,
@@ -827,6 +819,7 @@
           "violations": {}
         },
         {
+          "anchor_truncated": true,
           "angle_index": 1,
           "checks": 164,
           "clubhouse_index": 0,
@@ -845,6 +838,7 @@
           "violations": {}
         },
         {
+          "anchor_truncated": true,
           "angle_index": 2,
           "checks": 164,
           "clubhouse_index": 0,
@@ -863,6 +857,7 @@
           "violations": {}
         },
         {
+          "anchor_truncated": true,
           "angle_index": 0,
           "checks": 140,
           "clubhouse_index": 0,
@@ -881,6 +876,7 @@
           "violations": {}
         },
         {
+          "anchor_truncated": true,
           "angle_index": 1,
           "checks": 140,
           "clubhouse_index": 0,
@@ -899,6 +895,7 @@
           "violations": {}
         },
         {
+          "anchor_truncated": true,
           "angle_index": 2,
           "checks": 140,
           "clubhouse_index": 0,
@@ -917,6 +914,7 @@
           "violations": {}
         },
         {
+          "anchor_truncated": false,
           "angle_index": 0,
           "checks": 538,
           "clubhouse_index": 1,
@@ -942,7 +940,7 @@
       ],
       "clubhouse_edge": "W",
       "doglegs": 12,
-      "elapsed_seconds": 3.835,
+      "elapsed_seconds": 3.7428,
       "hole_lengths": [
         147.0,
         102.0,
@@ -983,7 +981,6 @@
         13.0,
         14.5
       ],
-      "lobes": null,
       "nine_lengths": {
         "back": {
           "holes": 910.9,
@@ -1024,7 +1021,6 @@
           3
         ]
       },
-      "path_mode": "ring",
       "pattern": "muirfield",
       "plan": {
         "angle_index": 0,
@@ -1041,9 +1037,7 @@
           "heading_turns": 2.5246,
           "hull_ratio": 0.4762,
           "obliquity_abs": 0.3084,
-          "obliquity_abs_ring": 0.3084,
           "obliquity_signed": 0.1282,
-          "obliquity_signed_ring": 0.1282,
           "path_to_nine_length": 0.4887,
           "radial_alignment_R": 0.1837
         },
@@ -1059,18 +1053,17 @@
           "heading_turns": 1.1231,
           "hull_ratio": 1.0687,
           "obliquity_abs": 0.2829,
-          "obliquity_abs_ring": 0.2829,
           "obliquity_signed": 0.1176,
-          "obliquity_signed_ring": 0.1176,
           "path_to_nine_length": 0.7967,
           "radial_alignment_R": 0.5105
         }
       },
+      "skipped": [],
       "status": "succes",
-      "terrain_seconds_cached_or_built": 0.0,
+      "terrain_seconds_cached_or_built": 5.258,
       "timings": {
-        "routing": 3.7408,
-        "sites": 0.0938,
+        "routing": 3.6467,
+        "sites": 0.0958,
         "terrain": 0.0,
         "validate": 0.013
       },
@@ -1080,6 +1073,7 @@
     {
       "attempts": [
         {
+          "anchor_truncated": false,
           "angle_index": 0,
           "checks": 31,
           "clubhouse_index": 0,
@@ -1105,7 +1099,7 @@
       ],
       "clubhouse_edge": "W",
       "doglegs": 9,
-      "elapsed_seconds": 0.2522,
+      "elapsed_seconds": 0.2516,
       "hole_lengths": [
         57.9,
         105.8,
@@ -1146,7 +1140,6 @@
         15.0,
         16.5
       ],
-      "lobes": null,
       "nine_lengths": {
         "back": {
           "holes": 855.9,
@@ -1187,7 +1180,6 @@
           4
         ]
       },
-      "path_mode": "ring",
       "pattern": "muirfield",
       "plan": {
         "angle_index": 0,
@@ -1204,9 +1196,7 @@
           "heading_turns": 2.1167,
           "hull_ratio": 0.4004,
           "obliquity_abs": 0.6477,
-          "obliquity_abs_ring": 0.6477,
           "obliquity_signed": -0.0471,
-          "obliquity_signed_ring": -0.0471,
           "path_to_nine_length": 0.5308,
           "radial_alignment_R": 0.1621
         },
@@ -1222,20 +1212,19 @@
           "heading_turns": 0.8985,
           "hull_ratio": 1.2162,
           "obliquity_abs": 0.2389,
-          "obliquity_abs_ring": 0.2389,
           "obliquity_signed": 0.1724,
-          "obliquity_signed_ring": 0.1724,
           "path_to_nine_length": 0.7613,
           "radial_alignment_R": 0.8107
         }
       },
+      "skipped": [],
       "status": "succes",
-      "terrain_seconds_cached_or_built": 0.0,
+      "terrain_seconds_cached_or_built": 5.267,
       "timings": {
-        "routing": 0.1577,
-        "sites": 0.0943,
+        "routing": 0.1572,
+        "sites": 0.0941,
         "terrain": 0.0,
-        "validate": 0.0114
+        "validate": 0.0115
       },
       "violations_by_kind": {},
       "violations_total": 0
@@ -1251,11 +1240,12 @@
     6
   ],
   "stats": {
+    "attempts_mean": 3.333,
     "failures": [],
     "relaunches_total": 14,
-    "seconds_max": 10.554,
-    "seconds_median": 2.371,
-    "seconds_p90": 7.682,
+    "seconds_max": 10.425,
+    "seconds_median": 2.324,
+    "seconds_p90": 7.579,
     "seeds_over_2s": [
       2,
       4,
@@ -1310,17 +1300,7 @@
           "median": 0.4212,
           "min": 0.3084
         },
-        "obliquity_abs_ring": {
-          "max": 0.6477,
-          "median": 0.4212,
-          "min": 0.3084
-        },
         "obliquity_signed": {
-          "max": 0.1282,
-          "median": 0.0435,
-          "min": -0.1355
-        },
-        "obliquity_signed_ring": {
           "max": 0.1282,
           "median": 0.0435,
           "min": -0.1355
@@ -1367,17 +1347,7 @@
           "median": 0.2867,
           "min": 0.2389
         },
-        "obliquity_abs_ring": {
-          "max": 0.4054,
-          "median": 0.2867,
-          "min": 0.2389
-        },
         "obliquity_signed": {
-          "max": 0.1724,
-          "median": 0.0525,
-          "min": -0.0632
-        },
-        "obliquity_signed_ring": {
           "max": 0.1724,
           "median": 0.0525,
           "min": -0.0632
@@ -1394,10 +1364,10 @@
         }
       }
     },
+    "skipped_total": 0,
     "successes": 6,
     "violations_total": 0
   },
-  "target_mode": "uniform",
   "width": 400,
   "width_mode": "variable"
 }
