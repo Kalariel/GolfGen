@@ -1,0 +1,1600 @@
+{
+  "calib": {
+    "long": 450,
+    "orientation": "portrait",
+    "short": 280
+  },
+  "height": 450,
+  "pattern": "muirfield_inverse",
+  "reports": [
+    {
+      "attempts": [
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 1051,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 17,
+            "10": 10
+          },
+          "edge": "W",
+          "nodes": 41,
+          "pattern": "muirfield_inverse",
+          "permutation_index": 0,
+          "rejections": {
+            "bridge_lookahead": 816,
+            "fairway_gap": 194
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        6.0,
+        245.98
+      ],
+      "clubhouse_edge": "W",
+      "doglegs": 9,
+      "elapsed_seconds": 2.5118,
+      "hole_lengths": [
+        147.0,
+        47.0,
+        102.0,
+        100.7,
+        147.0,
+        102.0,
+        54.0,
+        102.9,
+        147.0,
+        102.0,
+        62.0,
+        158.0,
+        47.0,
+        100.4,
+        136.3,
+        119.0,
+        102.0,
+        111.9
+      ],
+      "hole_widths": [
+        14.5,
+        11.5,
+        14.5,
+        11.5,
+        12.5,
+        15.5,
+        13.5,
+        14.5,
+        14.5,
+        12.0,
+        10.5,
+        16.0,
+        13.0,
+        13.0,
+        15.5,
+        11.0,
+        11.0,
+        12.5
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 938.6,
+          "links": 301.0,
+          "par": 35,
+          "total": 1239.6
+        },
+        "front": {
+          "holes": 949.7,
+          "links": 365.2,
+          "par": 37,
+          "total": 1314.8
+        }
+      },
+      "outer_direction": -1,
+      "outer_nine": "back",
+      "pars": {
+        "back": [
+          4,
+          3,
+          5,
+          3,
+          4,
+          4,
+          4,
+          4,
+          4
+        ],
+        "front": [
+          5,
+          3,
+          4,
+          4,
+          5,
+          4,
+          3,
+          4,
+          5
+        ]
+      },
+      "pattern": "muirfield_inverse",
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 0,
+        "permutation_index": 0
+      },
+      "relaunches": 0,
+      "seed": 1,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.3537,
+          "direction_entropy": 0.8222,
+          "forward_mean": 0.9604,
+          "heading_turns": 1.1612,
+          "hull_ratio": 1.1674,
+          "obliquity_abs": 0.2329,
+          "obliquity_signed": -0.1004,
+          "path_to_nine_length": 0.8755,
+          "radial_alignment_R": 0.4948
+        },
+        "course": {
+          "angular_step_cv": 1.3465,
+          "direction_entropy": 0.9228,
+          "radial_alignment_R": 0.3826
+        },
+        "front": {
+          "angular_step_cv": 2.2276,
+          "direction_entropy": 0.8222,
+          "forward_mean": 0.5685,
+          "heading_turns": 2.4974,
+          "hull_ratio": 0.4236,
+          "obliquity_abs": 0.5124,
+          "obliquity_signed": 0.0505,
+          "path_to_nine_length": 0.5336,
+          "radial_alignment_R": 0.2851
+        }
+      },
+      "skipped": [],
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 0.0,
+      "timings": {
+        "routing": 2.4124,
+        "sites": 0.0992,
+        "terrain": 0.0,
+        "validate": 0.0116
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 233,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 16,
+            "10": 10
+          },
+          "edge": "S",
+          "nodes": 108,
+          "pattern": "muirfield_inverse",
+          "permutation_index": 0,
+          "rejections": {
+            "bridge_lookahead": 15,
+            "fairway_gap": 111
+          },
+          "status": "echec_front",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 1,
+          "checks": 265,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 16,
+            "10": 10
+          },
+          "edge": "S",
+          "nodes": 100,
+          "pattern": "muirfield_inverse",
+          "permutation_index": 0,
+          "rejections": {
+            "bounds": 1,
+            "bridge_lookahead": 35,
+            "fairway_gap": 130
+          },
+          "status": "echec_front",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 2,
+          "checks": 173,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 17,
+            "10": 10
+          },
+          "edge": "S",
+          "nodes": 21,
+          "pattern": "muirfield_inverse",
+          "permutation_index": 0,
+          "rejections": {
+            "bridge_lookahead": 98,
+            "fairway_gap": 54
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        168.79,
+        444.0
+      ],
+      "clubhouse_edge": "S",
+      "doglegs": 9,
+      "elapsed_seconds": 2.1103,
+      "hole_lengths": [
+        102.0,
+        147.0,
+        102.0,
+        147.0,
+        102.0,
+        102.7,
+        50.8,
+        117.4,
+        147.0,
+        50.2,
+        66.5,
+        102.0,
+        147.0,
+        120.1,
+        109.6,
+        137.3,
+        102.0,
+        65.8
+      ],
+      "hole_widths": [
+        12.0,
+        14.0,
+        11.5,
+        16.0,
+        16.0,
+        15.0,
+        14.5,
+        12.0,
+        13.0,
+        12.0,
+        12.0,
+        16.5,
+        16.0,
+        15.0,
+        13.5,
+        12.5,
+        12.5,
+        14.0
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 900.5,
+          "links": 318.5,
+          "par": 34,
+          "total": 1218.9
+        },
+        "front": {
+          "holes": 1017.9,
+          "links": 339.7,
+          "par": 38,
+          "total": 1357.7
+        }
+      },
+      "outer_direction": -1,
+      "outer_nine": "back",
+      "pars": {
+        "back": [
+          3,
+          3,
+          4,
+          5,
+          4,
+          4,
+          4,
+          4,
+          3
+        ],
+        "front": [
+          4,
+          5,
+          4,
+          5,
+          4,
+          4,
+          3,
+          4,
+          5
+        ]
+      },
+      "pattern": "muirfield_inverse",
+      "plan": {
+        "angle_index": 2,
+        "clubhouse_index": 0,
+        "permutation_index": 0
+      },
+      "relaunches": 2,
+      "seed": 2,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.4363,
+          "direction_entropy": 0.6749,
+          "forward_mean": 0.9755,
+          "heading_turns": 0.9763,
+          "hull_ratio": 1.1064,
+          "obliquity_abs": 0.2086,
+          "obliquity_signed": -0.0961,
+          "path_to_nine_length": 0.9234,
+          "radial_alignment_R": 0.4726
+        },
+        "course": {
+          "angular_step_cv": 0.8283,
+          "direction_entropy": 0.6189,
+          "radial_alignment_R": 0.1868
+        },
+        "front": {
+          "angular_step_cv": 1.0796,
+          "direction_entropy": 0.377,
+          "forward_mean": 0.714,
+          "heading_turns": 1.4468,
+          "hull_ratio": 0.3857,
+          "obliquity_abs": 0.1879,
+          "obliquity_signed": 0.0404,
+          "path_to_nine_length": 0.5057,
+          "radial_alignment_R": 0.28
+        }
+      },
+      "skipped": [],
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 0.0,
+      "timings": {
+        "routing": 2.0075,
+        "sites": 0.1024,
+        "terrain": 0.0,
+        "validate": 0.0117
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "anchor_truncated": true,
+          "angle_index": 0,
+          "checks": 354,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 2,
+            "10": 1
+          },
+          "edge": "S",
+          "nodes": 13,
+          "pattern": "muirfield_inverse",
+          "permutation_index": 0,
+          "rejections": {
+            "anchor_lookahead": 342
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 1,
+          "checks": 354,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 2,
+            "10": 1
+          },
+          "edge": "S",
+          "nodes": 13,
+          "pattern": "muirfield_inverse",
+          "permutation_index": 0,
+          "rejections": {
+            "anchor_lookahead": 342
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 2,
+          "checks": 354,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 2,
+            "10": 1
+          },
+          "edge": "S",
+          "nodes": 13,
+          "pattern": "muirfield_inverse",
+          "permutation_index": 0,
+          "rejections": {
+            "anchor_lookahead": 342
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 0,
+          "checks": 471,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 2,
+            "10": 1
+          },
+          "edge": "S",
+          "nodes": 13,
+          "pattern": "muirfield_inverse",
+          "permutation_index": 1,
+          "rejections": {
+            "anchor_lookahead": 456,
+            "fairway_gap": 3
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 1,
+          "checks": 471,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 2,
+            "10": 1
+          },
+          "edge": "S",
+          "nodes": 13,
+          "pattern": "muirfield_inverse",
+          "permutation_index": 1,
+          "rejections": {
+            "anchor_lookahead": 456,
+            "fairway_gap": 3
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 2,
+          "checks": 471,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 2,
+            "10": 1
+          },
+          "edge": "S",
+          "nodes": 13,
+          "pattern": "muirfield_inverse",
+          "permutation_index": 1,
+          "rejections": {
+            "anchor_lookahead": 456,
+            "fairway_gap": 3
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 0,
+          "checks": 471,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 2,
+            "10": 1
+          },
+          "edge": "S",
+          "nodes": 13,
+          "pattern": "muirfield_inverse",
+          "permutation_index": 2,
+          "rejections": {
+            "anchor_lookahead": 456,
+            "fairway_gap": 3
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 1,
+          "checks": 471,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 2,
+            "10": 1
+          },
+          "edge": "S",
+          "nodes": 13,
+          "pattern": "muirfield_inverse",
+          "permutation_index": 2,
+          "rejections": {
+            "anchor_lookahead": 456,
+            "fairway_gap": 3
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 2,
+          "checks": 471,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 2,
+            "10": 1
+          },
+          "edge": "S",
+          "nodes": 13,
+          "pattern": "muirfield_inverse",
+          "permutation_index": 2,
+          "rejections": {
+            "anchor_lookahead": 456,
+            "fairway_gap": 3
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 0,
+          "checks": 477,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 3,
+            "10": 4
+          },
+          "edge": "S",
+          "nodes": 37,
+          "pattern": "muirfield_inverse",
+          "permutation_index": 0,
+          "rejections": {
+            "anchor_lookahead": 156,
+            "clubhouse_clear": 21,
+            "fairway_gap": 264
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 1,
+          "checks": 477,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 3,
+            "10": 4
+          },
+          "edge": "S",
+          "nodes": 37,
+          "pattern": "muirfield_inverse",
+          "permutation_index": 0,
+          "rejections": {
+            "anchor_lookahead": 156,
+            "clubhouse_clear": 21,
+            "fairway_gap": 264
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 2,
+          "checks": 483,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 3,
+            "10": 4
+          },
+          "edge": "S",
+          "nodes": 37,
+          "pattern": "muirfield_inverse",
+          "permutation_index": 0,
+          "rejections": {
+            "anchor_lookahead": 162,
+            "clubhouse_clear": 21,
+            "fairway_gap": 264
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 0,
+          "checks": 165,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 12,
+            "10": 10
+          },
+          "edge": "S",
+          "nodes": 19,
+          "pattern": "muirfield_inverse",
+          "permutation_index": 1,
+          "rejections": {
+            "anchor_lookahead": 126,
+            "clubhouse_clear": 11,
+            "fairway_gap": 10
+          },
+          "status": "echec_front",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 1,
+          "checks": 159,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 12,
+            "10": 10
+          },
+          "edge": "S",
+          "nodes": 19,
+          "pattern": "muirfield_inverse",
+          "permutation_index": 1,
+          "rejections": {
+            "anchor_lookahead": 126,
+            "clubhouse_clear": 11,
+            "fairway_gap": 4
+          },
+          "status": "echec_front",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 2,
+          "checks": 164,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 17,
+            "10": 10
+          },
+          "edge": "S",
+          "nodes": 22,
+          "pattern": "muirfield_inverse",
+          "permutation_index": 1,
+          "rejections": {
+            "anchor_lookahead": 127,
+            "clubhouse_clear": 10,
+            "fairway_gap": 5
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        184.84,
+        444.0
+      ],
+      "clubhouse_edge": "S",
+      "doglegs": 11,
+      "elapsed_seconds": 4.1869,
+      "hole_lengths": [
+        147.0,
+        65.0,
+        147.0,
+        53.3,
+        47.0,
+        147.0,
+        102.0,
+        109.9,
+        102.0,
+        48.5,
+        102.0,
+        102.0,
+        102.0,
+        106.1,
+        107.3,
+        141.1,
+        147.0,
+        102.0
+      ],
+      "hole_widths": [
+        14.0,
+        13.5,
+        15.0,
+        12.0,
+        15.0,
+        15.5,
+        16.5,
+        14.0,
+        15.5,
+        13.0,
+        12.0,
+        11.5,
+        13.0,
+        13.5,
+        13.5,
+        17.0,
+        16.5,
+        12.5
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 958.1,
+          "links": 369.4,
+          "par": 36,
+          "total": 1327.5
+        },
+        "front": {
+          "holes": 920.2,
+          "links": 358.1,
+          "par": 36,
+          "total": 1278.2
+        }
+      },
+      "outer_direction": -1,
+      "outer_nine": "back",
+      "pars": {
+        "back": [
+          3,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          5,
+          4
+        ],
+        "front": [
+          5,
+          3,
+          5,
+          3,
+          3,
+          5,
+          4,
+          4,
+          4
+        ]
+      },
+      "pattern": "muirfield_inverse",
+      "plan": {
+        "angle_index": 2,
+        "clubhouse_index": 1,
+        "permutation_index": 1
+      },
+      "relaunches": 14,
+      "seed": 3,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.2845,
+          "direction_entropy": 0.7369,
+          "forward_mean": 0.9747,
+          "heading_turns": 0.8326,
+          "hull_ratio": 1.1949,
+          "obliquity_abs": 0.1944,
+          "obliquity_signed": -0.0369,
+          "path_to_nine_length": 0.8341,
+          "radial_alignment_R": 0.6049
+        },
+        "course": {
+          "angular_step_cv": 0.7142,
+          "direction_entropy": 0.8166,
+          "radial_alignment_R": 0.2639
+        },
+        "front": {
+          "angular_step_cv": 0.9733,
+          "direction_entropy": 0.7603,
+          "forward_mean": 0.6276,
+          "heading_turns": 2.0159,
+          "hull_ratio": 0.4252,
+          "obliquity_abs": 0.3611,
+          "obliquity_signed": 0.0187,
+          "path_to_nine_length": 0.5661,
+          "radial_alignment_R": 0.5166
+        }
+      },
+      "skipped": [],
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 0.0,
+      "timings": {
+        "routing": 4.0867,
+        "sites": 0.0998,
+        "terrain": 0.0,
+        "validate": 0.0126
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 208,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 17,
+            "10": 10
+          },
+          "edge": "W",
+          "nodes": 32,
+          "pattern": "muirfield_inverse",
+          "permutation_index": 0,
+          "rejections": {
+            "bridge_lookahead": 83,
+            "fairway_gap": 93
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        6.0,
+        197.53
+      ],
+      "clubhouse_edge": "W",
+      "doglegs": 10,
+      "elapsed_seconds": 0.6812,
+      "hole_lengths": [
+        102.0,
+        61.3,
+        110.1,
+        46.3,
+        101.1,
+        147.0,
+        104.6,
+        102.0,
+        47.0,
+        102.0,
+        102.0,
+        150.4,
+        125.6,
+        126.9,
+        147.0,
+        102.0,
+        47.0,
+        147.0
+      ],
+      "hole_widths": [
+        15.0,
+        12.0,
+        11.5,
+        13.0,
+        15.5,
+        13.5,
+        16.0,
+        12.0,
+        10.5,
+        12.5,
+        15.0,
+        12.5,
+        14.5,
+        17.0,
+        15.5,
+        11.5,
+        14.5,
+        17.5
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 1049.9,
+          "links": 356.5,
+          "par": 38,
+          "total": 1406.4
+        },
+        "front": {
+          "holes": 821.4,
+          "links": 313.9,
+          "par": 34,
+          "total": 1135.3
+        }
+      },
+      "outer_direction": 1,
+      "outer_nine": "back",
+      "pars": {
+        "back": [
+          4,
+          4,
+          5,
+          4,
+          4,
+          5,
+          4,
+          3,
+          5
+        ],
+        "front": [
+          4,
+          3,
+          4,
+          3,
+          4,
+          5,
+          4,
+          4,
+          3
+        ]
+      },
+      "pattern": "muirfield_inverse",
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 0,
+        "permutation_index": 0
+      },
+      "relaunches": 0,
+      "seed": 4,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.4251,
+          "direction_entropy": 0.8222,
+          "forward_mean": 0.8865,
+          "heading_turns": 1.4359,
+          "hull_ratio": 1.0796,
+          "obliquity_abs": 0.2864,
+          "obliquity_signed": 0.2013,
+          "path_to_nine_length": 0.7827,
+          "radial_alignment_R": 0.4157
+        },
+        "course": {
+          "angular_step_cv": 0.9076,
+          "direction_entropy": 0.9345,
+          "radial_alignment_R": 0.0645
+        },
+        "front": {
+          "angular_step_cv": 1.1873,
+          "direction_entropy": 0.8222,
+          "forward_mean": 0.6943,
+          "heading_turns": 2.161,
+          "hull_ratio": 0.3188,
+          "obliquity_abs": 0.5331,
+          "obliquity_signed": -0.0946,
+          "path_to_nine_length": 0.6015,
+          "radial_alignment_R": 0.3021
+        }
+      },
+      "skipped": [],
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 0.0,
+      "timings": {
+        "routing": 0.5782,
+        "sites": 0.1026,
+        "terrain": 0.0,
+        "validate": 0.012
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 36,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 17,
+            "10": 10
+          },
+          "edge": "E",
+          "nodes": 19,
+          "pattern": "muirfield_inverse",
+          "permutation_index": 0,
+          "rejections": {
+            "bridge_lookahead": 10,
+            "fairway_gap": 7
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        274.0,
+        187.61
+      ],
+      "clubhouse_edge": "E",
+      "doglegs": 10,
+      "elapsed_seconds": 0.306,
+      "hole_lengths": [
+        147.0,
+        102.0,
+        102.0,
+        147.0,
+        50.9,
+        102.0,
+        102.0,
+        102.0,
+        45.4,
+        100.5,
+        108.4,
+        102.8,
+        47.8,
+        147.0,
+        112.0,
+        58.0,
+        102.0,
+        147.0
+      ],
+      "hole_widths": [
+        12.5,
+        16.0,
+        11.5,
+        15.5,
+        12.0,
+        17.0,
+        13.0,
+        13.5,
+        11.5,
+        16.5,
+        11.5,
+        17.0,
+        11.0,
+        14.0,
+        14.5,
+        13.5,
+        13.0,
+        14.5
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 925.5,
+          "links": 322.7,
+          "par": 36,
+          "total": 1248.2
+        },
+        "front": {
+          "holes": 900.3,
+          "links": 330.7,
+          "par": 36,
+          "total": 1231.0
+        }
+      },
+      "outer_direction": -1,
+      "outer_nine": "back",
+      "pars": {
+        "back": [
+          4,
+          4,
+          4,
+          3,
+          5,
+          4,
+          3,
+          4,
+          5
+        ],
+        "front": [
+          5,
+          4,
+          4,
+          5,
+          3,
+          4,
+          4,
+          4,
+          3
+        ]
+      },
+      "pattern": "muirfield_inverse",
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 0,
+        "permutation_index": 0
+      },
+      "relaunches": 0,
+      "seed": 5,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.4491,
+          "direction_entropy": 0.8222,
+          "forward_mean": 0.939,
+          "heading_turns": 1.3288,
+          "hull_ratio": 1.1304,
+          "obliquity_abs": 0.3155,
+          "obliquity_signed": -0.1613,
+          "path_to_nine_length": 0.847,
+          "radial_alignment_R": 0.5332
+        },
+        "course": {
+          "angular_step_cv": 0.8438,
+          "direction_entropy": 0.8918,
+          "radial_alignment_R": 0.2666
+        },
+        "front": {
+          "angular_step_cv": 1.235,
+          "direction_entropy": 0.7603,
+          "forward_mean": 0.7217,
+          "heading_turns": 2.1528,
+          "hull_ratio": 0.4493,
+          "obliquity_abs": 0.4344,
+          "obliquity_signed": 0.1699,
+          "path_to_nine_length": 0.5541,
+          "radial_alignment_R": 0.014
+        }
+      },
+      "skipped": [],
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 0.0,
+      "timings": {
+        "routing": 0.2043,
+        "sites": 0.1014,
+        "terrain": 0.0,
+        "validate": 0.012
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "anchor_truncated": true,
+          "angle_index": 0,
+          "checks": 633,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 3,
+            "10": 1
+          },
+          "edge": "W",
+          "nodes": 40,
+          "pattern": "muirfield_inverse",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 594
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 1,
+          "checks": 633,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 3,
+            "10": 1
+          },
+          "edge": "W",
+          "nodes": 40,
+          "pattern": "muirfield_inverse",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 594
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 2,
+          "checks": 603,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 3,
+            "10": 1
+          },
+          "edge": "W",
+          "nodes": 40,
+          "pattern": "muirfield_inverse",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 564
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 0,
+          "checks": 633,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 3,
+            "10": 1
+          },
+          "edge": "W",
+          "nodes": 40,
+          "pattern": "muirfield_inverse",
+          "permutation_index": 1,
+          "rejections": {
+            "fairway_gap": 594
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 1,
+          "checks": 633,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 3,
+            "10": 1
+          },
+          "edge": "W",
+          "nodes": 40,
+          "pattern": "muirfield_inverse",
+          "permutation_index": 1,
+          "rejections": {
+            "fairway_gap": 594
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 2,
+          "checks": 21,
+          "clubhouse_index": 0,
+          "deepest": {
+            "10": 0
+          },
+          "edge": "W",
+          "nodes": 1,
+          "pattern": "muirfield_inverse",
+          "permutation_index": 1,
+          "rejections": {
+            "anchor_lookahead": 21
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 0,
+          "checks": 633,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 3,
+            "10": 1
+          },
+          "edge": "W",
+          "nodes": 40,
+          "pattern": "muirfield_inverse",
+          "permutation_index": 2,
+          "rejections": {
+            "fairway_gap": 594
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 1,
+          "checks": 633,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 3,
+            "10": 1
+          },
+          "edge": "W",
+          "nodes": 40,
+          "pattern": "muirfield_inverse",
+          "permutation_index": 2,
+          "rejections": {
+            "fairway_gap": 594
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 2,
+          "checks": 606,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 3,
+            "10": 1
+          },
+          "edge": "W",
+          "nodes": 40,
+          "pattern": "muirfield_inverse",
+          "permutation_index": 2,
+          "rejections": {
+            "fairway_gap": 567
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 362,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 17,
+            "10": 10
+          },
+          "edge": "E",
+          "nodes": 24,
+          "pattern": "muirfield_inverse",
+          "permutation_index": 0,
+          "rejections": {
+            "bridge_lookahead": 179,
+            "fairway_gap": 159
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        274.0,
+        175.43
+      ],
+      "clubhouse_edge": "E",
+      "doglegs": 10,
+      "elapsed_seconds": 2.7032,
+      "hole_lengths": [
+        102.0,
+        147.0,
+        47.4,
+        100.3,
+        147.0,
+        102.0,
+        102.0,
+        103.1,
+        102.0,
+        147.0,
+        47.0,
+        117.1,
+        116.3,
+        58.3,
+        120.5,
+        102.0,
+        147.0,
+        47.8
+      ],
+      "hole_widths": [
+        16.0,
+        16.5,
+        13.0,
+        15.5,
+        14.5,
+        15.0,
+        13.0,
+        14.5,
+        14.0,
+        14.0,
+        14.5,
+        16.0,
+        15.0,
+        12.0,
+        13.0,
+        14.0,
+        18.0,
+        13.5
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 903.1,
+          "links": 321.3,
+          "par": 35,
+          "total": 1224.4
+        },
+        "front": {
+          "holes": 952.8,
+          "links": 384.4,
+          "par": 37,
+          "total": 1337.3
+        }
+      },
+      "outer_direction": 1,
+      "outer_nine": "back",
+      "pars": {
+        "back": [
+          5,
+          3,
+          4,
+          4,
+          3,
+          4,
+          4,
+          5,
+          3
+        ],
+        "front": [
+          4,
+          5,
+          3,
+          4,
+          5,
+          4,
+          4,
+          4,
+          4
+        ]
+      },
+      "pattern": "muirfield_inverse",
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 1,
+        "permutation_index": 0
+      },
+      "relaunches": 9,
+      "seed": 6,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.3461,
+          "direction_entropy": 0.7603,
+          "forward_mean": 0.9429,
+          "heading_turns": 1.0705,
+          "hull_ratio": 1.1021,
+          "obliquity_abs": 0.2827,
+          "obliquity_signed": -0.0105,
+          "path_to_nine_length": 0.8911,
+          "radial_alignment_R": 0.596
+        },
+        "course": {
+          "angular_step_cv": 0.7005,
+          "direction_entropy": 0.8476,
+          "radial_alignment_R": 0.3733
+        },
+        "front": {
+          "angular_step_cv": 0.9018,
+          "direction_entropy": 0.6749,
+          "forward_mean": 0.5861,
+          "heading_turns": 1.5966,
+          "hull_ratio": 0.5111,
+          "obliquity_abs": 0.416,
+          "obliquity_signed": -0.0808,
+          "path_to_nine_length": 0.5311,
+          "radial_alignment_R": 0.5131
+        }
+      },
+      "skipped": [],
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 0.0,
+      "timings": {
+        "routing": 2.5996,
+        "sites": 0.1032,
+        "terrain": 0.0,
+        "validate": 0.0122
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    }
+  ],
+  "round": "CALIB",
+  "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "stats": {
+    "attempts_mean": 5.167,
+    "failures": [],
+    "relaunches_total": 25,
+    "seconds_max": 4.187,
+    "seconds_median": 2.311,
+    "seconds_p90": 3.445,
+    "seeds_over_2s": [
+      1,
+      2,
+      3,
+      6
+    ],
+    "shape_course": {
+      "angular_step_cv": {
+        "max": 1.3465,
+        "median": 0.836,
+        "min": 0.7005
+      },
+      "direction_entropy": {
+        "max": 0.9345,
+        "median": 0.8697,
+        "min": 0.6189
+      },
+      "radial_alignment_R": {
+        "max": 0.3826,
+        "median": 0.2652,
+        "min": 0.0645
+      }
+    },
+    "shape_nines": {
+      "inner": {
+        "angular_step_cv": {
+          "max": 2.2276,
+          "median": 1.1334,
+          "min": 0.9018
+        },
+        "direction_entropy": {
+          "max": 0.8222,
+          "median": 0.7603,
+          "min": 0.377
+        },
+        "forward_mean": {
+          "max": 0.7217,
+          "median": 0.661,
+          "min": 0.5685
+        },
+        "heading_turns": {
+          "max": 2.4974,
+          "median": 2.0843,
+          "min": 1.4468
+        },
+        "hull_ratio": {
+          "max": 0.5111,
+          "median": 0.4244,
+          "min": 0.3188
+        },
+        "obliquity_abs": {
+          "max": 0.5331,
+          "median": 0.4252,
+          "min": 0.1879
+        },
+        "obliquity_signed": {
+          "max": 0.1699,
+          "median": 0.0295,
+          "min": -0.0946
+        },
+        "path_to_nine_length": {
+          "max": 0.6015,
+          "median": 0.5438,
+          "min": 0.5057
+        },
+        "radial_alignment_R": {
+          "max": 0.5166,
+          "median": 0.2936,
+          "min": 0.014
+        }
+      },
+      "outer": {
+        "angular_step_cv": {
+          "max": 0.4491,
+          "median": 0.3894,
+          "min": 0.2845
+        },
+        "direction_entropy": {
+          "max": 0.8222,
+          "median": 0.7913,
+          "min": 0.6749
+        },
+        "forward_mean": {
+          "max": 0.9755,
+          "median": 0.9516,
+          "min": 0.8865
+        },
+        "heading_turns": {
+          "max": 1.4359,
+          "median": 1.1159,
+          "min": 0.8326
+        },
+        "hull_ratio": {
+          "max": 1.1949,
+          "median": 1.1184,
+          "min": 1.0796
+        },
+        "obliquity_abs": {
+          "max": 0.3155,
+          "median": 0.2578,
+          "min": 0.1944
+        },
+        "obliquity_signed": {
+          "max": 0.2013,
+          "median": -0.0665,
+          "min": -0.1613
+        },
+        "path_to_nine_length": {
+          "max": 0.9234,
+          "median": 0.8612,
+          "min": 0.7827
+        },
+        "radial_alignment_R": {
+          "max": 0.6049,
+          "median": 0.514,
+          "min": 0.4157
+        }
+      }
+    },
+    "skipped_total": 0,
+    "successes": 6,
+    "violations_total": 0
+  },
+  "width": 280,
+  "width_mode": "variable"
+}

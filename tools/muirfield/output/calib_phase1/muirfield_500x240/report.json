@@ -1,0 +1,2826 @@
+{
+  "calib": {
+    "long": 500,
+    "orientation": "paysage",
+    "short": 240
+  },
+  "height": 240,
+  "pattern": "muirfield",
+  "reports": [
+    {
+      "attempts": [
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 200,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "W",
+          "nodes": 133,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 68
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 1,
+          "checks": 200,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "W",
+          "nodes": 133,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 68
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 2,
+          "checks": 42,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 17
+          },
+          "edge": "W",
+          "nodes": 31,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 11
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        6.0,
+        131.19
+      ],
+      "clubhouse_edge": "W",
+      "doglegs": 10,
+      "elapsed_seconds": 3.062,
+      "hole_lengths": [
+        48.4,
+        170.2,
+        47.0,
+        181.4,
+        125.9,
+        147.0,
+        102.0,
+        108.4,
+        110.0,
+        102.0,
+        102.0,
+        102.0,
+        46.2,
+        102.0,
+        147.0,
+        102.0,
+        102.0,
+        54.0
+      ],
+      "hole_widths": [
+        12.0,
+        14.0,
+        13.0,
+        12.5,
+        11.5,
+        16.5,
+        15.0,
+        14.5,
+        13.5,
+        12.0,
+        11.5,
+        15.0,
+        13.0,
+        13.0,
+        16.5,
+        11.0,
+        11.0,
+        11.5
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 859.3,
+          "links": 274.7,
+          "par": 35,
+          "total": 1134.0
+        },
+        "front": {
+          "holes": 1040.4,
+          "links": 322.5,
+          "par": 37,
+          "total": 1362.9
+        }
+      },
+      "outer_direction": -1,
+      "outer_nine": "front",
+      "pars": {
+        "back": [
+          4,
+          4,
+          4,
+          3,
+          4,
+          5,
+          4,
+          4,
+          3
+        ],
+        "front": [
+          3,
+          5,
+          3,
+          5,
+          4,
+          5,
+          4,
+          4,
+          4
+        ]
+      },
+      "pattern": "muirfield",
+      "plan": {
+        "angle_index": 2,
+        "clubhouse_index": 0,
+        "permutation_index": 0
+      },
+      "relaunches": 2,
+      "seed": 1,
+      "shape": {
+        "back": {
+          "angular_step_cv": null,
+          "direction_entropy": 0.6749,
+          "forward_mean": 0.6913,
+          "heading_turns": 1.4564,
+          "hull_ratio": 0.4162,
+          "obliquity_abs": 0.4347,
+          "obliquity_signed": 0.2082,
+          "path_to_nine_length": 0.6106,
+          "radial_alignment_R": 0.5073
+        },
+        "course": {
+          "angular_step_cv": 2.7741,
+          "direction_entropy": 0.8166,
+          "radial_alignment_R": 0.0985
+        },
+        "front": {
+          "angular_step_cv": 0.3052,
+          "direction_entropy": 0.7603,
+          "forward_mean": 0.9687,
+          "heading_turns": 1.0196,
+          "hull_ratio": 1.2461,
+          "obliquity_abs": 0.1794,
+          "obliquity_signed": -0.1248,
+          "path_to_nine_length": 0.8399,
+          "radial_alignment_R": 0.3481
+        }
+      },
+      "skipped": [],
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 5.36,
+      "timings": {
+        "routing": 2.9674,
+        "sites": 0.0944,
+        "terrain": 0.0,
+        "validate": 0.0119
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 318,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "S",
+          "nodes": 123,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 196
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 1,
+          "checks": 769,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "S",
+          "nodes": 156,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "bounds": 1,
+            "bridge_lookahead": 262,
+            "fairway_gap": 351
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 2,
+          "checks": 390,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 2
+          },
+          "edge": "S",
+          "nodes": 13,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "anchor_lookahead": 378
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 98,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 15
+          },
+          "edge": "S",
+          "nodes": 63,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "fairway_gap": 36
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 1,
+          "checks": 112,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 15
+          },
+          "edge": "S",
+          "nodes": 54,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "fairway_gap": 59
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 2,
+          "checks": 471,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 2
+          },
+          "edge": "S",
+          "nodes": 13,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "anchor_lookahead": 459
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 161,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "S",
+          "nodes": 97,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "bounds": 1,
+            "fairway_gap": 64
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 1,
+          "checks": 160,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "S",
+          "nodes": 97,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "bounds": 1,
+            "fairway_gap": 63
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 2,
+          "checks": 471,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 2
+          },
+          "edge": "S",
+          "nodes": 13,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "anchor_lookahead": 459
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "angle_index": 0,
+          "checks": 0,
+          "clubhouse_index": 1,
+          "nodes": 0,
+          "permutation_index": 0,
+          "status": "infaisable_ancrage"
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 178,
+          "clubhouse_index": 2,
+          "deepest": {
+            "1": 10,
+            "10": 15
+          },
+          "edge": "S",
+          "nodes": 89,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 90
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 1,
+          "checks": 167,
+          "clubhouse_index": 2,
+          "deepest": {
+            "1": 10,
+            "10": 15
+          },
+          "edge": "S",
+          "nodes": 86,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "bounds": 1,
+            "fairway_gap": 81
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 2,
+          "checks": 176,
+          "clubhouse_index": 2,
+          "deepest": {
+            "1": 10,
+            "10": 15
+          },
+          "edge": "S",
+          "nodes": 89,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 88
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 258,
+          "clubhouse_index": 2,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "S",
+          "nodes": 136,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "bridge_lookahead": 1,
+            "fairway_gap": 122
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 1,
+          "checks": 197,
+          "clubhouse_index": 2,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "S",
+          "nodes": 113,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "fairway_gap": 85
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 2,
+          "checks": 259,
+          "clubhouse_index": 2,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "S",
+          "nodes": 136,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "bridge_lookahead": 1,
+            "fairway_gap": 123
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 61,
+          "clubhouse_index": 2,
+          "deepest": {
+            "1": 10,
+            "10": 15
+          },
+          "edge": "S",
+          "nodes": 36,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "fairway_gap": 26
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 1,
+          "checks": 1232,
+          "clubhouse_index": 2,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "S",
+          "nodes": 309,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "bridge_lookahead": 450,
+            "fairway_gap": 471,
+            "parallel_stack": 3
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 2,
+          "checks": 486,
+          "clubhouse_index": 2,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "S",
+          "nodes": 194,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "bridge_lookahead": 61,
+            "fairway_gap": 232
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 0,
+          "checks": 405,
+          "clubhouse_index": 3,
+          "deepest": {
+            "1": 9,
+            "10": 3
+          },
+          "edge": "W",
+          "nodes": 304,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 94
+          },
+          "status": "echec_front",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 1,
+          "checks": 407,
+          "clubhouse_index": 3,
+          "deepest": {
+            "1": 9,
+            "10": 3
+          },
+          "edge": "W",
+          "nodes": 304,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 96
+          },
+          "status": "echec_front",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 2,
+          "checks": 358,
+          "clubhouse_index": 3,
+          "deepest": {
+            "1": 9,
+            "10": 3
+          },
+          "edge": "W",
+          "nodes": 304,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 47
+          },
+          "status": "echec_front",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 0,
+          "checks": 405,
+          "clubhouse_index": 3,
+          "deepest": {
+            "1": 9,
+            "10": 3
+          },
+          "edge": "W",
+          "nodes": 304,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "fairway_gap": 94
+          },
+          "status": "echec_front",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 1,
+          "checks": 405,
+          "clubhouse_index": 3,
+          "deepest": {
+            "1": 9,
+            "10": 3
+          },
+          "edge": "W",
+          "nodes": 304,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "fairway_gap": 94
+          },
+          "status": "echec_front",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 2,
+          "checks": 403,
+          "clubhouse_index": 3,
+          "deepest": {
+            "1": 9,
+            "10": 3
+          },
+          "edge": "W",
+          "nodes": 304,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "fairway_gap": 92
+          },
+          "status": "echec_front",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 696,
+          "clubhouse_index": 3,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "W",
+          "nodes": 309,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "fairway_gap": 388
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 1,
+          "checks": 663,
+          "clubhouse_index": 3,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "W",
+          "nodes": 281,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "fairway_gap": 383
+          },
+          "status": "echec_back",
+          "violations": {}
+        }
+      ],
+      "elapsed_seconds": 24.1545,
+      "failure_stages": {
+        "echec_ancrages": 3,
+        "echec_back": 17,
+        "echec_front": 6,
+        "infaisable_ancrage": 1
+      },
+      "relaunches": 27,
+      "seed": 2,
+      "skipped": [],
+      "status": "echec",
+      "terrain_seconds_cached_or_built": 5.414
+    },
+    {
+      "attempts": [
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 90,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 15
+          },
+          "edge": "S",
+          "nodes": 56,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 35
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 1,
+          "checks": 90,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 15
+          },
+          "edge": "S",
+          "nodes": 56,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 35
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 2,
+          "checks": 70,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 15
+          },
+          "edge": "S",
+          "nodes": 55,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 16
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 208,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "S",
+          "nodes": 138,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "bridge_lookahead": 1,
+            "fairway_gap": 70
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 1,
+          "checks": 208,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "S",
+          "nodes": 138,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "bridge_lookahead": 1,
+            "fairway_gap": 70
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 2,
+          "checks": 152,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "S",
+          "nodes": 116,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "fairway_gap": 37
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 114,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "S",
+          "nodes": 72,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "fairway_gap": 43
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 1,
+          "checks": 127,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "S",
+          "nodes": 82,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "fairway_gap": 46
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 2,
+          "checks": 90,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "S",
+          "nodes": 71,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "fairway_gap": 20
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 585,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "S",
+          "nodes": 232,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "anchor_lookahead": 1,
+            "bridge_lookahead": 50,
+            "clubhouse_clear": 2,
+            "fairway_gap": 301
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 1,
+          "checks": 189,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "S",
+          "nodes": 114,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "anchor_lookahead": 1,
+            "bridge_lookahead": 8,
+            "clubhouse_clear": 2,
+            "fairway_gap": 65
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 2,
+          "checks": 556,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 10,
+            "10": 12
+          },
+          "edge": "S",
+          "nodes": 208,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "bounds": 11,
+            "bridge_lookahead": 33,
+            "fairway_gap": 305
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 0,
+          "checks": 524,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "S",
+          "nodes": 165,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "anchor_lookahead": 7,
+            "clubhouse_clear": 8,
+            "fairway_gap": 345
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 1,
+          "checks": 240,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "S",
+          "nodes": 131,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "anchor_lookahead": 1,
+            "clubhouse_clear": 2,
+            "fairway_gap": 102,
+            "link_blocked": 5
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 2,
+          "checks": 217,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 10,
+            "10": 12
+          },
+          "edge": "S",
+          "nodes": 74,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "bridge_lookahead": 4,
+            "fairway_gap": 140
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 194,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "S",
+          "nodes": 91,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "anchor_lookahead": 1,
+            "clubhouse_clear": 1,
+            "fairway_gap": 86,
+            "link_blocked": 16
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 1,
+          "checks": 1034,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "S",
+          "nodes": 223,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "anchor_lookahead": 1,
+            "bridge_lookahead": 255,
+            "clubhouse_clear": 1,
+            "fairway_gap": 555
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 2,
+          "checks": 639,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 1,
+            "10": 3
+          },
+          "edge": "S",
+          "nodes": 40,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "clubhouse_clear": 6,
+            "fairway_gap": 594
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 64,
+          "clubhouse_index": 2,
+          "deepest": {
+            "1": 10,
+            "10": 14
+          },
+          "edge": "N",
+          "nodes": 51,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 14
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 1,
+          "checks": 66,
+          "clubhouse_index": 2,
+          "deepest": {
+            "1": 10,
+            "10": 14
+          },
+          "edge": "N",
+          "nodes": 51,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 16
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 2,
+          "checks": 61,
+          "clubhouse_index": 2,
+          "deepest": {
+            "1": 10,
+            "10": 14
+          },
+          "edge": "N",
+          "nodes": 51,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 11
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 183,
+          "clubhouse_index": 2,
+          "deepest": {
+            "1": 10,
+            "10": 15
+          },
+          "edge": "N",
+          "nodes": 102,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "fairway_gap": 82
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 1,
+          "checks": 186,
+          "clubhouse_index": 2,
+          "deepest": {
+            "1": 10,
+            "10": 15
+          },
+          "edge": "N",
+          "nodes": 102,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "fairway_gap": 85
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 2,
+          "checks": 181,
+          "clubhouse_index": 2,
+          "deepest": {
+            "1": 10,
+            "10": 15
+          },
+          "edge": "N",
+          "nodes": 102,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "fairway_gap": 80
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 150,
+          "clubhouse_index": 2,
+          "deepest": {
+            "1": 10,
+            "10": 14
+          },
+          "edge": "N",
+          "nodes": 42,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "anchor_lookahead": 32,
+            "fairway_gap": 77
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 1,
+          "checks": 93,
+          "clubhouse_index": 2,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "N",
+          "nodes": 58,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "anchor_lookahead": 2,
+            "fairway_gap": 34
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 2,
+          "checks": 148,
+          "clubhouse_index": 2,
+          "deepest": {
+            "1": 10,
+            "10": 14
+          },
+          "edge": "N",
+          "nodes": 42,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "anchor_lookahead": 31,
+            "fairway_gap": 76
+          },
+          "status": "echec_back",
+          "violations": {}
+        }
+      ],
+      "elapsed_seconds": 16.5609,
+      "failure_stages": {
+        "echec_ancrages": 1,
+        "echec_back": 26
+      },
+      "relaunches": 27,
+      "seed": 3,
+      "skipped": [],
+      "status": "echec",
+      "terrain_seconds_cached_or_built": 5.302
+    },
+    {
+      "attempts": [
+        {
+          "anchor_truncated": true,
+          "angle_index": 0,
+          "checks": 651,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 3
+          },
+          "edge": "W",
+          "nodes": 40,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "anchor_lookahead": 30,
+            "clubhouse_clear": 27,
+            "fairway_gap": 555
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 1,
+          "checks": 651,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 3
+          },
+          "edge": "W",
+          "nodes": 40,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "anchor_lookahead": 30,
+            "clubhouse_clear": 27,
+            "fairway_gap": 555
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 2,
+          "checks": 651,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 3
+          },
+          "edge": "W",
+          "nodes": 40,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "anchor_lookahead": 30,
+            "clubhouse_clear": 27,
+            "fairway_gap": 555
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 0,
+          "checks": 651,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 3
+          },
+          "edge": "W",
+          "nodes": 40,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "anchor_lookahead": 48,
+            "clubhouse_clear": 27,
+            "fairway_gap": 537
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 1,
+          "checks": 651,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 3
+          },
+          "edge": "W",
+          "nodes": 40,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "anchor_lookahead": 48,
+            "clubhouse_clear": 27,
+            "fairway_gap": 537
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 2,
+          "checks": 651,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 3
+          },
+          "edge": "W",
+          "nodes": 40,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "anchor_lookahead": 48,
+            "clubhouse_clear": 27,
+            "fairway_gap": 537
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 0,
+          "checks": 741,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 3
+          },
+          "edge": "W",
+          "nodes": 40,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "anchor_lookahead": 30,
+            "bounds": 54,
+            "clubhouse_clear": 27,
+            "fairway_gap": 591
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 1,
+          "checks": 741,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 3
+          },
+          "edge": "W",
+          "nodes": 40,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "anchor_lookahead": 30,
+            "bounds": 54,
+            "clubhouse_clear": 27,
+            "fairway_gap": 591
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 2,
+          "checks": 741,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 3
+          },
+          "edge": "W",
+          "nodes": 40,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "anchor_lookahead": 30,
+            "bounds": 54,
+            "clubhouse_clear": 27,
+            "fairway_gap": 591
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 135,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 10,
+            "10": 15
+          },
+          "edge": "E",
+          "nodes": 75,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 61
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 1,
+          "checks": 135,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 10,
+            "10": 15
+          },
+          "edge": "E",
+          "nodes": 75,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 61
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 2,
+          "checks": 235,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "E",
+          "nodes": 119,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 117
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 1510,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "E",
+          "nodes": 262,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "bridge_lookahead": 653,
+            "fairway_gap": 596
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 1,
+          "checks": 1510,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "E",
+          "nodes": 262,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "bridge_lookahead": 653,
+            "fairway_gap": 596
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 2,
+          "checks": 1510,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "E",
+          "nodes": 270,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "bridge_lookahead": 732,
+            "fairway_gap": 509
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 487,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "E",
+          "nodes": 260,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "fairway_gap": 228
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 1,
+          "checks": 487,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "E",
+          "nodes": 260,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "fairway_gap": 228
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 2,
+          "checks": 1338,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 10,
+            "10": 17
+          },
+          "edge": "E",
+          "nodes": 309,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "bridge_lookahead": 406,
+            "fairway_gap": 622,
+            "parallel_stack": 2
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "angle_index": 0,
+          "checks": 0,
+          "clubhouse_index": 2,
+          "nodes": 0,
+          "permutation_index": 0,
+          "status": "infaisable_ancrage"
+        },
+        {
+          "angle_index": 0,
+          "checks": 0,
+          "clubhouse_index": 3,
+          "nodes": 0,
+          "permutation_index": 0,
+          "status": "infaisable_ancrage"
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 0,
+          "checks": 187,
+          "clubhouse_index": 4,
+          "deepest": {
+            "1": 10,
+            "10": 15
+          },
+          "edge": "S",
+          "nodes": 74,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 114
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 1,
+          "checks": 205,
+          "clubhouse_index": 4,
+          "deepest": {
+            "1": 10,
+            "10": 15
+          },
+          "edge": "S",
+          "nodes": 90,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 116
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 2,
+          "checks": 228,
+          "clubhouse_index": 4,
+          "deepest": {
+            "1": 10,
+            "10": 11
+          },
+          "edge": "S",
+          "nodes": 135,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "bridge_lookahead": 72,
+            "fairway_gap": 22
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 0,
+          "checks": 192,
+          "clubhouse_index": 4,
+          "deepest": {
+            "1": 1,
+            "10": 3
+          },
+          "edge": "S",
+          "nodes": 40,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "fairway_gap": 153
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 1,
+          "checks": 192,
+          "clubhouse_index": 4,
+          "deepest": {
+            "1": 1,
+            "10": 3
+          },
+          "edge": "S",
+          "nodes": 40,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "fairway_gap": 153
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 2,
+          "checks": 114,
+          "clubhouse_index": 4,
+          "deepest": {
+            "1": 10,
+            "10": 11
+          },
+          "edge": "S",
+          "nodes": 78,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "bounds": 2,
+            "bridge_lookahead": 13,
+            "fairway_gap": 22
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 0,
+          "checks": 192,
+          "clubhouse_index": 4,
+          "deepest": {
+            "1": 1,
+            "10": 3
+          },
+          "edge": "S",
+          "nodes": 40,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "fairway_gap": 153
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        }
+      ],
+      "elapsed_seconds": 26.5684,
+      "failure_stages": {
+        "echec_ancrages": 12,
+        "echec_back": 13,
+        "infaisable_ancrage": 2
+      },
+      "relaunches": 27,
+      "seed": 4,
+      "skipped": [],
+      "status": "echec",
+      "terrain_seconds_cached_or_built": 5.321
+    },
+    {
+      "attempts": [
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 1395,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "E",
+          "nodes": 309,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "bridge_lookahead": 508,
+            "fairway_gap": 579
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 1,
+          "checks": 1411,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "E",
+          "nodes": 309,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "bridge_lookahead": 506,
+            "fairway_gap": 597
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 2,
+          "checks": 1493,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "E",
+          "nodes": 309,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "bridge_lookahead": 569,
+            "fairway_gap": 616
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 754,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "E",
+          "nodes": 309,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "bounds": 1,
+            "bridge_lookahead": 212,
+            "fairway_gap": 233
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 1,
+          "checks": 839,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "E",
+          "nodes": 309,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "bridge_lookahead": 236,
+            "fairway_gap": 295
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 2,
+          "checks": 732,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "E",
+          "nodes": 309,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "bounds": 1,
+            "bridge_lookahead": 201,
+            "fairway_gap": 222
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 502,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 17
+          },
+          "edge": "E",
+          "nodes": 200,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "bounds": 1,
+            "bridge_lookahead": 143,
+            "fairway_gap": 158
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        494.0,
+        100.06
+      ],
+      "clubhouse_edge": "E",
+      "doglegs": 10,
+      "elapsed_seconds": 23.2102,
+      "hole_lengths": [
+        47.0,
+        124.1,
+        108.3,
+        147.0,
+        47.9,
+        147.0,
+        139.4,
+        110.1,
+        102.0,
+        147.0,
+        47.2,
+        102.0,
+        102.4,
+        47.0,
+        102.0,
+        102.0,
+        102.0,
+        148.3
+      ],
+      "hole_widths": [
+        10.5,
+        16.0,
+        11.5,
+        15.5,
+        12.0,
+        18.0,
+        13.0,
+        13.5,
+        12.5,
+        17.5,
+        10.5,
+        17.0,
+        12.5,
+        12.0,
+        14.5,
+        15.5,
+        13.0,
+        14.5
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 899.9,
+          "links": 376.7,
+          "par": 36,
+          "total": 1276.5
+        },
+        "front": {
+          "holes": 972.9,
+          "links": 304.6,
+          "par": 36,
+          "total": 1277.4
+        }
+      },
+      "outer_direction": -1,
+      "outer_nine": "front",
+      "pars": {
+        "back": [
+          5,
+          3,
+          4,
+          4,
+          3,
+          4,
+          4,
+          4,
+          5
+        ],
+        "front": [
+          3,
+          4,
+          4,
+          5,
+          3,
+          5,
+          4,
+          4,
+          4
+        ]
+      },
+      "pattern": "muirfield",
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 0,
+        "permutation_index": 2
+      },
+      "relaunches": 6,
+      "seed": 5,
+      "shape": {
+        "back": {
+          "angular_step_cv": 1.0904,
+          "direction_entropy": 0.6749,
+          "forward_mean": 0.438,
+          "heading_turns": 1.7442,
+          "hull_ratio": 0.4315,
+          "obliquity_abs": 0.4039,
+          "obliquity_signed": 0.2115,
+          "path_to_nine_length": 0.5917,
+          "radial_alignment_R": 0.2077
+        },
+        "course": {
+          "angular_step_cv": 0.8318,
+          "direction_entropy": 0.7236,
+          "radial_alignment_R": 0.0979
+        },
+        "front": {
+          "angular_step_cv": 0.4335,
+          "direction_entropy": 0.6749,
+          "forward_mean": 0.9831,
+          "heading_turns": 0.9253,
+          "hull_ratio": 1.0882,
+          "obliquity_abs": 0.1568,
+          "obliquity_signed": 0.0645,
+          "path_to_nine_length": 0.8613,
+          "radial_alignment_R": 0.3865
+        }
+      },
+      "skipped": [],
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 5.398,
+      "timings": {
+        "routing": 23.1158,
+        "sites": 0.0939,
+        "terrain": 0.0,
+        "validate": 0.0121
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "anchor_truncated": true,
+          "angle_index": 0,
+          "checks": 255,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 2
+          },
+          "edge": "W",
+          "nodes": 9,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "anchor_lookahead": 165,
+            "clubhouse_clear": 1,
+            "fairway_gap": 81
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 1,
+          "checks": 255,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 2
+          },
+          "edge": "W",
+          "nodes": 9,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "anchor_lookahead": 165,
+            "clubhouse_clear": 1,
+            "fairway_gap": 81
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 2,
+          "checks": 255,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 2
+          },
+          "edge": "W",
+          "nodes": 9,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "anchor_lookahead": 165,
+            "clubhouse_clear": 1,
+            "fairway_gap": 81
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 0,
+          "checks": 357,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 2
+          },
+          "edge": "W",
+          "nodes": 9,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "anchor_lookahead": 203,
+            "clubhouse_clear": 1,
+            "fairway_gap": 145
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 1,
+          "checks": 357,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 2
+          },
+          "edge": "W",
+          "nodes": 9,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "anchor_lookahead": 203,
+            "clubhouse_clear": 1,
+            "fairway_gap": 145
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 2,
+          "checks": 357,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 2
+          },
+          "edge": "W",
+          "nodes": 9,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "anchor_lookahead": 203,
+            "clubhouse_clear": 1,
+            "fairway_gap": 145
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 0,
+          "checks": 255,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 2
+          },
+          "edge": "W",
+          "nodes": 9,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "anchor_lookahead": 165,
+            "clubhouse_clear": 1,
+            "fairway_gap": 81
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 1,
+          "checks": 255,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 2
+          },
+          "edge": "W",
+          "nodes": 9,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "anchor_lookahead": 165,
+            "clubhouse_clear": 1,
+            "fairway_gap": 81
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 2,
+          "checks": 255,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 2
+          },
+          "edge": "W",
+          "nodes": 9,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "anchor_lookahead": 165,
+            "clubhouse_clear": 1,
+            "fairway_gap": 81
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 0,
+          "checks": 1117,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 10,
+            "10": 3
+          },
+          "edge": "E",
+          "nodes": 304,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "anchor_lookahead": 2,
+            "bounds": 22,
+            "bridge_lookahead": 352,
+            "fairway_gap": 430
+          },
+          "status": "echec_front",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 1,
+          "checks": 1116,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 10,
+            "10": 3
+          },
+          "edge": "E",
+          "nodes": 304,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "anchor_lookahead": 2,
+            "bounds": 22,
+            "bridge_lookahead": 352,
+            "fairway_gap": 429
+          },
+          "status": "echec_front",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 2,
+          "checks": 1111,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 10,
+            "10": 3
+          },
+          "edge": "E",
+          "nodes": 304,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "anchor_lookahead": 2,
+            "bounds": 22,
+            "bridge_lookahead": 352,
+            "fairway_gap": 424
+          },
+          "status": "echec_front",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 0,
+          "checks": 1002,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 10,
+            "10": 3
+          },
+          "edge": "E",
+          "nodes": 304,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "anchor_lookahead": 2,
+            "bounds": 392,
+            "fairway_gap": 297
+          },
+          "status": "echec_front",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 1,
+          "checks": 951,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 10,
+            "10": 3
+          },
+          "edge": "E",
+          "nodes": 304,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "anchor_lookahead": 2,
+            "bounds": 392,
+            "fairway_gap": 246
+          },
+          "status": "echec_front",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 2,
+          "checks": 954,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 10,
+            "10": 3
+          },
+          "edge": "E",
+          "nodes": 304,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "anchor_lookahead": 2,
+            "bounds": 392,
+            "fairway_gap": 249
+          },
+          "status": "echec_front",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 0,
+          "checks": 1276,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 10,
+            "10": 3
+          },
+          "edge": "E",
+          "nodes": 328,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "bridge_lookahead": 283,
+            "fairway_gap": 658
+          },
+          "status": "echec_front",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 1,
+          "checks": 1272,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 10,
+            "10": 3
+          },
+          "edge": "E",
+          "nodes": 328,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "bridge_lookahead": 287,
+            "fairway_gap": 650
+          },
+          "status": "echec_front",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 2,
+          "checks": 1269,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 10,
+            "10": 3
+          },
+          "edge": "E",
+          "nodes": 328,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "bridge_lookahead": 283,
+            "fairway_gap": 651
+          },
+          "status": "echec_front",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 371,
+          "clubhouse_index": 2,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "E",
+          "nodes": 309,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 63
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 1,
+          "checks": 366,
+          "clubhouse_index": 2,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "E",
+          "nodes": 309,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "bridge_lookahead": 7,
+            "fairway_gap": 51
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 2,
+          "checks": 376,
+          "clubhouse_index": 2,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "E",
+          "nodes": 309,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "bridge_lookahead": 3,
+            "fairway_gap": 65
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 297,
+          "clubhouse_index": 2,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "E",
+          "nodes": 179,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "bounds": 1,
+            "fairway_gap": 118
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 1,
+          "checks": 300,
+          "clubhouse_index": 2,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "E",
+          "nodes": 182,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "bounds": 1,
+            "bridge_lookahead": 4,
+            "fairway_gap": 114
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 2,
+          "checks": 313,
+          "clubhouse_index": 2,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "E",
+          "nodes": 194,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "bounds": 1,
+            "fairway_gap": 119
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 739,
+          "clubhouse_index": 2,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "E",
+          "nodes": 309,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "bridge_lookahead": 188,
+            "fairway_gap": 243
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 1,
+          "checks": 1195,
+          "clubhouse_index": 2,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "E",
+          "nodes": 309,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "bridge_lookahead": 474,
+            "fairway_gap": 413
+          },
+          "status": "echec_back",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 2,
+          "checks": 885,
+          "clubhouse_index": 2,
+          "deepest": {
+            "1": 10,
+            "10": 16
+          },
+          "edge": "E",
+          "nodes": 309,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "bridge_lookahead": 259,
+            "fairway_gap": 318
+          },
+          "status": "echec_back",
+          "violations": {}
+        }
+      ],
+      "elapsed_seconds": 31.0546,
+      "failure_stages": {
+        "echec_ancrages": 9,
+        "echec_back": 9,
+        "echec_front": 9
+      },
+      "relaunches": 27,
+      "seed": 6,
+      "skipped": [],
+      "status": "echec",
+      "terrain_seconds_cached_or_built": 5.316
+    }
+  ],
+  "round": "CALIB",
+  "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "stats": {
+    "attempts_mean": 19.667,
+    "failures": [
+      2,
+      3,
+      4,
+      6
+    ],
+    "relaunches_total": 116,
+    "seconds_max": 31.055,
+    "seconds_median": 23.682,
+    "seconds_p90": 28.812,
+    "seeds_over_2s": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "shape_course": {
+      "angular_step_cv": {
+        "max": 2.7741,
+        "median": 1.803,
+        "min": 0.8318
+      },
+      "direction_entropy": {
+        "max": 0.8166,
+        "median": 0.7701,
+        "min": 0.7236
+      },
+      "radial_alignment_R": {
+        "max": 0.0985,
+        "median": 0.0982,
+        "min": 0.0979
+      }
+    },
+    "shape_nines": {
+      "inner": {
+        "angular_step_cv": {
+          "max": 1.0904,
+          "median": 1.0904,
+          "min": 1.0904
+        },
+        "direction_entropy": {
+          "max": 0.6749,
+          "median": 0.6749,
+          "min": 0.6749
+        },
+        "forward_mean": {
+          "max": 0.6913,
+          "median": 0.5646,
+          "min": 0.438
+        },
+        "heading_turns": {
+          "max": 1.7442,
+          "median": 1.6003,
+          "min": 1.4564
+        },
+        "hull_ratio": {
+          "max": 0.4315,
+          "median": 0.4239,
+          "min": 0.4162
+        },
+        "obliquity_abs": {
+          "max": 0.4347,
+          "median": 0.4193,
+          "min": 0.4039
+        },
+        "obliquity_signed": {
+          "max": 0.2115,
+          "median": 0.2098,
+          "min": 0.2082
+        },
+        "path_to_nine_length": {
+          "max": 0.6106,
+          "median": 0.6012,
+          "min": 0.5917
+        },
+        "radial_alignment_R": {
+          "max": 0.5073,
+          "median": 0.3575,
+          "min": 0.2077
+        }
+      },
+      "outer": {
+        "angular_step_cv": {
+          "max": 0.4335,
+          "median": 0.3694,
+          "min": 0.3052
+        },
+        "direction_entropy": {
+          "max": 0.7603,
+          "median": 0.7176,
+          "min": 0.6749
+        },
+        "forward_mean": {
+          "max": 0.9831,
+          "median": 0.9759,
+          "min": 0.9687
+        },
+        "heading_turns": {
+          "max": 1.0196,
+          "median": 0.9725,
+          "min": 0.9253
+        },
+        "hull_ratio": {
+          "max": 1.2461,
+          "median": 1.1671,
+          "min": 1.0882
+        },
+        "obliquity_abs": {
+          "max": 0.1794,
+          "median": 0.1681,
+          "min": 0.1568
+        },
+        "obliquity_signed": {
+          "max": 0.0645,
+          "median": -0.0301,
+          "min": -0.1248
+        },
+        "path_to_nine_length": {
+          "max": 0.8613,
+          "median": 0.8506,
+          "min": 0.8399
+        },
+        "radial_alignment_R": {
+          "max": 0.3865,
+          "median": 0.3673,
+          "min": 0.3481
+        }
+      }
+    },
+    "skipped_total": 0,
+    "successes": 2,
+    "violations_total": 0
+  },
+  "width": 500,
+  "width_mode": "variable"
+}

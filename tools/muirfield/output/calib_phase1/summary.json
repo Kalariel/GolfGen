@@ -1,0 +1,3489 @@
+{
+  "phase": 1,
+  "criterion": {
+    "successes": "toutes les seeds, chaque patron et orientation",
+    "violations": 0,
+    "seconds_p90_max": 10.0,
+    "seconds_max_max": 30.0,
+    "note": "critère de lecture, temps HORS relief ; ne filtre rien"
+  },
+  "grid": {
+    "short": [
+      240,
+      260,
+      280,
+      300,
+      325,
+      350
+    ],
+    "long": [
+      400,
+      450,
+      500
+    ],
+    "orientations": [
+      "portrait",
+      "paysage"
+    ],
+    "patterns": [
+      "muirfield",
+      "muirfield_inverse"
+    ]
+  },
+  "totals": {
+    "reports": 72,
+    "seeds_run": 432,
+    "routing_seconds": 2329.4,
+    "terrain_seconds": 1253.9
+  },
+  "rows": [
+    {
+      "short": 240,
+      "long": 400,
+      "orientation": "portrait",
+      "pattern": "muirfield",
+      "width": 240,
+      "height": 400,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 0,
+      "violations_total": 0,
+      "statuses": {
+        "echec": 6
+      },
+      "failed_seeds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "failure_stages": {
+        "echec_ancrages": 34,
+        "echec_back": 125,
+        "echec_front": 2,
+        "infaisable_ancrage": 1
+      },
+      "size_error_messages": [],
+      "seconds_median": 8.615,
+      "seconds_p90": 15.931,
+      "seconds_max": 19.499,
+      "terrain_seconds_mean": 4.257,
+      "terrain_seconds_max": 4.359,
+      "ok": false,
+      "ko_reasons": [
+        "réussites 0/6",
+        "p90 15.9 s"
+      ]
+    },
+    {
+      "short": 240,
+      "long": 400,
+      "orientation": "portrait",
+      "pattern": "muirfield_inverse",
+      "width": 240,
+      "height": 400,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 0,
+      "violations_total": 0,
+      "statuses": {
+        "echec": 6
+      },
+      "failed_seeds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "failure_stages": {
+        "echec_ancrages": 31,
+        "echec_back": 15,
+        "echec_front": 115,
+        "infaisable_ancrage": 1
+      },
+      "size_error_messages": [],
+      "seconds_median": 5.531,
+      "seconds_p90": 10.573,
+      "seconds_max": 12.722,
+      "terrain_seconds_mean": 0.0,
+      "terrain_seconds_max": 0.0,
+      "ok": false,
+      "ko_reasons": [
+        "réussites 0/6",
+        "p90 10.6 s"
+      ]
+    },
+    {
+      "short": 240,
+      "long": 400,
+      "orientation": "paysage",
+      "pattern": "muirfield",
+      "width": 400,
+      "height": 240,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 0,
+      "violations_total": 0,
+      "statuses": {
+        "echec": 6
+      },
+      "failed_seeds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "failure_stages": {
+        "echec_ancrages": 37,
+        "echec_back": 118,
+        "echec_front": 5,
+        "infaisable_ancrage": 2
+      },
+      "size_error_messages": [],
+      "seconds_median": 7.826,
+      "seconds_p90": 12.206,
+      "seconds_max": 13.878,
+      "terrain_seconds_mean": 4.32,
+      "terrain_seconds_max": 4.406,
+      "ok": false,
+      "ko_reasons": [
+        "réussites 0/6",
+        "p90 12.2 s"
+      ]
+    },
+    {
+      "short": 240,
+      "long": 400,
+      "orientation": "paysage",
+      "pattern": "muirfield_inverse",
+      "width": 400,
+      "height": 240,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 0,
+      "violations_total": 0,
+      "statuses": {
+        "echec": 6
+      },
+      "failed_seeds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "failure_stages": {
+        "echec_ancrages": 10,
+        "echec_back": 11,
+        "echec_front": 139,
+        "infaisable_ancrage": 2
+      },
+      "size_error_messages": [],
+      "seconds_median": 7.419,
+      "seconds_p90": 11.667,
+      "seconds_max": 14.124,
+      "terrain_seconds_mean": 0.0,
+      "terrain_seconds_max": 0.001,
+      "ok": false,
+      "ko_reasons": [
+        "réussites 0/6",
+        "p90 11.7 s"
+      ]
+    },
+    {
+      "short": 240,
+      "long": 450,
+      "orientation": "portrait",
+      "pattern": "muirfield",
+      "width": 240,
+      "height": 450,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 3,
+      "violations_total": 0,
+      "statuses": {
+        "echec": 3,
+        "succes": 3
+      },
+      "failed_seeds": [
+        3,
+        4,
+        6
+      ],
+      "failure_stages": {
+        "echec_ancrages": 25,
+        "echec_back": 53,
+        "echec_front": 2,
+        "infaisable_ancrage": 1
+      },
+      "size_error_messages": [],
+      "seconds_median": 8.621,
+      "seconds_p90": 26.708,
+      "seconds_max": 39.941,
+      "terrain_seconds_mean": 4.791,
+      "terrain_seconds_max": 4.947,
+      "ok": false,
+      "ko_reasons": [
+        "réussites 3/6",
+        "p90 26.7 s",
+        "max 39.9 s"
+      ]
+    },
+    {
+      "short": 240,
+      "long": 450,
+      "orientation": "portrait",
+      "pattern": "muirfield_inverse",
+      "width": 240,
+      "height": 450,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 1,
+      "violations_total": 0,
+      "statuses": {
+        "echec": 5,
+        "succes": 1
+      },
+      "failed_seeds": [
+        1,
+        2,
+        4,
+        5,
+        6
+      ],
+      "failure_stages": {
+        "echec_ancrages": 25,
+        "echec_back": 7,
+        "echec_front": 102,
+        "infaisable_ancrage": 1
+      },
+      "size_error_messages": [],
+      "seconds_median": 11.868,
+      "seconds_p90": 14.564,
+      "seconds_max": 15.768,
+      "terrain_seconds_mean": 0.0,
+      "terrain_seconds_max": 0.0,
+      "ok": false,
+      "ko_reasons": [
+        "réussites 1/6",
+        "p90 14.6 s"
+      ]
+    },
+    {
+      "short": 240,
+      "long": 450,
+      "orientation": "paysage",
+      "pattern": "muirfield",
+      "width": 450,
+      "height": 240,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 2,
+      "violations_total": 0,
+      "statuses": {
+        "echec": 4,
+        "succes": 2
+      },
+      "failed_seeds": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "failure_stages": {
+        "echec_ancrages": 7,
+        "echec_back": 80,
+        "echec_front": 20,
+        "infaisable_ancrage": 1
+      },
+      "size_error_messages": [],
+      "seconds_median": 17.131,
+      "seconds_p90": 26.338,
+      "seconds_max": 33.785,
+      "terrain_seconds_mean": 4.779,
+      "terrain_seconds_max": 4.897,
+      "ok": false,
+      "ko_reasons": [
+        "réussites 2/6",
+        "p90 26.3 s",
+        "max 33.8 s"
+      ]
+    },
+    {
+      "short": 240,
+      "long": 450,
+      "orientation": "paysage",
+      "pattern": "muirfield_inverse",
+      "width": 450,
+      "height": 240,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 3,
+      "violations_total": 0,
+      "statuses": {
+        "echec": 3,
+        "succes": 3
+      },
+      "failed_seeds": [
+        1,
+        2,
+        6
+      ],
+      "failure_stages": {
+        "echec_ancrages": 10,
+        "echec_back": 24,
+        "echec_front": 47
+      },
+      "size_error_messages": [],
+      "seconds_median": 8.983,
+      "seconds_p90": 17.699,
+      "seconds_max": 19.019,
+      "terrain_seconds_mean": 0.0,
+      "terrain_seconds_max": 0.0,
+      "ok": false,
+      "ko_reasons": [
+        "réussites 3/6",
+        "p90 17.7 s"
+      ]
+    },
+    {
+      "short": 240,
+      "long": 500,
+      "orientation": "portrait",
+      "pattern": "muirfield",
+      "width": 240,
+      "height": 500,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 4,
+      "violations_total": 0,
+      "statuses": {
+        "echec": 2,
+        "succes": 4
+      },
+      "failed_seeds": [
+        4,
+        6
+      ],
+      "failure_stages": {
+        "echec_ancrages": 13,
+        "echec_back": 38,
+        "echec_front": 3
+      },
+      "size_error_messages": [],
+      "seconds_median": 11.169,
+      "seconds_p90": 26.182,
+      "seconds_max": 29.201,
+      "terrain_seconds_mean": 5.329,
+      "terrain_seconds_max": 5.419,
+      "ok": false,
+      "ko_reasons": [
+        "réussites 4/6",
+        "p90 26.2 s"
+      ]
+    },
+    {
+      "short": 240,
+      "long": 500,
+      "orientation": "portrait",
+      "pattern": "muirfield_inverse",
+      "width": 240,
+      "height": 500,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 4,
+      "violations_total": 0,
+      "statuses": {
+        "echec": 2,
+        "succes": 4
+      },
+      "failed_seeds": [
+        2,
+        3
+      ],
+      "failure_stages": {
+        "echec_back": 12,
+        "echec_front": 42
+      },
+      "size_error_messages": [],
+      "seconds_median": 5.787,
+      "seconds_p90": 38.612,
+      "seconds_max": 38.773,
+      "terrain_seconds_mean": 0.0,
+      "terrain_seconds_max": 0.0,
+      "ok": false,
+      "ko_reasons": [
+        "réussites 4/6",
+        "p90 38.6 s",
+        "max 38.8 s"
+      ]
+    },
+    {
+      "short": 240,
+      "long": 500,
+      "orientation": "paysage",
+      "pattern": "muirfield",
+      "width": 500,
+      "height": 240,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 2,
+      "violations_total": 0,
+      "statuses": {
+        "echec": 4,
+        "succes": 2
+      },
+      "failed_seeds": [
+        2,
+        3,
+        4,
+        6
+      ],
+      "failure_stages": {
+        "echec_ancrages": 25,
+        "echec_back": 65,
+        "echec_front": 15,
+        "infaisable_ancrage": 3
+      },
+      "size_error_messages": [],
+      "seconds_median": 23.682,
+      "seconds_p90": 28.812,
+      "seconds_max": 31.055,
+      "terrain_seconds_mean": 5.352,
+      "terrain_seconds_max": 5.414,
+      "ok": false,
+      "ko_reasons": [
+        "réussites 2/6",
+        "p90 28.8 s",
+        "max 31.1 s"
+      ]
+    },
+    {
+      "short": 240,
+      "long": 500,
+      "orientation": "paysage",
+      "pattern": "muirfield_inverse",
+      "width": 500,
+      "height": 240,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 4,
+      "violations_total": 0,
+      "statuses": {
+        "echec": 2,
+        "succes": 4
+      },
+      "failed_seeds": [
+        2,
+        6
+      ],
+      "failure_stages": {
+        "echec_ancrages": 10,
+        "echec_back": 17,
+        "echec_front": 26,
+        "infaisable_ancrage": 1
+      },
+      "size_error_messages": [],
+      "seconds_median": 7.818,
+      "seconds_p90": 25.998,
+      "seconds_max": 33.66,
+      "terrain_seconds_mean": 0.0,
+      "terrain_seconds_max": 0.0,
+      "ok": false,
+      "ko_reasons": [
+        "réussites 4/6",
+        "p90 26.0 s",
+        "max 33.7 s"
+      ]
+    },
+    {
+      "short": 260,
+      "long": 400,
+      "orientation": "portrait",
+      "pattern": "muirfield",
+      "width": 260,
+      "height": 400,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 2,
+      "violations_total": 0,
+      "statuses": {
+        "echec": 4,
+        "succes": 2
+      },
+      "failed_seeds": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "failure_stages": {
+        "echec_ancrages": 21,
+        "echec_back": 84,
+        "echec_front": 3
+      },
+      "size_error_messages": [],
+      "seconds_median": 15.432,
+      "seconds_p90": 31.608,
+      "seconds_max": 31.924,
+      "terrain_seconds_mean": 4.602,
+      "terrain_seconds_max": 4.683,
+      "ok": false,
+      "ko_reasons": [
+        "réussites 2/6",
+        "p90 31.6 s",
+        "max 31.9 s"
+      ]
+    },
+    {
+      "short": 260,
+      "long": 400,
+      "orientation": "portrait",
+      "pattern": "muirfield_inverse",
+      "width": 260,
+      "height": 400,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 1,
+      "violations_total": 0,
+      "statuses": {
+        "echec": 5,
+        "succes": 1
+      },
+      "failed_seeds": [
+        1,
+        2,
+        3,
+        5,
+        6
+      ],
+      "failure_stages": {
+        "echec_ancrages": 17,
+        "echec_back": 1,
+        "echec_front": 116,
+        "infaisable_ancrage": 1
+      },
+      "size_error_messages": [],
+      "seconds_median": 10.811,
+      "seconds_p90": 14.684,
+      "seconds_max": 17.261,
+      "terrain_seconds_mean": 0.0,
+      "terrain_seconds_max": 0.0,
+      "ok": false,
+      "ko_reasons": [
+        "réussites 1/6",
+        "p90 14.7 s"
+      ]
+    },
+    {
+      "short": 260,
+      "long": 400,
+      "orientation": "paysage",
+      "pattern": "muirfield",
+      "width": 400,
+      "height": 260,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 2,
+      "violations_total": 0,
+      "statuses": {
+        "echec": 4,
+        "succes": 2
+      },
+      "failed_seeds": [
+        2,
+        3,
+        4,
+        6
+      ],
+      "failure_stages": {
+        "echec_ancrages": 37,
+        "echec_back": 64,
+        "echec_front": 5,
+        "infaisable_ancrage": 2
+      },
+      "size_error_messages": [],
+      "seconds_median": 15.789,
+      "seconds_p90": 21.386,
+      "seconds_max": 23.069,
+      "terrain_seconds_mean": 4.59,
+      "terrain_seconds_max": 4.631,
+      "ok": false,
+      "ko_reasons": [
+        "réussites 2/6",
+        "p90 21.4 s"
+      ]
+    },
+    {
+      "short": 260,
+      "long": 400,
+      "orientation": "paysage",
+      "pattern": "muirfield_inverse",
+      "width": 400,
+      "height": 260,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 1,
+      "violations_total": 0,
+      "statuses": {
+        "echec": 5,
+        "succes": 1
+      },
+      "failed_seeds": [
+        1,
+        2,
+        3,
+        5,
+        6
+      ],
+      "failure_stages": {
+        "echec_ancrages": 27,
+        "echec_back": 12,
+        "echec_front": 96
+      },
+      "size_error_messages": [],
+      "seconds_median": 14.601,
+      "seconds_p90": 16.52,
+      "seconds_max": 16.579,
+      "terrain_seconds_mean": 0.0,
+      "terrain_seconds_max": 0.0,
+      "ok": false,
+      "ko_reasons": [
+        "réussites 1/6",
+        "p90 16.5 s"
+      ]
+    },
+    {
+      "short": 260,
+      "long": 450,
+      "orientation": "portrait",
+      "pattern": "muirfield",
+      "width": 260,
+      "height": 450,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 5,
+      "violations_total": 0,
+      "statuses": {
+        "echec": 1,
+        "succes": 5
+      },
+      "failed_seeds": [
+        4
+      ],
+      "failure_stages": {
+        "echec_back": 27
+      },
+      "size_error_messages": [],
+      "seconds_median": 12.724,
+      "seconds_p90": 33.747,
+      "seconds_max": 50.484,
+      "terrain_seconds_mean": 5.145,
+      "terrain_seconds_max": 5.2,
+      "ok": false,
+      "ko_reasons": [
+        "réussites 5/6",
+        "p90 33.7 s",
+        "max 50.5 s"
+      ]
+    },
+    {
+      "short": 260,
+      "long": 450,
+      "orientation": "portrait",
+      "pattern": "muirfield_inverse",
+      "width": 260,
+      "height": 450,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 5,
+      "violations_total": 0,
+      "statuses": {
+        "echec": 1,
+        "succes": 5
+      },
+      "failed_seeds": [
+        6
+      ],
+      "failure_stages": {
+        "echec_ancrages": 1,
+        "echec_back": 2,
+        "echec_front": 24
+      },
+      "size_error_messages": [],
+      "seconds_median": 10.015,
+      "seconds_p90": 26.346,
+      "seconds_max": 37.757,
+      "terrain_seconds_mean": 0.0,
+      "terrain_seconds_max": 0.0,
+      "ok": false,
+      "ko_reasons": [
+        "réussites 5/6",
+        "p90 26.3 s",
+        "max 37.8 s"
+      ]
+    },
+    {
+      "short": 260,
+      "long": 450,
+      "orientation": "paysage",
+      "pattern": "muirfield",
+      "width": 450,
+      "height": 260,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 5,
+      "violations_total": 0,
+      "statuses": {
+        "echec": 1,
+        "succes": 5
+      },
+      "failed_seeds": [
+        3
+      ],
+      "failure_stages": {
+        "echec_ancrages": 11,
+        "echec_back": 15,
+        "echec_front": 1
+      },
+      "size_error_messages": [],
+      "seconds_median": 8.976,
+      "seconds_p90": 26.986,
+      "seconds_max": 29.934,
+      "terrain_seconds_mean": 5.478,
+      "terrain_seconds_max": 5.634,
+      "ok": false,
+      "ko_reasons": [
+        "réussites 5/6",
+        "p90 27.0 s"
+      ]
+    },
+    {
+      "short": 260,
+      "long": 450,
+      "orientation": "paysage",
+      "pattern": "muirfield_inverse",
+      "width": 450,
+      "height": 260,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 4,
+      "violations_total": 0,
+      "statuses": {
+        "echec": 2,
+        "succes": 4
+      },
+      "failed_seeds": [
+        1,
+        6
+      ],
+      "failure_stages": {
+        "echec_ancrages": 17,
+        "echec_back": 6,
+        "echec_front": 31
+      },
+      "size_error_messages": [],
+      "seconds_median": 19.917,
+      "seconds_p90": 31.654,
+      "seconds_max": 38.448,
+      "terrain_seconds_mean": 0.0,
+      "terrain_seconds_max": 0.0,
+      "ok": false,
+      "ko_reasons": [
+        "réussites 4/6",
+        "p90 31.7 s",
+        "max 38.4 s"
+      ]
+    },
+    {
+      "short": 260,
+      "long": 500,
+      "orientation": "portrait",
+      "pattern": "muirfield",
+      "width": 260,
+      "height": 500,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 3.671,
+      "seconds_p90": 16.779,
+      "seconds_max": 29.002,
+      "terrain_seconds_mean": 5.67,
+      "terrain_seconds_max": 5.706,
+      "ok": false,
+      "ko_reasons": [
+        "p90 16.8 s"
+      ]
+    },
+    {
+      "short": 260,
+      "long": 500,
+      "orientation": "portrait",
+      "pattern": "muirfield_inverse",
+      "width": 260,
+      "height": 500,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 4.651,
+      "seconds_p90": 15.051,
+      "seconds_max": 23.949,
+      "terrain_seconds_mean": 0.0,
+      "terrain_seconds_max": 0.0,
+      "ok": false,
+      "ko_reasons": [
+        "p90 15.1 s"
+      ]
+    },
+    {
+      "short": 260,
+      "long": 500,
+      "orientation": "paysage",
+      "pattern": "muirfield",
+      "width": 500,
+      "height": 260,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.585,
+      "seconds_p90": 1.551,
+      "seconds_max": 1.613,
+      "terrain_seconds_mean": 5.76,
+      "terrain_seconds_max": 5.768,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 260,
+      "long": 500,
+      "orientation": "paysage",
+      "pattern": "muirfield_inverse",
+      "width": 500,
+      "height": 260,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 2.064,
+      "seconds_p90": 6.411,
+      "seconds_max": 6.424,
+      "terrain_seconds_mean": 0.0,
+      "terrain_seconds_max": 0.0,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 280,
+      "long": 400,
+      "orientation": "portrait",
+      "pattern": "muirfield",
+      "width": 280,
+      "height": 400,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 5,
+      "violations_total": 0,
+      "statuses": {
+        "echec": 1,
+        "succes": 5
+      },
+      "failed_seeds": [
+        3
+      ],
+      "failure_stages": {
+        "echec_ancrages": 9,
+        "echec_back": 18
+      },
+      "size_error_messages": [],
+      "seconds_median": 4.631,
+      "seconds_p90": 31.176,
+      "seconds_max": 44.497,
+      "terrain_seconds_mean": 4.949,
+      "terrain_seconds_max": 5.009,
+      "ok": false,
+      "ko_reasons": [
+        "réussites 5/6",
+        "p90 31.2 s",
+        "max 44.5 s"
+      ]
+    },
+    {
+      "short": 280,
+      "long": 400,
+      "orientation": "portrait",
+      "pattern": "muirfield_inverse",
+      "width": 280,
+      "height": 400,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 5,
+      "violations_total": 0,
+      "statuses": {
+        "echec": 1,
+        "succes": 5
+      },
+      "failed_seeds": [
+        6
+      ],
+      "failure_stages": {
+        "echec_ancrages": 16,
+        "echec_back": 2,
+        "echec_front": 9
+      },
+      "size_error_messages": [],
+      "seconds_median": 3.114,
+      "seconds_p90": 10.624,
+      "seconds_max": 14.901,
+      "terrain_seconds_mean": 0.0,
+      "terrain_seconds_max": 0.0,
+      "ok": false,
+      "ko_reasons": [
+        "réussites 5/6",
+        "p90 10.6 s"
+      ]
+    },
+    {
+      "short": 280,
+      "long": 400,
+      "orientation": "paysage",
+      "pattern": "muirfield",
+      "width": 400,
+      "height": 280,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 5.43,
+      "seconds_p90": 8.991,
+      "seconds_max": 9.473,
+      "terrain_seconds_mean": 4.941,
+      "terrain_seconds_max": 5.001,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 280,
+      "long": 400,
+      "orientation": "paysage",
+      "pattern": "muirfield_inverse",
+      "width": 400,
+      "height": 280,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 5,
+      "violations_total": 0,
+      "statuses": {
+        "echec": 1,
+        "succes": 5
+      },
+      "failed_seeds": [
+        6
+      ],
+      "failure_stages": {
+        "echec_ancrages": 9,
+        "echec_front": 18
+      },
+      "size_error_messages": [],
+      "seconds_median": 14.022,
+      "seconds_p90": 31.997,
+      "seconds_max": 34.056,
+      "terrain_seconds_mean": 0.0,
+      "terrain_seconds_max": 0.0,
+      "ok": false,
+      "ko_reasons": [
+        "réussites 5/6",
+        "p90 32.0 s",
+        "max 34.1 s"
+      ]
+    },
+    {
+      "short": 280,
+      "long": 450,
+      "orientation": "portrait",
+      "pattern": "muirfield",
+      "width": 280,
+      "height": 450,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.716,
+      "seconds_p90": 12.253,
+      "seconds_max": 20.324,
+      "terrain_seconds_mean": 5.548,
+      "terrain_seconds_max": 5.592,
+      "ok": false,
+      "ko_reasons": [
+        "p90 12.3 s"
+      ]
+    },
+    {
+      "short": 280,
+      "long": 450,
+      "orientation": "portrait",
+      "pattern": "muirfield_inverse",
+      "width": 280,
+      "height": 450,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 2.311,
+      "seconds_p90": 3.445,
+      "seconds_max": 4.187,
+      "terrain_seconds_mean": 0.0,
+      "terrain_seconds_max": 0.0,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 280,
+      "long": 450,
+      "orientation": "paysage",
+      "pattern": "muirfield",
+      "width": 450,
+      "height": 280,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.409,
+      "seconds_p90": 5.669,
+      "seconds_max": 9.772,
+      "terrain_seconds_mean": 5.532,
+      "terrain_seconds_max": 5.545,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 280,
+      "long": 450,
+      "orientation": "paysage",
+      "pattern": "muirfield_inverse",
+      "width": 450,
+      "height": 280,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 1.423,
+      "seconds_p90": 5.652,
+      "seconds_max": 8.074,
+      "terrain_seconds_mean": 0.0,
+      "terrain_seconds_max": 0.0,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 280,
+      "long": 500,
+      "orientation": "portrait",
+      "pattern": "muirfield",
+      "width": 280,
+      "height": 500,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.362,
+      "seconds_p90": 1.707,
+      "seconds_max": 2.873,
+      "terrain_seconds_mean": 6.156,
+      "terrain_seconds_max": 6.213,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 280,
+      "long": 500,
+      "orientation": "portrait",
+      "pattern": "muirfield_inverse",
+      "width": 280,
+      "height": 500,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.601,
+      "seconds_p90": 4.162,
+      "seconds_max": 7.662,
+      "terrain_seconds_mean": 0.0,
+      "terrain_seconds_max": 0.0,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 280,
+      "long": 500,
+      "orientation": "paysage",
+      "pattern": "muirfield",
+      "width": 500,
+      "height": 280,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.413,
+      "seconds_p90": 1.836,
+      "seconds_max": 2.557,
+      "terrain_seconds_mean": 6.25,
+      "terrain_seconds_max": 6.537,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 280,
+      "long": 500,
+      "orientation": "paysage",
+      "pattern": "muirfield_inverse",
+      "width": 500,
+      "height": 280,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.623,
+      "seconds_p90": 2.001,
+      "seconds_max": 2.562,
+      "terrain_seconds_mean": 0.0,
+      "terrain_seconds_max": 0.0,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 300,
+      "long": 400,
+      "orientation": "portrait",
+      "pattern": "muirfield",
+      "width": 300,
+      "height": 400,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 1.171,
+      "seconds_p90": 6.426,
+      "seconds_max": 10.643,
+      "terrain_seconds_mean": 4.433,
+      "terrain_seconds_max": 5.353,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 300,
+      "long": 400,
+      "orientation": "portrait",
+      "pattern": "muirfield_inverse",
+      "width": 300,
+      "height": 400,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 4.257,
+      "seconds_p90": 11.646,
+      "seconds_max": 14.045,
+      "terrain_seconds_mean": 0.0,
+      "terrain_seconds_max": 0.0,
+      "ok": false,
+      "ko_reasons": [
+        "p90 11.6 s"
+      ]
+    },
+    {
+      "short": 300,
+      "long": 400,
+      "orientation": "paysage",
+      "pattern": "muirfield",
+      "width": 400,
+      "height": 300,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 2.378,
+      "seconds_p90": 7.686,
+      "seconds_max": 10.551,
+      "terrain_seconds_mean": 5.263,
+      "terrain_seconds_max": 5.303,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 300,
+      "long": 400,
+      "orientation": "paysage",
+      "pattern": "muirfield_inverse",
+      "width": 400,
+      "height": 300,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.941,
+      "seconds_p90": 4.758,
+      "seconds_max": 7.705,
+      "terrain_seconds_mean": 0.0,
+      "terrain_seconds_max": 0.0,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 300,
+      "long": 450,
+      "orientation": "portrait",
+      "pattern": "muirfield",
+      "width": 300,
+      "height": 450,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.467,
+      "seconds_p90": 5.412,
+      "seconds_max": 6.751,
+      "terrain_seconds_mean": 5.925,
+      "terrain_seconds_max": 5.993,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 300,
+      "long": 450,
+      "orientation": "portrait",
+      "pattern": "muirfield_inverse",
+      "width": 300,
+      "height": 450,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.364,
+      "seconds_p90": 1.63,
+      "seconds_max": 2.893,
+      "terrain_seconds_mean": 0.0,
+      "terrain_seconds_max": 0.001,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 300,
+      "long": 450,
+      "orientation": "paysage",
+      "pattern": "muirfield",
+      "width": 450,
+      "height": 300,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.302,
+      "seconds_p90": 8.424,
+      "seconds_max": 11.616,
+      "terrain_seconds_mean": 5.946,
+      "terrain_seconds_max": 5.994,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 300,
+      "long": 450,
+      "orientation": "paysage",
+      "pattern": "muirfield_inverse",
+      "width": 450,
+      "height": 300,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.311,
+      "seconds_p90": 0.903,
+      "seconds_max": 1.089,
+      "terrain_seconds_mean": 0.0,
+      "terrain_seconds_max": 0.0,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 300,
+      "long": 500,
+      "orientation": "portrait",
+      "pattern": "muirfield",
+      "width": 300,
+      "height": 500,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.362,
+      "seconds_p90": 0.416,
+      "seconds_max": 0.427,
+      "terrain_seconds_mean": 6.673,
+      "terrain_seconds_max": 6.853,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 300,
+      "long": 500,
+      "orientation": "portrait",
+      "pattern": "muirfield_inverse",
+      "width": 300,
+      "height": 500,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.699,
+      "seconds_p90": 2.812,
+      "seconds_max": 3.014,
+      "terrain_seconds_mean": 0.0,
+      "terrain_seconds_max": 0.001,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 300,
+      "long": 500,
+      "orientation": "paysage",
+      "pattern": "muirfield",
+      "width": 500,
+      "height": 300,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.329,
+      "seconds_p90": 1.211,
+      "seconds_max": 1.498,
+      "terrain_seconds_mean": 6.686,
+      "terrain_seconds_max": 7.043,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 300,
+      "long": 500,
+      "orientation": "paysage",
+      "pattern": "muirfield_inverse",
+      "width": 500,
+      "height": 300,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.318,
+      "seconds_p90": 0.758,
+      "seconds_max": 1.18,
+      "terrain_seconds_mean": 0.0,
+      "terrain_seconds_max": 0.0,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 325,
+      "long": 400,
+      "orientation": "portrait",
+      "pattern": "muirfield",
+      "width": 325,
+      "height": 400,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.44,
+      "seconds_p90": 1.293,
+      "seconds_max": 1.984,
+      "terrain_seconds_mean": 5.701,
+      "terrain_seconds_max": 5.784,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 325,
+      "long": 400,
+      "orientation": "portrait",
+      "pattern": "muirfield_inverse",
+      "width": 325,
+      "height": 400,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.674,
+      "seconds_p90": 2.147,
+      "seconds_max": 2.858,
+      "terrain_seconds_mean": 0.0,
+      "terrain_seconds_max": 0.001,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 325,
+      "long": 400,
+      "orientation": "paysage",
+      "pattern": "muirfield",
+      "width": 400,
+      "height": 325,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.582,
+      "seconds_p90": 2.81,
+      "seconds_max": 3.588,
+      "terrain_seconds_mean": 5.916,
+      "terrain_seconds_max": 5.933,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 325,
+      "long": 400,
+      "orientation": "paysage",
+      "pattern": "muirfield_inverse",
+      "width": 400,
+      "height": 325,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.661,
+      "seconds_p90": 4.137,
+      "seconds_max": 5.978,
+      "terrain_seconds_mean": 0.0,
+      "terrain_seconds_max": 0.0,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 325,
+      "long": 450,
+      "orientation": "portrait",
+      "pattern": "muirfield",
+      "width": 325,
+      "height": 450,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.876,
+      "seconds_p90": 4.29,
+      "seconds_max": 5.844,
+      "terrain_seconds_mean": 6.398,
+      "terrain_seconds_max": 6.449,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 325,
+      "long": 450,
+      "orientation": "portrait",
+      "pattern": "muirfield_inverse",
+      "width": 325,
+      "height": 450,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.555,
+      "seconds_p90": 3.034,
+      "seconds_max": 3.336,
+      "terrain_seconds_mean": 0.0,
+      "terrain_seconds_max": 0.0,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 325,
+      "long": 450,
+      "orientation": "paysage",
+      "pattern": "muirfield",
+      "width": 450,
+      "height": 325,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 1.101,
+      "seconds_p90": 3.317,
+      "seconds_max": 4.271,
+      "terrain_seconds_mean": 6.505,
+      "terrain_seconds_max": 6.62,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 325,
+      "long": 450,
+      "orientation": "paysage",
+      "pattern": "muirfield_inverse",
+      "width": 450,
+      "height": 325,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.348,
+      "seconds_p90": 1.719,
+      "seconds_max": 1.867,
+      "terrain_seconds_mean": 0.0,
+      "terrain_seconds_max": 0.0,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 325,
+      "long": 500,
+      "orientation": "portrait",
+      "pattern": "muirfield",
+      "width": 325,
+      "height": 500,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.35,
+      "seconds_p90": 1.614,
+      "seconds_max": 2.669,
+      "terrain_seconds_mean": 7.182,
+      "terrain_seconds_max": 7.371,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 325,
+      "long": 500,
+      "orientation": "portrait",
+      "pattern": "muirfield_inverse",
+      "width": 325,
+      "height": 500,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.369,
+      "seconds_p90": 6.228,
+      "seconds_max": 7.685,
+      "terrain_seconds_mean": 0.0,
+      "terrain_seconds_max": 0.0,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 325,
+      "long": 500,
+      "orientation": "paysage",
+      "pattern": "muirfield",
+      "width": 500,
+      "height": 325,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.338,
+      "seconds_p90": 3.401,
+      "seconds_max": 4.375,
+      "terrain_seconds_mean": 7.178,
+      "terrain_seconds_max": 7.335,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 325,
+      "long": 500,
+      "orientation": "paysage",
+      "pattern": "muirfield_inverse",
+      "width": 500,
+      "height": 325,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.333,
+      "seconds_p90": 1.641,
+      "seconds_max": 2.919,
+      "terrain_seconds_mean": 0.0,
+      "terrain_seconds_max": 0.0,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 350,
+      "long": 400,
+      "orientation": "portrait",
+      "pattern": "muirfield",
+      "width": 350,
+      "height": 400,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.356,
+      "seconds_p90": 2.014,
+      "seconds_max": 2.19,
+      "terrain_seconds_mean": 6.158,
+      "terrain_seconds_max": 6.177,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 350,
+      "long": 400,
+      "orientation": "portrait",
+      "pattern": "muirfield_inverse",
+      "width": 350,
+      "height": 400,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.31,
+      "seconds_p90": 4.035,
+      "seconds_max": 4.065,
+      "terrain_seconds_mean": 0.0,
+      "terrain_seconds_max": 0.0,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 350,
+      "long": 400,
+      "orientation": "paysage",
+      "pattern": "muirfield",
+      "width": 400,
+      "height": 350,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.439,
+      "seconds_p90": 1.969,
+      "seconds_max": 2.747,
+      "terrain_seconds_mean": 6.183,
+      "terrain_seconds_max": 6.237,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 350,
+      "long": 400,
+      "orientation": "paysage",
+      "pattern": "muirfield_inverse",
+      "width": 400,
+      "height": 350,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.332,
+      "seconds_p90": 1.578,
+      "seconds_max": 2.56,
+      "terrain_seconds_mean": 0.0,
+      "terrain_seconds_max": 0.0,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 350,
+      "long": 450,
+      "orientation": "portrait",
+      "pattern": "muirfield",
+      "width": 350,
+      "height": 450,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.343,
+      "seconds_p90": 0.398,
+      "seconds_max": 0.423,
+      "terrain_seconds_mean": 6.92,
+      "terrain_seconds_max": 7.038,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 350,
+      "long": 450,
+      "orientation": "portrait",
+      "pattern": "muirfield_inverse",
+      "width": 350,
+      "height": 450,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.326,
+      "seconds_p90": 0.525,
+      "seconds_max": 0.679,
+      "terrain_seconds_mean": 0.0,
+      "terrain_seconds_max": 0.0,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 350,
+      "long": 450,
+      "orientation": "paysage",
+      "pattern": "muirfield",
+      "width": 450,
+      "height": 350,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.703,
+      "seconds_p90": 2.381,
+      "seconds_max": 3.526,
+      "terrain_seconds_mean": 6.957,
+      "terrain_seconds_max": 7.109,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 350,
+      "long": 450,
+      "orientation": "paysage",
+      "pattern": "muirfield_inverse",
+      "width": 450,
+      "height": 350,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.351,
+      "seconds_p90": 1.588,
+      "seconds_max": 2.264,
+      "terrain_seconds_mean": 0.0,
+      "terrain_seconds_max": 0.001,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 350,
+      "long": 500,
+      "orientation": "portrait",
+      "pattern": "muirfield",
+      "width": 350,
+      "height": 500,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.4,
+      "seconds_p90": 1.915,
+      "seconds_max": 2.786,
+      "terrain_seconds_mean": 7.778,
+      "terrain_seconds_max": 7.804,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 350,
+      "long": 500,
+      "orientation": "portrait",
+      "pattern": "muirfield_inverse",
+      "width": 350,
+      "height": 500,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.367,
+      "seconds_p90": 3.166,
+      "seconds_max": 5.018,
+      "terrain_seconds_mean": 0.0,
+      "terrain_seconds_max": 0.0,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 350,
+      "long": 500,
+      "orientation": "paysage",
+      "pattern": "muirfield",
+      "width": 500,
+      "height": 350,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.357,
+      "seconds_p90": 1.32,
+      "seconds_max": 2.27,
+      "terrain_seconds_mean": 7.728,
+      "terrain_seconds_max": 7.856,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 350,
+      "long": 500,
+      "orientation": "paysage",
+      "pattern": "muirfield_inverse",
+      "width": 500,
+      "height": 350,
+      "width_mode": "variable",
+      "seeds": 6,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 6
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.353,
+      "seconds_p90": 1.577,
+      "seconds_max": 2.789,
+      "terrain_seconds_mean": 0.0,
+      "terrain_seconds_max": 0.0,
+      "ok": true,
+      "ko_reasons": []
+    }
+  ],
+  "aggregated": [
+    {
+      "short": 240,
+      "long": 400,
+      "orientation": "portrait",
+      "width": 240,
+      "height": 400,
+      "patterns": [
+        "muirfield",
+        "muirfield_inverse"
+      ],
+      "successes_by_pattern": {
+        "muirfield": 0,
+        "muirfield_inverse": 0
+      },
+      "seeds": 12,
+      "successes": 0,
+      "violations_total": 0,
+      "statuses": {
+        "echec": 12
+      },
+      "failed_seeds": [
+        1,
+        1,
+        2,
+        2,
+        3,
+        3,
+        4,
+        4,
+        5,
+        5,
+        6,
+        6
+      ],
+      "failure_stages": {
+        "echec_ancrages": 65,
+        "echec_back": 140,
+        "echec_front": 117,
+        "infaisable_ancrage": 2
+      },
+      "size_error_messages": [],
+      "seconds_median": 5.936,
+      "seconds_p90": 12.686,
+      "seconds_max": 19.499,
+      "terrain_seconds_mean": 2.128,
+      "terrain_seconds_max": 4.359,
+      "ok": false,
+      "ko_reasons": [
+        "muirfield : réussites 0/6",
+        "muirfield : p90 15.9 s",
+        "muirfield_inverse : réussites 0/6",
+        "muirfield_inverse : p90 10.6 s"
+      ]
+    },
+    {
+      "short": 240,
+      "long": 400,
+      "orientation": "paysage",
+      "width": 400,
+      "height": 240,
+      "patterns": [
+        "muirfield",
+        "muirfield_inverse"
+      ],
+      "successes_by_pattern": {
+        "muirfield": 0,
+        "muirfield_inverse": 0
+      },
+      "seeds": 12,
+      "successes": 0,
+      "violations_total": 0,
+      "statuses": {
+        "echec": 12
+      },
+      "failed_seeds": [
+        1,
+        1,
+        2,
+        2,
+        3,
+        3,
+        4,
+        4,
+        5,
+        5,
+        6,
+        6
+      ],
+      "failure_stages": {
+        "echec_ancrages": 47,
+        "echec_back": 129,
+        "echec_front": 144,
+        "infaisable_ancrage": 4
+      },
+      "size_error_messages": [],
+      "seconds_median": 7.419,
+      "seconds_p90": 13.544,
+      "seconds_max": 14.124,
+      "terrain_seconds_mean": 2.16,
+      "terrain_seconds_max": 4.406,
+      "ok": false,
+      "ko_reasons": [
+        "muirfield : réussites 0/6",
+        "muirfield : p90 12.2 s",
+        "muirfield_inverse : réussites 0/6",
+        "muirfield_inverse : p90 11.7 s"
+      ]
+    },
+    {
+      "short": 240,
+      "long": 450,
+      "orientation": "portrait",
+      "width": 240,
+      "height": 450,
+      "patterns": [
+        "muirfield",
+        "muirfield_inverse"
+      ],
+      "successes_by_pattern": {
+        "muirfield": 3,
+        "muirfield_inverse": 1
+      },
+      "seeds": 12,
+      "successes": 4,
+      "violations_total": 0,
+      "statuses": {
+        "echec": 8,
+        "succes": 4
+      },
+      "failed_seeds": [
+        1,
+        2,
+        3,
+        4,
+        4,
+        5,
+        6,
+        6
+      ],
+      "failure_stages": {
+        "echec_ancrages": 50,
+        "echec_back": 60,
+        "echec_front": 104,
+        "infaisable_ancrage": 2
+      },
+      "size_error_messages": [],
+      "seconds_median": 10.87,
+      "seconds_p90": 15.539,
+      "seconds_max": 39.941,
+      "terrain_seconds_mean": 2.395,
+      "terrain_seconds_max": 4.947,
+      "ok": false,
+      "ko_reasons": [
+        "muirfield : réussites 3/6",
+        "muirfield : p90 26.7 s",
+        "muirfield : max 39.9 s",
+        "muirfield_inverse : réussites 1/6",
+        "muirfield_inverse : p90 14.6 s"
+      ]
+    },
+    {
+      "short": 240,
+      "long": 450,
+      "orientation": "paysage",
+      "width": 450,
+      "height": 240,
+      "patterns": [
+        "muirfield",
+        "muirfield_inverse"
+      ],
+      "successes_by_pattern": {
+        "muirfield": 2,
+        "muirfield_inverse": 3
+      },
+      "seeds": 12,
+      "successes": 5,
+      "violations_total": 0,
+      "statuses": {
+        "echec": 7,
+        "succes": 5
+      },
+      "failed_seeds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        6
+      ],
+      "failure_stages": {
+        "echec_ancrages": 17,
+        "echec_back": 104,
+        "echec_front": 67,
+        "infaisable_ancrage": 1
+      },
+      "size_error_messages": [],
+      "seconds_median": 14.553,
+      "seconds_p90": 19.006,
+      "seconds_max": 33.785,
+      "terrain_seconds_mean": 2.39,
+      "terrain_seconds_max": 4.897,
+      "ok": false,
+      "ko_reasons": [
+        "muirfield : réussites 2/6",
+        "muirfield : p90 26.3 s",
+        "muirfield : max 33.8 s",
+        "muirfield_inverse : réussites 3/6",
+        "muirfield_inverse : p90 17.7 s"
+      ]
+    },
+    {
+      "short": 240,
+      "long": 500,
+      "orientation": "portrait",
+      "width": 240,
+      "height": 500,
+      "patterns": [
+        "muirfield",
+        "muirfield_inverse"
+      ],
+      "successes_by_pattern": {
+        "muirfield": 4,
+        "muirfield_inverse": 4
+      },
+      "seeds": 12,
+      "successes": 8,
+      "violations_total": 0,
+      "statuses": {
+        "echec": 4,
+        "succes": 8
+      },
+      "failed_seeds": [
+        2,
+        3,
+        4,
+        6
+      ],
+      "failure_stages": {
+        "echec_ancrages": 13,
+        "echec_back": 50,
+        "echec_front": 45
+      },
+      "size_error_messages": [],
+      "seconds_median": 10.212,
+      "seconds_p90": 37.525,
+      "seconds_max": 38.773,
+      "terrain_seconds_mean": 2.664,
+      "terrain_seconds_max": 5.419,
+      "ok": false,
+      "ko_reasons": [
+        "muirfield : réussites 4/6",
+        "muirfield : p90 26.2 s",
+        "muirfield_inverse : réussites 4/6",
+        "muirfield_inverse : p90 38.6 s",
+        "muirfield_inverse : max 38.8 s"
+      ]
+    },
+    {
+      "short": 240,
+      "long": 500,
+      "orientation": "paysage",
+      "width": 500,
+      "height": 240,
+      "patterns": [
+        "muirfield",
+        "muirfield_inverse"
+      ],
+      "successes_by_pattern": {
+        "muirfield": 2,
+        "muirfield_inverse": 4
+      },
+      "seeds": 12,
+      "successes": 6,
+      "violations_total": 0,
+      "statuses": {
+        "echec": 6,
+        "succes": 6
+      },
+      "failed_seeds": [
+        2,
+        2,
+        3,
+        4,
+        6,
+        6
+      ],
+      "failure_stages": {
+        "echec_ancrages": 35,
+        "echec_back": 82,
+        "echec_front": 41,
+        "infaisable_ancrage": 4
+      },
+      "size_error_messages": [],
+      "seconds_median": 17.448,
+      "seconds_p90": 30.606,
+      "seconds_max": 33.66,
+      "terrain_seconds_mean": 2.676,
+      "terrain_seconds_max": 5.414,
+      "ok": false,
+      "ko_reasons": [
+        "muirfield : réussites 2/6",
+        "muirfield : p90 28.8 s",
+        "muirfield : max 31.1 s",
+        "muirfield_inverse : réussites 4/6",
+        "muirfield_inverse : p90 26.0 s",
+        "muirfield_inverse : max 33.7 s"
+      ]
+    },
+    {
+      "short": 260,
+      "long": 400,
+      "orientation": "portrait",
+      "width": 260,
+      "height": 400,
+      "patterns": [
+        "muirfield",
+        "muirfield_inverse"
+      ],
+      "successes_by_pattern": {
+        "muirfield": 2,
+        "muirfield_inverse": 1
+      },
+      "seeds": 12,
+      "successes": 3,
+      "violations_total": 0,
+      "statuses": {
+        "echec": 9,
+        "succes": 3
+      },
+      "failed_seeds": [
+        1,
+        2,
+        3,
+        3,
+        4,
+        5,
+        5,
+        6,
+        6
+      ],
+      "failure_stages": {
+        "echec_ancrages": 38,
+        "echec_back": 85,
+        "echec_front": 119,
+        "infaisable_ancrage": 1
+      },
+      "size_error_messages": [],
+      "seconds_median": 10.811,
+      "seconds_p90": 30.183,
+      "seconds_max": 31.924,
+      "terrain_seconds_mean": 2.301,
+      "terrain_seconds_max": 4.683,
+      "ok": false,
+      "ko_reasons": [
+        "muirfield : réussites 2/6",
+        "muirfield : p90 31.6 s",
+        "muirfield : max 31.9 s",
+        "muirfield_inverse : réussites 1/6",
+        "muirfield_inverse : p90 14.7 s"
+      ]
+    },
+    {
+      "short": 260,
+      "long": 400,
+      "orientation": "paysage",
+      "width": 400,
+      "height": 260,
+      "patterns": [
+        "muirfield",
+        "muirfield_inverse"
+      ],
+      "successes_by_pattern": {
+        "muirfield": 2,
+        "muirfield_inverse": 1
+      },
+      "seeds": 12,
+      "successes": 3,
+      "violations_total": 0,
+      "statuses": {
+        "echec": 9,
+        "succes": 3
+      },
+      "failed_seeds": [
+        1,
+        2,
+        2,
+        3,
+        3,
+        4,
+        5,
+        6,
+        6
+      ],
+      "failure_stages": {
+        "echec_ancrages": 64,
+        "echec_back": 76,
+        "echec_front": 101,
+        "infaisable_ancrage": 2
+      },
+      "size_error_messages": [],
+      "seconds_median": 15.753,
+      "seconds_p90": 19.39,
+      "seconds_max": 23.069,
+      "terrain_seconds_mean": 2.295,
+      "terrain_seconds_max": 4.631,
+      "ok": false,
+      "ko_reasons": [
+        "muirfield : réussites 2/6",
+        "muirfield : p90 21.4 s",
+        "muirfield_inverse : réussites 1/6",
+        "muirfield_inverse : p90 16.5 s"
+      ]
+    },
+    {
+      "short": 260,
+      "long": 450,
+      "orientation": "portrait",
+      "width": 260,
+      "height": 450,
+      "patterns": [
+        "muirfield",
+        "muirfield_inverse"
+      ],
+      "successes_by_pattern": {
+        "muirfield": 5,
+        "muirfield_inverse": 5
+      },
+      "seeds": 12,
+      "successes": 10,
+      "violations_total": 0,
+      "statuses": {
+        "echec": 2,
+        "succes": 10
+      },
+      "failed_seeds": [
+        4,
+        6
+      ],
+      "failure_stages": {
+        "echec_ancrages": 1,
+        "echec_back": 29,
+        "echec_front": 24
+      },
+      "size_error_messages": [],
+      "seconds_median": 10.465,
+      "seconds_p90": 35.682,
+      "seconds_max": 50.484,
+      "terrain_seconds_mean": 2.573,
+      "terrain_seconds_max": 5.2,
+      "ok": false,
+      "ko_reasons": [
+        "muirfield : réussites 5/6",
+        "muirfield : p90 33.7 s",
+        "muirfield : max 50.5 s",
+        "muirfield_inverse : réussites 5/6",
+        "muirfield_inverse : p90 26.3 s",
+        "muirfield_inverse : max 37.8 s"
+      ]
+    },
+    {
+      "short": 260,
+      "long": 450,
+      "orientation": "paysage",
+      "width": 450,
+      "height": 260,
+      "patterns": [
+        "muirfield",
+        "muirfield_inverse"
+      ],
+      "successes_by_pattern": {
+        "muirfield": 5,
+        "muirfield_inverse": 4
+      },
+      "seeds": 12,
+      "successes": 9,
+      "violations_total": 0,
+      "statuses": {
+        "echec": 3,
+        "succes": 9
+      },
+      "failed_seeds": [
+        1,
+        3,
+        6
+      ],
+      "failure_stages": {
+        "echec_ancrages": 28,
+        "echec_back": 21,
+        "echec_front": 32
+      },
+      "size_error_messages": [],
+      "seconds_median": 13.457,
+      "seconds_p90": 29.427,
+      "seconds_max": 38.448,
+      "terrain_seconds_mean": 2.739,
+      "terrain_seconds_max": 5.634,
+      "ok": false,
+      "ko_reasons": [
+        "muirfield : réussites 5/6",
+        "muirfield : p90 27.0 s",
+        "muirfield_inverse : réussites 4/6",
+        "muirfield_inverse : p90 31.7 s",
+        "muirfield_inverse : max 38.4 s"
+      ]
+    },
+    {
+      "short": 260,
+      "long": 500,
+      "orientation": "portrait",
+      "width": 260,
+      "height": 500,
+      "patterns": [
+        "muirfield",
+        "muirfield_inverse"
+      ],
+      "successes_by_pattern": {
+        "muirfield": 6,
+        "muirfield_inverse": 6
+      },
+      "seeds": 12,
+      "successes": 12,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 12
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 4.041,
+      "seconds_p90": 22.17,
+      "seconds_max": 29.002,
+      "terrain_seconds_mean": 2.835,
+      "terrain_seconds_max": 5.706,
+      "ok": false,
+      "ko_reasons": [
+        "muirfield : p90 16.8 s",
+        "muirfield_inverse : p90 15.1 s"
+      ]
+    },
+    {
+      "short": 260,
+      "long": 500,
+      "orientation": "paysage",
+      "width": 500,
+      "height": 260,
+      "patterns": [
+        "muirfield",
+        "muirfield_inverse"
+      ],
+      "successes_by_pattern": {
+        "muirfield": 6,
+        "muirfield_inverse": 6
+      },
+      "seeds": 12,
+      "successes": 12,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 12
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 1.551,
+      "seconds_p90": 5.981,
+      "seconds_max": 6.424,
+      "terrain_seconds_mean": 2.88,
+      "terrain_seconds_max": 5.768,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 280,
+      "long": 400,
+      "orientation": "portrait",
+      "width": 280,
+      "height": 400,
+      "patterns": [
+        "muirfield",
+        "muirfield_inverse"
+      ],
+      "successes_by_pattern": {
+        "muirfield": 5,
+        "muirfield_inverse": 5
+      },
+      "seeds": 12,
+      "successes": 10,
+      "violations_total": 0,
+      "statuses": {
+        "echec": 2,
+        "succes": 10
+      },
+      "failed_seeds": [
+        3,
+        6
+      ],
+      "failure_stages": {
+        "echec_ancrages": 25,
+        "echec_back": 20,
+        "echec_front": 9
+      },
+      "size_error_messages": [],
+      "seconds_median": 4.481,
+      "seconds_p90": 17.559,
+      "seconds_max": 44.497,
+      "terrain_seconds_mean": 2.474,
+      "terrain_seconds_max": 5.009,
+      "ok": false,
+      "ko_reasons": [
+        "muirfield : réussites 5/6",
+        "muirfield : p90 31.2 s",
+        "muirfield : max 44.5 s",
+        "muirfield_inverse : réussites 5/6",
+        "muirfield_inverse : p90 10.6 s"
+      ]
+    },
+    {
+      "short": 280,
+      "long": 400,
+      "orientation": "paysage",
+      "width": 400,
+      "height": 280,
+      "patterns": [
+        "muirfield",
+        "muirfield_inverse"
+      ],
+      "successes_by_pattern": {
+        "muirfield": 6,
+        "muirfield_inverse": 5
+      },
+      "seeds": 12,
+      "successes": 11,
+      "violations_total": 0,
+      "statuses": {
+        "echec": 1,
+        "succes": 11
+      },
+      "failed_seeds": [
+        6
+      ],
+      "failure_stages": {
+        "echec_ancrages": 9,
+        "echec_front": 18
+      },
+      "size_error_messages": [],
+      "seconds_median": 8.309,
+      "seconds_p90": 28.662,
+      "seconds_max": 34.056,
+      "terrain_seconds_mean": 2.47,
+      "terrain_seconds_max": 5.001,
+      "ok": false,
+      "ko_reasons": [
+        "muirfield_inverse : réussites 5/6",
+        "muirfield_inverse : p90 32.0 s",
+        "muirfield_inverse : max 34.1 s"
+      ]
+    },
+    {
+      "short": 280,
+      "long": 450,
+      "orientation": "portrait",
+      "width": 280,
+      "height": 450,
+      "patterns": [
+        "muirfield",
+        "muirfield_inverse"
+      ],
+      "successes_by_pattern": {
+        "muirfield": 6,
+        "muirfield_inverse": 6
+      },
+      "seeds": 12,
+      "successes": 12,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 12
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 1.492,
+      "seconds_p90": 4.186,
+      "seconds_max": 20.324,
+      "terrain_seconds_mean": 2.774,
+      "terrain_seconds_max": 5.592,
+      "ok": false,
+      "ko_reasons": [
+        "muirfield : p90 12.3 s"
+      ]
+    },
+    {
+      "short": 280,
+      "long": 450,
+      "orientation": "paysage",
+      "width": 450,
+      "height": 280,
+      "patterns": [
+        "muirfield",
+        "muirfield_inverse"
+      ],
+      "successes_by_pattern": {
+        "muirfield": 6,
+        "muirfield_inverse": 6
+      },
+      "seeds": 12,
+      "successes": 12,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 12
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.555,
+      "seconds_p90": 7.589,
+      "seconds_max": 9.772,
+      "terrain_seconds_mean": 2.766,
+      "terrain_seconds_max": 5.545,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 280,
+      "long": 500,
+      "orientation": "portrait",
+      "width": 280,
+      "height": 500,
+      "patterns": [
+        "muirfield",
+        "muirfield_inverse"
+      ],
+      "successes_by_pattern": {
+        "muirfield": 6,
+        "muirfield_inverse": 6
+      },
+      "seeds": 12,
+      "successes": 12,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 12
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.473,
+      "seconds_p90": 2.652,
+      "seconds_max": 7.662,
+      "terrain_seconds_mean": 3.078,
+      "terrain_seconds_max": 6.213,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 280,
+      "long": 500,
+      "orientation": "paysage",
+      "width": 500,
+      "height": 280,
+      "patterns": [
+        "muirfield",
+        "muirfield_inverse"
+      ],
+      "successes_by_pattern": {
+        "muirfield": 6,
+        "muirfield_inverse": 6
+      },
+      "seeds": 12,
+      "successes": 12,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 12
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.443,
+      "seconds_p90": 2.445,
+      "seconds_max": 2.562,
+      "terrain_seconds_mean": 3.125,
+      "terrain_seconds_max": 6.537,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 300,
+      "long": 400,
+      "orientation": "portrait",
+      "width": 300,
+      "height": 400,
+      "patterns": [
+        "muirfield",
+        "muirfield_inverse"
+      ],
+      "successes_by_pattern": {
+        "muirfield": 6,
+        "muirfield_inverse": 6
+      },
+      "seeds": 12,
+      "successes": 12,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 12
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 2.884,
+      "seconds_p90": 10.504,
+      "seconds_max": 14.045,
+      "terrain_seconds_mean": 2.216,
+      "terrain_seconds_max": 5.353,
+      "ok": false,
+      "ko_reasons": [
+        "muirfield_inverse : p90 11.6 s"
+      ]
+    },
+    {
+      "short": 300,
+      "long": 400,
+      "orientation": "paysage",
+      "width": 400,
+      "height": 300,
+      "patterns": [
+        "muirfield",
+        "muirfield_inverse"
+      ],
+      "successes_by_pattern": {
+        "muirfield": 6,
+        "muirfield_inverse": 6
+      },
+      "seeds": 12,
+      "successes": 12,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 12
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.966,
+      "seconds_p90": 7.416,
+      "seconds_max": 10.551,
+      "terrain_seconds_mean": 2.632,
+      "terrain_seconds_max": 5.303,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 300,
+      "long": 450,
+      "orientation": "portrait",
+      "width": 300,
+      "height": 450,
+      "patterns": [
+        "muirfield",
+        "muirfield_inverse"
+      ],
+      "successes_by_pattern": {
+        "muirfield": 6,
+        "muirfield_inverse": 6
+      },
+      "seeds": 12,
+      "successes": 12,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 12
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.364,
+      "seconds_p90": 3.955,
+      "seconds_max": 6.751,
+      "terrain_seconds_mean": 2.962,
+      "terrain_seconds_max": 5.993,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 300,
+      "long": 450,
+      "orientation": "paysage",
+      "width": 450,
+      "height": 300,
+      "patterns": [
+        "muirfield",
+        "muirfield_inverse"
+      ],
+      "successes_by_pattern": {
+        "muirfield": 6,
+        "muirfield_inverse": 6
+      },
+      "seeds": 12,
+      "successes": 12,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 12
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.309,
+      "seconds_p90": 4.817,
+      "seconds_max": 11.616,
+      "terrain_seconds_mean": 2.973,
+      "terrain_seconds_max": 5.994,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 300,
+      "long": 500,
+      "orientation": "portrait",
+      "width": 300,
+      "height": 500,
+      "patterns": [
+        "muirfield",
+        "muirfield_inverse"
+      ],
+      "successes_by_pattern": {
+        "muirfield": 6,
+        "muirfield_inverse": 6
+      },
+      "seeds": 12,
+      "successes": 12,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 12
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.362,
+      "seconds_p90": 2.454,
+      "seconds_max": 3.014,
+      "terrain_seconds_mean": 3.337,
+      "terrain_seconds_max": 6.853,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 300,
+      "long": 500,
+      "orientation": "paysage",
+      "width": 500,
+      "height": 300,
+      "patterns": [
+        "muirfield",
+        "muirfield_inverse"
+      ],
+      "successes_by_pattern": {
+        "muirfield": 6,
+        "muirfield_inverse": 6
+      },
+      "seeds": 12,
+      "successes": 12,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 12
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.326,
+      "seconds_p90": 1.155,
+      "seconds_max": 1.498,
+      "terrain_seconds_mean": 3.343,
+      "terrain_seconds_max": 7.043,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 325,
+      "long": 400,
+      "orientation": "portrait",
+      "width": 325,
+      "height": 400,
+      "patterns": [
+        "muirfield",
+        "muirfield_inverse"
+      ],
+      "successes_by_pattern": {
+        "muirfield": 6,
+        "muirfield_inverse": 6
+      },
+      "seeds": 12,
+      "successes": 12,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 12
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.533,
+      "seconds_p90": 1.929,
+      "seconds_max": 2.858,
+      "terrain_seconds_mean": 2.851,
+      "terrain_seconds_max": 5.784,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 325,
+      "long": 400,
+      "orientation": "paysage",
+      "width": 400,
+      "height": 325,
+      "patterns": [
+        "muirfield",
+        "muirfield_inverse"
+      ],
+      "successes_by_pattern": {
+        "muirfield": 6,
+        "muirfield_inverse": 6
+      },
+      "seeds": 12,
+      "successes": 12,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 12
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.582,
+      "seconds_p90": 3.459,
+      "seconds_max": 5.978,
+      "terrain_seconds_mean": 2.958,
+      "terrain_seconds_max": 5.933,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 325,
+      "long": 450,
+      "orientation": "portrait",
+      "width": 325,
+      "height": 450,
+      "patterns": [
+        "muirfield",
+        "muirfield_inverse"
+      ],
+      "successes_by_pattern": {
+        "muirfield": 6,
+        "muirfield_inverse": 6
+      },
+      "seeds": 12,
+      "successes": 12,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 12
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.643,
+      "seconds_p90": 3.276,
+      "seconds_max": 5.844,
+      "terrain_seconds_mean": 3.199,
+      "terrain_seconds_max": 6.449,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 325,
+      "long": 450,
+      "orientation": "paysage",
+      "width": 450,
+      "height": 325,
+      "patterns": [
+        "muirfield",
+        "muirfield_inverse"
+      ],
+      "successes_by_pattern": {
+        "muirfield": 6,
+        "muirfield_inverse": 6
+      },
+      "seeds": 12,
+      "successes": 12,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 12
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.355,
+      "seconds_p90": 2.313,
+      "seconds_max": 4.271,
+      "terrain_seconds_mean": 3.253,
+      "terrain_seconds_max": 6.62,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 325,
+      "long": 500,
+      "orientation": "portrait",
+      "width": 325,
+      "height": 500,
+      "patterns": [
+        "muirfield",
+        "muirfield_inverse"
+      ],
+      "successes_by_pattern": {
+        "muirfield": 6,
+        "muirfield_inverse": 6
+      },
+      "seeds": 12,
+      "successes": 12,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 12
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.351,
+      "seconds_p90": 4.561,
+      "seconds_max": 7.685,
+      "terrain_seconds_mean": 3.591,
+      "terrain_seconds_max": 7.371,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 325,
+      "long": 500,
+      "orientation": "paysage",
+      "width": 500,
+      "height": 325,
+      "patterns": [
+        "muirfield",
+        "muirfield_inverse"
+      ],
+      "successes_by_pattern": {
+        "muirfield": 6,
+        "muirfield_inverse": 6
+      },
+      "seeds": 12,
+      "successes": 12,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 12
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.334,
+      "seconds_p90": 2.87,
+      "seconds_max": 4.375,
+      "terrain_seconds_mean": 3.589,
+      "terrain_seconds_max": 7.335,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 350,
+      "long": 400,
+      "orientation": "portrait",
+      "width": 350,
+      "height": 400,
+      "patterns": [
+        "muirfield",
+        "muirfield_inverse"
+      ],
+      "successes_by_pattern": {
+        "muirfield": 6,
+        "muirfield_inverse": 6
+      },
+      "seeds": 12,
+      "successes": 12,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 12
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.314,
+      "seconds_p90": 3.823,
+      "seconds_max": 4.065,
+      "terrain_seconds_mean": 3.079,
+      "terrain_seconds_max": 6.177,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 350,
+      "long": 400,
+      "orientation": "paysage",
+      "width": 400,
+      "height": 350,
+      "patterns": [
+        "muirfield",
+        "muirfield_inverse"
+      ],
+      "successes_by_pattern": {
+        "muirfield": 6,
+        "muirfield_inverse": 6
+      },
+      "seeds": 12,
+      "successes": 12,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 12
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.382,
+      "seconds_p90": 2.423,
+      "seconds_max": 2.747,
+      "terrain_seconds_mean": 3.092,
+      "terrain_seconds_max": 6.237,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 350,
+      "long": 450,
+      "orientation": "portrait",
+      "width": 350,
+      "height": 450,
+      "patterns": [
+        "muirfield",
+        "muirfield_inverse"
+      ],
+      "successes_by_pattern": {
+        "muirfield": 6,
+        "muirfield_inverse": 6
+      },
+      "seeds": 12,
+      "successes": 12,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 12
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.334,
+      "seconds_p90": 0.418,
+      "seconds_max": 0.679,
+      "terrain_seconds_mean": 3.46,
+      "terrain_seconds_max": 7.038,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 350,
+      "long": 450,
+      "orientation": "paysage",
+      "width": 450,
+      "height": 350,
+      "patterns": [
+        "muirfield",
+        "muirfield_inverse"
+      ],
+      "successes_by_pattern": {
+        "muirfield": 6,
+        "muirfield_inverse": 6
+      },
+      "seeds": 12,
+      "successes": 12,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 12
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.353,
+      "seconds_p90": 2.161,
+      "seconds_max": 3.526,
+      "terrain_seconds_mean": 3.478,
+      "terrain_seconds_max": 7.109,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 350,
+      "long": 500,
+      "orientation": "portrait",
+      "width": 350,
+      "height": 500,
+      "patterns": [
+        "muirfield",
+        "muirfield_inverse"
+      ],
+      "successes_by_pattern": {
+        "muirfield": 6,
+        "muirfield_inverse": 6
+      },
+      "seeds": 12,
+      "successes": 12,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 12
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.367,
+      "seconds_p90": 2.639,
+      "seconds_max": 5.018,
+      "terrain_seconds_mean": 3.889,
+      "terrain_seconds_max": 7.804,
+      "ok": true,
+      "ko_reasons": []
+    },
+    {
+      "short": 350,
+      "long": 500,
+      "orientation": "paysage",
+      "width": 500,
+      "height": 350,
+      "patterns": [
+        "muirfield",
+        "muirfield_inverse"
+      ],
+      "successes_by_pattern": {
+        "muirfield": 6,
+        "muirfield_inverse": 6
+      },
+      "seeds": 12,
+      "successes": 12,
+      "violations_total": 0,
+      "statuses": {
+        "succes": 12
+      },
+      "failed_seeds": [],
+      "failure_stages": {},
+      "size_error_messages": [],
+      "seconds_median": 0.353,
+      "seconds_p90": 2.08,
+      "seconds_max": 2.789,
+      "terrain_seconds_mean": 3.864,
+      "terrain_seconds_max": 7.856,
+      "ok": true,
+      "ko_reasons": []
+    }
+  ]
+}
