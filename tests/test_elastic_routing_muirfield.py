@@ -72,9 +72,13 @@ def test_explicit_failure_without_relaxing_rules(monkeypatch):
     monkeypatch.setattr(mf, "NODE_BUDGET_PER_NINE", 3)
     with pytest.raises(mf.MuirfieldRoutingError) as info:
         mf.build_muirfield(2, width=350, height=400)
-    # budget minuscule : chaque échec d'ancrage est coupé, donc rien n'est
-    # sauté pour échec prouvé et le plafond de tentatives réelles est atteint
-    assert len(info.value.attempts) == mf.MAX_ATTEMPTS == 27
+    # budget minuscule : chaque tentative est coupée par le budget, coupure
+    # signalée par anchor_truncated ; rien n'est donc sauté pour échec prouvé
+    # et le plafond de tentatives réelles est atteint
+    attempts = info.value.attempts
+    assert len(attempts) == mf.MAX_ATTEMPTS == 27
+    assert info.value.skipped == []
+    assert all(a["anchor_truncated"] for a in attempts)
 
 
 @pytest.mark.parametrize("case", CASES, ids=lambda c: f"{c[0]}x{c[1]}-s{c[2]}")
@@ -540,14 +544,70 @@ def test_inverse_roles_front_inside_back_outside(inverse_results, seed):
     assert mf.anchor_bounds(1, "muirfield_inverse") == mf.anchor_bounds(10, "muirfield")
 
 
-def test_frame_side_is_the_same_for_every_start_angle():
-    for edge, ch in (("S", (120.0, 394.0)), ("W", (6.0, 230.0)), ("N", (200.0, 6.0))):
-        for direction in (1, -1):
-            sides = set()
-            for outer_delta, inner_delta in mf.START_ANGLES:
-                _, _, front, _ = mf.nine_paths(ch, direction, 300, 400, outer_delta, inner_delta)
-                sides.add(mf.clubhouse_frame(edge, ch, front, 300, 400).side)
-            assert len(sides) == 1
+def _plan_frame(pattern: str, plan: "mf.Plan", width: float, height: float):
+    """Repère du clubhouse tel que ``build_course`` le construit pour ``plan``."""
+    _, _, front, back = mf.nine_paths(plan.clubhouse, plan.direction, width, height,
+                                      plan.outer_delta_deg, plan.inner_delta_deg, pattern)
+    outer = front if mf.outer_start(pattern) == 1 else back
+    return mf.clubhouse_frame(plan.edge, plan.clubhouse, outer, width, height)
+
+
+def test_frame_depends_on_the_angle_through_side_only():
+    """Sur les clubhouses tirés, ``side`` PEUT changer d'un angle de départ à
+    l'autre (cônes 1/9 et 10/18 inversés) ; le reste du repère (origine,
+    normale, rayon du couloir) et le couloir lui-même n'en dépendent pas, et
+    ``anchor_key`` distingue deux angles de ``side`` différents."""
+    probe = np.random.default_rng(0).uniform((0, 0), (400, 400), size=(500, 2))
+    varying = set()
+    for pattern in ("muirfield", "muirfield_inverse"):
+        for width, height in ((300, 400), (400, 300)):
+            for seed in range(1, 6):
+                by_ch: dict[int, list] = {}
+                for (ch, perm, _), plan in mf.iter_plans(seed, width, height, None, pattern,
+                                                         clubhouses=4):
+                    if perm == 0:
+                        by_ch.setdefault(ch, []).append(plan)
+                for ch, plans in by_ch.items():
+                    frames = [_plan_frame(pattern, plan, width, height) for plan in plans]
+                    ref = frames[0]
+                    for frame in frames:
+                        assert dataclasses.replace(frame, side=ref.side) == ref
+                        assert (frame.in_corridor(probe) == ref.in_corridor(probe)).all()
+                    sides = [mf.frame_side(frame) for frame in frames]
+                    keys = [mf.anchor_key(plan, frame) for plan, frame in zip(plans, frames)]
+                    for i in range(len(plans)):
+                        for j in range(len(plans)):
+                            assert (keys[i] == keys[j]) == (sides[i] == sides[j])
+                    if len(set(sides)) > 1:
+                        varying.add((pattern, width, height, seed, ch))
+    assert ("muirfield", 400, 300, 1, 1) in varying          # cas de la revue
+
+
+def test_anchor_failure_is_never_reused_across_frame_sides(monkeypatch):
+    """Régression (400×300, seed 1, clubhouse 1, muirfield) : ``side`` vaut
+    le même aux angles 0 et 1, l'opposé à l'angle 2. Un échec d'ancrage
+    exhaustif (simulé) à l'angle 0 fait sauter l'angle 1, jamais l'angle 2."""
+    plans = {indices: plan for indices, plan in mf.iter_plans(1, 400, 300, None, "muirfield",
+                                                                clubhouses=2)
+             if indices[:2] == (1, 0)}
+    frames = {indices: _plan_frame("muirfield", plan, 400, 300)
+              for indices, plan in plans.items()}
+    sides = {indices[2]: mf.frame_side(frame) for indices, frame in frames.items()}
+    assert sides[0] == sides[1] != sides[2]
+    keys = {indices[2]: mf.anchor_key(plans[indices], frames[indices]) for indices in plans}
+    assert keys[0] == keys[1] != keys[2]
+
+    real = mf.iter_plans
+    monkeypatch.setattr(mf, "iter_plans", lambda *args, **kwargs: (
+        item for item in real(*args, **{**kwargs, "clubhouses": 2}) if item[0][:2] == (1, 0)))
+    # échec d'ancrage sans coupure : anchors_done et anchor_truncated restent faux
+    monkeypatch.setattr(mf._Search, "route_course", lambda self, *args: None)
+    attempts, skipped, plan = _outcome("muirfield", 1, 400, 300)
+    assert plan is None
+    assert [_key(a) for a in attempts] == [(1, 0, 0), (1, 0, 2)]
+    assert all(a["status"] == "echec_ancrages" and not a["anchor_truncated"] for a in attempts)
+    assert [(_key(s), s["proven_by"], s["key"]["side"]) for s in skipped] == [
+        ((1, 0, 1), [1, 0, 0], list(sides[0]))]
 
 
 def test_order_nine_exhaustive_fallback():
@@ -1101,28 +1161,34 @@ def test_clubhouse_positions_beyond_the_first_three_follow_the_seeded_stream():
 
 
 def _forced_attempt(monkeypatch, pattern, seed, width, height, target):
-    """Une variante relancée seule (aucun saut possible)."""
+    """Une variante relancée seule (aucun saut possible) : (tentative,
+    ``side`` du repère de cette variante)."""
     real = mf.iter_plans
+    forced = {}
 
     def only(*args, **kwargs):
         for indices, plan in real(*args, **kwargs):
             if indices == target:
+                forced["side"] = mf.frame_side(_plan_frame(pattern, plan, width, height))
                 yield indices, plan
                 return
 
-    monkeypatch.setattr(mf, "iter_plans", only)
-    attempts, _, _ = _outcome(pattern, seed, width, height)
-    monkeypatch.undo()
-    return attempts[0]
+    with monkeypatch.context() as patch:
+        patch.setattr(mf, "iter_plans", only)
+        attempts, _, _ = _outcome(pattern, seed, width, height)
+    return attempts[0], forced["side"]
 
 
 @pytest.mark.parametrize("perm", range(3))
 def test_exhaustive_anchor_failure_is_angle_invariant(monkeypatch, perm):
     """Preuve empirique de l'hypothèse sur un vrai cas sans coupure (inverse
-    17, 300×400, clubhouse 0) : les trois angles relancés de force donnent
-    le même échec, compteurs compris."""
+    17, 300×400, clubhouse 0) : les trois angles relancés de force, de même
+    ``side`` (l'invariant ne vaut qu'à repère égal), donnent le même échec,
+    compteurs compris."""
     forced = [_forced_attempt(monkeypatch, "muirfield_inverse", 17, 300, 400, (0, perm, angle))
               for angle in range(3)]
+    assert len({side for _, side in forced}) == 1
+    forced = [attempt for attempt, _ in forced]
     assert all(a["status"] == "echec_ancrages" and not a["anchor_truncated"] for a in forced)
     summary = {(a["checks"], a["nodes"], tuple(a["rejections"].items()),
                 tuple(a["deepest"].items())) for a in forced}
@@ -1131,13 +1197,32 @@ def test_exhaustive_anchor_failure_is_angle_invariant(monkeypatch, perm):
 
 def test_exhaustive_anchor_failure_is_angle_invariant_on_a_deeper_tree(monkeypatch):
     """Même invariant sur un arbre d'ancrages plus profond (muirfield 19,
-    400×300, 94 nœuds) : k est levé DANS CE TEST SEULEMENT pour que la
-    recherche des ancrages soit exhaustive (aucun budget de production
-    modifié)."""
-    forced = []
-    for angle in range(3):
-        monkeypatch.setattr(mf, "CHILDREN_PER_NODE", 10 ** 6)
-        forced.append(_forced_attempt(monkeypatch, "muirfield", 19, 400, 300, (0, 0, angle)))
+    400×300, 94 nœuds, même ``side`` aux trois angles) : k est levé DANS CE
+    TEST SEULEMENT pour que la recherche des ancrages soit exhaustive (aucun
+    budget de production modifié)."""
+    monkeypatch.setattr(mf, "CHILDREN_PER_NODE", 10 ** 6)
+    forced = [_forced_attempt(monkeypatch, "muirfield", 19, 400, 300, (0, 0, angle))
+              for angle in range(3)]
+    assert len({side for _, side in forced}) == 1
+    forced = [attempt for attempt, _ in forced]
     assert all(a["status"] == "echec_ancrages" and not a["anchor_truncated"] for a in forced)
     assert len({(a["checks"], a["nodes"], tuple(a["rejections"].items())) for a in forced}) == 1
     assert forced[0]["nodes"] > 50
+
+
+@pytest.mark.parametrize("budget, value", (("EXAMINED_PER_NODE", 1),
+                                           ("NODE_BUDGET_PER_NINE", 5),
+                                           ("CHECK_BUDGET_PER_NINE", 5)))
+def test_anchor_cut_by_examined_or_budget_is_flagged(monkeypatch, budget, value):
+    """Les coupures autres que k pendant la pose des ancrages (positions
+    0-3) lèvent aussi ``anchor_truncated`` : limite des candidats EXAMINÉS
+    par nœud, budget de nœuds, budget de contrôles. Même cas que ci-dessus
+    (exhaustif avec k levé, non coupé) ; seule la limite testée est abaissée,
+    DANS CE TEST SEULEMENT."""
+    monkeypatch.setattr(mf, "CHILDREN_PER_NODE", 10 ** 6)
+    monkeypatch.setattr(mf, budget, value)
+    attempt, _ = _forced_attempt(monkeypatch, "muirfield", 19, 400, 300, (0, 0, 0))
+    assert attempt["status"] == "echec_ancrages" and attempt["anchor_truncated"] is True
+    if budget == "EXAMINED_PER_NODE":           # coupure par EXAMINÉS, budgets loin
+        assert attempt["nodes"] < mf.NODE_BUDGET_PER_NINE
+        assert attempt["checks"] < mf.CHECK_BUDGET_PER_NINE

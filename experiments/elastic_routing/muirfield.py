@@ -48,9 +48,10 @@ permutation des pars ; un plan sans permutation admissible n'est pas tenté.
 Relances bon marché (angle de départ, permutation des pars, position du
 clubhouse) ; aucune règle n'est jamais assouplie : échec explicite sinon.
 Au plus ``MAX_ATTEMPTS`` tentatives réelles : une variante dont l'échec est
-déjà prouvé (même plan, ou même clubhouse et mêmes pars d'ancrage après une
-recherche d'ancrages exhaustive) est sautée sans être comptée, et les
-clubhouses 3, 4… prennent le relais une fois les trois premiers épuisés.
+déjà prouvé (même plan, ou même clubhouse, même côté ``side`` du repère et
+mêmes pars d'ancrage après une recherche d'ancrages exhaustive) est sautée
+sans être comptée, et les clubhouses 3, 4… prennent le relais une fois les
+trois premiers épuisés.
 """
 
 from __future__ import annotations
@@ -484,9 +485,13 @@ class ClubhouseFrame:
 
 def clubhouse_frame(edge: str, clubhouse: Point, outer_path: list[Point],
                     width: float, height: float) -> ClubhouseFrame:
-    """Le côté ``side`` ne dépend que du signe de l'angle de départ du chemin
-    extérieur : il est le même pour tous les ``START_ANGLES`` (tous < 90°),
-    d'où un seul repère par position de clubhouse (vérifié par les tests)."""
+    """``origin``, ``normal`` et ``corridor_radius`` ne dépendent que du
+    clubhouse, de son bord et de la carte. ``side`` dépend en revanche du
+    signe de la projection de ``outer_path[1]`` sur la tangente du bord, donc
+    de l'angle de départ du chemin extérieur : il PEUT changer d'un
+    ``START_ANGLES`` à l'autre pour une même position de clubhouse (et
+    inverser alors les cônes d'ancrage). ``in_corridor`` n'utilise que
+    ``|φ|`` et ne dépend donc pas de ``side`` (vérifié par les tests)."""
     normal = {"N": (0.0, 1.0), "S": (0.0, -1.0), "W": (1.0, 0.0), "E": (-1.0, 0.0)}[edge]
     tangent = (-normal[1], normal[0])
     first = outer_path[1]
@@ -1211,6 +1216,21 @@ def iter_plans(seed: int, width: float = MAP_WIDTH, height: float = MAP_HEIGHT,
                                 inner_delta, ch_index, perm_index, angle_index, pattern)
 
 
+def frame_side(frame: ClubhouseFrame) -> tuple[int, int]:
+    """``side`` en entiers (−0.0 et 0.0 confondus ; sérialisable tel quel)."""
+    return int(round(frame.side[0])) or 0, int(round(frame.side[1])) or 0
+
+
+def anchor_key(plan: Plan, frame: ClubhouseFrame) -> tuple:
+    """Clé d'un échec d'ancrage exhaustif : tout ce dont dépend l'ENSEMBLE
+    des candidats d'ancrage. Clubhouse (origine, bord, couloir), ``side``
+    du repère (seule partie du repère qui dépend de l'angle : il oriente les
+    cônes 1/9 et 10/18) et pars des trous 1/9/10/18. À clé égale, l'angle ne
+    change que l'ORDRE des candidats (cibles, départage des coudes)."""
+    return (plan.clubhouse_index, frame_side(frame),
+            (plan.front_pars[0], plan.front_pars[-1], plan.back_pars[0], plan.back_pars[-1]))
+
+
 def build_muirfield(seed: int, heightmap: np.ndarray | None = None, *,
                     width: float = MAP_WIDTH, height: float = MAP_HEIGHT,
                     rules: ValidationRules | None = None,
@@ -1284,10 +1304,13 @@ def build_course(seed: int, pattern: str = "muirfield", heightmap: np.ndarray | 
 
     t0 = time.perf_counter()
     attempts: list[dict] = []
-    def make_search(edge: str, clubhouse: Point, front_path: list[Point],
-                    back_path: list[Point]) -> _Search:
+    def frame_for(edge: str, clubhouse: Point, front_path: list[Point],
+                  back_path: list[Point]) -> ClubhouseFrame:
         outer_path = front_path if outer_start(pattern) == 1 else back_path
-        frame = clubhouse_frame(edge, clubhouse, outer_path, width, height)
+        return clubhouse_frame(edge, clubhouse, outer_path, width, height)
+
+    def make_search(frame: ClubhouseFrame) -> _Search:
+        clubhouse = frame.origin
         return _Search(
             width=width, height=height, tees=tee_sites, greens=green_sites, frame=frame,
             partial=PartialLayout(rules, clubhouse),
@@ -1298,9 +1321,16 @@ def build_course(seed: int, pattern: str = "muirfield", heightmap: np.ndarray | 
         )
 
     def capacity(edge: str, clubhouse: Point, direction: int) -> AnchorCapacity:
+        # Évaluée une seule fois par clubhouse, au repère et aux chemins de
+        # l'angle 0 (``nine_paths`` par défaut = START_ANGLES[0]), puis
+        # appliquée à tous les angles (comportement antérieur, inchangé, même
+        # si ``side`` peut différer à un autre angle). Le verdict
+        # ``infaisable_ancrage`` en découle et valait donc déjà pour tous les
+        # angles et toutes les permutations du clubhouse : le réduire à une
+        # seule entrée par clubhouse ne change aucune décision.
         _, _, front_path, back_path = nine_paths(clubhouse, direction, width, height,
                                                  pattern=pattern)
-        probe = make_search(edge, clubhouse, front_path, back_path)
+        probe = make_search(frame_for(edge, clubhouse, front_path, back_path))
         return {order: frozenset(par for par in (3, 4, 5)
                                  if probe.anchor_fits(order, par,
                                                       front_path if order <= 9 else back_path))
@@ -1309,11 +1339,14 @@ def build_course(seed: int, pattern: str = "muirfield", heightmap: np.ndarray | 
     outer_name = "front" if outer_start(pattern) == 1 else "back"
     inner_name = "back" if outer_name == "front" else "front"
     # Clés d'échec PROUVÉ → indices de la tentative qui l'a prouvé :
-    # - (clubhouse, pars des trous 1/9/10/18) : ``echec_ancrages`` sans
-    #   aucune coupure pendant la pose des ancrages. L'angle ne change que
-    #   l'ORDRE des candidats d'ancrage (cibles, départage des coudes), jamais
-    #   leur ensemble ; la permutation n'en voit que ces quatre pars. Une
-    #   recherche exhaustive échoue donc pour toute variante de même clé.
+    # - ``anchor_key`` = (clubhouse, ``side`` du repère, pars des trous
+    #   1/9/10/18) : ``echec_ancrages`` sans aucune coupure pendant la pose
+    #   des ancrages. L'angle agit sur le repère par ``side`` SEULEMENT
+    #   (``clubhouse_frame``), qui oriente les cônes : il fait partie de la
+    #   clé. À ``side`` égal, l'angle ne change que l'ORDRE des candidats
+    #   d'ancrage (cibles, départage des coudes), jamais leur ensemble ; la
+    #   permutation n'en voit que ces quatre pars. Une recherche exhaustive
+    #   échoue donc pour toute variante de même clé.
     # - (clubhouse, angle, pars complets) : plan strictement identique,
     #   recherche déterministe.
     proven_anchors: dict[tuple, tuple[int, int, int]] = {}
@@ -1337,14 +1370,19 @@ def build_course(seed: int, pattern: str = "muirfield", heightmap: np.ndarray | 
             if len(attempts) >= MAX_ATTEMPTS:
                 break
             continue
-        anchor_pars = (plan.front_pars[0], plan.front_pars[-1],
-                       plan.back_pars[0], plan.back_pars[-1])
-        anchor_key = (plan.clubhouse_index, anchor_pars)
+        outer, inner, front_ring, back_ring = nine_paths(
+            plan.clubhouse, plan.direction, width, height, plan.outer_delta_deg,
+            plan.inner_delta_deg, pattern)
+        # repère du clubhouse : chemin extérieur (identique dans les deux modes)
+        frame = frame_for(plan.edge, plan.clubhouse, front_ring, back_ring)
+        anchors = anchor_key(plan, frame)
         plan_key = (plan.clubhouse_index, plan.angle_index, plan.front_pars, plan.back_pars)
-        if anchor_key in proven_anchors:
+        if anchors in proven_anchors:
+            _, side, anchor_pars = anchors
             skip(plan, "echec_ancrages_prouve",
-                 {"clubhouse_index": plan.clubhouse_index, "anchor_pars": list(anchor_pars)},
-                 proven_anchors[anchor_key])
+                 {"clubhouse_index": plan.clubhouse_index, "side": list(side),
+                  "anchor_pars": list(anchor_pars)},
+                 proven_anchors[anchors])
             continue
         if plan_key in tried_plans:
             skip(plan, "plan_identique",
@@ -1352,9 +1390,6 @@ def build_course(seed: int, pattern: str = "muirfield", heightmap: np.ndarray | 
                   "front_pars": list(plan.front_pars), "back_pars": list(plan.back_pars)},
                  tried_plans[plan_key])
             continue
-        outer, inner, front_ring, back_ring = nine_paths(
-            plan.clubhouse, plan.direction, width, height, plan.outer_delta_deg,
-            plan.inner_delta_deg, pattern)
         front_path, back_path = front_ring, back_ring
         if lobes is not None:
             lobed = lobed_inner_path(plan.clubhouse, plan.direction, width, height,
@@ -1363,8 +1398,7 @@ def build_course(seed: int, pattern: str = "muirfield", heightmap: np.ndarray | 
                 back_path = lobed
             else:
                 front_path = lobed
-        # repère du clubhouse : chemin extérieur (identique dans les deux modes)
-        search = make_search(plan.edge, plan.clubhouse, front_ring, back_ring)
+        search = make_search(frame)
         routed = search.route_course(plan.front_pars, plan.back_pars, front_path, back_path)
         front, back = routed if routed is not None else (None, None)
         layout = violations = None
@@ -1399,7 +1433,7 @@ def build_course(seed: int, pattern: str = "muirfield", heightmap: np.ndarray | 
         })
         tried_plans[plan_key] = indices
         if status == "echec_ancrages" and not search.anchor_truncated:
-            proven_anchors.setdefault(anchor_key, indices)
+            proven_anchors.setdefault(anchors, indices)
         if status != "succes":
             if len(attempts) >= MAX_ATTEMPTS:  # plafond de tentatives réelles atteint
                 break
