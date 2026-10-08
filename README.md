@@ -14,7 +14,9 @@ experiments/bean_paving/        spike archivé
 tests/                          tests pytest (pipeline + spikes)
 ```
 
-Détail de l'architecture, du contrat JSON et des invariants : `CLAUDE.md`.
+Détail de l'architecture, du contrat JSON et des invariants : note vault
+`/home/kalariel/Documents/Git/ObsidianVault/dev-kb/golfgen/_overview.md`, section
+« Pipeline golfgen : contrat JSON et invariants ». Spike : `experiments/elastic_routing/PLAN.md`.
 
 ## Démarrage rapide
 
