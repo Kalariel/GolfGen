@@ -60,8 +60,7 @@ def test_build_is_deterministic(results):
 @pytest.mark.parametrize("case", CASES, ids=lambda c: f"{c[0]}x{c[1]}-s{c[2]}")
 def test_search_budgets_are_bounded(results, case):
     attempts = results[case].attempts
-    max_attempts = mf.CLUBHOUSE_POSITIONS * mf.PAR_PERMUTATIONS * len(mf.START_ANGLES)
-    assert 1 <= len(attempts) <= max_attempts
+    assert 1 <= len(attempts) <= mf.MAX_ATTEMPTS
     for attempt in attempts:
         assert attempt["checks"] <= 2 * mf.CHECK_BUDGET_PER_NINE
         assert attempt["nodes"] <= 2 * mf.NODE_BUDGET_PER_NINE
@@ -73,8 +72,9 @@ def test_explicit_failure_without_relaxing_rules(monkeypatch):
     monkeypatch.setattr(mf, "NODE_BUDGET_PER_NINE", 3)
     with pytest.raises(mf.MuirfieldRoutingError) as info:
         mf.build_muirfield(2, width=350, height=400)
-    assert len(info.value.attempts) == (mf.CLUBHOUSE_POSITIONS * mf.PAR_PERMUTATIONS
-                                        * len(mf.START_ANGLES))
+    # budget minuscule : chaque échec d'ancrage est coupé, donc rien n'est
+    # sauté pour échec prouvé et le plafond de tentatives réelles est atteint
+    assert len(info.value.attempts) == mf.MAX_ATTEMPTS == 27
 
 
 @pytest.mark.parametrize("case", CASES, ids=lambda c: f"{c[0]}x{c[1]}-s{c[2]}")
@@ -293,10 +293,10 @@ def test_layout_rejected_by_the_oracle_is_never_returned(monkeypatch):
 
     monkeypatch.setattr(mf, "validate",
                         lambda layout, rules: [Violation("length", (1,), "injectée")])
-    monkeypatch.setattr(mf, "CLUBHOUSE_POSITIONS", 1)
-    monkeypatch.setattr(mf, "PAR_PERMUTATIONS", 1)
+    monkeypatch.setattr(mf, "MAX_ATTEMPTS", 3)
     with pytest.raises(mf.MuirfieldRoutingError) as info:
         mf.build_muirfield(3, width=350, height=400)
+    assert len(info.value.attempts) == 3
     assert {a["status"] for a in info.value.attempts} == {"echec_validate"}
 
 
@@ -451,10 +451,15 @@ def test_order_nine_respects_anchor_capacity():
 def test_plan_not_tried_when_no_permutation_fits_the_cones():
     nothing = {order: frozenset() for order in (1, 9, 10, 18)}
     plans = list(mf.iter_plans(5, 300, 400, capacity=lambda edge, ch, direction: nothing))
-    assert len(plans) == mf.CLUBHOUSE_POSITIONS * mf.PAR_PERMUTATIONS * len(mf.START_ANGLES)
+    # une seule entrée par clubhouse infaisable, puis clubhouse suivant
+    assert [indices for indices, _ in plans] == [(ch, 0, 0)
+                                                 for ch in range(mf.MAX_CLUBHOUSE_POSITIONS)]
     assert all(plan is None for _, plan in plans)
     only_fours = {order: frozenset((4,)) for order in (1, 9, 10, 18)}
-    for _, plan in mf.iter_plans(5, 300, 400, capacity=lambda edge, ch, direction: only_fours):
+    plans = list(mf.iter_plans(5, 300, 400, capacity=lambda edge, ch, direction: only_fours,
+                               clubhouses=3))
+    assert len(plans) == 3 * mf.PAR_PERMUTATIONS * len(mf.START_ANGLES)
+    for _, plan in plans:
         assert plan is not None
         assert (plan.front_pars[0], plan.front_pars[-1], plan.back_pars[0], plan.back_pars[-1]) == (4, 4, 4, 4)
 

@@ -47,6 +47,10 @@ d'ancrage (pars qui y tiennent à cette position de clubhouse) contraint la
 permutation des pars ; un plan sans permutation admissible n'est pas tenté.
 Relances bon marché (angle de départ, permutation des pars, position du
 clubhouse) ; aucune règle n'est jamais assouplie : échec explicite sinon.
+Au plus ``MAX_ATTEMPTS`` tentatives réelles : une variante dont l'échec est
+déjà prouvé (même plan, ou même clubhouse et mêmes pars d'ancrage après une
+recherche d'ancrages exhaustive) est sautée sans être comptée, et les
+clubhouses 3, 4… prennent le relais une fois les trois premiers épuisés.
 """
 
 from __future__ import annotations
@@ -95,7 +99,15 @@ RING_STEP_DEG = 0.5
 # Index 0 = plan de base ; les suivants servent aux relances.
 START_ANGLES = ((9.0, 18.0), (15.0, 26.0), (5.0, 12.0))
 PAR_PERMUTATIONS = 3                # relances par permutation des pars
-CLUBHOUSE_POSITIONS = 3             # relances par position de clubhouse
+# Plafond de tentatives RÉELLES (entrées de ``attempts``, infaisables
+# comprises) : 27 = 3 clubhouses × 3 permutations × 3 angles, valeur
+# historique inchangée. Les doublons d'un échec prouvé sont sautés sans
+# compter ; les positions de clubhouse 3, 4… complètent jusqu'au plafond.
+MAX_ATTEMPTS = 27
+# Garde-fou : chaque nouvelle position de clubhouse donne au moins une
+# tentative réelle (aucune clé d'échec prouvé ne la couvre encore), donc
+# MAX_ATTEMPTS positions suffisent toujours à atteindre le plafond.
+MAX_CLUBHOUSE_POSITIONS = MAX_ATTEMPTS
 
 # Secteur réservé au clubhouse (angles φ dans le repère local du clubhouse)
 ANCHOR_FRONT_MIN_DEG = 58.0
@@ -192,12 +204,16 @@ def nine_start(order: int) -> int:
 
 
 class MuirfieldRoutingError(RuntimeError):
-    """Aucune relance n'a produit de parcours valide (aucune règle assouplie)."""
+    """Aucune relance n'a produit de parcours valide (aucune règle assouplie).
 
-    def __init__(self, seed: int, attempts: list[dict]):
+    ``skipped`` : variantes sautées car leur échec était déjà prouvé (hors
+    de ``attempts``)."""
+
+    def __init__(self, seed: int, attempts: list[dict], skipped: list[dict] | None = None):
         super().__init__(f"seed {seed} : échec après {len(attempts)} tentative(s)")
         self.seed = seed
         self.attempts = attempts
+        self.skipped = list(skipped or ())
 
 
 @dataclass(frozen=True, slots=True)
@@ -239,6 +255,8 @@ class MuirfieldResult:
     front_ring_path: tuple[Point, ...] = ()
     back_ring_path: tuple[Point, ...] = ()
     lobes: tuple[int, float] | None = None     # (m, φ) en mode ``lobed``
+    # variantes sautées (échec déjà prouvé), hors de ``attempts``
+    skipped: tuple[dict, ...] = ()
 
     @property
     def pattern(self) -> str:
@@ -739,6 +757,9 @@ class _Search:
     target_factors: dict[int, np.ndarray] | None = None
     anchors_done: bool = False
     outer_done: bool = False
+    # une coupure (k enfants, candidats examinés ou budget) a eu lieu pendant
+    # la pose des ancrages : un échec d'ancrage n'est alors PAS exhaustif
+    anchor_truncated: bool = False
 
     @property
     def clubhouse(self) -> np.ndarray:
@@ -1045,7 +1066,12 @@ class _Search:
                 return True
             start_order, index = levels[position]
             if exhausted(start_order):
+                # anchors_done n'est levé qu'après ce contrôle : une coupure
+                # à l'entrée de la position 4 laisse aussi les ancrages en échec
+                if levels is phase_a and (position < 4 or not self.anchors_done):
+                    self.anchor_truncated = True
                 return False
+            anchoring = levels is phase_a and position < 4
             nodes[start_order] += 1
             self.nodes += 1
             depth = position if levels is phase_a else len(phase_a) + position
@@ -1055,8 +1081,10 @@ class _Search:
             pars, _, path_arr = nines[start_order]
             level = level_for(start_order, index)
             explored = examined = 0
-            for hole in self.candidates(level, pars[index], used, path_arr):
+            candidates = self.candidates(level, pars[index], used, path_arr)
+            for hole in candidates:
                 if examined >= EXAMINED_PER_NODE or exhausted(start_order):
+                    self.anchor_truncated |= anchoring
                     return False
                 examined += 1
                 links, mins = links_for(level, hole)
@@ -1089,6 +1117,10 @@ class _Search:
                 self.partial.pop()
                 explored += 1
                 if explored >= CHILDREN_PER_NODE:
+                    # coupure seulement s'il restait au moins un candidat
+                    # (le générateur est sans effet de bord : rien n'est contrôlé)
+                    if anchoring and next(candidates, None) is not None:
+                        self.anchor_truncated = True
                     return False
             return False
 
@@ -1121,7 +1153,7 @@ AnchorCapacity = dict[int, frozenset[int]]
 
 def iter_plans(seed: int, width: float = MAP_WIDTH, height: float = MAP_HEIGHT,
                capacity: Callable[[str, Point, int], AnchorCapacity] | None = None,
-               pattern: str = "muirfield",
+               pattern: str = "muirfield", clubhouses: int | None = None,
                ) -> Iterator[tuple[tuple[int, int, int], Plan | None]]:
     """Plan de base puis relances : angle de départ, permutation des pars,
     position du clubhouse (dans cet ordre d'imbrication).
@@ -1130,44 +1162,48 @@ def iter_plans(seed: int, width: float = MAP_WIDTH, height: float = MAP_HEIGHT,
     d'ancrage (1, 9, 10, 18), les pars qui tiennent dans son cône à cette
     position de clubhouse. Les permutations de pars sont tirées sous cette
     contrainte ; si aucune n'est possible, le plan est ``None`` (non tenté).
-    Sans contrainte active, les plans sont identiques à ceux du round A."""
+    Sans contrainte active, les plans sont identiques à ceux du round A.
+
+    Positions de clubhouse 0, 1, 2… jusqu'à ``clubhouses`` (défaut
+    ``MAX_CLUBHOUSE_POSITIONS``) ; l'appelant arrête l'itération quand son
+    plafond de tentatives est atteint. Un clubhouse infaisable (``None``)
+    ne produit qu'UNE entrée : ``order_nine`` ne renvoie ``None`` qu'après
+    une énumération exhaustive qui ne dépend que des nombres de par 3 / par 5
+    et de la capacité des cônes, ni de la permutation ni de l'angle."""
     rng = np.random.default_rng([seed, 7])
     base_edge, base_ch = place_clubhouse(rng, width, height)
     direction = 1 if rng.random() < 0.5 else -1
     (f3, f5), (b3, b5) = draw_par_counts(rng)
     base_pars = (order_nine(f3, f5, rng), order_nine(b3, b5, rng))
-    allowed: dict[int, AnchorCapacity] = {}
-    for ch_index, perm_index, angle_index in product(range(CLUBHOUSE_POSITIONS),
-                                                     range(PAR_PERMUTATIONS),
-                                                     range(len(START_ANGLES))):
+    limit = MAX_CLUBHOUSE_POSITIONS if clubhouses is None else clubhouses
+    for ch_index in range(limit):
         if ch_index == 0:
             edge, ch = base_edge, base_ch
         else:
             edge, ch = place_clubhouse(np.random.default_rng([seed, 11, ch_index]), width, height)
-        if ch_index not in allowed:
-            allowed[ch_index] = (capacity(edge, ch, direction) if capacity is not None
-                                 else {order: frozenset((3, 4, 5)) for order in (1, 9, 10, 18)})
-        fits = allowed[ch_index]
+        fits = (capacity(edge, ch, direction) if capacity is not None
+                else {order: frozenset((3, 4, 5)) for order in (1, 9, 10, 18)})
 
         def admissible(pars) -> bool:
             front, back = pars
             return (front[0] in fits[1] and front[-1] in fits[9]
                     and back[0] in fits[10] and back[-1] in fits[18])
 
-        if perm_index == 0 and admissible(base_pars):
-            front_pars, back_pars = base_pars
-        else:
-            seed_tail = (13, perm_index) if perm_index else (17, ch_index)
-            prng = np.random.default_rng([seed, *seed_tail])
-            front_pars = order_nine(f3, f5, prng, first=fits[1], last=fits[9])
-            back_pars = order_nine(b3, b5, prng, first=fits[10], last=fits[18])
-        indices = (ch_index, perm_index, angle_index)
-        if front_pars is None or back_pars is None:
-            yield indices, None
-            continue
-        outer_delta, inner_delta = START_ANGLES[angle_index]
-        yield indices, Plan(edge, ch, direction, front_pars, back_pars, outer_delta, inner_delta,
-                            ch_index, perm_index, angle_index, pattern)
+        for perm_index, angle_index in product(range(PAR_PERMUTATIONS), range(len(START_ANGLES))):
+            if perm_index == 0 and admissible(base_pars):
+                front_pars, back_pars = base_pars
+            else:
+                seed_tail = (13, perm_index) if perm_index else (17, ch_index)
+                prng = np.random.default_rng([seed, *seed_tail])
+                front_pars = order_nine(f3, f5, prng, first=fits[1], last=fits[9])
+                back_pars = order_nine(b3, b5, prng, first=fits[10], last=fits[18])
+            indices = (ch_index, perm_index, angle_index)
+            if front_pars is None or back_pars is None:
+                yield indices, None
+                break                       # infaisable pour tout ce clubhouse
+            outer_delta, inner_delta = START_ANGLES[angle_index]
+            yield indices, Plan(edge, ch, direction, front_pars, back_pars, outer_delta,
+                                inner_delta, ch_index, perm_index, angle_index, pattern)
 
 
 def build_muirfield(seed: int, heightmap: np.ndarray | None = None, *,
@@ -1267,11 +1303,49 @@ def build_course(seed: int, pattern: str = "muirfield", heightmap: np.ndarray | 
 
     outer_name = "front" if outer_start(pattern) == 1 else "back"
     inner_name = "back" if outer_name == "front" else "front"
+    # Clés d'échec PROUVÉ → indices de la tentative qui l'a prouvé :
+    # - (clubhouse, pars des trous 1/9/10/18) : ``echec_ancrages`` sans
+    #   aucune coupure pendant la pose des ancrages. L'angle ne change que
+    #   l'ORDRE des candidats d'ancrage (cibles, départage des coudes), jamais
+    #   leur ensemble ; la permutation n'en voit que ces quatre pars. Une
+    #   recherche exhaustive échoue donc pour toute variante de même clé.
+    # - (clubhouse, angle, pars complets) : plan strictement identique,
+    #   recherche déterministe.
+    proven_anchors: dict[tuple, tuple[int, int, int]] = {}
+    tried_plans: dict[tuple, tuple[int, int, int]] = {}
+    skipped: list[dict] = []
+
+    def skip(plan: Plan, reason: str, key: dict, proof: tuple[int, int, int]) -> None:
+        skipped.append({"clubhouse_index": plan.clubhouse_index,
+                        "permutation_index": plan.permutation_index,
+                        "angle_index": plan.angle_index, "reason": reason, "key": key,
+                        "proven_by": list(proof)})
+
     for indices, plan in iter_plans(seed, width, height, capacity, pattern):
+        if len(attempts) >= MAX_ATTEMPTS:      # garde-fou (l'arrêt normal est plus bas)
+            break
         if plan is None:
+            # une seule entrée par clubhouse infaisable (iter_plans passe au suivant)
             attempts.append({"clubhouse_index": indices[0], "permutation_index": indices[1],
                              "angle_index": indices[2], "status": "infaisable_ancrage",
                              "checks": 0, "nodes": 0})
+            if len(attempts) >= MAX_ATTEMPTS:
+                break
+            continue
+        anchor_pars = (plan.front_pars[0], plan.front_pars[-1],
+                       plan.back_pars[0], plan.back_pars[-1])
+        anchor_key = (plan.clubhouse_index, anchor_pars)
+        plan_key = (plan.clubhouse_index, plan.angle_index, plan.front_pars, plan.back_pars)
+        if anchor_key in proven_anchors:
+            skip(plan, "echec_ancrages_prouve",
+                 {"clubhouse_index": plan.clubhouse_index, "anchor_pars": list(anchor_pars)},
+                 proven_anchors[anchor_key])
+            continue
+        if plan_key in tried_plans:
+            skip(plan, "plan_identique",
+                 {"clubhouse_index": plan.clubhouse_index, "angle_index": plan.angle_index,
+                  "front_pars": list(plan.front_pars), "back_pars": list(plan.back_pars)},
+                 tried_plans[plan_key])
             continue
         outer, inner, front_ring, back_ring = nine_paths(
             plan.clubhouse, plan.direction, width, height, plan.outer_delta_deg,
@@ -1312,13 +1386,18 @@ def build_course(seed: int, pattern: str = "muirfield", heightmap: np.ndarray | 
         attempts.append({
             "clubhouse_index": plan.clubhouse_index, "permutation_index": plan.permutation_index,
             "angle_index": plan.angle_index, "edge": plan.edge, "pattern": pattern,
-            "status": status,
+            "status": status, "anchor_truncated": search.anchor_truncated,
             "checks": search.partial.checks, "nodes": search.nodes,
             "rejections": dict(sorted(search.rejections.items())),
             "deepest": dict(search.deepest),
             "violations": dict(sorted(Counter(v.kind for v in violations or ()).items())),
         })
+        tried_plans[plan_key] = indices
+        if status == "echec_ancrages" and not search.anchor_truncated:
+            proven_anchors.setdefault(anchor_key, indices)
         if status != "succes":
+            if len(attempts) >= MAX_ATTEMPTS:  # plafond de tentatives réelles atteint
+                break
             continue
         timings["routing"] = time.perf_counter() - t0      # validations comprises
         return MuirfieldResult(
@@ -1329,5 +1408,7 @@ def build_course(seed: int, pattern: str = "muirfield", heightmap: np.ndarray | 
             timings=timings, requested_pattern=requested, width_mode=width_mode,
             target_mode=target_mode, path_mode=path_mode,
             front_ring_path=tuple(front_ring), back_ring_path=tuple(back_ring), lobes=lobes,
+            skipped=tuple(skipped),
         )
-    raise MuirfieldRoutingError(seed, attempts)
+    # plafond atteint, ou positions de clubhouse épuisées
+    raise MuirfieldRoutingError(seed, attempts, skipped)
