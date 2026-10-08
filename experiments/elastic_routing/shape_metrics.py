@@ -13,8 +13,9 @@ Trois métriques, calculées par nine et pour le parcours entier :
 - ``angular_step_cv`` : coefficient de variation des pas angulaires entre
   greens successifs. Bas → progression trop régulière autour du centre
   (hélice).
-- ``direction_entropy`` : entropie normalisée des orientations des trous.
-  Basse → trous en faisceaux parallèles.
+- ``direction_entropy`` : entropie normalisée des orientations des trous
+  (orientation = corde tee→green ; les coudes sont ignorés). Basse → trous
+  en faisceaux parallèles.
 - ``radial_alignment_R`` : concentration de l'obliquité des trous par rapport
   au rayon. Haute → pales de même obliquité (moulinet).
 """
@@ -32,7 +33,7 @@ from experiments.elastic_routing.model import CourseLayout, ElasticHole
 Point = tuple[float, float]
 
 DIRECTION_BINS = 12                 # cases de 15° sur [0°, 180°)
-CV_MEAN_EPSILON = 1e-9              # pas moyen nul : CV non défini
+CV_MIN_PROGRESS = math.pi / 2       # |Σ Δθ| en deçà : pas de tour net, CV non défini
 
 
 def _as_array(points: Sequence[Point]) -> np.ndarray:
@@ -65,18 +66,18 @@ def oriented_angular_steps(greens: Sequence[Point], centre: Point) -> np.ndarray
 def _cv(steps: np.ndarray) -> float | None:
     if steps.size == 0:
         return None
-    mean = float(steps.mean())
-    if abs(mean) < CV_MEAN_EPSILON:
+    if abs(float(steps.sum())) < CV_MIN_PROGRESS:
         return None
-    return float(steps.std()) / abs(mean)
+    return float(steps.std()) / abs(float(steps.mean()))
 
 
 def angular_step_cv(greens: Sequence[Point], centre: Point) -> float | None:
     """Coefficient de variation (écart-type / moyenne) des pas angulaires.
 
     Pas orientés de ``oriented_angular_steps`` ; écart-type de population.
-    ``None`` si moins de deux greens ou si le pas moyen est nul (boucle qui
-    revient sur elle-même). Une valeur proche de 0 signale une hélice : les
+    ``None`` si moins de deux greens ou si la progression nette |Σ Δθ| est
+    inférieure à ``CV_MIN_PROGRESS`` (π/2 : la boucle ne tourne pas assez
+    autour du centre pour qu'un pas moyen ait un sens). Une valeur proche de 0 signale une hélice : les
     greens avancent d'un pas constant autour du centre.
     """
     return _cv(oriented_angular_steps(greens, centre))

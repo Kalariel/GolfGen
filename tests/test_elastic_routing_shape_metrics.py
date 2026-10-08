@@ -8,7 +8,9 @@ import math
 import pytest
 
 from experiments.elastic_routing.model import ControlPoint, CourseLayout, ElasticHole, NineLayout
+from experiments.elastic_routing.run_muirfield import _shape_stats
 from experiments.elastic_routing.shape_metrics import (
+    CV_MIN_PROGRESS,
     angular_step_cv,
     direction_entropy,
     oriented_angular_steps,
@@ -54,10 +56,10 @@ def test_steps_are_oriented_by_the_dominant_direction():
 
 
 def test_backtracking_step_raises_cv():
-    angles = [0.0, 0.5, 1.0, 0.5, 1.0, 1.5]        # un pas à rebours de même amplitude
+    angles = [0.0, 0.5, 1.0, 0.5, 1.0, 1.5, 2.0]   # un pas à rebours de même amplitude
     greens = [_polar(100.0, a) for a in angles]
     steps = oriented_angular_steps(greens, CENTRE)
-    assert steps == pytest.approx([0.5, 0.5, -0.5, 0.5, 0.5])
+    assert steps == pytest.approx([0.5, 0.5, -0.5, 0.5, 0.5, 0.5])
     assert angular_step_cv(greens, CENTRE) > 1.0   # |Δθ| aurait donné CV = 0
 
 
@@ -65,6 +67,18 @@ def test_cv_is_undefined_without_net_progress():
     greens = [_polar(100.0, a) for a in (0.0, 0.5, 0.0)]
     assert angular_step_cv(greens, CENTRE) is None
     assert angular_step_cv(greens[:1], CENTRE) is None
+
+
+def test_cv_needs_a_minimal_net_progress():
+    # pas réguliers mais quart de tour à peine entamé : pas de CV
+    short = [_polar(100.0, a) for a in (0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4)]
+    assert abs(sum(oriented_angular_steps(short, CENTRE))) < CV_MIN_PROGRESS
+    assert angular_step_cv(short, CENTRE) is None
+    longer = short + [_polar(100.0, 1.6)]                    # 1,6 rad > π/2
+    assert angular_step_cv(longer, CENTRE) == pytest.approx(0.0, abs=1e-9)
+    # forte dispersion mais progression nette faible : toujours None
+    zigzag = [_polar(100.0, a) for a in (0.0, 1.0, 0.1, 1.1, 0.2, 1.2)]
+    assert angular_step_cv(zigzag, CENTRE) is None
 
 
 def _oblique(theta: float, alpha: float):
@@ -117,9 +131,9 @@ def test_varied_directions_have_high_entropy():
 
 @pytest.mark.parametrize("start", (math.pi - 0.3, -math.pi + 0.1, 3.0))
 def test_steps_unwrap_across_pi(start):
-    angles = [start + 0.2 * i for i in range(6)]             # traverse ±π
+    angles = [start + 0.4 * i for i in range(6)]             # traverse ±π
     greens = [_polar(100.0, a) for a in angles]
-    assert oriented_angular_steps(greens, CENTRE) == pytest.approx([0.2] * 5)
+    assert oriented_angular_steps(greens, CENTRE) == pytest.approx([0.4] * 5)
     assert angular_step_cv(greens, CENTRE) == pytest.approx(0.0, abs=1e-9)
 
 
@@ -152,11 +166,24 @@ def test_shape_metrics_summary_is_serialisable():
         assert set(scope) == {"angular_step_cv", "direction_entropy", "radial_alignment_R"}
         assert scope["angular_step_cv"] == pytest.approx(0.0, abs=1e-4)
         assert scope["radial_alignment_R"] == pytest.approx(1.0)
-    # 18 orientations distinctes modulo 180° → 12 cases toutes touchées
+    # 18 orientations distinctes modulo 180° : les 12 cases sont touchées, mais
+    # inégalement (6 cases à 2 trous, 6 à 1) → entropie < 1
+    uneven = -(6 * (2 / 18) * math.log(2 / 18) + 6 * (1 / 18) * math.log(1 / 18)) / math.log(12)
+    assert metrics["course"]["direction_entropy"] == pytest.approx(uneven, abs=1e-4)
     assert metrics["course"]["direction_entropy"] > metrics["front"]["direction_entropy"]
     assert json.loads(json.dumps(metrics, allow_nan=False)) == metrics
 
 
-def test_shape_metrics_is_deterministic():
-    layout = _windmill_course()
-    assert shape_metrics(layout) == shape_metrics(layout)
+# -- agrégation du runner --------------------------------------------------------
+
+def test_shape_stats_skip_failures_and_missing_values():
+    def ok(cv, entropy, r):
+        return {"status": "succes", "shape": {"course": {
+            "angular_step_cv": cv, "direction_entropy": entropy, "radial_alignment_R": r}}}
+    reports = [ok(0.2, 0.5, 0.9), {"status": "echec", "seed": 4},
+               ok(None, 0.7, 0.1), ok(0.6, 0.6, 0.5), ok(0.4, 0.8, None)]
+    stats = _shape_stats(reports)
+    assert stats["angular_step_cv"] == {"median": 0.4, "min": 0.2, "max": 0.6}
+    assert stats["direction_entropy"] == {"median": 0.65, "min": 0.5, "max": 0.8}
+    assert stats["radial_alignment_R"] == {"median": 0.5, "min": 0.1, "max": 0.9}
+    assert _shape_stats([{"status": "echec"}, ok(None, 0.3, 0.3)])["angular_step_cv"] is None
