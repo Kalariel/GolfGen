@@ -1120,6 +1120,96 @@ boucle : ses trous se regroupent en faisceaux et en zigzags au centre (s2,
 s3), comme le back intérieur du Muirfield normal — l'hélice / le
 remplissage du centre reste le défaut de forme commun aux deux patrons.
 
+#### Round C (2026-10-08) — largeurs de fairway variables
+
+Nits de revue B traités : empreinte de non-régression du patron `muirfield`
+(seeds 1–3, 300×400 : plan, pars, longueurs, nombre de tentatives) en
+`width_mode="min"` ; `outer_start` / `anchor_bounds` lèvent `ValueError`
+pour un patron hors `PATTERNS` (`random` non résolu compris) ; test des
+rôles sur les trous réels (distance moyenne au centre des sommets d'axe :
+nine extérieur > nine intérieur, pour les deux patrons) ; `lru_cache` sur
+`_distinct_orders`.
+
+**C1 — variation ENTRE trous (fait).** Chaque ordre 1..18 tire une
+fraction seedée (`hole_width_fractions`, flux `[seed, 31]`, une fois par
+seed, indépendante des relances) ; la largeur du trou est le point
+correspondant de la plage de SON par (`PAR_SPECS`), arrondi au demi-bloc
+(`hole_width`). Utilisée partout où la largeur minimale l'était : trous
+construits, rayons des pré-filtres, trou-pont, capacité des cônes. Rien
+d'autre ne change (règles, budgets, patrons). `width_mode` : `variable`
+(défaut) ou `min` (comportement A–B ; les rounds r2…rb du runner y sont
+figés pour rester reproductibles). Runner : `--width-mode`, `--round rc`
+(planche 6 seeds muirfield) et `--round rc-30` (30 seeds par patron).
+
+| patron, 300×400 s1–30 | largeur | réussis | violations | relances tentées | gratuites | médiane | p90 | max |
+|---|---|---|---|---|---|---|---|---|
+| muirfield (round B) | min (moy. ≈ 11) | 30/30 | 0 | 28 | 9 | 0.37 s | 3.5 s | 4.2 s |
+| muirfield (C1) | variable (moy. 13.9) | 30/30 | 0 | 108 | 9 | 2.3 s | 10.8 s | 17.1 s |
+| muirfield_inverse (round B) | min | 30/30 | 0 | 23 | 9 | 0.38 s | 3.5 s | 17.7 s |
+| muirfield_inverse (C1) | variable | 30/30 | 0 | 100 | 9 | 2.4 s | 12.0 s | 18.0 s |
+
+Sorties : `output/muirfield/rc_muirfield_300x400/` (planche + report,
+seeds 1–6) et `rc_<patron>_300x400_30seeds/report.json`. Les fairways plus
+larges (+26 % en moyenne) consomment plus d'espace : la validité est
+conservée (30/30 pour les deux patrons, aucune règle ni budget touché) mais
+les relances quadruplent (`echec_ancrages` 63/54, `echec_back` 45 pour
+muirfield, `echec_front` 46 pour l'inversé — le milieu du nine intérieur) et
+les temps médians passent de ~0.4 s à ~2.3 s. Temps machine de dev,
+chronomètre homogène.
+
+Lecture de la planche (muirfield 300×400, seeds 1–6) : la variation se voit
+— des par 5 larges à côté de par 3 étroits (s2 : trou 7 large, 18 étroit),
+ce qui casse l'uniformité des bandes. La carte paraît plus pleine ; les
+faisceaux de trous parallèles et l'hélice restent les défauts de forme.
+
+**C2 — variation À L'INTÉRIEUR d'un trou : NON FAIT, plan ci-dessous.**
+Le changement n'est pas contenu : il touche l'oracle (construction exacte
+du cœur et du rough), les arguments de nécessité des pré-filtres, le
+surrogate incrémental (et ses preuves de conservativité), le modèle et son
+schéma, et le rendu. Conformément à la consigne, arrêt après C1.
+
+Plan de C2 :
+
+1. *Modèle* (`model.py`) : `ElasticHole.width_profile: tuple[float, ...] |
+   None`, une largeur par sommet de l'axe (tee, doglegs, green) ; `width`
+   reste le scalaire compatible (= max du profil, ou valeur unique si pas de
+   profil). Validation : longueur du profil = nombre de sommets, chaque
+   valeur dans la plage du par. `SCHEMA_VERSION` 1 → 2, lecture des
+   documents v1 inchangée (profil absent).
+2. *Oracle* (`geometry.py`) : `buffered_axis(axis, radii)` à rayon par
+   sommet. Chaque segment devient un trapèze (côtés décalés de r_i et
+   r_{i+1}, donc NON parallèles à l'axe) ; jointure = intersection des deux
+   droites décalées voisines (onglet exact), avec la même limite d'onglet
+   (0.72) qu'aujourd'hui ; bouts prolongés de r_0 / r_n. `rough` = rayon +
+   `rough_margin`. Risque principal : l'onglet entre côtés convergents peut
+   produire une auto-intersection pour un dogleg serré et un fort écart de
+   rayons — borner la variation (ex. |r_i − r_{i+1}| ≤ 0.25 × longueur du
+   segment) et ajouter un test de simplicité du polygone.
+3. *Contrôles en ligne* (`partial_checks.py`) : inchangés sur le principe
+   (mêmes prédicats sur le nouveau cœur). Pré-filtres `Obstacles` : la
+   condition nécessaire « cœur ⊇ axe ⊕ disque » doit devenir « cœur ⊇ ∪
+   segments ⊕ disque(rayon MIN du segment) » — à démontrer pour la
+   construction trapézoïdale + onglet, sinon utiliser le rayon min (plus
+   faible, toujours nécessaire).
+4. *Surrogate incrémental* (`incremental.py`) : capsules par segment au
+   rayon MAX du segment (conservateur), disque de dogleg au max des deux
+   rayons × `MITER_FACTOR` ; garder le test « zéro faux négatif » sur seeds
+   perturbées et mesurer le taux de faux positifs avant/après.
+5. *Routage* (`muirfield.py`) : profil seedé par trou — par 3 : quasi
+   constant, se resserrant vers le green ; par 4 : élargi dans la zone
+   d'atterrissage du drive (≈ 55–65 % de la longueur), resserré à l'approche
+   du green ; par 5 : deux zones larges (drive, second coup). Profil défini
+   aux sommets : nécessite d'ajouter des sommets intermédiaires sur les
+   tirs droits (axe à 3–4 sommets colinéaires), ce qui touche aussi les
+   pré-filtres de candidats.
+6. *Rendu* (`render_readable.py`) : remplacer la polyligne épaisse par le
+   polygone du cœur (et du rough), puisque `stroke-width` est constant.
+7. *Tests* : oracle à rayon variable (écart fairway qui passe avec un profil
+   resserré et échoue avec le profil plein au même axe ; polygone simple ;
+   largeur hors plage d'un sommet → `width`) ; surrogate zéro faux négatif ;
+   pré-filtres nécessaires (propriété) ; 0 violation 30 seeds × 2 patrons ;
+   lecture/écriture JSON v1 et v2.
+
 ### Étape 4 — trous élastiques et mutations locales
 
 Note (2026-10-07) : cette étape reste valable (score incrémental), mais la
