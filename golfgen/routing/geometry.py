@@ -11,7 +11,7 @@ from collections import Counter
 from dataclasses import dataclass
 import math
 
-from experiments.elastic_routing.model import CourseLayout, ElasticHole, PAR_SPECS
+from golfgen.routing.model import CourseLayout, ElasticHole, PAR_SPECS
 
 
 Point = tuple[float, float]

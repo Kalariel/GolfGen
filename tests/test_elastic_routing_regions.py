@@ -14,8 +14,8 @@ from functools import lru_cache
 import numpy as np
 import pytest
 
-from experiments.elastic_routing.geometry import segments_intersect
-from experiments.elastic_routing.model import LEGACY_PAR_SPECS
+from golfgen.routing.geometry import segments_intersect
+from golfgen.routing.model import LEGACY_PAR_SPECS
 from experiments.elastic_routing.regions import (
     CELL_BY_W_MIN,
     ENDPOINT_MAX_DIST,

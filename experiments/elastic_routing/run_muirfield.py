@@ -54,7 +54,7 @@ from pathlib import Path
 import subprocess
 import time
 
-from experiments.elastic_routing.muirfield import (
+from golfgen.routing.muirfield import (
     PATTERN_CHOICES,
     PATTERNS,
     MuirfieldRoutingError,
@@ -63,7 +63,7 @@ from experiments.elastic_routing.muirfield import (
 )
 from experiments.elastic_routing.render_readable import render_readable_svg
 from experiments.elastic_routing.shape_metrics import shape_metrics
-from experiments.elastic_routing.sites import WATER_LEVEL, load_terrain
+from golfgen.routing.sites import WATER_LEVEL, load_terrain
 
 
 OUTPUT_ROOT = Path(__file__).resolve().parent / "output" / "muirfield"

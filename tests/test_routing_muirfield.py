@@ -17,13 +17,13 @@ import re
 import numpy as np
 import pytest
 
-from experiments.elastic_routing import muirfield as mf
-from experiments.elastic_routing.geometry import ValidationRules, Violation, validate
-from experiments.elastic_routing.model import GLOBAL_PAR_QUOTA, PAR_SPECS, ControlPoint, ElasticHole
-from experiments.elastic_routing.partial_checks import Obstacles, PartialLayout, PlannedLink
+from golfgen.routing import muirfield as mf
+from golfgen.routing.geometry import ValidationRules, Violation, validate
+from golfgen.routing.model import GLOBAL_PAR_QUOTA, PAR_SPECS, ControlPoint, ElasticHole
+from golfgen.routing.partial_checks import Obstacles, PartialLayout, PlannedLink
 from experiments.elastic_routing.render_readable import render_readable_svg
-from experiments.elastic_routing import sites as sites_module
-from experiments.elastic_routing.sites import (
+from golfgen.routing import sites as sites_module
+from golfgen.routing.sites import (
     GREEN_SPACING,
     TEE_SPACING,
     WATER_LEVEL,
@@ -472,7 +472,7 @@ def test_round_a_failures_now_route_cleanly(seed):
 
 # -- round B : patron explicite, Muirfield inversé ---------------------------
 
-from experiments.elastic_routing.sites import Sites
+from golfgen.routing.sites import Sites
 
 
 @pytest.fixture(scope="module")

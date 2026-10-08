@@ -1,6 +1,6 @@
 import xml.etree.ElementTree as ET
 
-from experiments.elastic_routing.geometry import ValidationRules
+from golfgen.routing.geometry import ValidationRules
 from experiments.elastic_routing.render import render_svg
 from experiments.elastic_routing.synthetic import build_synthetic_layout
 

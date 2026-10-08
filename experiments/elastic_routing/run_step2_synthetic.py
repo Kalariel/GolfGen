@@ -7,7 +7,7 @@ from dataclasses import asdict
 import json
 from pathlib import Path
 
-from experiments.elastic_routing.geometry import ValidationRules, validate
+from golfgen.routing.geometry import ValidationRules, validate
 from experiments.elastic_routing.render import render_svg
 from experiments.elastic_routing.synthetic import build_synthetic_layout
 

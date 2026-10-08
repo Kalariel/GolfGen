@@ -88,8 +88,8 @@ from dataclasses import dataclass, replace
 import math
 from typing import Iterable, Mapping
 
-from experiments.elastic_routing.geometry import ValidationRules, segment_distance, segments_intersect
-from experiments.elastic_routing.model import (
+from golfgen.routing.geometry import ValidationRules, segment_distance, segments_intersect
+from golfgen.routing.model import (
     PAR_SPECS,
     ControlPoint,
     CourseLayout,

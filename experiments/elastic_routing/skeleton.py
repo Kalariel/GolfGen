@@ -66,8 +66,8 @@ import time
 from bisect import bisect_left, bisect_right
 from dataclasses import dataclass, field
 
-from experiments.elastic_routing.geometry import segment_distance, segments_intersect
-from experiments.elastic_routing.model import (
+from golfgen.routing.geometry import segment_distance, segments_intersect
+from golfgen.routing.model import (
     LEGACY_PAR_SPECS,
     ControlPoint,
     ElasticHole,

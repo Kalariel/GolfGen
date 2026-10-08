@@ -3,7 +3,7 @@ import math
 
 import pytest
 
-from experiments.elastic_routing.model import (
+from golfgen.routing.model import (
     LEGACY_PAR_SPECS,
     PAR_SPECS,
     ControlPoint,

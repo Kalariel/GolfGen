@@ -1,39 +1,5 @@
-"""Prototype de routage global à trous élastiques."""
+"""Prototype de routage global à trous élastiques.
 
-from experiments.elastic_routing.model import (
-    LEGACY_PAR_SPECS,
-    PAR_SPECS,
-    SCHEMA_VERSION,
-    ControlPoint,
-    CourseLayout,
-    ElasticHole,
-    HoleClassSpec,
-    NineLayout,
-    WalkingLink,
-)
-from experiments.elastic_routing.geometry import (
-    HoleGeometry,
-    ValidationRules,
-    Violation,
-    build_hole_geometry,
-    validate,
-)
-from experiments.elastic_routing.render import render_svg
-
-__all__ = [
-    "LEGACY_PAR_SPECS",
-    "PAR_SPECS",
-    "SCHEMA_VERSION",
-    "ControlPoint",
-    "CourseLayout",
-    "ElasticHole",
-    "HoleGeometry",
-    "HoleClassSpec",
-    "NineLayout",
-    "ValidationRules",
-    "Violation",
-    "WalkingLink",
-    "build_hole_geometry",
-    "render_svg",
-    "validate",
-]
+Le cœur (model, geometry, partial_checks, sites, muirfield) vit désormais
+dans ``golfgen.routing`` ; restent ici les expériences et les runners.
+"""

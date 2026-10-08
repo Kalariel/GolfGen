@@ -13,9 +13,9 @@ import random
 
 import pytest
 
-from experiments.elastic_routing.geometry import ValidationRules, validate
+from golfgen.routing.geometry import ValidationRules, validate
 from experiments.elastic_routing.incremental import COMPONENT_NAMES, IncrementalEvaluator
-from experiments.elastic_routing.model import ControlPoint, CourseLayout, ElasticHole, NineLayout, PAR_SPECS
+from golfgen.routing.model import ControlPoint, CourseLayout, ElasticHole, NineLayout, PAR_SPECS
 from experiments.elastic_routing.synthetic import NINE_PARS, build_synthetic_layout
 
 

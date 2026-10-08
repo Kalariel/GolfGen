@@ -48,8 +48,8 @@ from typing import Sequence
 
 import numpy as np
 
-from experiments.elastic_routing.model import PAR_SPECS, CourseLayout, ElasticHole
-from experiments.elastic_routing.muirfield import LINK_NOMINAL
+from golfgen.routing.model import PAR_SPECS, CourseLayout, ElasticHole
+from golfgen.routing.muirfield import LINK_NOMINAL
 
 
 Point = tuple[float, float]

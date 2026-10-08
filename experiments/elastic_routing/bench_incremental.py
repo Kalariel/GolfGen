@@ -15,9 +15,9 @@ import random
 import statistics
 import time
 
-from experiments.elastic_routing.geometry import ValidationRules, validate
+from golfgen.routing.geometry import ValidationRules, validate
 from experiments.elastic_routing.incremental import IncrementalEvaluator
-from experiments.elastic_routing.model import ControlPoint
+from golfgen.routing.model import ControlPoint
 from experiments.elastic_routing.synthetic import build_synthetic_layout
 
 

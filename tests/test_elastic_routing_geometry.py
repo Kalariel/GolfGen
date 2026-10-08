@@ -4,12 +4,12 @@ import math
 
 import pytest
 
-from experiments.elastic_routing.geometry import (
+from golfgen.routing.geometry import (
     ValidationRules,
     build_hole_geometry,
     validate,
 )
-from experiments.elastic_routing.model import (
+from golfgen.routing.model import (
     PAR_SPECS,
     ControlPoint,
     CourseLayout,

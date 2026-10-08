@@ -7,8 +7,8 @@ import math
 
 import pytest
 
-from experiments.elastic_routing.model import ControlPoint, CourseLayout, ElasticHole, NineLayout
-from experiments.elastic_routing import muirfield as mf
+from golfgen.routing.model import ControlPoint, CourseLayout, ElasticHole, NineLayout
+from golfgen.routing import muirfield as mf
 from experiments.elastic_routing.run_muirfield import (
     _nine_shape_stats,
     _planche_title,

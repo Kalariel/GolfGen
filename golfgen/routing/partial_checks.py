@@ -25,7 +25,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from experiments.elastic_routing.geometry import (
+from golfgen.routing.geometry import (
     EPSILON,
     HoleGeometry,
     ValidationRules,
@@ -37,7 +37,7 @@ from experiments.elastic_routing.geometry import (
     polygon_gap,
     segments_intersect,
 )
-from experiments.elastic_routing.model import PAR_SPECS, ElasticHole
+from golfgen.routing.model import PAR_SPECS, ElasticHole
 
 
 Point = tuple[float, float]

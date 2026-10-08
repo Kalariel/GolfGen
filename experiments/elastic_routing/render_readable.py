@@ -16,8 +16,8 @@ from collections.abc import Sequence
 
 import numpy as np
 
-from experiments.elastic_routing.geometry import Violation, build_hole_geometry
-from experiments.elastic_routing.model import CourseLayout
+from golfgen.routing.geometry import Violation, build_hole_geometry
+from golfgen.routing.model import CourseLayout
 from experiments.elastic_routing.regions import _point_and_tangent
 
 

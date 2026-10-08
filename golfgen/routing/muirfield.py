@@ -66,8 +66,8 @@ from typing import Callable, Iterator
 
 import numpy as np
 
-from experiments.elastic_routing.geometry import ValidationRules, Violation, validate
-from experiments.elastic_routing.model import (
+from golfgen.routing.geometry import ValidationRules, Violation, validate
+from golfgen.routing.model import (
     GLOBAL_PAR_QUOTA,
     PAR_SPECS,
     ControlPoint,
@@ -75,14 +75,14 @@ from experiments.elastic_routing.model import (
     ElasticHole,
     NineLayout,
 )
-from experiments.elastic_routing.partial_checks import (
+from golfgen.routing.partial_checks import (
     PREFILTER_SLACK,
     Obstacles,
     PartialLayout,
     PlannedLink,
     segment_segment_distances,
 )
-from experiments.elastic_routing.sites import Sites, build_sites, load_terrain
+from golfgen.routing.sites import Sites, build_sites, load_terrain
 
 
 Point = tuple[float, float]

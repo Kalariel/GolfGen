@@ -4,13 +4,13 @@ from __future__ import annotations
 
 from html import escape
 
-from experiments.elastic_routing.geometry import (
+from golfgen.routing.geometry import (
     ValidationRules,
     Violation,
     build_hole_geometry,
     validate,
 )
-from experiments.elastic_routing.model import CourseLayout
+from golfgen.routing.model import CourseLayout
 
 
 PAR_COLORS = {3: "#58a6ff", 4: "#56d364", 5: "#f2cc60"}

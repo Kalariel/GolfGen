@@ -35,7 +35,7 @@ from functools import lru_cache
 import pytest
 
 from experiments.elastic_routing import skeleton as sk
-from experiments.elastic_routing.geometry import segment_distance, segments_intersect
+from golfgen.routing.geometry import segment_distance, segments_intersect
 from experiments.elastic_routing.skeleton import (
     SkeletonGenerationError,
     build_skeleton,
