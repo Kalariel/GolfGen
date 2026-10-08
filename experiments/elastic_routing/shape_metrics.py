@@ -18,6 +18,15 @@ Trois métriques, calculées par nine et pour le parcours entier :
   en faisceaux parallèles.
 - ``radial_alignment_R`` : concentration de l'obliquité des trous par rapport
   au rayon. Haute → pales de même obliquité (moulinet).
+
+Deux métriques par nine seulement, quand le chemin du nine (``front_path`` /
+``back_path`` de ``MuirfieldResult``, orienté dans le sens de jeu) est fourni :
+
+- ``obliquity_signed`` : moyenne de sin α, α = angle signé entre la corde
+  tee→green et la tangente du chemin (segment le plus proche du milieu de la
+  corde). ≈ 0 → trous tangents (ou à rebours, ou obliquités qui se
+  compensent) ; nettement d'un seul signe → pales de moulinet.
+- ``obliquity_abs`` : moyenne de |sin α| (obliquité sans signe).
 """
 
 from __future__ import annotations
@@ -131,30 +140,100 @@ def radial_alignment_R(tees: Sequence[Point], greens: Sequence[Point],
     return float(abs(np.exp(2j * alpha).mean()))
 
 
+def nearest_segment(path: Sequence[Point], point: Point) -> int:
+    """Index ``i`` du segment ``[path[i], path[i + 1]]`` le plus proche de ``point``.
+
+    Distance euclidienne au segment (projection bornée aux extrémités) ; les
+    segments de longueur nulle sont ignorés ; en cas d'égalité, le premier
+    segment l'emporte. ``ValueError`` si le chemin n'a aucun segment non nul.
+    """
+    arr = _as_array(path)
+    if len(arr) < 2:
+        raise ValueError("chemin d'au moins deux points attendu")
+    start, delta = arr[:-1], np.diff(arr, axis=0)
+    length2 = (delta ** 2).sum(axis=1)
+    valid = length2 > 0.0
+    if not valid.any():
+        raise ValueError("chemin sans segment de longueur non nulle")
+    offset = np.asarray(point, dtype=float) - start
+    t = np.clip((offset * delta).sum(axis=1) / np.where(valid, length2, 1.0), 0.0, 1.0)
+    distance2 = ((offset - t[:, None] * delta) ** 2).sum(axis=1)
+    return int(np.argmin(np.where(valid, distance2, np.inf)))
+
+
+def path_tangent(path: Sequence[Point], point: Point) -> float:
+    """Angle (radians, repère de la carte) du segment de ``path`` le plus
+    proche de ``point``, orienté dans le sens de parcours du chemin."""
+    arr = _as_array(path)
+    i = nearest_segment(arr, point)
+    dx, dy = arr[i + 1] - arr[i]
+    return math.atan2(dy, dx)
+
+
+def obliquity_sines(tees: Sequence[Point], greens: Sequence[Point],
+                    path: Sequence[Point]) -> np.ndarray:
+    """sin α par trou, α = angle(tee→green) − tangente du chemin au milieu
+    de la corde (segment le plus proche, ``path_tangent``)."""
+    tee_xy, green_xy = _as_array(tees), _as_array(greens)
+    middle = (tee_xy + green_xy) / 2.0
+    tangent = np.array([path_tangent(path, tuple(m)) for m in middle])
+    return np.sin(_orientations(tee_xy, green_xy) - tangent)
+
+
+def obliquity_signed(tees: Sequence[Point], greens: Sequence[Point],
+                     path: Sequence[Point]) -> float:
+    """Moyenne de sin α ∈ [-1, 1] (``obliquity_sines``) ; 0.0 sans trou.
+
+    ≈ 0 : trous tangents au chemin, joués à rebours, ou obliquités qui se
+    compensent ; valeur nettement d'un seul signe : pales de moulinet. Le
+    signe dépend du sens du chemin et du repère (y vers le bas en image)."""
+    sines = obliquity_sines(tees, greens, path)
+    return float(sines.mean()) if sines.size else 0.0
+
+
+def obliquity_abs(tees: Sequence[Point], greens: Sequence[Point],
+                  path: Sequence[Point]) -> float:
+    """Moyenne de |sin α| ∈ [0, 1] ; 0.0 sans trou."""
+    sines = obliquity_sines(tees, greens, path)
+    return float(np.abs(sines).mean()) if sines.size else 0.0
+
+
 def _xy(point) -> Point:
     return (point.x, point.y)
 
 
-def _nine_metrics(holes: Sequence[ElasticHole], centre: Point) -> dict[str, float | None]:
+def _nine_metrics(holes: Sequence[ElasticHole], centre: Point,
+                  path: Sequence[Point] | None = None) -> dict[str, float | None]:
     tees = [_xy(h.tee) for h in holes]
     greens = [_xy(h.green) for h in holes]
-    return {
+    metrics = {
         "angular_step_cv": angular_step_cv(greens, centre),
         "direction_entropy": direction_entropy(tees, greens),
         "radial_alignment_R": radial_alignment_R(tees, greens, centre),
     }
+    if path is not None:
+        metrics["obliquity_signed"] = obliquity_signed(tees, greens, path)
+        metrics["obliquity_abs"] = obliquity_abs(tees, greens, path)
+    return metrics
 
 
 def _rounded(metrics: dict[str, float | None], digits: int) -> dict[str, float | None]:
     return {k: (None if v is None else round(v, digits)) for k, v in metrics.items()}
 
 
-def shape_metrics(layout: CourseLayout, digits: int = 4) -> dict[str, dict[str, float | None]]:
+def shape_metrics(layout: CourseLayout, digits: int = 4, *,
+                  front_path: Sequence[Point] | None = None,
+                  back_path: Sequence[Point] | None = None
+                  ) -> dict[str, dict[str, float | None]]:
     """Synthèse sérialisable ``{"front": {...}, "back": {...}, "course": {...}}``.
 
     Pour ``course`` : entropie et R sur les 18 trous ; CV sur les 16 pas
     orientés regroupés (8 par nine, chaque nine orienté selon son propre sens,
     sans le pas green 9 → green 10 qui change d'anneau).
+
+    ``front_path`` / ``back_path`` (chemins des nines orientés dans le sens de
+    jeu) ajoutent ``obliquity_signed`` et ``obliquity_abs`` au nine
+    correspondant ; pas d'obliquité au niveau ``course``.
     """
     centre = (layout.width / 2.0, layout.height / 2.0)
     ordered = sorted(layout.holes, key=lambda h: h.order)
@@ -165,7 +244,7 @@ def shape_metrics(layout: CourseLayout, digits: int = 4) -> dict[str, dict[str, 
                             for nine in (front, back)])
     course["angular_step_cv"] = _cv(steps)
     return {
-        "front": _rounded(_nine_metrics(front, centre), digits),
-        "back": _rounded(_nine_metrics(back, centre), digits),
+        "front": _rounded(_nine_metrics(front, centre, front_path), digits),
+        "back": _rounded(_nine_metrics(back, centre, back_path), digits),
         "course": _rounded(course, digits),
     }

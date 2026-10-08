@@ -8,12 +8,17 @@ import math
 import pytest
 
 from experiments.elastic_routing.model import ControlPoint, CourseLayout, ElasticHole, NineLayout
+from experiments.elastic_routing import muirfield as mf
 from experiments.elastic_routing.run_muirfield import _shape_stats
 from experiments.elastic_routing.shape_metrics import (
     CV_MIN_PROGRESS,
     angular_step_cv,
     direction_entropy,
+    nearest_segment,
+    obliquity_abs,
+    obliquity_signed,
     oriented_angular_steps,
+    path_tangent,
     radial_alignment_R,
     shape_metrics,
 )
@@ -174,6 +179,110 @@ def test_shape_metrics_summary_is_serialisable():
     assert json.loads(json.dumps(metrics, allow_nan=False)) == metrics
 
 
+# -- projeteur sur le chemin ---------------------------------------------------
+
+SQUARE = [(0.0, 0.0), (100.0, 0.0), (100.0, 100.0), (0.0, 100.0), (0.0, 0.0)]
+
+
+@pytest.mark.parametrize("point,index", (
+    ((50.0, -5.0), 0), ((50.0, 10.0), 0), ((95.0, 50.0), 1), ((50.0, 140.0), 2),
+    ((-30.0, 60.0), 3), ((300.0, 50.0), 1),
+))
+def test_nearest_segment(point, index):
+    assert nearest_segment(SQUARE, point) == index
+
+
+def test_nearest_segment_clamps_to_the_ends_and_breaks_ties_on_the_first():
+    path = [(0.0, 0.0), (10.0, 0.0), (20.0, 0.0)]
+    assert nearest_segment(path, (-50.0, 3.0)) == 0
+    assert nearest_segment(path, (70.0, 3.0)) == 1
+    assert nearest_segment(path, (10.0, 5.0)) == 0            # sommet partagé
+    assert nearest_segment(SQUARE, (50.0, 50.0)) == 0         # équidistant des 4 côtés
+
+
+def test_nearest_segment_skips_degenerate_segments():
+    path = [(0.0, 0.0), (0.0, 0.0), (10.0, 0.0), (10.0, 0.0), (10.0, 10.0)]
+    assert nearest_segment(path, (0.0, 0.0)) == 1
+    assert nearest_segment(path, (10.0, 0.0)) == 1
+    assert nearest_segment(path, (12.0, 8.0)) == 3
+    with pytest.raises(ValueError):
+        nearest_segment([(1.0, 1.0), (1.0, 1.0)], (0.0, 0.0))
+    with pytest.raises(ValueError):
+        nearest_segment([(1.0, 1.0)], (0.0, 0.0))
+
+
+def test_path_tangent_follows_the_path_direction():
+    assert path_tangent(SQUARE, (50.0, -5.0)) == pytest.approx(0.0)
+    assert path_tangent(SQUARE, (105.0, 50.0)) == pytest.approx(math.pi / 2)
+    assert path_tangent(SQUARE[::-1], (50.0, -5.0)) == pytest.approx(math.pi)
+
+
+# -- obliquité signée -----------------------------------------------------------
+
+def _circle(radius: float = 100.0, count: int = 720):
+    """Chemin circulaire parcouru dans le sens θ croissant."""
+    return [_polar(radius, 2.0 * math.pi * k / count) for k in range(count + 1)]
+
+
+def _tilted(theta: float, tilt: float, radius: float = 100.0, half: float = 30.0):
+    """Trou centré sur le cercle en ``theta``, tourné de ``tilt`` depuis la tangente."""
+    mx, my = _polar(radius, theta)
+    heading = theta + math.pi / 2 + tilt                    # tangente dans le sens θ croissant
+    ux, uy = math.cos(heading), math.sin(heading)
+    return (mx - half * ux, my - half * uy), (mx + half * ux, my + half * uy)
+
+
+def _tilted_nine(tilts):
+    holes = [_tilted(0.3 + i * 2.0 * math.pi / 9, tilt) for i, tilt in enumerate(tilts)]
+    return [h[0] for h in holes], [h[1] for h in holes]
+
+
+def test_tangent_holes_have_zero_obliquity():
+    tees, greens = _tilted_nine([0.0] * 9)
+    assert obliquity_signed(tees, greens, _circle()) == pytest.approx(0.0, abs=1e-2)
+    assert obliquity_abs(tees, greens, _circle()) == pytest.approx(0.0, abs=1e-2)
+    # joués à rebours : sin(π) ≈ 0 aussi
+    assert obliquity_signed(greens, tees, _circle()) == pytest.approx(0.0, abs=1e-2)
+
+
+@pytest.mark.parametrize("tilt,expected", ((math.pi / 6, 0.5), (-math.pi / 6, -0.5)))
+def test_uniformly_tilted_holes(tilt, expected):
+    tees, greens = _tilted_nine([tilt] * 9)
+    assert obliquity_signed(tees, greens, _circle()) == pytest.approx(expected, abs=1e-2)
+    assert obliquity_abs(tees, greens, _circle()) == pytest.approx(0.5, abs=1e-2)
+
+
+def test_mirror_tilts_cancel_in_the_signed_obliquity():
+    tilts = [math.pi / 6, -math.pi / 6] * 4 + [0.0]
+    tees, greens = _tilted_nine(tilts[:8])
+    assert obliquity_signed(tees, greens, _circle()) == pytest.approx(0.0, abs=1e-2)
+    assert obliquity_abs(tees, greens, _circle()) == pytest.approx(0.5, abs=1e-2)
+
+
+def test_windmill_blades_have_a_one_sided_obliquity():
+    tees, greens = _blades(twist=0.4)
+    path = _circle(radius=105.0)
+    signed = obliquity_signed(tees, greens, path)
+    assert abs(signed) > 0.5
+    assert obliquity_abs(tees, greens, path) == pytest.approx(abs(signed))
+    # le même moulinet sur un chemin parcouru en sens inverse change de signe
+    assert obliquity_signed(tees, greens, path[::-1]) == pytest.approx(-signed)
+
+
+def test_obliquity_is_reported_per_nine_only_when_paths_are_given():
+    layout = _windmill_course()
+    bare = shape_metrics(layout)
+    assert all("obliquity_signed" not in scope for scope in bare.values())
+    path = _circle(radius=105.0)
+    metrics = shape_metrics(layout, front_path=path, back_path=path)
+    for nine in ("front", "back"):
+        assert abs(metrics[nine]["obliquity_signed"]) == pytest.approx(
+            metrics[nine]["obliquity_abs"], abs=1e-4)
+        assert metrics[nine]["obliquity_abs"] > 0.5
+    assert set(metrics["course"]) == set(bare["course"])
+    assert json.loads(json.dumps(metrics, allow_nan=False)) == metrics
+
+
 # -- agrégation du runner --------------------------------------------------------
 
 def test_shape_stats_skip_failures_and_missing_values():
@@ -187,3 +296,24 @@ def test_shape_stats_skip_failures_and_missing_values():
     assert stats["direction_entropy"] == {"median": 0.65, "min": 0.5, "max": 0.8}
     assert stats["radial_alignment_R"] == {"median": 0.5, "min": 0.1, "max": 0.9}
     assert _shape_stats([{"status": "echec"}, ok(None, 0.3, 0.3)])["angular_step_cv"] is None
+
+
+# -- métriques figées sur un vrai parcours -------------------------------------
+
+# muirfield seed 1, 300×400, width_mode="min", target_mode uniform
+REAL_COURSE_SHAPE = {
+    "front": {"angular_step_cv": 0.2681, "direction_entropy": 0.6749, "radial_alignment_R": 0.488,
+              "obliquity_signed": -0.0213, "obliquity_abs": 0.2614},
+    "back": {"angular_step_cv": 0.3325, "direction_entropy": 0.6983, "radial_alignment_R": 0.2601,
+             "obliquity_signed": -0.0573, "obliquity_abs": 0.3451},
+    "course": {"angular_step_cv": 0.3164, "direction_entropy": 0.7739,
+               "radial_alignment_R": 0.1139},
+}
+
+
+def test_shape_metrics_on_a_real_course_are_frozen():
+    result = mf.build_course(1, "muirfield", width=300, height=400, width_mode="min")
+    assert result.target_mode == "uniform"
+    metrics = shape_metrics(result.layout, front_path=result.front_path,
+                            back_path=result.back_path)
+    assert metrics == REAL_COURSE_SHAPE
