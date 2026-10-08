@@ -225,6 +225,8 @@ def main() -> None:
                         help="patron explicite (défaut : muirfield ; rb-30/rb-check : les deux)")
     parser.add_argument("--width-mode", choices=("variable", "min"), default="variable",
                         help="largeurs de fairway (C1 : variable ; rounds A–B : min)")
+    parser.add_argument("--target-mode", choices=TARGET_MODES, default="uniform",
+                        help="cibles des greens (R2b M1 : irregular ; round custom)")
     parser.add_argument("--size", default="300x400", help="format LxH (round custom)")
     parser.add_argument("--seeds", default="1-6", help="ex. 1-6 ou 3,7 (round custom)")
     args = parser.parse_args()
@@ -286,7 +288,8 @@ def main() -> None:
             seeds = tuple(int(v) for v in args.seeds.split(","))
         pattern = args.pattern or "muirfield"
         _run_format(width, height, seeds=seeds, label="custom", pattern=pattern,
-                    out_name=f"custom_{pattern}_{width}x{height}", width_mode=args.width_mode)
+                    out_name=f"custom_{pattern}_{width}x{height}", width_mode=args.width_mode,
+                    target_mode=args.target_mode)
 
 
 if __name__ == "__main__":
