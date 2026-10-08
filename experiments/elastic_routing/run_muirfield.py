@@ -136,8 +136,10 @@ def _run_format(width: int, height: int, *, seeds: tuple[int, ...] = SEEDS,
         svg = render_readable_svg(
             result.layout, result.violations, heightmap=heightmap, water_level=WATER_LEVEL,
             rings=(result.outer_ring, result.inner_ring),
-            title=(f"{result.pattern} {label.upper()} · {width}×{height} · seed {seed} · bord "
-                   f"{result.clubhouse_edge} · {outer_nine} extérieur {side} · cibles "
+            # titre abrégé (« s<seed> », « ext. ») : avec le mode de cibles, la
+            # version longue dépassait la largeur de la vignette pour l'inversé
+            title=(f"{result.pattern} {label.upper()} · {width}×{height} · s{seed} · bord "
+                   f"{result.clubhouse_edge} · {outer_nine} ext. {side} · cibles "
                    f"{result.target_mode}"),
             subtitle=(f"front par {lengths['front']['par']} · {lengths['front']['total']:.0f} blocs  |  "
                       f"back par {lengths['back']['par']} · {lengths['back']['total']:.0f} blocs  |  "
