@@ -794,3 +794,110 @@ def test_irregular_mode_is_valid_and_reported():
     uniform = mf.build_course(1, "muirfield", width=300, height=400, width_mode="min")
     assert uniform.target_mode == "uniform"
     assert result.layout.to_json() != uniform.layout.to_json()
+
+
+# -- round R2b M2 : chemin intérieur à lobes ---------------------------------------
+
+def test_lobe_parameters_are_seeded_once_per_seed():
+    draws = {seed: mf.lobe_parameters(seed) for seed in range(1, 41)}
+    assert mf.lobe_parameters(5) == draws[5]
+    assert {m for m, _ in draws.values()} == set(mf.LOBE_ORDERS)
+    assert all(0.0 <= phase < 2 * math.pi for _, phase in draws.values())
+    assert len({phase for _, phase in draws.values()}) == len(draws)
+
+
+def test_lobe_envelope_is_quiet_near_the_clubhouse_and_full_beyond():
+    theta_ch = 1.0
+    degrees = np.array([0.0, 20.0, -40.0, 60.0, -80.0, 120.0, 180.0])
+    g = mf.lobe_envelope(theta_ch + np.radians(degrees), theta_ch)
+    assert g == pytest.approx([0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0])
+    ramp = mf.lobe_envelope(theta_ch + np.radians(np.linspace(40.0, 80.0, 41)), theta_ch)
+    assert np.all(np.diff(ramp) > 0.0)
+
+
+def test_lobe_offsets_stay_within_the_declared_amplitudes():
+    theta = np.linspace(-math.pi, math.pi, 2001)
+    for order in mf.LOBE_ORDERS:
+        off = mf.lobe_offsets(theta, math.pi, order, 0.7)
+        assert off.max() <= mf.LOBE_OUT and off.min() >= -mf.LOBE_IN
+        assert off.max() > 0.9 * mf.LOBE_OUT and off.min() < -0.9 * mf.LOBE_IN
+
+
+@pytest.mark.parametrize("seed", range(1, 13))
+def test_lobed_inner_path_follows_the_ring_radially(seed):
+    """Même départ, mêmes angles que l'anneau intérieur ; écart radial =
+    lobe_offsets ; nul près du clubhouse ; dans la carte."""
+    width, height = 300.0, 400.0
+    center = (width / 2, height / 2)
+    edge, ch = mf.place_clubhouse(np.random.default_rng(seed), width, height)
+    direction = 1 if seed % 2 else -1
+    lobes = mf.lobe_parameters(seed)
+    _, _, _, ring = mf.nine_paths(ch, direction, width, height, inner_delta_deg=18.0)
+    lobed = mf.lobed_inner_path(ch, direction, width, height, 18.0, lobes)
+    assert len(lobed) == len(ring) and lobed[0] == lobed[-1] == ch
+    ring_arr, lobed_arr = np.asarray(ring[1:-1]), np.asarray(lobed[1:-1])
+    theta = np.arctan2(*(ring_arr - center)[:, ::-1].T)
+    assert np.allclose(np.arctan2(*(lobed_arr - center)[:, ::-1].T), theta)
+    theta_ch = math.atan2(ch[1] - center[1], ch[0] - center[0])
+    radial = np.hypot(*(lobed_arr - center).T) - np.hypot(*(ring_arr - center).T)
+    assert np.allclose(radial, mf.lobe_offsets(theta, theta_ch, *lobes))
+    assert np.allclose(lobed_arr[:3], ring_arr[:3]) and np.allclose(lobed_arr[-3:], ring_arr[-3:])
+    assert np.abs(radial).max() > 10.0
+    assert lobed_arr.min() >= 0.0 and lobed_arr[:, 0].max() <= width
+    assert lobed_arr[:, 1].max() <= height
+
+
+def test_lobed_path_without_amplitude_is_the_ring_path(monkeypatch):
+    monkeypatch.setattr(mf, "LOBE_OUT", 0.0)
+    monkeypatch.setattr(mf, "LOBE_IN", 0.0)
+    ch = (90.0, 6.0)
+    _, _, _, ring = mf.nine_paths(ch, 1, 300, 400, inner_delta_deg=26.0)
+    lobed = mf.lobed_inner_path(ch, 1, 300, 400, 26.0, (3, 1.0))
+    assert np.allclose(lobed, ring)
+
+
+def test_lobed_path_refuses_to_leave_the_map_or_collapse(monkeypatch):
+    ch = (90.0, 6.0)
+    monkeypatch.setattr(mf, "LOBE_OUT", 200.0)
+    with pytest.raises(ValueError, match="hors de la carte"):
+        mf.lobed_inner_path(ch, 1, 300, 400, 18.0, (2, 0.0))
+    monkeypatch.setattr(mf, "LOBE_OUT", 30.0)
+    monkeypatch.setattr(mf, "LOBE_IN", 100.0)
+    with pytest.raises(ValueError, match="rayon"):
+        mf.lobed_inner_path(ch, 1, 300, 400, 18.0, (2, 0.0))
+
+
+def test_unknown_path_mode_raises():
+    with pytest.raises(ValueError, match="path_mode"):
+        mf.build_course(1, "muirfield", width=300, height=400, path_mode="spirale")
+    with pytest.raises(ValueError, match="path_mode"):
+        mf.build_muirfield(1, width=300, height=400, path_mode="spirale")
+
+
+def test_ring_mode_draws_no_lobes(monkeypatch):
+    def forbidden(seed):
+        raise AssertionError("tirage de lobes en mode ring")
+    monkeypatch.setattr(mf, "lobe_parameters", forbidden)
+    result = mf.build_course(1, "muirfield", width=300, height=400, width_mode="min")
+    assert result.path_mode == "ring" and result.lobes is None
+    assert result.front_path == result.front_ring_path
+    assert result.back_path == result.back_ring_path
+
+
+@pytest.mark.parametrize("pattern", mf.PATTERNS)
+def test_lobed_mode_only_bends_the_inner_nine(pattern):
+    ring = mf.build_course(1, pattern, width=300, height=400, width_mode="min")
+    lobed = mf.build_course(1, pattern, width=300, height=400, width_mode="min",
+                            path_mode="lobed")
+    assert lobed.path_mode == "lobed" and lobed.lobes == mf.lobe_parameters(1)
+    assert lobed.violations == ()
+    assert (lobed.outer_ring, lobed.inner_ring) == (ring.outer_ring, ring.inner_ring)
+    inner = "back_path" if mf.outer_start(pattern) == 1 else "front_path"
+    outer = "front_path" if inner == "back_path" else "back_path"
+    assert getattr(lobed, outer) == getattr(lobed, outer.replace("path", "ring_path"))
+    assert getattr(lobed, inner) != getattr(lobed, inner.replace("path", "ring_path"))
+    plan = lobed.plan
+    _, _, front_ring, back_ring = mf.nine_paths(plan.clubhouse, plan.direction, 300, 400,
+                                                plan.outer_delta_deg, plan.inner_delta_deg,
+                                                pattern)
+    assert (lobed.front_ring_path, lobed.back_ring_path) == (tuple(front_ring), tuple(back_ring))

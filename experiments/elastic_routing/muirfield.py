@@ -128,6 +128,16 @@ TARGET_MODES = ("uniform", "irregular")
 TARGET_JITTER = 0.5                 # M1 : facteur de pas tiré dans [1 - a, 1 + a]
 WIDTH_STEP = 0.5                    # largeurs arrondies au demi-bloc
 
+# Round R2b M2 : chemin cible à lobes pour le SEUL nine intérieur. Paramètres
+# déclarés avant les mesures, à ne pas ajuster après coup.
+PATH_MODES = ("ring", "lobed")
+LOBE_ORDERS = (2, 3)                # nombre de lobes m, tiré uniformément par seed
+LOBE_OUT = 30.0                     # décalage radial max vers l'extérieur (blocs)
+LOBE_IN = 20.0                      # décalage radial max vers l'intérieur (blocs)
+LOBE_QUIET_DEG = 40.0               # aucun lobe à moins de 40° du clubhouse
+LOBE_FULL_DEG = 80.0                # lobes pleins au-delà de 80° (smoothstep entre)
+LOBE_MIN_RADIUS = 5.0               # rayon minimal du chemin à lobes (ValueError sinon)
+
 
 def hole_width_fractions(seed: int) -> dict[int, float]:
     """Round C1 : position seedée de chaque trou (ordre 1..18) dans la plage
@@ -223,6 +233,12 @@ class MuirfieldResult:
     requested_pattern: str = "muirfield"
     width_mode: str = "variable"
     target_mode: str = "uniform"
+    path_mode: str = "ring"
+    # chemins ANNEAU des deux nines (repère des ancrages) ; égaux à
+    # front_path / back_path en mode ``ring``
+    front_ring_path: tuple[Point, ...] = ()
+    back_ring_path: tuple[Point, ...] = ()
+    lobes: tuple[int, float] | None = None     # (m, φ) en mode ``lobed``
 
     @property
     def pattern(self) -> str:
@@ -331,6 +347,67 @@ def nine_paths(clubhouse: Point, direction: int, width: float = MAP_WIDTH,
     if outer_start(pattern) == 1:
         return outer, inner, outer_path, inner_path
     return outer, inner, inner_path, outer_path
+
+
+def lobe_parameters(seed: int) -> tuple[int, float]:
+    """Round R2b M2 : (m, φ) du chemin intérieur à lobes, tirés une seule
+    fois par seed sur le flux ``[seed, 41]`` (indépendants des relances et du
+    patron) : m uniforme dans ``LOBE_ORDERS``, φ uniforme dans [0, 2π)."""
+    rng = np.random.default_rng([seed, 41])
+    order = LOBE_ORDERS[int(rng.integers(len(LOBE_ORDERS)))]
+    return order, float(rng.uniform(0.0, 2.0 * math.pi))
+
+
+def lobe_envelope(theta, theta_ch: float) -> np.ndarray:
+    """Enveloppe g(θ) des lobes : 0 à moins de ``LOBE_QUIET_DEG`` du
+    clubhouse (écart angulaire |Δ(θ, θ_ch)| autour du centre), 1 au-delà de
+    ``LOBE_FULL_DEG``, smoothstep 3t² − 2t³ entre les deux."""
+    delta = np.abs((np.asarray(theta, dtype=float) - theta_ch + math.pi) % (2 * math.pi) - math.pi)
+    t = np.clip((np.degrees(delta) - LOBE_QUIET_DEG) / (LOBE_FULL_DEG - LOBE_QUIET_DEG), 0.0, 1.0)
+    return t * t * (3.0 - 2.0 * t)
+
+
+def lobe_offsets(theta, theta_ch: float, order: int, phase: float) -> np.ndarray:
+    """Décalage radial off(θ) = g(θ)·L(c)·c, c = cos(mθ + φ), L = ``LOBE_OUT``
+    si c > 0 (vers l'extérieur), ``LOBE_IN`` sinon (vers le centre)."""
+    c = np.cos(order * np.asarray(theta, dtype=float) + phase)
+    return lobe_envelope(theta, theta_ch) * np.where(c > 0.0, LOBE_OUT, LOBE_IN) * c
+
+
+def lobed_arc(theta_start: float, sweep: float, semi_x: float, semi_y: float, center: Point,
+              theta_ch: float, lobes: tuple[int, float], width: float, height: float
+              ) -> list[Point]:
+    """Arc de l'anneau (mêmes angles que ``ring_arc``) dont le rayon reçoit
+    le décalage ``lobe_offsets`` le long du rayon issu du centre.
+
+    ``ValueError`` si un rayon tombe sous ``LOBE_MIN_RADIUS`` ou si un point
+    sort de la carte : jamais de rognage silencieux."""
+    steps = max(2, int(abs(math.degrees(sweep)) / RING_STEP_DEG) + 1)
+    thetas = theta_start + np.linspace(0.0, sweep, steps)
+    radii = superellipse_radius(thetas, semi_x, semi_y) + lobe_offsets(thetas, theta_ch, *lobes)
+    if float(radii.min()) < LOBE_MIN_RADIUS:
+        raise ValueError(f"chemin à lobes : rayon {float(radii.min()):.1f} < {LOBE_MIN_RADIUS:g}")
+    xs = center[0] + radii * np.cos(thetas)
+    ys = center[1] + radii * np.sin(thetas)
+    if xs.min() < 0.0 or ys.min() < 0.0 or xs.max() > width or ys.max() > height:
+        raise ValueError(f"chemin à lobes hors de la carte {width:g}×{height:g}")
+    return [(float(x), float(y)) for x, y in zip(xs, ys)]
+
+
+def lobed_inner_path(clubhouse: Point, direction: int, width: float = MAP_WIDTH,
+                     height: float = MAP_HEIGHT, inner_delta_deg: float = START_ANGLES[0][1],
+                     lobes: tuple[int, float] = (LOBE_ORDERS[0], 0.0)) -> list[Point]:
+    """Chemin cible à lobes du nine intérieur : même départ, même balayage et
+    mêmes liaisons au clubhouse que le chemin intérieur de ``nine_paths`` ;
+    seul le rayon change (l'anneau reste le repère des ancrages)."""
+    center = (width / 2, height / 2)
+    theta_ch = math.atan2(clubhouse[1] - center[1], clubhouse[0] - center[0])
+    _, (ix, iy) = ring_semi_axes(width, height)
+    delta_b = math.radians(inner_delta_deg)
+    return [clubhouse, *lobed_arc(theta_ch - direction * delta_b,
+                                  -direction * (2 * math.pi - 2 * delta_b), ix, iy, center,
+                                  theta_ch, lobes, width, height),
+            clubhouse]
 
 
 @dataclass(frozen=True, slots=True)
@@ -1070,17 +1147,17 @@ def build_muirfield(seed: int, heightmap: np.ndarray | None = None, *,
                     width: float = MAP_WIDTH, height: float = MAP_HEIGHT,
                     rules: ValidationRules | None = None,
                     pattern: str = "muirfield", width_mode: str = "variable",
-                    target_mode: str = "uniform") -> MuirfieldResult:
+                    target_mode: str = "uniform", path_mode: str = "ring") -> MuirfieldResult:
     """Alias historique de ``build_course`` (patron ``muirfield`` par défaut)."""
     return build_course(seed, pattern, heightmap, width=width, height=height, rules=rules,
-                        width_mode=width_mode, target_mode=target_mode)
+                        width_mode=width_mode, target_mode=target_mode, path_mode=path_mode)
 
 
 def build_course(seed: int, pattern: str = "muirfield", heightmap: np.ndarray | None = None, *,
                  width: float = MAP_WIDTH, height: float = MAP_HEIGHT,
                  rules: ValidationRules | None = None,
                  width_mode: str = "variable",
-                 target_mode: str = "uniform") -> MuirfieldResult:
+                 target_mode: str = "uniform", path_mode: str = "ring") -> MuirfieldResult:
     """Parcours valide pour (seed, patron), ou ``MuirfieldRoutingError``.
 
     ``pattern`` est un paramètre explicite, au même titre que la seed :
@@ -1097,6 +1174,13 @@ def build_course(seed: int, pattern: str = "muirfield", heightmap: np.ndarray | 
     chaque pas multiplié par un facteur seedé (``target_jitter_factors``),
     total conservé.
 
+    ``path_mode`` : ``ring`` (défaut) — chemins cibles sur les anneaux ;
+    ``lobed`` (round R2b M2) — le chemin cible du SEUL nine intérieur
+    reçoit des lobes radiaux seedés (``lobe_parameters``,
+    ``lobed_inner_path``) ; il sert aux cibles des greens et au départage
+    des coudes. Anneaux, repère du clubhouse, couloir, cônes et capacité
+    des ancrages restent calculés sur l'anneau.
+
     Le résultat renvoyé a TOUJOURS zéro violation ``validate(layout, rules)`` ;
     les plages de liaison sont dérivées de ``rules`` (``link_bounds``)."""
     requested = pattern
@@ -1108,6 +1192,9 @@ def build_course(seed: int, pattern: str = "muirfield", heightmap: np.ndarray | 
         raise ValueError(f"target_mode inconnu : {target_mode!r} "
                          f"(attendu : {', '.join(TARGET_MODES)})")
     target_factors = target_jitter_factors(seed) if target_mode == "irregular" else None
+    if path_mode not in PATH_MODES:
+        raise ValueError(f"path_mode inconnu : {path_mode!r} (attendu : {', '.join(PATH_MODES)})")
+    lobes = lobe_parameters(seed) if path_mode == "lobed" else None
     started = time.perf_counter()
     timings: dict[str, float] = {}
     if heightmap is None:
@@ -1155,10 +1242,19 @@ def build_course(seed: int, pattern: str = "muirfield", heightmap: np.ndarray | 
                              "angle_index": indices[2], "status": "infaisable_ancrage",
                              "checks": 0, "nodes": 0})
             continue
-        outer, inner, front_path, back_path = nine_paths(
+        outer, inner, front_ring, back_ring = nine_paths(
             plan.clubhouse, plan.direction, width, height, plan.outer_delta_deg,
             plan.inner_delta_deg, pattern)
-        search = make_search(plan.edge, plan.clubhouse, front_path, back_path)
+        front_path, back_path = front_ring, back_ring
+        if lobes is not None:
+            lobed = lobed_inner_path(plan.clubhouse, plan.direction, width, height,
+                                     plan.inner_delta_deg, lobes)
+            if outer_start(pattern) == 1:
+                back_path = lobed
+            else:
+                front_path = lobed
+        # repère du clubhouse : chemin extérieur (identique dans les deux modes)
+        search = make_search(plan.edge, plan.clubhouse, front_ring, back_ring)
         routed = search.route_course(plan.front_pars, plan.back_pars, front_path, back_path)
         front, back = routed if routed is not None else (None, None)
         layout = violations = None
@@ -1200,6 +1296,7 @@ def build_course(seed: int, pattern: str = "muirfield", heightmap: np.ndarray | 
             front_path=tuple(front_path), back_path=tuple(back_path),
             attempts=tuple(attempts), elapsed_seconds=time.perf_counter() - started,
             timings=timings, requested_pattern=requested, width_mode=width_mode,
-            target_mode=target_mode,
+            target_mode=target_mode, path_mode=path_mode,
+            front_ring_path=tuple(front_ring), back_ring_path=tuple(back_ring), lobes=lobes,
         )
     raise MuirfieldRoutingError(seed, attempts)
