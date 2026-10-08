@@ -405,3 +405,42 @@ def test_check_rejects_link_distance():
     assert _partial().check(candidate, (too_short,)) == "link_distance"
     # minimum plus strict exigé pour une liaison du clubhouse
     assert _partial().check(candidate, (ok,), (35.0,)) == "link_distance"
+
+
+# -- round A2 : robustesse 300×400 -------------------------------------------
+
+def test_check_rejects_width_above_max_and_accepts_valid_width():
+    assert _partial().check(_hole(12, (100.0, 300.0), (200.0, 300.0), width=18.0), ()) == "width"
+    assert _partial().check(_hole(12, (100.0, 300.0), (200.0, 300.0), width=14.0), ()) is None
+
+
+def test_order_nine_respects_anchor_capacity():
+    rng = np.random.default_rng(3)
+    free = mf.order_nine(2, 3, np.random.default_rng(3))
+    assert mf.order_nine(2, 3, rng, first=frozenset((3, 4, 5)), last=frozenset((3, 4, 5))) == free
+    constrained = mf.order_nine(2, 3, np.random.default_rng(3), first=frozenset((4,)),
+                                last=frozenset((3, 4)))
+    assert constrained[0] == 4 and constrained[-1] in (3, 4)
+    assert mf.par_sequence_ok(constrained)
+    assert mf.order_nine(2, 3, np.random.default_rng(3), first=frozenset(),
+                         last=frozenset((4,))) is None
+
+
+def test_plan_not_tried_when_no_permutation_fits_the_cones():
+    nothing = {order: frozenset() for order in (1, 9, 10, 18)}
+    plans = list(mf.iter_plans(5, 300, 400, capacity=lambda edge, ch, direction: nothing))
+    assert len(plans) == mf.CLUBHOUSE_POSITIONS * mf.PAR_PERMUTATIONS * len(mf.START_ANGLES)
+    assert all(plan is None for _, plan in plans)
+    only_fours = {order: frozenset((4,)) for order in (1, 9, 10, 18)}
+    for _, plan in mf.iter_plans(5, 300, 400, capacity=lambda edge, ch, direction: only_fours):
+        assert plan is not None
+        assert (plan.front_pars[0], plan.front_pars[-1], plan.back_pars[0], plan.back_pars[-1]) == (4, 4, 4, 4)
+
+
+@pytest.mark.parametrize("seed", (8, 19, 25, 27, 28))
+def test_round_a_failures_now_route_cleanly(seed):
+    """Échecs du round A (300×400) : clubhouse sur bord court + par 5 au
+    trou 1 (19, 28), back bloqué vers 17/18 (8, 25, 27)."""
+    result = mf.build_muirfield(seed, width=300, height=400)
+    assert result.violations == ()
+    assert validate(result.layout, ValidationRules(width=300, height=400)) == []

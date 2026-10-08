@@ -6,7 +6,14 @@ Rounds disponibles (``--round``) :
 - ``ra`` : formats paysage 400×300 et 400×350, seeds 1–6 → ``ra_<w>x<h>/`` ;
 - ``ra-30`` : robustesse 300×400 sur les seeds 1–30 →
   ``ra_300x400_30seeds/`` (taux de réussite, relances, temps médian/p90/max,
-  planche 6×5 réduite).
+  planche 6×5 réduite) ;
+- ``ra2-30`` : idem après le round A2 → ``ra2_300x400_30seeds/`` ;
+- ``ra2-check`` : non-régression A2 sur 350×400, 400×300, 400×350 (seeds
+  1–6) → ``ra2_check_<w>x<h>/report.json`` (pas de planche).
+
+Les temps sont mesurés sur la machine qui exécute le runner (dépendants du
+matériel) : chronomètre unique autour de ``build_muirfield``, succès comme
+échecs, relief en cache exclu.
 
 Seuls ``planche.png`` et ``report.json`` sont versionnés ; les png/svg par
 seed sont régénérés localement (``.gitignore``).
@@ -54,7 +61,7 @@ def _percentile(values: list[float], q: float) -> float:
 
 def _run_format(width: int, height: int, *, seeds: tuple[int, ...] = SEEDS,
                 label: str = "r2", out_name: str | None = None, tile: str = "3x",
-                thumb: str | None = None) -> dict:
+                thumb: str | None = None, planche: bool = True) -> dict:
     out_dir = OUTPUT_ROOT / (out_name or f"{label}_{width}x{height}")
     out_dir.mkdir(parents=True, exist_ok=True)
     reports, pngs = [], []
@@ -62,9 +69,12 @@ def _run_format(width: int, height: int, *, seeds: tuple[int, ...] = SEEDS,
         t0 = time.perf_counter()
         heightmap = load_terrain(seed, width, height)
         terrain_seconds = time.perf_counter() - t0
+        # mesure homogène succès/échec : même chronomètre autour de
+        # build_muirfield (sites + recherche + oracle, relief en cache exclu)
         t1 = time.perf_counter()
         try:
             result = build_muirfield(seed, heightmap, width=width, height=height)
+            elapsed = time.perf_counter() - t1
         except MuirfieldRoutingError as error:
             elapsed = time.perf_counter() - t1
             stages = dict(sorted(Counter(a["status"] for a in error.attempts).items()))
@@ -84,7 +94,7 @@ def _run_format(width: int, height: int, *, seeds: tuple[int, ...] = SEEDS,
                    f"{result.clubhouse_edge} · front {side}"),
             subtitle=(f"front par {lengths['front']['par']} · {lengths['front']['total']:.0f} blocs  |  "
                       f"back par {lengths['back']['par']} · {lengths['back']['total']:.0f} blocs  |  "
-                      f"{result.relaunches} relance(s) · {result.elapsed_seconds * 1000:.0f} ms"),
+                      f"{result.relaunches} relance(s) · {elapsed * 1000:.0f} ms"),
         )
         svg_path = out_dir / f"seed_{seed}.svg"
         png_path = out_dir / f"seed_{seed}.png"
@@ -110,13 +120,13 @@ def _run_format(width: int, height: int, *, seeds: tuple[int, ...] = SEEDS,
             "relaunches": result.relaunches,
             "attempts": list(result.attempts),
             "terrain_seconds_cached_or_built": round(terrain_seconds, 3),
-            "elapsed_seconds": round(result.elapsed_seconds, 4),
+            "elapsed_seconds": round(elapsed, 4),
             "timings": {k: round(v, 4) for k, v in result.timings.items()},
         })
         print(f"{width}x{height} seed {seed}: {len(result.violations)} violation(s) {kinds} · "
               f"{result.relaunches} relance(s) · front {lengths['front']['total']:.0f} / back "
-              f"{lengths['back']['total']:.0f} blocs · {result.elapsed_seconds * 1000:.0f} ms")
-    if pngs:
+              f"{lengths['back']['total']:.0f} blocs · {elapsed * 1000:.0f} ms")
+    if pngs and planche:
         geometry = f"{thumb}+3+3" if thumb else "+6+6"
         # vignettes réduites en palette 8 bits : la planche des 30 seeds reste < 1 Mo
         target = f"PNG8:{out_dir / 'planche.png'}" if thumb else str(out_dir / "planche.png")
@@ -149,7 +159,8 @@ def _run_format(width: int, height: int, *, seeds: tuple[int, ...] = SEEDS,
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--round", choices=("r2", "ra", "ra-30"), default="r2")
+    parser.add_argument("--round", choices=("r2", "ra", "ra-30", "ra2-30", "ra2-check"),
+                        default="r2")
     args = parser.parse_args()
     if args.round == "r2":
         for width, height in FORMATS:
@@ -157,9 +168,16 @@ def main() -> None:
     elif args.round == "ra":
         for width, height in LANDSCAPE_FORMATS:
             _run_format(width, height, label="ra")
-    else:
+    elif args.round == "ra-30":
         _run_format(300, 400, seeds=ROBUSTNESS_SEEDS, label="ra",
                     out_name="ra_300x400_30seeds", tile="6x", thumb="340x")
+    elif args.round == "ra2-30":
+        _run_format(300, 400, seeds=ROBUSTNESS_SEEDS, label="ra2",
+                    out_name="ra2_300x400_30seeds", tile="6x", thumb="340x")
+    else:
+        for width, height in ((350, 400), *LANDSCAPE_FORMATS):
+            _run_format(width, height, label="ra2", out_name=f"ra2_check_{width}x{height}",
+                        planche=False)
 
 
 if __name__ == "__main__":
