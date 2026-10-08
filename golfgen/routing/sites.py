@@ -28,10 +28,9 @@ from golfgen.config import CourseConfig, TerrainConfig
 from golfgen.terrain import TerrainGenerator
 
 
-# Figé sur l'emplacement historique (spike experiments/elastic_routing) pour que
-# les runners retrouvent le relief déjà en cache ; la fusion avec le cache du
-# pipeline (output/.cache) viendra au round R2.
-CACHE_DIR = Path(__file__).resolve().parents[2] / "experiments" / "elastic_routing" / "output" / ".cache"
+# Sous-dossier dédié du cache du pipeline (output/.cache, ignoré par git) ;
+# la fusion complète avec le cache du pipeline viendra au round R2.
+CACHE_DIR = Path(__file__).resolve().parents[2] / "output" / ".cache" / "routing"
 
 WATER_LEVEL = 60.0             # sous ce niveau : eau (~1 % de la carte, seeds 1–3)
 GRID_STEP = 3.0                # pas de la grille fine de candidats
