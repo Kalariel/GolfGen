@@ -1330,8 +1330,11 @@ M3 n'a jamais été fusionné (code archivé dans le tag `archive/r2b-m3`).
   l'utilisateur : le code est retiré pour alléger la base. Il reste
   récupérable via les tags `archive/r2b-m1-m2` (0c521a1) et
   `archive/r2b-m3` (cec1e25). Les rounds `r2b1*` et `r2b2*` et leurs
-  sorties sont retirés avec lui. Le comportement par défaut est inchangé
-  (`rc-30`, `land-30` et `land` régénérés à l'identique).
+  sorties sont retirés avec lui. Le comportement par défaut est inchangé :
+  `rc-30`, `land-30` et `land` régénérés avec géométrie et statuts
+  identiques ; seuls les report.json de `land` gagnent les clés de
+  déduplication (`anchor_truncated`, `skipped`, `attempts_mean`) et les
+  planche.png changent de quelques octets.
 - **Acquis conservés :**
   - la déduplication des tentatives (30/30 en `rc-30` et `land-30` sur
     les deux patrons) ;
