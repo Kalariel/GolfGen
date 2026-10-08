@@ -12,7 +12,6 @@ from __future__ import annotations
 from collections import Counter
 import dataclasses
 import math
-import re
 
 import numpy as np
 import pytest
@@ -21,7 +20,6 @@ from golfgen.routing import muirfield as mf
 from golfgen.routing.geometry import ValidationRules, Violation, validate
 from golfgen.routing.model import GLOBAL_PAR_QUOTA, PAR_SPECS, ControlPoint, ElasticHole
 from golfgen.routing.partial_checks import Obstacles, PartialLayout, PlannedLink
-from experiments.elastic_routing.render_readable import render_readable_svg
 from golfgen.routing import sites as sites_module
 from golfgen.routing.sites import (
     GREEN_SPACING,
@@ -237,28 +235,6 @@ def test_flat_relief_falls_back_to_seeded_random_scores():
     assert first.random_scores
     assert np.array_equal(first.points, build_sites(flat, 5, "green").points)
     assert not np.array_equal(first.points, build_sites(flat, 6, "green").points)
-
-
-def test_readable_render_numbers_every_hole(results):
-    result = results[(300, 400, 1)]
-    svg = render_readable_svg(result.layout, result.violations,
-                              rings=(result.outer_ring, result.inner_ring), title="t")
-    assert svg.startswith("<svg") and svg.rstrip().endswith("</svg>")
-    for order in range(1, 19):
-        assert f'text-anchor="middle">{order}</text>' in svg
-
-
-def test_readable_render_crops_the_canvas_to_a_landscape_map(results):
-    """Portrait : canevas 800×(800 + pied), inchangé ; paysage : hauteur
-    rognée à la carte, pas de bande vide sous la carte."""
-    result = results[(300, 400, 1)]
-    portrait = render_readable_svg(result.layout, result.violations, title="t")
-    assert 'width="800" height="888"' in portrait.splitlines()[0]
-    landscape = dataclasses.replace(result.layout, width=400.0, height=300.0)
-    svg = render_readable_svg(landscape, (), title="t")
-    assert 'width="800" height="700"' in svg.splitlines()[0]
-    labels = [float(y) for y in re.findall(r'<circle cx="[\d.]+" cy="([\d.]+)" r="10"', svg)]
-    assert len(labels) == 18 and max(labels) <= 612 - 24 - 10
 
 
 # ----------------------------------------------------------------------

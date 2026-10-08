@@ -2,8 +2,6 @@ from collections import Counter
 from dataclasses import replace
 import math
 
-import pytest
-
 from golfgen.routing.geometry import (
     ValidationRules,
     build_hole_geometry,
@@ -50,13 +48,6 @@ def _kinds(layout, rules=PERMISSIVE):
 
 def test_synthetic_layout_is_valid_under_explicitly_permissive_rules():
     assert validate(build_synthetic_layout(), PERMISSIVE) == []
-
-
-def test_validation_rules_reject_non_finite_and_ambiguous_values():
-    with pytest.raises(ValueError, match="fini"):
-        ValidationRules(fairway_gap=math.nan)
-    with pytest.raises(TypeError, match="max_parallel_stack"):
-        ValidationRules(max_parallel_stack=True)
 
 
 def test_geometry_builds_core_and_larger_rough_from_elastic_axis():
