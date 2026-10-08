@@ -1,11 +1,70 @@
-"""Génération de terrain par Perlin noise (OpenSimplex)."""
+"""Génération de terrain par Perlin noise (OpenSimplex), et son cache disque."""
 
 from __future__ import annotations
+
+from dataclasses import asdict
+import hashlib
+import json
+import os
+from pathlib import Path
+import uuid
 
 import numpy as np
 import opensimplex
 
-from .config import CourseConfig
+from .config import CourseConfig, TerrainConfig
+
+
+# Cache unique du relief (pipeline et routeur Muirfield) : chemin absolu,
+# indépendant du répertoire courant ; ``output/.cache/`` est ignoré par git.
+TERRAIN_CACHE_DIR = Path(__file__).resolve().parents[1] / "output" / ".cache" / "terrain"
+TERRAIN_CACHE_VERSION = 1      # à incrémenter si TerrainGenerator change d'algorithme
+
+
+def terrain_cache_tag(terrain: TerrainConfig | None = None) -> str:
+    """Empreinte de la configuration de relief : version + hash de ``TerrainConfig``.
+    Toute modification des paramètres de relief invalide donc le cache."""
+    payload = json.dumps({"version": TERRAIN_CACHE_VERSION,
+                          "terrain": asdict(terrain or TerrainConfig())}, sort_keys=True)
+    return hashlib.sha1(payload.encode("utf-8")).hexdigest()[:12]
+
+
+def terrain_cache_path(config: CourseConfig, cache_dir: Path | None = None) -> Path:
+    """Fichier ``.npy`` du relief de ``config`` : seed, taille et ``terrain_cache_tag``."""
+    directory = Path(cache_dir) if cache_dir is not None else TERRAIN_CACHE_DIR
+    return directory / (f"terrain_s{config.seed}_{config.width}x{config.height}"
+                        f"_{terrain_cache_tag(config.terrain)}.npy")
+
+
+def load_or_generate(config: CourseConfig, cache_dir: Path | None = None) -> np.ndarray:
+    """Relief de ``TerrainGenerator(config).generate()``, mis en cache sur disque.
+
+    Seul point d'entrée du cache de relief, partagé par ``pipeline.py`` et le
+    routeur Muirfield. Le relief ne dépend que de la seed, de la taille et de
+    ``config.terrain`` : la clé (cf. ``terrain_cache_path``) couvre exactement
+    ces trois éléments. ``cache_dir`` vaut ``TERRAIN_CACHE_DIR`` par défaut.
+    L'écriture est atomique (fichier temporaire du même dossier puis
+    ``os.replace``) : un lecteur concurrent ne voit jamais un fichier partiel.
+
+    Returns:
+        np.ndarray float32 de shape (height, width), identique à
+        ``TerrainGenerator(config).generate()``.
+    """
+    path = terrain_cache_path(config, cache_dir)
+    if path.exists():
+        return np.load(path)
+    heightmap = TerrainGenerator(config).generate()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    # Nom unique ouvert en "xb" (et non mkstemp, en 0600) : droits usuels du umask.
+    tmp = path.with_name(f".{path.stem}.{os.getpid()}.{uuid.uuid4().hex}.tmp")
+    try:
+        with open(tmp, "xb") as handle:
+            np.save(handle, heightmap)
+        os.replace(tmp, path)
+    except BaseException:
+        tmp.unlink(missing_ok=True)
+        raise
+    return heightmap
 
 
 class TerrainGenerator:

@@ -3,8 +3,19 @@
 import numpy as np
 import pytest
 
-from golfgen.config import CourseConfig
-from golfgen.terrain import TerrainGenerator
+from pathlib import Path
+
+from golfgen.config import CourseConfig, TerrainConfig
+from golfgen import terrain as terrain_module
+from golfgen.terrain import (
+    TERRAIN_CACHE_DIR,
+    TerrainGenerator,
+    load_or_generate,
+    terrain_cache_path,
+    terrain_cache_tag,
+)
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 class TestTerrainShape:
@@ -95,3 +106,61 @@ class TestTerrainWaterMask:
     def test_land_above_threshold(self, heightmap):
         mask = TerrainGenerator.water_mask(heightmap, 61.0)
         assert heightmap[~mask].min() >= 61.0
+
+
+class TestDefaultConfig:
+    """``default_config.json`` (pipeline) et ``TerrainConfig()`` (runners) donnent le même relief."""
+
+    def test_default_config_terrain_equals_terrain_config(self):
+        config = CourseConfig.from_json(REPO_ROOT / "default_config.json")
+        assert config.terrain == TerrainConfig()
+        assert terrain_cache_tag(config.terrain) == terrain_cache_tag()
+
+
+class TestTerrainCache:
+    """Cache unique ``load_or_generate`` : clé, emplacement, égalité stricte."""
+
+    def test_default_dir_is_absolute_under_repo_output_cache(self):
+        assert TERRAIN_CACHE_DIR.is_absolute()
+        assert TERRAIN_CACHE_DIR == REPO_ROOT / "output" / ".cache" / "terrain"
+
+    def test_cache_key_tracks_terrain_config(self, tmp_path):
+        assert terrain_cache_tag() == terrain_cache_tag(TerrainConfig())
+        assert terrain_cache_tag() != terrain_cache_tag(TerrainConfig(octaves=5))
+        base = CourseConfig(width=40, height=30, seed=9)
+        other = CourseConfig(width=40, height=30, seed=9, terrain=TerrainConfig(octaves=5))
+        assert terrain_cache_path(base, tmp_path) != terrain_cache_path(other, tmp_path)
+        assert terrain_cache_path(base, tmp_path).name == f"terrain_s9_40x30_{terrain_cache_tag()}.npy"
+        assert terrain_cache_path(base).parent == TERRAIN_CACHE_DIR
+
+    @pytest.mark.parametrize("seed, width, height", [(42, 350, 350), (9, 40, 30), (3, 300, 400)])
+    def test_identical_to_generator(self, tmp_path, seed, width, height):
+        config = CourseConfig(width=width, height=height, seed=seed)
+        reference = TerrainGenerator(CourseConfig(width=width, height=height, seed=seed)).generate()
+        built = load_or_generate(config, tmp_path)
+        cached = load_or_generate(config, tmp_path)
+        for heightmap in (built, cached):
+            assert heightmap.dtype == reference.dtype == np.float32
+            assert np.array_equal(heightmap, reference)
+        assert [p.name for p in tmp_path.iterdir()] == [terrain_cache_path(config).name]
+
+    def test_cache_is_read_back(self, tmp_path, monkeypatch):
+        config = CourseConfig(width=40, height=30, seed=9)
+        first = load_or_generate(config, tmp_path)
+
+        def fail(self):
+            raise AssertionError("relief régénéré malgré le cache")
+
+        monkeypatch.setattr(terrain_module.TerrainGenerator, "generate", fail)
+        assert np.array_equal(load_or_generate(config, tmp_path), first)
+
+    def test_failed_write_leaves_no_file(self, tmp_path, monkeypatch):
+        config = CourseConfig(width=40, height=30, seed=9)
+
+        def broken_save(*args, **kwargs):
+            raise OSError("disque plein")
+
+        monkeypatch.setattr(terrain_module.np, "save", broken_save)
+        with pytest.raises(OSError):
+            load_or_generate(config, tmp_path)
+        assert list(tmp_path.iterdir()) == []
