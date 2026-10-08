@@ -58,6 +58,7 @@ from experiments.elastic_routing.muirfield import (
     outer_start,
 )
 from experiments.elastic_routing.render_readable import render_readable_svg
+from experiments.elastic_routing.shape_metrics import shape_metrics
 from experiments.elastic_routing.sites import WATER_LEVEL, load_terrain
 
 
@@ -76,6 +77,17 @@ def _percentile(values: list[float], q: float) -> float:
     low = int(rank)
     high = min(low + 1, len(ordered) - 1)
     return ordered[low] + (ordered[high] - ordered[low]) * (rank - low)
+
+
+def _shape_stats(reports: list[dict]) -> dict:
+    """Médiane, min et max des métriques de forme « course » sur les succès."""
+    stats = {}
+    for metric in ("angular_step_cv", "direction_entropy", "radial_alignment_R"):
+        values = [r["shape"]["course"][metric] for r in reports
+                  if r["status"] == "succes" and r["shape"]["course"][metric] is not None]
+        stats[metric] = ({"median": round(_percentile(values, 0.5), 4),
+                          "min": min(values), "max": max(values)} if values else None)
+    return stats
 
 
 # Rounds r2…rb : largeur minimale (``width_mode="min"``, défaut ici, pour
@@ -144,6 +156,7 @@ def _run_format(width: int, height: int, *, seeds: tuple[int, ...] = SEEDS,
             "nine_lengths": lengths,
             "hole_lengths": [round(h.length, 1) for h in result.layout.holes],
             "doglegs": sum(1 for h in result.layout.holes if h.doglegs),
+            "shape": shape_metrics(result.layout),
             "hole_widths": [h.width for h in result.layout.holes],
             "violations_total": len(result.violations),
             "violations_by_kind": kinds,
@@ -180,6 +193,7 @@ def _run_format(width: int, height: int, *, seeds: tuple[int, ...] = SEEDS,
             "seconds_p90": round(_percentile(times, 0.9), 3),
             "seconds_max": round(max(times), 3) if times else None,
             "seeds_over_2s": [r["seed"] for r in reports if r["elapsed_seconds"] > 2.0],
+            "shape_course": _shape_stats(reports),
         },
         "reports": reports,
     }

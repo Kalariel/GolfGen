@@ -196,7 +196,7 @@
       ],
       "clubhouse_edge": "N",
       "doglegs": 11,
-      "elapsed_seconds": 3.7762,
+      "elapsed_seconds": 3.8051,
       "hole_lengths": [
         147.0,
         49.0,
@@ -285,13 +285,30 @@
       },
       "relaunches": 9,
       "seed": 1,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.3317,
+          "direction_entropy": 0.7603,
+          "radial_alignment_R": 0.7707
+        },
+        "course": {
+          "angular_step_cv": 0.6432,
+          "direction_entropy": 0.9345,
+          "radial_alignment_R": 0.4549
+        },
+        "front": {
+          "angular_step_cv": 0.8838,
+          "direction_entropy": 0.6983,
+          "radial_alignment_R": 0.4934
+        }
+      },
       "status": "succes",
       "terrain_seconds_cached_or_built": 0.0,
       "timings": {
-        "routing": 3.6821,
-        "sites": 0.094,
+        "routing": 3.7093,
+        "sites": 0.0957,
         "terrain": 0.0,
-        "validate": 0.0125
+        "validate": 0.0126
       },
       "violations_by_kind": {},
       "violations_total": 0
@@ -491,7 +508,7 @@
       ],
       "clubhouse_edge": "E",
       "doglegs": 11,
-      "elapsed_seconds": 9.1273,
+      "elapsed_seconds": 9.1701,
       "hole_lengths": [
         102.0,
         102.0,
@@ -580,11 +597,28 @@
       },
       "relaunches": 9,
       "seed": 2,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.3438,
+          "direction_entropy": 0.8222,
+          "radial_alignment_R": 0.6324
+        },
+        "course": {
+          "angular_step_cv": 1.3789,
+          "direction_entropy": 0.8415,
+          "radial_alignment_R": 0.3157
+        },
+        "front": {
+          "angular_step_cv": 1.8824,
+          "direction_entropy": 0.6749,
+          "radial_alignment_R": 0.276
+        }
+      },
       "status": "succes",
       "terrain_seconds_cached_or_built": 0.0,
       "timings": {
-        "routing": 9.0317,
-        "sites": 0.0951,
+        "routing": 9.074,
+        "sites": 0.0957,
         "terrain": 0.0,
         "validate": 0.0126
       },
@@ -676,7 +710,7 @@
       ],
       "clubhouse_edge": "S",
       "doglegs": 7,
-      "elapsed_seconds": 13.7347,
+      "elapsed_seconds": 13.906,
       "hole_lengths": [
         147.0,
         64.6,
@@ -765,13 +799,30 @@
       },
       "relaunches": 3,
       "seed": 3,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.2289,
+          "direction_entropy": 0.6983,
+          "radial_alignment_R": 0.7799
+        },
+        "course": {
+          "angular_step_cv": 1.034,
+          "direction_entropy": 0.8374,
+          "radial_alignment_R": 0.3033
+        },
+        "front": {
+          "angular_step_cv": 1.466,
+          "direction_entropy": 0.6749,
+          "radial_alignment_R": 0.4136
+        }
+      },
       "status": "succes",
       "terrain_seconds_cached_or_built": 0.0,
       "timings": {
-        "routing": 13.6392,
-        "sites": 0.0951,
+        "routing": 13.8083,
+        "sites": 0.0973,
         "terrain": 0.0,
-        "validate": 0.0108
+        "validate": 0.0109
       },
       "violations_by_kind": {},
       "violations_total": 0
@@ -805,7 +856,7 @@
       ],
       "clubhouse_edge": "W",
       "doglegs": 12,
-      "elapsed_seconds": 0.661,
+      "elapsed_seconds": 0.6735,
       "hole_lengths": [
         102.0,
         60.6,
@@ -894,13 +945,30 @@
       },
       "relaunches": 0,
       "seed": 4,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.2636,
+          "direction_entropy": 0.6983,
+          "radial_alignment_R": 0.6315
+        },
+        "course": {
+          "angular_step_cv": 0.4684,
+          "direction_entropy": 0.8298,
+          "radial_alignment_R": 0.2839
+        },
+        "front": {
+          "angular_step_cv": 0.549,
+          "direction_entropy": 0.6749,
+          "radial_alignment_R": 0.1973
+        }
+      },
       "status": "succes",
       "terrain_seconds_cached_or_built": 0.0,
       "timings": {
-        "routing": 0.5647,
-        "sites": 0.0959,
+        "routing": 0.576,
+        "sites": 0.097,
         "terrain": 0.0,
-        "validate": 0.0128
+        "validate": 0.0129
       },
       "violations_by_kind": {},
       "violations_total": 0
@@ -992,7 +1060,7 @@
       ],
       "clubhouse_edge": "E",
       "doglegs": 10,
-      "elapsed_seconds": 4.7192,
+      "elapsed_seconds": 4.7643,
       "hole_lengths": [
         147.0,
         102.6,
@@ -1081,11 +1149,28 @@
       },
       "relaunches": 3,
       "seed": 5,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.2289,
+          "direction_entropy": 0.6129,
+          "radial_alignment_R": 0.7331
+        },
+        "course": {
+          "angular_step_cv": 1.3989,
+          "direction_entropy": 0.6942,
+          "radial_alignment_R": 0.3818
+        },
+        "front": {
+          "angular_step_cv": 2.5106,
+          "direction_entropy": 0.5123,
+          "radial_alignment_R": 0.1082
+        }
+      },
       "status": "succes",
       "terrain_seconds_cached_or_built": 0.0,
       "timings": {
-        "routing": 4.6254,
-        "sites": 0.0933,
+        "routing": 4.6677,
+        "sites": 0.0961,
         "terrain": 0.0,
         "validate": 0.0121
       },
@@ -1141,7 +1226,7 @@
       ],
       "clubhouse_edge": "W",
       "doglegs": 10,
-      "elapsed_seconds": 3.5334,
+      "elapsed_seconds": 3.5596,
       "hole_lengths": [
         147.0,
         102.0,
@@ -1230,13 +1315,30 @@
       },
       "relaunches": 1,
       "seed": 6,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.215,
+          "direction_entropy": 0.6749,
+          "radial_alignment_R": 0.5916
+        },
+        "course": {
+          "angular_step_cv": 1.7701,
+          "direction_entropy": 0.7795,
+          "radial_alignment_R": 0.499
+        },
+        "front": {
+          "angular_step_cv": 4.0,
+          "direction_entropy": 0.5743,
+          "radial_alignment_R": 0.4149
+        }
+      },
       "status": "succes",
       "terrain_seconds_cached_or_built": 0.0,
       "timings": {
-        "routing": 3.4375,
-        "sites": 0.0954,
+        "routing": 3.4631,
+        "sites": 0.0961,
         "terrain": 0.0,
-        "validate": 0.0122
+        "validate": 0.0123
       },
       "violations_by_kind": {},
       "violations_total": 0
@@ -1270,7 +1372,7 @@
       ],
       "clubhouse_edge": "N",
       "doglegs": 12,
-      "elapsed_seconds": 0.3158,
+      "elapsed_seconds": 0.322,
       "hole_lengths": [
         102.0,
         102.0,
@@ -1359,11 +1461,28 @@
       },
       "relaunches": 0,
       "seed": 7,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.4917,
+          "direction_entropy": 0.7603,
+          "radial_alignment_R": 0.6803
+        },
+        "course": {
+          "angular_step_cv": 0.552,
+          "direction_entropy": 0.8298,
+          "radial_alignment_R": 0.3363
+        },
+        "front": {
+          "angular_step_cv": 0.598,
+          "direction_entropy": 0.6983,
+          "radial_alignment_R": 0.0278
+        }
+      },
       "status": "succes",
       "terrain_seconds_cached_or_built": 0.0,
       "timings": {
-        "routing": 0.221,
-        "sites": 0.0943,
+        "routing": 0.2264,
+        "sites": 0.0952,
         "terrain": 0.0,
         "validate": 0.0129
       },
@@ -1398,7 +1517,7 @@
       ],
       "clubhouse_edge": "W",
       "doglegs": 7,
-      "elapsed_seconds": 0.252,
+      "elapsed_seconds": 0.2532,
       "hole_lengths": [
         147.0,
         58.4,
@@ -1487,11 +1606,28 @@
       },
       "relaunches": 0,
       "seed": 8,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.4315,
+          "direction_entropy": 0.7603,
+          "radial_alignment_R": 0.5358
+        },
+        "course": {
+          "angular_step_cv": 1.2238,
+          "direction_entropy": 0.9228,
+          "radial_alignment_R": 0.3556
+        },
+        "front": {
+          "angular_step_cv": 1.8536,
+          "direction_entropy": 0.7603,
+          "radial_alignment_R": 0.182
+        }
+      },
       "status": "succes",
       "terrain_seconds_cached_or_built": 0.0,
       "timings": {
-        "routing": 0.1572,
-        "sites": 0.0944,
+        "routing": 0.1578,
+        "sites": 0.0949,
         "terrain": 0.0,
         "validate": 0.0108
       },
@@ -1546,7 +1682,7 @@
       ],
       "clubhouse_edge": "S",
       "doglegs": 9,
-      "elapsed_seconds": 0.5089,
+      "elapsed_seconds": 0.5096,
       "hole_lengths": [
         147.0,
         102.0,
@@ -1635,11 +1771,28 @@
       },
       "relaunches": 1,
       "seed": 9,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.3214,
+          "direction_entropy": 0.7603,
+          "radial_alignment_R": 0.5496
+        },
+        "course": {
+          "angular_step_cv": 0.93,
+          "direction_entropy": 0.9035,
+          "radial_alignment_R": 0.1999
+        },
+        "front": {
+          "angular_step_cv": 1.327,
+          "direction_entropy": 0.7603,
+          "radial_alignment_R": 0.3293
+        }
+      },
       "status": "succes",
       "terrain_seconds_cached_or_built": 0.0,
       "timings": {
-        "routing": 0.4132,
-        "sites": 0.0951,
+        "routing": 0.4131,
+        "sites": 0.0959,
         "terrain": 0.0,
         "validate": 0.0118
       },
@@ -1674,7 +1827,7 @@
       ],
       "clubhouse_edge": "E",
       "doglegs": 11,
-      "elapsed_seconds": 1.4015,
+      "elapsed_seconds": 1.4611,
       "hole_lengths": [
         102.0,
         47.7,
@@ -1763,13 +1916,30 @@
       },
       "relaunches": 0,
       "seed": 10,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.3455,
+          "direction_entropy": 0.6129,
+          "radial_alignment_R": 0.5536
+        },
+        "course": {
+          "angular_step_cv": 2.8073,
+          "direction_entropy": 0.8283,
+          "radial_alignment_R": 0.3605
+        },
+        "front": {
+          "angular_step_cv": 19.5274,
+          "direction_entropy": 0.7603,
+          "radial_alignment_R": 0.3419
+        }
+      },
       "status": "succes",
       "terrain_seconds_cached_or_built": 0.0,
       "timings": {
-        "routing": 1.3076,
-        "sites": 0.0934,
+        "routing": 1.3647,
+        "sites": 0.096,
         "terrain": 0.0,
-        "validate": 0.0125
+        "validate": 0.0132
       },
       "violations_by_kind": {},
       "violations_total": 0
@@ -1972,7 +2142,7 @@
       ],
       "clubhouse_edge": "S",
       "doglegs": 11,
-      "elapsed_seconds": 2.7094,
+      "elapsed_seconds": 2.7187,
       "hole_lengths": [
         147.0,
         102.0,
@@ -2061,13 +2231,30 @@
       },
       "relaunches": 9,
       "seed": 11,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.3815,
+          "direction_entropy": 0.6983,
+          "radial_alignment_R": 0.6741
+        },
+        "course": {
+          "angular_step_cv": 0.8398,
+          "direction_entropy": 0.8181,
+          "radial_alignment_R": 0.3868
+        },
+        "front": {
+          "angular_step_cv": 1.1383,
+          "direction_entropy": 0.7369,
+          "radial_alignment_R": 0.1584
+        }
+      },
       "status": "succes",
       "terrain_seconds_cached_or_built": 0.0,
       "timings": {
-        "routing": 2.6148,
-        "sites": 0.0941,
+        "routing": 2.6228,
+        "sites": 0.0954,
         "terrain": 0.0,
-        "validate": 0.0123
+        "validate": 0.0125
       },
       "violations_by_kind": {},
       "violations_total": 0
@@ -2124,7 +2311,7 @@
       ],
       "clubhouse_edge": "E",
       "doglegs": 9,
-      "elapsed_seconds": 0.8522,
+      "elapsed_seconds": 0.8569,
       "hole_lengths": [
         147.0,
         55.6,
@@ -2213,13 +2400,30 @@
       },
       "relaunches": 1,
       "seed": 12,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.3375,
+          "direction_entropy": 0.6363,
+          "radial_alignment_R": 0.6544
+        },
+        "course": {
+          "angular_step_cv": 1.2719,
+          "direction_entropy": 0.8222,
+          "radial_alignment_R": 0.5654
+        },
+        "front": {
+          "angular_step_cv": 1.7961,
+          "direction_entropy": 0.6363,
+          "radial_alignment_R": 0.522
+        }
+      },
       "status": "succes",
       "terrain_seconds_cached_or_built": 0.0,
       "timings": {
-        "routing": 0.7593,
-        "sites": 0.0925,
+        "routing": 0.7635,
+        "sites": 0.093,
         "terrain": 0.0,
-        "validate": 0.0114
+        "validate": 0.0117
       },
       "violations_by_kind": {},
       "violations_total": 0
@@ -2253,7 +2457,7 @@
       ],
       "clubhouse_edge": "S",
       "doglegs": 10,
-      "elapsed_seconds": 3.3828,
+      "elapsed_seconds": 3.4159,
       "hole_lengths": [
         102.0,
         102.0,
@@ -2342,13 +2546,30 @@
       },
       "relaunches": 0,
       "seed": 13,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.2944,
+          "direction_entropy": 0.7603,
+          "radial_alignment_R": 0.5772
+        },
+        "course": {
+          "angular_step_cv": 0.4355,
+          "direction_entropy": 0.9345,
+          "radial_alignment_R": 0.2421
+        },
+        "front": {
+          "angular_step_cv": 0.5394,
+          "direction_entropy": 0.8222,
+          "radial_alignment_R": 0.1706
+        }
+      },
       "status": "succes",
       "terrain_seconds_cached_or_built": 0.0,
       "timings": {
-        "routing": 3.2899,
-        "sites": 0.0925,
+        "routing": 3.3225,
+        "sites": 0.093,
         "terrain": 0.0,
-        "validate": 0.0123
+        "validate": 0.0119
       },
       "violations_by_kind": {},
       "violations_total": 0
@@ -2460,7 +2681,7 @@
       ],
       "clubhouse_edge": "N",
       "doglegs": 14,
-      "elapsed_seconds": 16.3569,
+      "elapsed_seconds": 16.4926,
       "hole_lengths": [
         102.0,
         47.0,
@@ -2549,13 +2770,30 @@
       },
       "relaunches": 4,
       "seed": 14,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.4016,
+          "direction_entropy": 0.7603,
+          "radial_alignment_R": 0.6045
+        },
+        "course": {
+          "angular_step_cv": 1.4306,
+          "direction_entropy": 0.8222,
+          "radial_alignment_R": 0.4626
+        },
+        "front": {
+          "angular_step_cv": 1.9573,
+          "direction_entropy": 0.6749,
+          "radial_alignment_R": 0.4133
+        }
+      },
       "status": "succes",
       "terrain_seconds_cached_or_built": 0.0,
       "timings": {
-        "routing": 16.2636,
-        "sites": 0.0928,
+        "routing": 16.3981,
+        "sites": 0.094,
         "terrain": 0.0,
-        "validate": 0.0139
+        "validate": 0.0137
       },
       "violations_by_kind": {},
       "violations_total": 0
@@ -2625,7 +2863,7 @@
       ],
       "clubhouse_edge": "S",
       "doglegs": 11,
-      "elapsed_seconds": 4.033,
+      "elapsed_seconds": 4.095,
       "hole_lengths": [
         102.0,
         147.0,
@@ -2714,13 +2952,30 @@
       },
       "relaunches": 2,
       "seed": 15,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.3426,
+          "direction_entropy": 0.6749,
+          "radial_alignment_R": 0.5784
+        },
+        "course": {
+          "angular_step_cv": 0.8704,
+          "direction_entropy": 0.7856,
+          "radial_alignment_R": 0.2443
+        },
+        "front": {
+          "angular_step_cv": 1.1605,
+          "direction_entropy": 0.7603,
+          "radial_alignment_R": 0.0966
+        }
+      },
       "status": "succes",
       "terrain_seconds_cached_or_built": 0.0,
       "timings": {
-        "routing": 3.9387,
-        "sites": 0.0939,
+        "routing": 3.9992,
+        "sites": 0.0953,
         "terrain": 0.0,
-        "validate": 0.0126
+        "validate": 0.0127
       },
       "violations_by_kind": {},
       "violations_total": 0
@@ -2925,7 +3180,7 @@
       ],
       "clubhouse_edge": "S",
       "doglegs": 9,
-      "elapsed_seconds": 3.935,
+      "elapsed_seconds": 3.9657,
       "hole_lengths": [
         102.0,
         147.0,
@@ -3014,13 +3269,30 @@
       },
       "relaunches": 9,
       "seed": 16,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.2505,
+          "direction_entropy": 0.7369,
+          "radial_alignment_R": 0.4827
+        },
+        "course": {
+          "angular_step_cv": 1.4226,
+          "direction_entropy": 0.8166,
+          "radial_alignment_R": 0.2554
+        },
+        "front": {
+          "angular_step_cv": 1.9896,
+          "direction_entropy": 0.6129,
+          "radial_alignment_R": 0.1714
+        }
+      },
       "status": "succes",
-      "terrain_seconds_cached_or_built": 0.001,
+      "terrain_seconds_cached_or_built": 0.0,
       "timings": {
-        "routing": 3.8405,
-        "sites": 0.0941,
+        "routing": 3.8714,
+        "sites": 0.0938,
         "terrain": 0.0,
-        "validate": 0.0117
+        "validate": 0.0116
       },
       "violations_by_kind": {},
       "violations_total": 0
@@ -3242,7 +3514,7 @@
       ],
       "clubhouse_edge": "S",
       "doglegs": 11,
-      "elapsed_seconds": 3.9517,
+      "elapsed_seconds": 3.9915,
       "hole_lengths": [
         147.0,
         102.0,
@@ -3331,13 +3603,30 @@
       },
       "relaunches": 11,
       "seed": 17,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.4154,
+          "direction_entropy": 0.7603,
+          "radial_alignment_R": 0.4233
+        },
+        "course": {
+          "angular_step_cv": 0.6879,
+          "direction_entropy": 0.8801,
+          "radial_alignment_R": 0.2418
+        },
+        "front": {
+          "angular_step_cv": 0.8905,
+          "direction_entropy": 0.8222,
+          "radial_alignment_R": 0.3545
+        }
+      },
       "status": "succes",
       "terrain_seconds_cached_or_built": 0.0,
       "timings": {
-        "routing": 3.857,
-        "sites": 0.0943,
+        "routing": 3.8969,
+        "sites": 0.0942,
         "terrain": 0.0,
-        "validate": 0.0124
+        "validate": 0.0126
       },
       "violations_by_kind": {},
       "violations_total": 0
@@ -3615,7 +3904,7 @@
       ],
       "clubhouse_edge": "N",
       "doglegs": 14,
-      "elapsed_seconds": 5.3712,
+      "elapsed_seconds": 5.3806,
       "hole_lengths": [
         102.0,
         147.0,
@@ -3704,13 +3993,30 @@
       },
       "relaunches": 13,
       "seed": 18,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.3966,
+          "direction_entropy": 0.8222,
+          "radial_alignment_R": 0.719
+        },
+        "course": {
+          "angular_step_cv": 1.006,
+          "direction_entropy": 0.8725,
+          "radial_alignment_R": 0.5988
+        },
+        "front": {
+          "angular_step_cv": 1.318,
+          "direction_entropy": 0.7369,
+          "radial_alignment_R": 0.5236
+        }
+      },
       "status": "succes",
       "terrain_seconds_cached_or_built": 0.0,
       "timings": {
-        "routing": 5.2764,
-        "sites": 0.0944,
+        "routing": 5.2878,
+        "sites": 0.0924,
         "terrain": 0.0,
-        "validate": 0.0139
+        "validate": 0.0137
       },
       "violations_by_kind": {},
       "violations_total": 0
@@ -3800,7 +4106,7 @@
       ],
       "clubhouse_edge": "N",
       "doglegs": 9,
-      "elapsed_seconds": 11.7681,
+      "elapsed_seconds": 11.8676,
       "hole_lengths": [
         147.0,
         102.0,
@@ -3889,13 +4195,30 @@
       },
       "relaunches": 3,
       "seed": 19,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.3451,
+          "direction_entropy": 0.8222,
+          "radial_alignment_R": 0.5912
+        },
+        "course": {
+          "angular_step_cv": 0.8972,
+          "direction_entropy": 0.8801,
+          "radial_alignment_R": 0.335
+        },
+        "front": {
+          "angular_step_cv": 1.2216,
+          "direction_entropy": 0.7603,
+          "radial_alignment_R": 0.0892
+        }
+      },
       "status": "succes",
       "terrain_seconds_cached_or_built": 0.0,
       "timings": {
-        "routing": 11.6732,
+        "routing": 11.7727,
         "sites": 0.0944,
         "terrain": 0.0,
-        "validate": 0.0117
+        "validate": 0.0119
       },
       "violations_by_kind": {},
       "violations_total": 0
@@ -3929,7 +4252,7 @@
       ],
       "clubhouse_edge": "N",
       "doglegs": 11,
-      "elapsed_seconds": 1.9037,
+      "elapsed_seconds": 1.917,
       "hole_lengths": [
         147.0,
         47.0,
@@ -4018,11 +4341,28 @@
       },
       "relaunches": 0,
       "seed": 20,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.3034,
+          "direction_entropy": 0.7603,
+          "radial_alignment_R": 0.6617
+        },
+        "course": {
+          "angular_step_cv": 0.7815,
+          "direction_entropy": 0.8491,
+          "radial_alignment_R": 0.3425
+        },
+        "front": {
+          "angular_step_cv": 1.0891,
+          "direction_entropy": 0.6749,
+          "radial_alignment_R": 0.0642
+        }
+      },
       "status": "succes",
       "terrain_seconds_cached_or_built": 0.0,
       "timings": {
-        "routing": 1.8096,
-        "sites": 0.0936,
+        "routing": 1.8223,
+        "sites": 0.0943,
         "terrain": 0.0,
         "validate": 0.0125
       },
@@ -4058,7 +4398,7 @@
       ],
       "clubhouse_edge": "W",
       "doglegs": 12,
-      "elapsed_seconds": 0.3166,
+      "elapsed_seconds": 0.3142,
       "hole_lengths": [
         102.0,
         102.0,
@@ -4147,13 +4487,30 @@
       },
       "relaunches": 0,
       "seed": 21,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.3521,
+          "direction_entropy": 0.6983,
+          "radial_alignment_R": 0.5539
+        },
+        "course": {
+          "angular_step_cv": 1.2327,
+          "direction_entropy": 0.8415,
+          "radial_alignment_R": 0.3052
+        },
+        "front": {
+          "angular_step_cv": 1.6859,
+          "direction_entropy": 0.5743,
+          "radial_alignment_R": 0.1147
+        }
+      },
       "status": "succes",
       "terrain_seconds_cached_or_built": 0.0,
       "timings": {
-        "routing": 0.2207,
-        "sites": 0.0954,
+        "routing": 0.2201,
+        "sites": 0.0937,
         "terrain": 0.0,
-        "validate": 0.0131
+        "validate": 0.013
       },
       "violations_by_kind": {},
       "violations_total": 0
@@ -4187,7 +4544,7 @@
       ],
       "clubhouse_edge": "W",
       "doglegs": 8,
-      "elapsed_seconds": 1.258,
+      "elapsed_seconds": 1.2602,
       "hole_lengths": [
         100.6,
         102.0,
@@ -4276,11 +4633,28 @@
       },
       "relaunches": 0,
       "seed": 22,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.265,
+          "direction_entropy": 0.8222,
+          "radial_alignment_R": 0.6311
+        },
+        "course": {
+          "angular_step_cv": 0.7413,
+          "direction_entropy": 0.9228,
+          "radial_alignment_R": 0.3409
+        },
+        "front": {
+          "angular_step_cv": 0.9563,
+          "direction_entropy": 0.6983,
+          "radial_alignment_R": 0.1555
+        }
+      },
       "status": "succes",
       "terrain_seconds_cached_or_built": 0.0,
       "timings": {
-        "routing": 1.1633,
-        "sites": 0.0942,
+        "routing": 1.1643,
+        "sites": 0.0954,
         "terrain": 0.0,
         "validate": 0.0112
       },
@@ -4315,7 +4689,7 @@
       ],
       "clubhouse_edge": "N",
       "doglegs": 11,
-      "elapsed_seconds": 1.3573,
+      "elapsed_seconds": 1.3635,
       "hole_lengths": [
         147.0,
         52.1,
@@ -4404,13 +4778,30 @@
       },
       "relaunches": 0,
       "seed": 23,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.2486,
+          "direction_entropy": 0.6749,
+          "radial_alignment_R": 0.4732
+        },
+        "course": {
+          "angular_step_cv": 1.331,
+          "direction_entropy": 0.7856,
+          "radial_alignment_R": 0.4662
+        },
+        "front": {
+          "angular_step_cv": 1.9075,
+          "direction_entropy": 0.6363,
+          "radial_alignment_R": 0.4714
+        }
+      },
       "status": "succes",
       "terrain_seconds_cached_or_built": 0.0,
       "timings": {
-        "routing": 1.263,
-        "sites": 0.0938,
+        "routing": 1.2689,
+        "sites": 0.0942,
         "terrain": 0.0,
-        "validate": 0.0127
+        "validate": 0.0126
       },
       "violations_by_kind": {},
       "violations_total": 0
@@ -4443,7 +4834,7 @@
       ],
       "clubhouse_edge": "S",
       "doglegs": 8,
-      "elapsed_seconds": 0.8318,
+      "elapsed_seconds": 0.8283,
       "hole_lengths": [
         102.0,
         102.0,
@@ -4532,11 +4923,28 @@
       },
       "relaunches": 0,
       "seed": 24,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.2748,
+          "direction_entropy": 0.7603,
+          "radial_alignment_R": 0.5009
+        },
+        "course": {
+          "angular_step_cv": 0.8579,
+          "direction_entropy": 0.8918,
+          "radial_alignment_R": 0.1483
+        },
+        "front": {
+          "angular_step_cv": 1.1198,
+          "direction_entropy": 0.7369,
+          "radial_alignment_R": 0.2168
+        }
+      },
       "status": "succes",
       "terrain_seconds_cached_or_built": 0.0,
       "timings": {
-        "routing": 0.7405,
-        "sites": 0.0908,
+        "routing": 0.733,
+        "sites": 0.0949,
         "terrain": 0.0,
         "validate": 0.0112
       },
@@ -4573,7 +4981,7 @@
       ],
       "clubhouse_edge": "E",
       "doglegs": 10,
-      "elapsed_seconds": 0.5619,
+      "elapsed_seconds": 0.5581,
       "hole_lengths": [
         102.0,
         102.0,
@@ -4662,13 +5070,30 @@
       },
       "relaunches": 0,
       "seed": 25,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.329,
+          "direction_entropy": 0.8222,
+          "radial_alignment_R": 0.5742
+        },
+        "course": {
+          "angular_step_cv": 0.7205,
+          "direction_entropy": 0.8918,
+          "radial_alignment_R": 0.2935
+        },
+        "front": {
+          "angular_step_cv": 0.9246,
+          "direction_entropy": 0.6983,
+          "radial_alignment_R": 0.2898
+        }
+      },
       "status": "succes",
-      "terrain_seconds_cached_or_built": 0.001,
+      "terrain_seconds_cached_or_built": 0.0,
       "timings": {
-        "routing": 0.4649,
-        "sites": 0.0965,
+        "routing": 0.4625,
+        "sites": 0.0952,
         "terrain": 0.0,
-        "validate": 0.0121
+        "validate": 0.012
       },
       "violations_by_kind": {},
       "violations_total": 0
@@ -4701,7 +5126,7 @@
       ],
       "clubhouse_edge": "S",
       "doglegs": 12,
-      "elapsed_seconds": 1.6379,
+      "elapsed_seconds": 1.6383,
       "hole_lengths": [
         102.0,
         102.0,
@@ -4790,11 +5215,28 @@
       },
       "relaunches": 0,
       "seed": 26,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.3314,
+          "direction_entropy": 0.8222,
+          "radial_alignment_R": 0.7653
+        },
+        "course": {
+          "angular_step_cv": 1.38,
+          "direction_entropy": 0.8374,
+          "radial_alignment_R": 0.4533
+        },
+        "front": {
+          "angular_step_cv": 1.8771,
+          "direction_entropy": 0.6983,
+          "radial_alignment_R": 0.1414
+        }
+      },
       "status": "succes",
       "terrain_seconds_cached_or_built": 0.0,
       "timings": {
-        "routing": 1.5426,
-        "sites": 0.0948,
+        "routing": 1.5431,
+        "sites": 0.0947,
         "terrain": 0.0,
         "validate": 0.0131
       },
@@ -4829,7 +5271,7 @@
       ],
       "clubhouse_edge": "S",
       "doglegs": 13,
-      "elapsed_seconds": 0.3088,
+      "elapsed_seconds": 0.3079,
       "hole_lengths": [
         102.0,
         47.0,
@@ -4918,13 +5360,30 @@
       },
       "relaunches": 0,
       "seed": 27,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.3165,
+          "direction_entropy": 0.7369,
+          "radial_alignment_R": 0.6461
+        },
+        "course": {
+          "angular_step_cv": 0.6553,
+          "direction_entropy": 0.8491,
+          "radial_alignment_R": 0.196
+        },
+        "front": {
+          "angular_step_cv": 0.8506,
+          "direction_entropy": 0.6983,
+          "radial_alignment_R": 0.5002
+        }
+      },
       "status": "succes",
       "terrain_seconds_cached_or_built": 0.0,
       "timings": {
-        "routing": 0.2149,
-        "sites": 0.0934,
+        "routing": 0.2144,
+        "sites": 0.093,
         "terrain": 0.0,
-        "validate": 0.0135
+        "validate": 0.0134
       },
       "violations_by_kind": {},
       "violations_total": 0
@@ -5015,7 +5474,7 @@
       ],
       "clubhouse_edge": "N",
       "doglegs": 12,
-      "elapsed_seconds": 8.1173,
+      "elapsed_seconds": 8.1625,
       "hole_lengths": [
         147.0,
         102.0,
@@ -5104,11 +5563,28 @@
       },
       "relaunches": 3,
       "seed": 28,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.3339,
+          "direction_entropy": 0.6983,
+          "radial_alignment_R": 0.6325
+        },
+        "course": {
+          "angular_step_cv": 1.2702,
+          "direction_entropy": 0.7562,
+          "radial_alignment_R": 0.2428
+        },
+        "front": {
+          "angular_step_cv": 1.7613,
+          "direction_entropy": 0.5743,
+          "radial_alignment_R": 0.5875
+        }
+      },
       "status": "succes",
       "terrain_seconds_cached_or_built": 0.0,
       "timings": {
-        "routing": 8.022,
-        "sites": 0.0948,
+        "routing": 8.0692,
+        "sites": 0.0929,
         "terrain": 0.0,
         "validate": 0.0128
       },
@@ -5364,7 +5840,7 @@
       ],
       "clubhouse_edge": "S",
       "doglegs": 10,
-      "elapsed_seconds": 2.1041,
+      "elapsed_seconds": 2.1178,
       "hole_lengths": [
         102.0,
         102.0,
@@ -5453,13 +5929,30 @@
       },
       "relaunches": 12,
       "seed": 29,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.3539,
+          "direction_entropy": 0.6983,
+          "radial_alignment_R": 0.5285
+        },
+        "course": {
+          "angular_step_cv": 0.7691,
+          "direction_entropy": 0.7739,
+          "radial_alignment_R": 0.2047
+        },
+        "front": {
+          "angular_step_cv": 0.9881,
+          "direction_entropy": 0.6129,
+          "radial_alignment_R": 0.5443
+        }
+      },
       "status": "succes",
       "terrain_seconds_cached_or_built": 0.0,
       "timings": {
-        "routing": 2.0101,
-        "sites": 0.0935,
+        "routing": 2.0234,
+        "sites": 0.094,
         "terrain": 0.0,
-        "validate": 0.012
+        "validate": 0.0124
       },
       "violations_by_kind": {},
       "violations_total": 0
@@ -5698,7 +6191,7 @@
       ],
       "clubhouse_edge": "W",
       "doglegs": 9,
-      "elapsed_seconds": 18.0379,
+      "elapsed_seconds": 18.1906,
       "hole_lengths": [
         147.0,
         102.0,
@@ -5787,13 +6280,30 @@
       },
       "relaunches": 16,
       "seed": 30,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.2688,
+          "direction_entropy": 0.7603,
+          "radial_alignment_R": 0.5271
+        },
+        "course": {
+          "angular_step_cv": 1.0815,
+          "direction_entropy": 0.7988,
+          "radial_alignment_R": 0.4061
+        },
+        "front": {
+          "angular_step_cv": 1.7085,
+          "direction_entropy": 0.6129,
+          "radial_alignment_R": 0.3032
+        }
+      },
       "status": "succes",
       "terrain_seconds_cached_or_built": 0.0,
       "timings": {
-        "routing": 17.9438,
-        "sites": 0.0937,
+        "routing": 18.0953,
+        "sites": 0.0948,
         "terrain": 0.0,
-        "validate": 0.012
+        "validate": 0.0116
       },
       "violations_by_kind": {},
       "violations_total": 0
@@ -5835,9 +6345,9 @@
   "stats": {
     "failures": [],
     "relaunches_total": 109,
-    "seconds_max": 18.038,
-    "seconds_median": 2.407,
-    "seconds_p90": 11.965,
+    "seconds_max": 18.191,
+    "seconds_median": 2.418,
+    "seconds_p90": 12.071,
     "seeds_over_2s": [
       1,
       2,
@@ -5856,6 +6366,23 @@
       29,
       30
     ],
+    "shape_course": {
+      "angular_step_cv": {
+        "max": 2.8073,
+        "median": 0.968,
+        "min": 0.4355
+      },
+      "direction_entropy": {
+        "max": 0.9345,
+        "median": 0.8374,
+        "min": 0.6942
+      },
+      "radial_alignment_R": {
+        "max": 0.5988,
+        "median": 0.3357,
+        "min": 0.1483
+      }
+    },
     "successes": 30,
     "violations_total": 0
   },
