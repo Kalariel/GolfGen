@@ -53,7 +53,7 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import dataclass, field
-from itertools import product
+from itertools import permutations, product
 import math
 import time
 from typing import Callable, Iterator
@@ -122,6 +122,35 @@ CHECK_BUDGET_PER_NINE = 1500        # contrôles en ligne au plus par nine et pa
 NODE_BUDGET_PER_NINE = 300          # nœuds de recherche au plus par nine et par tentative
 
 
+PATTERNS = ("muirfield", "muirfield_inverse")
+PATTERN_CHOICES = (*PATTERNS, "random")
+
+
+def resolve_pattern(seed: int, pattern: str) -> str:
+    """Patron effectif. ``pattern`` est un paramètre explicite (au même titre
+    que la seed) ; ``random`` le tire de façon déterministe à partir de la
+    seed (flux indépendant de celui du routage)."""
+    if pattern == "random":
+        return PATTERNS[int(np.random.default_rng([seed, 23]).integers(len(PATTERNS)))]
+    if pattern not in PATTERNS:
+        raise ValueError(f"patron inconnu : {pattern!r} (attendu : {', '.join(PATTERN_CHOICES)})")
+    return pattern
+
+
+def outer_start(pattern: str) -> int:
+    """Premier trou du nine qui fait le grand tour extérieur : le front (1)
+    pour ``muirfield``, le back (10) pour ``muirfield_inverse``."""
+    return 1 if pattern == "muirfield" else 10
+
+
+def inner_start(pattern: str) -> int:
+    return 10 if outer_start(pattern) == 1 else 1
+
+
+def nine_start(order: int) -> int:
+    return 1 if order <= 9 else 10
+
+
 class MuirfieldRoutingError(RuntimeError):
     """Aucune relance n'a produit de parcours valide (aucune règle assouplie)."""
 
@@ -138,11 +167,12 @@ class Plan:
     direction: int
     front_pars: tuple[int, ...]
     back_pars: tuple[int, ...]
-    front_delta_deg: float
-    back_delta_deg: float
+    outer_delta_deg: float
+    inner_delta_deg: float
     clubhouse_index: int
     permutation_index: int
     angle_index: int
+    pattern: str = "muirfield"
 
 
 @dataclass(frozen=True, slots=True)
@@ -160,6 +190,11 @@ class MuirfieldResult:
     attempts: tuple[dict, ...]
     elapsed_seconds: float
     timings: dict[str, float] = field(default_factory=dict)
+    requested_pattern: str = "muirfield"
+
+    @property
+    def pattern(self) -> str:
+        return self.plan.pattern
 
     @property
     def clubhouse_edge(self) -> str:
@@ -240,26 +275,36 @@ def point_at(path: list[Point], cumulative: np.ndarray, distance: float) -> Poin
 
 
 def nine_paths(clubhouse: Point, direction: int, width: float = MAP_WIDTH,
-               height: float = MAP_HEIGHT, front_delta_deg: float = START_ANGLES[0][0],
-               back_delta_deg: float = START_ANGLES[0][1]):
-    """Anneaux complets (rendu) et chemins cibles des deux nines."""
+               height: float = MAP_HEIGHT, outer_delta_deg: float = START_ANGLES[0][0],
+               inner_delta_deg: float = START_ANGLES[0][1], pattern: str = "muirfield"):
+    """Anneaux complets (rendu) et chemins cibles des deux nines.
+
+    Renvoie ``(anneau ext., anneau int., chemin du front, chemin du back)`` ;
+    le nine extérieur (grand tour, sens ``direction``) est le front pour
+    ``muirfield`` et le back pour ``muirfield_inverse`` ; l'autre nine fait
+    la boucle intérieure en sens inverse."""
     center = (width / 2, height / 2)
     theta_ch = math.atan2(clubhouse[1] - center[1], clubhouse[0] - center[0])
     (ox, oy), (ix, iy) = ring_semi_axes(width, height)
     outer = ring_arc(0.0, 2 * math.pi, ox, oy, center)
     inner = ring_arc(0.0, 2 * math.pi, ix, iy, center)
-    delta = math.radians(front_delta_deg)
-    delta_b = math.radians(back_delta_deg)
-    front = [clubhouse, *ring_arc(theta_ch + direction * delta,
-                                  direction * (2 * math.pi - 2 * delta), ox, oy, center), clubhouse]
-    back = [clubhouse, *ring_arc(theta_ch - direction * delta_b,
-                                 -direction * (2 * math.pi - 2 * delta_b), ix, iy, center), clubhouse]
-    return outer, inner, front, back
+    delta = math.radians(outer_delta_deg)
+    delta_b = math.radians(inner_delta_deg)
+    outer_path = [clubhouse, *ring_arc(theta_ch + direction * delta,
+                                       direction * (2 * math.pi - 2 * delta), ox, oy, center),
+                  clubhouse]
+    inner_path = [clubhouse, *ring_arc(theta_ch - direction * delta_b,
+                                       -direction * (2 * math.pi - 2 * delta_b), ix, iy, center),
+                  clubhouse]
+    if outer_start(pattern) == 1:
+        return outer, inner, outer_path, inner_path
+    return outer, inner, inner_path, outer_path
 
 
 @dataclass(frozen=True, slots=True)
 class ClubhouseFrame:
-    """Repère local : ``normal`` entrante, ``side`` = tangente vers le trou 1."""
+    """Repère local : ``normal`` entrante, ``side`` = tangente vers le premier
+    trou du nine extérieur (trou 1 pour ``muirfield``, 10 pour l'inversé)."""
 
     origin: Point
     normal: Point
@@ -278,11 +323,14 @@ class ClubhouseFrame:
                 & (np.hypot(rel[:, 0], rel[:, 1]) < self.corridor_radius))
 
 
-def clubhouse_frame(edge: str, clubhouse: Point, front_path: list[Point],
+def clubhouse_frame(edge: str, clubhouse: Point, outer_path: list[Point],
                     width: float, height: float) -> ClubhouseFrame:
+    """Le côté ``side`` ne dépend que du signe de l'angle de départ du chemin
+    extérieur : il est le même pour tous les ``START_ANGLES`` (tous < 90°),
+    d'où un seul repère par position de clubhouse (vérifié par les tests)."""
     normal = {"N": (0.0, 1.0), "S": (0.0, -1.0), "W": (1.0, 0.0), "E": (-1.0, 0.0)}[edge]
     tangent = (-normal[1], normal[0])
-    first = front_path[1]
+    first = outer_path[1]
     sign = 1.0 if ((first[0] - clubhouse[0]) * tangent[0]
                    + (first[1] - clubhouse[1]) * tangent[1]) >= 0 else -1.0
     side = (tangent[0] * sign, tangent[1] * sign)
@@ -295,13 +343,19 @@ def clubhouse_frame(edge: str, clubhouse: Point, front_path: list[Point],
                           math.dist(clubhouse, inner_point) + CORRIDOR_EXTRA)
 
 
-def anchor_bounds(order: int) -> tuple[float, float] | None:
-    """Cône (φ min, φ max) imposé à l'axe d'un trou d'ancrage, sinon None."""
+def anchor_bounds(order: int, pattern: str = "muirfield") -> tuple[float, float] | None:
+    """Cône (φ min, φ max) imposé à l'axe d'un trou d'ancrage, sinon None.
+
+    Rôles : le nine extérieur part le long du bord côté ``side`` (φ ≥ 58°) et
+    revient le long du bord de l'autre côté (φ ≤ −58°) ; le nine intérieur
+    plonge entre eux, en sortant du côté du retour extérieur ([−32°, −1°]) et
+    en revenant du côté du départ extérieur ([1°, 32°])."""
+    outer, inner = outer_start(pattern), inner_start(pattern)
     return {
-        1: (ANCHOR_FRONT_MIN_DEG, 180.0),
-        9: (-180.0, -ANCHOR_FRONT_MIN_DEG),
-        10: (-ANCHOR_BACK_MAX_DEG, -ANCHOR_BACK_MIN_DEG),
-        18: (ANCHOR_BACK_MIN_DEG, ANCHOR_BACK_MAX_DEG),
+        outer: (ANCHOR_FRONT_MIN_DEG, 180.0),
+        outer + 8: (-180.0, -ANCHOR_FRONT_MIN_DEG),
+        inner: (-ANCHOR_BACK_MAX_DEG, -ANCHOR_BACK_MIN_DEG),
+        inner + 8: (ANCHOR_BACK_MIN_DEG, ANCHOR_BACK_MAX_DEG),
     }.get(order)
 
 
@@ -343,31 +397,49 @@ def draw_par_counts(rng: np.random.Generator) -> tuple[tuple[int, int], tuple[in
             (GLOBAL_PAR_QUOTA[3] - p3_front, GLOBAL_PAR_QUOTA[5] - p5_front))
 
 
+def _distinct_orders(p3: int, p5: int) -> list[tuple[int, ...]]:
+    """Toutes les permutations distinctes d'un nine (≤ 1680), ordre lexicographique."""
+    base = sorted([3] * p3 + [5] * p5 + [4] * (9 - p3 - p5))
+    return sorted(set(permutations(base)))
+
+
 def order_nine(p3: int, p5: int, rng: np.random.Generator, tries: int = 200,
                first: frozenset[int] | None = None,
                last: frozenset[int] | None = None) -> tuple[int, ...] | None:
     """Ordre seedé respectant la règle dure, pénalité souple minimale.
 
+    D'abord ``tries`` permutations aléatoires seedées (comportement des
+    rounds précédents) ; si aucune n'est admissible, énumération EXHAUSTIVE
+    des permutations distinctes et choix seedé parmi les moins pénalisées :
+    ``None`` signifie donc qu'aucun ordre admissible n'existe.
+
     ``first`` / ``last`` : pars admissibles pour le premier et le dernier trou
-    (capacité des cônes d'ancrage) ; sans contrainte, le résultat est
-    identique à celui d'avant le round A2. Renvoie ``None`` si aucun ordre
-    admissible n'est trouvé."""
+    (capacité des cônes d'ancrage)."""
+
+    def admissible(pars) -> bool:
+        return (par_sequence_ok(pars)
+                and (first is None or pars[0] in first)
+                and (last is None or pars[-1] in last))
+
     base = [3] * p3 + [5] * p5 + [4] * (9 - p3 - p5)
-    if first is not None and last is not None and not (set(base) & first and set(base) & last):
-        return None
     best: tuple[int, int, tuple[int, ...]] | None = None
     for index in range(tries):
         pars = tuple(int(p) for p in rng.permutation(base))
-        if not par_sequence_ok(pars):
-            continue
-        if (first is not None and pars[0] not in first) or (last is not None and pars[-1] not in last):
+        if not admissible(pars):
             continue
         penalty = par_sequence_penalty(pars)
         if penalty == 0:
             return pars
         if best is None or penalty < best[0]:
             best = (penalty, index, pars)
-    return None if best is None else best[2]
+    if best is not None:
+        return best[2]
+    candidates = [pars for pars in _distinct_orders(p3, p5) if admissible(pars)]
+    if not candidates:
+        return None
+    lowest = min(par_sequence_penalty(pars) for pars in candidates)
+    pool = [pars for pars in candidates if par_sequence_penalty(pars) == lowest]
+    return pool[int(rng.integers(len(pool)))]
 
 
 def draw_pars(rng: np.random.Generator) -> tuple[tuple[int, ...], tuple[int, ...]]:
@@ -491,14 +563,16 @@ class _Search:
     greens: Sites
     frame: ClubhouseFrame
     partial: PartialLayout
-    front_tee_ok: np.ndarray
-    front_green_ok: np.ndarray
+    outer_tee_ok: np.ndarray            # sites hors du couloir du nine intérieur
+    outer_green_ok: np.ndarray
     links: LinkBounds
     nodes: int = 0
     rejections: Counter = field(default_factory=Counter)
     deepest: dict[int, int] = field(default_factory=dict)
     budget_used: tuple[dict[int, int], dict[int, int]] = field(default_factory=lambda: ({}, {}))
-    front_done: bool = False
+    pattern: str = "muirfield"
+    anchors_done: bool = False
+    outer_done: bool = False
 
     @property
     def clubhouse(self) -> np.ndarray:
@@ -509,11 +583,14 @@ class _Search:
                     and margin <= point[1] <= self.height - margin)
 
     def _in_anchor(self, order: int, points: np.ndarray) -> np.ndarray:
-        bounds = anchor_bounds(order)
+        bounds = anchor_bounds(order, self.pattern)
         if bounds is None:
             return np.ones(len(points), dtype=bool)
         phi = self.frame.phi_deg(points)
         return (phi >= bounds[0]) & (phi <= bounds[1])
+
+    def is_outer(self, order: int) -> bool:
+        return nine_start(order) == outer_start(self.pattern)
 
     def _available(self, points: np.ndarray, mask: np.ndarray, used: list[np.ndarray]) -> np.ndarray:
         ok = mask.copy()
@@ -527,11 +604,11 @@ class _Search:
         vectorisés n'écartent que des candidats que ``check`` rejetterait."""
         spec = PAR_SPECS[par]
         order = level.order
-        front = order <= 9
+        outer = self.is_outer(order)
         obstacles = Obstacles.from_partial(self.partial)
         radius, gap = spec.width_min / 2.0, self.partial.rules.fairway_gap
 
-        tee_ok = self._available(self.tees.points, self.front_tee_ok if front
+        tee_ok = self._available(self.tees.points, self.outer_tee_ok if outer
                                  else np.ones(len(self.tees), dtype=bool), used)
         tee_ok &= self._in_anchor(order, self.tees.points)
         if level.start is not None:
@@ -545,7 +622,7 @@ class _Search:
                 keep &= obstacles.links_clear(level.start, pts, level.start_owner)
             tee_idx = tee_idx[keep]
 
-        green_ok = self._available(self.greens.points, self.front_green_ok if front
+        green_ok = self._available(self.greens.points, self.outer_green_ok if outer
                                    else np.ones(len(self.greens), dtype=bool), used)
         green_ok &= self._in_anchor(order, self.greens.points)
         if level.end is not None:
@@ -643,11 +720,11 @@ class _Search:
         spec = PAR_SPECS[level.bridge_par]
         radius, gap = spec.width_min / 2.0, self.partial.rules.fairway_gap
         order = level.order + 1
-        front = order <= 9
+        outer = self.is_outer(order)
         end = level.bridge_end
         lo, hi = self.links.minimum, self.links.maximum
         # greens du pont : à liaison du tee ancré, liaison non bloquée
-        g_ok = self._available(self.greens.points, self.front_green_ok if front
+        g_ok = self._available(self.greens.points, self.outer_green_ok if outer
                                else np.ones(len(self.greens), dtype=bool), used)
         d = np.hypot(*(self.greens.points - end).T)
         g_ok &= (d >= lo) & (d <= hi)
@@ -660,7 +737,7 @@ class _Search:
             return np.zeros(len(greens), dtype=bool)
         bridge_greens = self.greens.points[g_idx]
         # tees du pont : libres, avec au moins un green du pont à longueur de par
-        t_ok = self._available(self.tees.points, self.front_tee_ok if front
+        t_ok = self._available(self.tees.points, self.outer_tee_ok if outer
                                else np.ones(len(self.tees), dtype=bool), used)
         t_idx = np.flatnonzero(t_ok)
         t_idx = t_idx[obstacles.points_clear(self.tees.points[t_idx], radius, gap)]
@@ -698,7 +775,7 @@ class _Search:
         relié au clubhouse ? Condition nécessaire (les trous posés ne font
         que retirer des candidats)."""
         ch = self.clubhouse
-        leaving = order in (1, 10)
+        leaving = order in (1, 10)            # premier trou d'un nine (sinon dernier)
         level = _Level(order=order, index=0 if leaving else 8,
                        start=ch if leaving else None, start_min=self.links.clubhouse_min,
                        start_owner=None, end=None if leaving else ch,
@@ -711,14 +788,14 @@ class _Search:
                      ) -> tuple[list[ElasticHole], list[ElasticHole]] | None:
         """Recherche en profondeur bornée sur les deux nines à la fois.
 
-        Phase A : les quatre trous d'ancrage d'abord — 1, 9, 10, 18 (premier
-        trou depuis le clubhouse, dernier trou ancré vers le clubhouse) — pour
-        que leur emprise soit réservée avant que les trous intermédiaires ne
-        consomment l'espace autour du clubhouse ; puis les trous 2..8, qui
-        doivent relier le green 1 au tee 9. Phase B, une seule fois au bout de
-        la phase A : les trous 11..17 entre le green 10 et le tee 18. Un échec
-        de la phase B termine la tentative (pas de retour dans le front).
-        Chaque nine garde son propre budget (contrôles, nœuds).
+        Phase A : les quatre trous d'ancrage d'abord — premier et dernier trou
+        du nine extérieur, puis du nine intérieur — pour que leur emprise soit
+        réservée avant que les trous intermédiaires ne consomment l'espace
+        autour du clubhouse ; puis les trous intermédiaires du nine EXTÉRIEUR
+        (2..8 pour ``muirfield``, 11..17 pour l'inversé). Phase B, une seule
+        fois au bout de la phase A : les trous intermédiaires du nine
+        intérieur. Un échec de la phase B termine la tentative (pas de retour
+        dans le nine extérieur). Chaque nine garde son propre budget.
         """
         nines = {
             1: (front_pars, [np.asarray(t) for t in green_targets(front_path, front_pars)],
@@ -727,9 +804,10 @@ class _Search:
                  np.asarray(back_path)),
         }
         ch = self.clubhouse
-        phase_a = [(1, 0), (1, 8), (10, 0), (10, 8), *((1, i) for i in range(1, 8))]
-        phase_b = [(10, i) for i in range(1, 8)]
-        outcome = {"back": False}
+        o, i_ = outer_start(self.pattern), inner_start(self.pattern)
+        phase_a = [(o, 0), (o, 8), (i_, 0), (i_, 8), *((o, i) for i in range(1, 8))]
+        phase_b = [(i_, i) for i in range(1, 8)]
+        outcome = {"inner": False}
         placed: dict[int, ElasticHole] = {}
         checks = {1: 0, 10: 0}
         nodes = {1: 0, 10: 0}
@@ -786,10 +864,10 @@ class _Search:
         def recurse(levels: list[tuple[int, int]], position: int, used: list[np.ndarray]) -> bool:
             if position == len(levels):
                 if levels is phase_a:
-                    # front complet et ancrages du back posés : les trous 11..17
-                    # sont cherchés UNE fois ; un échec termine la tentative (on
-                    # ne remet pas le front en cause, la relance s'en charge)
-                    outcome["back"] = recurse(phase_b, 0, used)
+                    # nine extérieur complet et ancrages du nine intérieur
+                    # posés : ses trous intermédiaires sont cherchés UNE fois ;
+                    # un échec termine la tentative (la relance s'en charge)
+                    outcome["inner"] = recurse(phase_b, 0, used)
                 return True
             start_order, index = levels[position]
             if exhausted(start_order):
@@ -798,6 +876,8 @@ class _Search:
             self.nodes += 1
             depth = position if levels is phase_a else len(phase_a) + position
             self.deepest[start_order] = max(self.deepest.get(start_order, 0), depth)
+            if levels is phase_a and position >= 4:
+                self.anchors_done = True      # les quatre ancrages ont été posés
             pars, _, path_arr = nines[start_order]
             level = level_for(start_order, index)
             explored = examined = 0
@@ -855,9 +935,8 @@ class _Search:
             return next(iter(self.candidates(level, pars[index], used, path_arr)), None) is not None
 
         self.budget_used = (checks, nodes)
-        front_done = recurse(phase_a, 0, [])
-        self.front_done = front_done
-        if not front_done or not outcome["back"]:
+        self.outer_done = recurse(phase_a, 0, [])
+        if not self.outer_done or not outcome["inner"]:
             return None
         return ([placed[order] for order in range(1, 10)],
                 [placed[order] for order in range(10, 19)])
@@ -868,6 +947,7 @@ AnchorCapacity = dict[int, frozenset[int]]
 
 def iter_plans(seed: int, width: float = MAP_WIDTH, height: float = MAP_HEIGHT,
                capacity: Callable[[str, Point, int], AnchorCapacity] | None = None,
+               pattern: str = "muirfield",
                ) -> Iterator[tuple[tuple[int, int, int], Plan | None]]:
     """Plan de base puis relances : angle de départ, permutation des pars,
     position du clubhouse (dans cet ordre d'imbrication).
@@ -911,18 +991,33 @@ def iter_plans(seed: int, width: float = MAP_WIDTH, height: float = MAP_HEIGHT,
         if front_pars is None or back_pars is None:
             yield indices, None
             continue
-        front_delta, back_delta = START_ANGLES[angle_index]
-        yield indices, Plan(edge, ch, direction, front_pars, back_pars, front_delta, back_delta,
-                            ch_index, perm_index, angle_index)
+        outer_delta, inner_delta = START_ANGLES[angle_index]
+        yield indices, Plan(edge, ch, direction, front_pars, back_pars, outer_delta, inner_delta,
+                            ch_index, perm_index, angle_index, pattern)
 
 
 def build_muirfield(seed: int, heightmap: np.ndarray | None = None, *,
                     width: float = MAP_WIDTH, height: float = MAP_HEIGHT,
-                    rules: ValidationRules | None = None) -> MuirfieldResult:
-    """Parcours Muirfield valide pour la seed, ou ``MuirfieldRoutingError``.
+                    rules: ValidationRules | None = None,
+                    pattern: str = "muirfield") -> MuirfieldResult:
+    """Alias historique de ``build_course`` (patron ``muirfield`` par défaut)."""
+    return build_course(seed, pattern, heightmap, width=width, height=height, rules=rules)
+
+
+def build_course(seed: int, pattern: str = "muirfield", heightmap: np.ndarray | None = None, *,
+                 width: float = MAP_WIDTH, height: float = MAP_HEIGHT,
+                 rules: ValidationRules | None = None) -> MuirfieldResult:
+    """Parcours valide pour (seed, patron), ou ``MuirfieldRoutingError``.
+
+    ``pattern`` est un paramètre explicite, au même titre que la seed :
+    ``muirfield`` (front extérieur, back intérieur), ``muirfield_inverse``
+    (front intérieur, back extérieur) ou ``random`` (patron tiré de façon
+    déterministe à partir de la seed, cf. ``resolve_pattern``).
 
     Le résultat renvoyé a TOUJOURS zéro violation ``validate(layout, rules)`` ;
     les plages de liaison sont dérivées de ``rules`` (``link_bounds``)."""
+    requested = pattern
+    pattern = resolve_pattern(seed, pattern)
     started = time.perf_counter()
     timings: dict[str, float] = {}
     if heightmap is None:
@@ -940,40 +1035,43 @@ def build_muirfield(seed: int, heightmap: np.ndarray | None = None, *,
 
     t0 = time.perf_counter()
     attempts: list[dict] = []
-    def make_search(edge: str, clubhouse: Point, front_path: list[Point]) -> _Search:
-        frame = clubhouse_frame(edge, clubhouse, front_path, width, height)
+    def make_search(edge: str, clubhouse: Point, front_path: list[Point],
+                    back_path: list[Point]) -> _Search:
+        outer_path = front_path if outer_start(pattern) == 1 else back_path
+        frame = clubhouse_frame(edge, clubhouse, outer_path, width, height)
         return _Search(
             width=width, height=height, tees=tee_sites, greens=green_sites, frame=frame,
             partial=PartialLayout(rules, clubhouse),
-            front_tee_ok=~frame.in_corridor(tee_sites.points),
-            front_green_ok=~frame.in_corridor(green_sites.points),
-            links=links,
+            outer_tee_ok=~frame.in_corridor(tee_sites.points),
+            outer_green_ok=~frame.in_corridor(green_sites.points),
+            links=links, pattern=pattern,
         )
 
     def capacity(edge: str, clubhouse: Point, direction: int) -> AnchorCapacity:
-        _, _, front_path, back_path = nine_paths(clubhouse, direction, width, height)
-        probe = make_search(edge, clubhouse, front_path)
+        _, _, front_path, back_path = nine_paths(clubhouse, direction, width, height,
+                                                 pattern=pattern)
+        probe = make_search(edge, clubhouse, front_path, back_path)
         return {order: frozenset(par for par in (3, 4, 5)
                                  if probe.anchor_fits(order, par,
                                                       front_path if order <= 9 else back_path))
                 for order in (1, 9, 10, 18)}
 
-    for indices, plan in iter_plans(seed, width, height, capacity):
+    outer_name = "front" if outer_start(pattern) == 1 else "back"
+    inner_name = "back" if outer_name == "front" else "front"
+    for indices, plan in iter_plans(seed, width, height, capacity, pattern):
         if plan is None:
             attempts.append({"clubhouse_index": indices[0], "permutation_index": indices[1],
                              "angle_index": indices[2], "status": "infaisable_ancrage",
                              "checks": 0, "nodes": 0})
             continue
         outer, inner, front_path, back_path = nine_paths(
-            plan.clubhouse, plan.direction, width, height, plan.front_delta_deg, plan.back_delta_deg)
-        search = make_search(plan.edge, plan.clubhouse, front_path)
+            plan.clubhouse, plan.direction, width, height, plan.outer_delta_deg,
+            plan.inner_delta_deg, pattern)
+        search = make_search(plan.edge, plan.clubhouse, front_path, back_path)
         routed = search.route_course(plan.front_pars, plan.back_pars, front_path, back_path)
         front, back = routed if routed is not None else (None, None)
-        if routed is None:
-            front = [] if search.front_done else None
-            anchors_failed = not search.front_done and max(search.deepest.values(), default=0) < 4
         layout = violations = None
-        if back is not None:
+        if routed is not None:
             ch = ControlPoint(*plan.clubhouse)
             layout = CourseLayout(
                 seed=seed, width=width, height=height, clubhouse=ch,
@@ -983,16 +1081,20 @@ def build_muirfield(seed: int, heightmap: np.ndarray | None = None, *,
             t1 = time.perf_counter()
             violations = tuple(validate(layout, rules))
             timings["validate"] = time.perf_counter() - t1
-        if back is None:
-            status = ("echec_back" if front is not None
-                      else "echec_ancrages" if anchors_failed else "echec_front")
+        if routed is None:
+            # phase atteinte : ancrages (1/9/10/18), milieu du nine extérieur
+            # (phase A), milieu du nine intérieur (phase B)
+            status = ("echec_ancrages" if not search.anchors_done
+                      else f"echec_{outer_name}" if not search.outer_done
+                      else f"echec_{inner_name}")
         else:
             # filet de sécurité : un layout que l'oracle refuse n'est jamais
             # renvoyé, on passe au plan suivant
             status = "succes" if not violations else "echec_validate"
         attempts.append({
             "clubhouse_index": plan.clubhouse_index, "permutation_index": plan.permutation_index,
-            "angle_index": plan.angle_index, "edge": plan.edge, "status": status,
+            "angle_index": plan.angle_index, "edge": plan.edge, "pattern": pattern,
+            "status": status,
             "checks": search.partial.checks, "nodes": search.nodes,
             "rejections": dict(sorted(search.rejections.items())),
             "deepest": dict(search.deepest),
@@ -1006,6 +1108,6 @@ def build_muirfield(seed: int, heightmap: np.ndarray | None = None, *,
             plan=plan, outer_ring=tuple(outer), inner_ring=tuple(inner),
             front_path=tuple(front_path), back_path=tuple(back_path),
             attempts=tuple(attempts), elapsed_seconds=time.perf_counter() - started,
-            timings=timings,
+            timings=timings, requested_pattern=requested,
         )
     raise MuirfieldRoutingError(seed, attempts)

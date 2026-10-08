@@ -9,10 +9,20 @@ Rounds disponibles (``--round``) :
   planche 6×5 réduite) ;
 - ``ra2-30`` : idem après le round A2 → ``ra2_300x400_30seeds/`` ;
 - ``ra2-check`` : non-régression A2 sur 350×400, 400×300, 400×350 (seeds
-  1–6) → ``ra2_check_<w>x<h>/report.json`` (pas de planche).
+  1–6) → ``ra2_check_<w>x<h>/report.json`` (pas de planche) ;
+- ``rb`` : patron ``muirfield_inverse`` en 300×400, seeds 1–6 →
+  ``rb_inverse_300x400/`` ;
+- ``rb-30`` / ``rb-check`` : robustesse 30 seeds (300×400) et non-régression
+  (350×400, 400×300, 400×350, seeds 1–6) pour chaque patron (ou celui de
+  ``--pattern``) → ``rb_<patron>_300x400_30seeds/``, ``rb_check_<patron>_<w>x<h>/`` ;
+- ``custom`` : ``--pattern``, ``--size LxH``, ``--seeds 1-6`` →
+  ``custom_<patron>_<w>x<h>/``.
+
+Le patron (``--pattern`` : muirfield, muirfield_inverse, random) est un
+paramètre explicite au même titre que la seed.
 
 Les temps sont mesurés sur la machine qui exécute le runner (dépendants du
-matériel) : chronomètre unique autour de ``build_muirfield``, succès comme
+matériel) : chronomètre unique autour de ``build_course``, succès comme
 échecs, relief en cache exclu.
 
 Seuls ``planche.png`` et ``report.json`` sont versionnés ; les png/svg par
@@ -37,7 +47,12 @@ from pathlib import Path
 import subprocess
 import time
 
-from experiments.elastic_routing.muirfield import MuirfieldRoutingError, build_muirfield
+from experiments.elastic_routing.muirfield import (
+    PATTERN_CHOICES,
+    PATTERNS,
+    MuirfieldRoutingError,
+    build_course,
+)
 from experiments.elastic_routing.render_readable import render_readable_svg
 from experiments.elastic_routing.sites import WATER_LEVEL, load_terrain
 
@@ -61,7 +76,8 @@ def _percentile(values: list[float], q: float) -> float:
 
 def _run_format(width: int, height: int, *, seeds: tuple[int, ...] = SEEDS,
                 label: str = "r2", out_name: str | None = None, tile: str = "3x",
-                thumb: str | None = None, planche: bool = True) -> dict:
+                thumb: str | None = None, planche: bool = True,
+                pattern: str = "muirfield") -> dict:
     out_dir = OUTPUT_ROOT / (out_name or f"{label}_{width}x{height}")
     out_dir.mkdir(parents=True, exist_ok=True)
     reports, pngs = [], []
@@ -70,10 +86,10 @@ def _run_format(width: int, height: int, *, seeds: tuple[int, ...] = SEEDS,
         heightmap = load_terrain(seed, width, height)
         terrain_seconds = time.perf_counter() - t0
         # mesure homogène succès/échec : même chronomètre autour de
-        # build_muirfield (sites + recherche + oracle, relief en cache exclu)
+        # build_course (sites + recherche + oracle, relief en cache exclu)
         t1 = time.perf_counter()
         try:
-            result = build_muirfield(seed, heightmap, width=width, height=height)
+            result = build_course(seed, pattern, heightmap, width=width, height=height)
             elapsed = time.perf_counter() - t1
         except MuirfieldRoutingError as error:
             elapsed = time.perf_counter() - t1
@@ -90,7 +106,7 @@ def _run_format(width: int, height: int, *, seeds: tuple[int, ...] = SEEDS,
         svg = render_readable_svg(
             result.layout, result.violations, heightmap=heightmap, water_level=WATER_LEVEL,
             rings=(result.outer_ring, result.inner_ring),
-            title=(f"Muirfield {label.upper()} · {width}×{height} · seed {seed} · clubhouse bord "
+            title=(f"{result.pattern} {label.upper()} · {width}×{height} · seed {seed} · bord "
                    f"{result.clubhouse_edge} · front {side}"),
             subtitle=(f"front par {lengths['front']['par']} · {lengths['front']['total']:.0f} blocs  |  "
                       f"back par {lengths['back']['par']} · {lengths['back']['total']:.0f} blocs  |  "
@@ -138,7 +154,8 @@ def _run_format(width: int, height: int, *, seeds: tuple[int, ...] = SEEDS,
     times = [r["elapsed_seconds"] for r in reports]
     succeeded = [r for r in reports if r["status"] == "succes"]
     summary = {
-        "round": label.upper(), "width": width, "height": height, "seeds": list(seeds),
+        "round": label.upper(), "pattern": pattern, "width": width, "height": height,
+        "seeds": list(seeds),
         "stats": {
             "successes": len(succeeded),
             "failures": [r["seed"] for r in reports if r["status"] != "succes"],
@@ -159,9 +176,15 @@ def _run_format(width: int, height: int, *, seeds: tuple[int, ...] = SEEDS,
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--round", choices=("r2", "ra", "ra-30", "ra2-30", "ra2-check"),
+    parser.add_argument("--round", choices=("r2", "ra", "ra-30", "ra2-30", "ra2-check",
+                                            "rb", "rb-30", "rb-check", "custom"),
                         default="r2")
+    parser.add_argument("--pattern", choices=PATTERN_CHOICES, default=None,
+                        help="patron explicite (défaut : muirfield ; rb-30/rb-check : les deux)")
+    parser.add_argument("--size", default="300x400", help="format LxH (round custom)")
+    parser.add_argument("--seeds", default="1-6", help="ex. 1-6 ou 3,7 (round custom)")
     args = parser.parse_args()
+    patterns = (args.pattern,) if args.pattern else PATTERNS
     if args.round == "r2":
         for width, height in FORMATS:
             _run_format(width, height, label="r2")
@@ -174,10 +197,32 @@ def main() -> None:
     elif args.round == "ra2-30":
         _run_format(300, 400, seeds=ROBUSTNESS_SEEDS, label="ra2",
                     out_name="ra2_300x400_30seeds", tile="6x", thumb="340x")
-    else:
+    elif args.round == "ra2-check":
         for width, height in ((350, 400), *LANDSCAPE_FORMATS):
             _run_format(width, height, label="ra2", out_name=f"ra2_check_{width}x{height}",
                         planche=False)
+    elif args.round == "rb":
+        _run_format(300, 400, label="rb", out_name="rb_inverse_300x400",
+                    pattern=args.pattern or "muirfield_inverse")
+    elif args.round == "rb-30":
+        for pattern in patterns:
+            _run_format(300, 400, seeds=ROBUSTNESS_SEEDS, label="rb",
+                        out_name=f"rb_{pattern}_300x400_30seeds", planche=False, pattern=pattern)
+    elif args.round == "rb-check":
+        for pattern in patterns:
+            for width, height in ((350, 400), *LANDSCAPE_FORMATS):
+                _run_format(width, height, label="rb", planche=False, pattern=pattern,
+                            out_name=f"rb_check_{pattern}_{width}x{height}")
+    else:
+        width, height = (int(v) for v in args.size.lower().split("x"))
+        if "-" in args.seeds:
+            low, high = (int(v) for v in args.seeds.split("-"))
+            seeds = tuple(range(low, high + 1))
+        else:
+            seeds = tuple(int(v) for v in args.seeds.split(","))
+        pattern = args.pattern or "muirfield"
+        _run_format(width, height, seeds=seeds, label="custom", pattern=pattern,
+                    out_name=f"custom_{pattern}_{width}x{height}")
 
 
 if __name__ == "__main__":

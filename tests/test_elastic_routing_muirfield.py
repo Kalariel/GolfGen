@@ -444,3 +444,153 @@ def test_round_a_failures_now_route_cleanly(seed):
     result = mf.build_muirfield(seed, width=300, height=400)
     assert result.violations == ()
     assert validate(result.layout, ValidationRules(width=300, height=400)) == []
+
+
+# -- round B : patron explicite, Muirfield inversé ---------------------------
+
+from experiments.elastic_routing.sites import Sites
+
+
+@pytest.fixture(scope="module")
+def inverse_results():
+    return {seed: mf.build_course(seed, "muirfield_inverse", width=300, height=400)
+            for seed in SEEDS}
+
+
+def test_pattern_is_an_explicit_parameter():
+    assert mf.PATTERN_CHOICES == ("muirfield", "muirfield_inverse", "random")
+    assert mf.resolve_pattern(4, "muirfield") == "muirfield"
+    assert mf.resolve_pattern(4, "muirfield_inverse") == "muirfield_inverse"
+    with pytest.raises(ValueError):
+        mf.resolve_pattern(4, "spirale")
+    drawn = [mf.resolve_pattern(seed, "random") for seed in range(1, 41)]
+    assert drawn == [mf.resolve_pattern(seed, "random") for seed in range(1, 41)]
+    assert set(drawn) == set(mf.PATTERNS)
+
+
+def test_random_pattern_matches_the_explicit_one():
+    seed = 3
+    resolved = mf.resolve_pattern(seed, "random")
+    by_random = mf.build_course(seed, "random", width=350, height=400)
+    explicit = mf.build_course(seed, resolved, width=350, height=400)
+    assert by_random.pattern == resolved and by_random.requested_pattern == "random"
+    assert by_random.layout.to_json() == explicit.layout.to_json()
+
+
+@pytest.mark.parametrize("seed", SEEDS)
+def test_inverse_pattern_is_valid(inverse_results, seed):
+    result = inverse_results[seed]
+    assert result.pattern == "muirfield_inverse"
+    assert result.violations == ()
+    assert validate(result.layout, ValidationRules(width=300, height=400)) == []
+    pars = [tuple(h.par for h in nine.holes) for nine in (result.layout.front, result.layout.back)]
+    assert all(mf.par_sequence_ok(p) and mf.nine_par_ok(p) for p in pars)
+
+
+@pytest.mark.parametrize("seed", SEEDS)
+def test_inverse_roles_front_inside_back_outside(inverse_results, seed):
+    """Front = boucle intérieure, back = grand tour extérieur, sens opposés ;
+    10 et 18 longent le bord, 1 et 9 plongent entre eux."""
+    result = inverse_results[seed]
+    center = np.array([150.0, 200.0])
+    front_r = np.hypot(*(np.asarray(result.front_path[1:-1]) - center).T)
+    back_r = np.hypot(*(np.asarray(result.back_path[1:-1]) - center).T)
+    assert front_r.max() < back_r.min()
+
+    def signed_area(path):
+        pts = np.asarray(path)
+        return float(np.sum(pts[:-1, 0] * pts[1:, 1] - pts[1:, 0] * pts[:-1, 1]))
+
+    assert signed_area(result.front_path) * signed_area(result.back_path) < 0.0
+    plan = result.plan
+    frame = mf.clubhouse_frame(plan.edge, plan.clubhouse, list(result.back_path), 300, 400)
+    holes = {hole.order: hole for hole in result.layout.holes}
+    for order in (1, 9, 10, 18):
+        low, high = mf.anchor_bounds(order, "muirfield_inverse")
+        phi = frame.phi_deg(np.array([(p.x, p.y) for p in holes[order].axis]))
+        assert ((phi >= low) & (phi <= high)).all(), (order, phi)
+    assert mf.anchor_bounds(10, "muirfield_inverse") == mf.anchor_bounds(1, "muirfield")
+    assert mf.anchor_bounds(1, "muirfield_inverse") == mf.anchor_bounds(10, "muirfield")
+
+
+def test_frame_side_is_the_same_for_every_start_angle():
+    for edge, ch in (("S", (120.0, 394.0)), ("W", (6.0, 230.0)), ("N", (200.0, 6.0))):
+        for direction in (1, -1):
+            sides = set()
+            for outer_delta, inner_delta in mf.START_ANGLES:
+                _, _, front, _ = mf.nine_paths(ch, direction, 300, 400, outer_delta, inner_delta)
+                sides.add(mf.clubhouse_frame(edge, ch, front, 300, 400).side)
+            assert len(sides) == 1
+
+
+def test_order_nine_exhaustive_fallback():
+    exhaustive = mf.order_nine(3, 3, np.random.default_rng(1), tries=0,
+                               first=frozenset((5,)), last=frozenset((3,)))
+    assert exhaustive is not None and exhaustive[0] == 5 and exhaustive[-1] == 3
+    assert mf.par_sequence_ok(exhaustive)
+    assert exhaustive == mf.order_nine(3, 3, np.random.default_rng(1), tries=0,
+                                       first=frozenset((5,)), last=frozenset((3,)))
+    # un seul par 5 ne peut pas ouvrir ET fermer le nine : impossible, donc None
+    assert mf.order_nine(2, 1, np.random.default_rng(1), first=frozenset((5,)),
+                         last=frozenset((5,))) is None
+
+
+@pytest.mark.parametrize("seed", SEEDS)
+def test_attempt_statuses_are_classified(inverse_results, seed):
+    known = {"succes", "echec_ancrages", "echec_front", "echec_back", "echec_validate",
+             "infaisable_ancrage"}
+    assert {a["status"] for a in inverse_results[seed].attempts} <= known
+
+
+def _toy_search(tees, greens, holes=()):
+    rules = ValidationRules(width=400, height=400)
+    partial = PartialLayout(rules, (200.0, 394.0))
+    for hole in holes:
+        partial.push(hole, ())
+    tees, greens = np.asarray(tees, float), np.asarray(greens, float)
+    frame = mf.ClubhouseFrame((200.0, 394.0), (0.0, -1.0), (1.0, 0.0), 0.0)
+    return mf._Search(
+        width=400.0, height=400.0,
+        tees=Sites("tee", tees, np.ones(len(tees)), False),
+        greens=Sites("green", greens, np.ones(len(greens)), False),
+        frame=frame, partial=partial,
+        outer_tee_ok=np.ones(len(tees), dtype=bool), outer_green_ok=np.ones(len(greens), dtype=bool),
+        links=mf.link_bounds(rules),
+    )
+
+
+def _bridge_level(end):
+    return mf._Level(order=16, index=6, start=None, start_min=12.0, start_owner=None,
+                     end=None, end_min=12.0, end_owner=None, reach_point=None, reach=math.inf,
+                     heading=None, target_green=None, target_tee=None,
+                     bridge_end=np.asarray(end, float), bridge_par=4, bridge_owner=18)
+
+
+def test_bridge_reachable_keeps_a_green_that_can_still_reach_the_anchor():
+    tee18 = (300.0, 300.0)
+    tees = [(300.0, 150.0)]                                     # tee du trou-pont
+    greens = [(300.0, 270.0), (300.0, 120.0), (100.0, 100.0)]   # green pont, candidats
+    search = _toy_search(tees, greens)
+    level = _bridge_level(tee18)
+    candidates = np.asarray(greens[1:])
+    obstacles = Obstacles.from_partial(search.partial)
+    assert search._bridge_reachable(candidates, level, [], obstacles).tolist() == [True, False]
+    # un trou posé en travers du trou-pont : plus de pont possible
+    blocker = _hole(5, (250.0, 210.0), (350.0, 210.0))
+    blocked = _toy_search(tees, greens, holes=(blocker,))
+    assert blocked._bridge_reachable(candidates, level, [], Obstacles.from_partial(
+        blocked.partial)).tolist() == [False, False]
+
+
+def test_dogleg_prefilter_keeps_the_free_corner_only():
+    level = mf._Level(order=12, index=3, start=None, start_min=12.0, start_owner=None,
+                      end=None, end_min=12.0, end_owner=None, reach_point=None, reach=math.inf,
+                      heading=None, target_green=None, target_tee=None)
+    tee, green = (100.0, 200.0), (195.0, 200.0)                 # corde 95 < 100 : dogleg seul
+    free = list(_toy_search([tee], [green]).candidates(level, 4, [], np.zeros((1, 2))))
+    assert {hole.doglegs[0].y > 200.0 for hole in free} == {True, False}
+    blocker = _hole(5, (120.0, 230.0), (220.0, 230.0))          # du côté y > 200 de la corde
+    search = _toy_search([tee], [green], holes=(blocker,))
+    kept = list(search.candidates(level, 4, [], np.zeros((1, 2))))
+    assert len(kept) == 1 and kept[0].doglegs[0].y < 200.0
+    assert search.partial.check(kept[0], ()) is None             # le coude gardé est valide
