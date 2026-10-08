@@ -20,3 +20,6 @@ output/steps/
 # rendus par seed du runner Muirfield (reproduits par run_muirfield ; seuls planche.png et report.json sont versionnes)
 tools/muirfield/output/*/seed_*.png
 tools/muirfield/output/*/seed_*.svg
+
+# permissions locales de Claude Code (propres a chaque poste)
+.claude/settings.local.json
