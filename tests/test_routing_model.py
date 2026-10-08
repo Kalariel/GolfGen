@@ -8,6 +8,7 @@ from golfgen.routing.model import (
     ControlPoint,
     CourseLayout,
     ElasticHole,
+    HoleClassSpec,
     NineLayout,
     WalkingLink,
 )
@@ -159,3 +160,18 @@ def test_course_rejects_unknown_json_schema():
 
     with pytest.raises(ValueError, match="schema_version"):
         CourseLayout.from_dict(data)
+
+
+def test_validated_specs_match_decisions():
+    assert {
+        par: (spec.length_min, spec.length_max, spec.width_min, spec.width_max,
+              spec.coarse_max_doglegs, spec.final_max_doglegs)
+        for par, spec in PAR_SPECS.items()
+    } == {
+        3: (45.0, 70.0, 10.0, 15.0, 1, 2),
+        4: (100.0, 145.0, 11.0, 17.0, 1, 2),
+        5: (145.0, 185.0, 12.0, 18.0, 1, 2),
+    }
+
+    with pytest.raises(TypeError, match="doglegs"):
+        HoleClassSpec(3, 75, 110, 10, 15, coarse_max_doglegs=1.5)
