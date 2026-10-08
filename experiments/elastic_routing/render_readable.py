@@ -4,9 +4,7 @@ Reprend le langage visuel du rendu « bandes + flèches » de ``regions.py``
 (bandes épaisses, flèches de sens, clubhouse en losange) mais pour des trous
 réels : bande par trou colorée par par, tee (carré blanc) et green (disque)
 visibles, numéro du trou dans un cercle derrière le tee, liaisons en
-pointillés, anneaux cibles en pointillés très légers, chemins cibles
-non circulaires (``paths``, chemin à lobes du round R2b M2) en pointillés
-orange discrets, trous et liaisons en
+pointillés, anneaux cibles en pointillés très légers, trous et liaisons en
 violation surlignés en rose. Relief en fond (niveaux de gris, eau en bleu).
 """
 
@@ -27,7 +25,6 @@ Point = tuple[float, float]
 
 PAR_COLORS = {3: "#58a6ff", 4: "#56d364", 5: "#f2cc60"}
 VIOLATION_COLOR = "#ff2d7a"
-PATH_COLOR = "#ffa657"          # chemin cible à lobes (pointillés)
 RELIEF_CELL = 8                 # blocs par case de fond
 LABEL_BACKOFF = 11.0            # le numéro est posé derrière le tee (blocs)
 
@@ -58,7 +55,6 @@ def render_readable_svg(layout: CourseLayout, violations: Sequence[Violation] = 
                         heightmap: np.ndarray | None = None,
                         water_level: float | None = None,
                         rings: Sequence[Sequence[Point]] = (),
-                        paths: Sequence[Sequence[Point]] = (),
                         title: str = "", subtitle: str = "") -> str:
     size, padding, footer = 800, 24, 88
     scale = (size - 2 * padding) / max(layout.width, layout.height)
@@ -96,9 +92,6 @@ def render_readable_svg(layout: CourseLayout, violations: Sequence[Violation] = 
     for ring in rings:
         out.append(f'<polyline points="{fmt(ring)}" fill="none" stroke="#f0f6fc" '
                    'stroke-opacity="0.22" stroke-width="1" stroke-dasharray="2 6"/>')
-    for path in paths:
-        out.append(f'<polyline points="{fmt(path)}" fill="none" stroke="{PATH_COLOR}" '
-                   'stroke-opacity="0.6" stroke-width="1.3" stroke-dasharray="5 4"/>')
 
     for hole in layout.holes:
         color = PAR_COLORS[hole.par]

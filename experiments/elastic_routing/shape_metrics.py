@@ -28,7 +28,7 @@ Deux métriques par nine seulement, quand le chemin du nine (``front_path`` /
   compensent) ; nettement d'un seul signe → pales de moulinet.
 - ``obliquity_abs`` : moyenne de |sin α| (obliquité sans signe).
 
-Round R2b M2 (chemin intérieur à lobes), par nine :
+Par nine (métriques introduites au round R2b) :
 
 - ``heading_turns`` (toujours) : Σ|Δcap| / 2π sur la suite des cordes
   tee→green successives ; auto-enroulement du nine (≈ 1 pour un tour simple,
@@ -39,9 +39,6 @@ Round R2b M2 (chemin intérieur à lobes), par nine :
 - ``path_to_nine_length`` et ``forward_mean`` (chemin fourni) : longueur du
   chemin cible / longueur nominale du nine (``nominal_nine_length``) ;
   moyenne de cos α (trous joués à rebours : cos α < 0).
-- ``obliquity_signed_ring`` / ``obliquity_abs_ring`` (chemin ANNEAU fourni) :
-  obliquités mesurées sur l'anneau, comparables au round R2b 1 quand le
-  chemin effectif est à lobes.
 """
 
 from __future__ import annotations
@@ -317,7 +314,6 @@ def _xy(point) -> Point:
 
 def _nine_metrics(holes: Sequence[ElasticHole], centre: Point,
                   path: Sequence[Point] | None = None, *, nine: bool = False,
-                  ring_path: Sequence[Point] | None = None,
                   outer_ring: Sequence[Point] | None = None) -> dict[str, float | None]:
     tees = [_xy(h.tee) for h in holes]
     greens = [_xy(h.green) for h in holes]
@@ -337,9 +333,6 @@ def _nine_metrics(holes: Sequence[ElasticHole], centre: Point,
     if path is not None:
         metrics["forward_mean"] = forward_mean(tees, greens, path)
         metrics["path_to_nine_length"] = path_to_nine_length(path, [h.par for h in holes])
-    if ring_path is not None:
-        metrics["obliquity_signed_ring"] = obliquity_signed(tees, greens, ring_path)
-        metrics["obliquity_abs_ring"] = obliquity_abs(tees, greens, ring_path)
     return metrics
 
 
@@ -350,8 +343,6 @@ def _rounded(metrics: dict[str, float | None], digits: int) -> dict[str, float |
 def shape_metrics(layout: CourseLayout, digits: int = 4, *,
                   front_path: Sequence[Point] | None = None,
                   back_path: Sequence[Point] | None = None,
-                  front_ring_path: Sequence[Point] | None = None,
-                  back_ring_path: Sequence[Point] | None = None,
                   outer_ring: Sequence[Point] | None = None,
                   ) -> dict[str, dict[str, float | None]]:
     """Synthèse sérialisable ``{"front": {...}, "back": {...}, "course": {...}}``.
@@ -364,10 +355,9 @@ def shape_metrics(layout: CourseLayout, digits: int = 4, *,
     jeu) ajoutent ``obliquity_signed`` et ``obliquity_abs`` au nine
     correspondant ; pas d'obliquité au niveau ``course``.
 
-    Par nine seulement (round R2b M2) : ``heading_turns`` toujours ;
+    Par nine seulement (round R2b) : ``heading_turns`` toujours ;
     ``forward_mean`` et ``path_to_nine_length`` avec le chemin ;
-    ``obliquity_*_ring`` avec ``front_ring_path`` / ``back_ring_path``
-    (chemins sur l'anneau) ; ``hull_ratio`` avec ``outer_ring``.
+    ``hull_ratio`` avec ``outer_ring``.
     """
     centre = (layout.width / 2.0, layout.height / 2.0)
     ordered = sorted(layout.holes, key=lambda h: h.order)
@@ -379,10 +369,8 @@ def shape_metrics(layout: CourseLayout, digits: int = 4, *,
     course["angular_step_cv"] = _cv(steps)
     return {
         "front": _rounded(_nine_metrics(front, centre, front_path, nine=True,
-                                        ring_path=front_ring_path, outer_ring=outer_ring),
-                          digits),
+                                        outer_ring=outer_ring), digits),
         "back": _rounded(_nine_metrics(back, centre, back_path, nine=True,
-                                       ring_path=back_ring_path, outer_ring=outer_ring),
-                         digits),
+                                       outer_ring=outer_ring), digits),
         "course": _rounded(course, digits),
     }

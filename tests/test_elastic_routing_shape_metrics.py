@@ -296,7 +296,7 @@ def test_obliquity_is_reported_per_nine_only_when_paths_are_given():
     assert json.loads(json.dumps(metrics, allow_nan=False)) == metrics
 
 
-# -- métriques R2b M2 ---------------------------------------------------------
+# -- métriques par nine (R2b) ------------------------------------------------
 
 def _square(side: float, origin=(0.0, 0.0)):
     x, y = origin
@@ -367,25 +367,6 @@ def test_forward_mean_flags_holes_played_backwards():
     assert forward_mean([], [], path) == 0.0
 
 
-def test_ring_obliquity_is_measured_on_the_ring_path():
-    layout = _windmill_course()
-    circle = _circle(radius=105.0)
-    reversed_circle = circle[::-1]
-    metrics = shape_metrics(layout, front_path=circle, back_path=circle,
-                            front_ring_path=reversed_circle, back_ring_path=circle,
-                            outer_ring=_circle(radius=180.0))
-    front, back = metrics["front"], metrics["back"]
-    assert front["obliquity_signed_ring"] == pytest.approx(-front["obliquity_signed"], abs=1e-4)
-    assert back["obliquity_signed_ring"] == back["obliquity_signed"]
-    for nine in (front, back):
-        assert set(nine) >= {"heading_turns", "hull_ratio", "forward_mean",
-                             "path_to_nine_length", "obliquity_signed_ring",
-                             "obliquity_abs_ring"}
-        assert 0.0 < nine["hull_ratio"] < 1.0
-    assert "heading_turns" not in metrics["course"]
-    assert json.loads(json.dumps(metrics, allow_nan=False)) == metrics
-
-
 # -- agrégation du runner --------------------------------------------------------
 
 def test_shape_stats_skip_failures_and_missing_values():
@@ -401,25 +382,14 @@ def test_shape_stats_skip_failures_and_missing_values():
     assert _shape_stats([{"status": "echec"}, ok(None, 0.3, 0.3)])["angular_step_cv"] is None
 
 
-def test_planche_title_keeps_the_legacy_form_outside_r2b_rounds():
+def test_planche_title_lists_pattern_round_format_seed_and_outer_nine():
     from types import SimpleNamespace
-    result = SimpleNamespace(pattern="muirfield", clubhouse_edge="N", target_mode="uniform")
-    legacy = "muirfield RC · 300×400 · seed 3 · bord N · front extérieur horaire"
-    assert _planche_title(result, "rc", 300, 400, 3, "front", "horaire") == legacy
-    r2b = _planche_title(result, "r2b1", 300, 400, 3, "front", "horaire")
-    assert r2b == "muirfield R2B1 · 300×400 · s3 · bord N · front ext. horaire · cibles uniform"
-    irregular = SimpleNamespace(pattern="muirfield", clubhouse_edge="N", target_mode="irregular")
-    assert _planche_title(irregular, "custom", 300, 400, 3, "front", "horaire").endswith(
-        "extérieur horaire · cibles irregular")
-    lobed = SimpleNamespace(pattern="muirfield", clubhouse_edge="N", target_mode="uniform",
-                            path_mode="lobed")
-    assert _planche_title(lobed, "r2b2", 300, 400, 3, "front", "horaire") == (
-        "muirfield R2B2 · 300×400 · s3 · bord N · front ext. horaire · chemin lobed")
-    assert _planche_title(lobed, "custom", 300, 400, 3, "front", "horaire").endswith(
-        "extérieur horaire · chemin lobed")
-    ring = SimpleNamespace(pattern="muirfield", clubhouse_edge="N", target_mode="uniform",
-                           path_mode="ring")
-    assert _planche_title(ring, "rc", 300, 400, 3, "front", "horaire") == legacy
+    result = SimpleNamespace(pattern="muirfield", clubhouse_edge="N")
+    assert _planche_title(result, "rc", 300, 400, 3, "front", "horaire") == (
+        "muirfield RC · 300×400 · seed 3 · bord N · front extérieur horaire")
+    inverse = SimpleNamespace(pattern="muirfield_inverse", clubhouse_edge="E")
+    assert _planche_title(inverse, "land", 400, 300, 5, "back", "anti-horaire") == (
+        "muirfield_inverse LAND · 400×300 · seed 5 · bord E · back extérieur anti-horaire")
 
 
 def test_nine_shape_stats_split_outer_and_inner_nines():
@@ -437,19 +407,16 @@ def test_nine_shape_stats_split_outer_and_inner_nines():
 
 # -- métriques figées sur un vrai parcours -------------------------------------
 
-# muirfield seed 1, 300×400, width_mode="min", target_mode uniform, path_mode ring
-# (clés R2b M2 ajoutées après ``obliquity_abs`` ; valeurs antérieures inchangées)
+# muirfield seed 1, 300×400, width_mode="min"
 REAL_COURSE_SHAPE = {
     "front": {"angular_step_cv": 0.2681, "direction_entropy": 0.6749, "radial_alignment_R": 0.488,
               "obliquity_signed": -0.0213, "obliquity_abs": 0.2614,
               "heading_turns": 1.1867, "hull_ratio": 1.14, "forward_mean": 0.8809,
-              "path_to_nine_length": 0.78, "obliquity_signed_ring": -0.0213,
-              "obliquity_abs_ring": 0.2614},
+              "path_to_nine_length": 0.78},
     "back": {"angular_step_cv": 0.3325, "direction_entropy": 0.6983, "radial_alignment_R": 0.2601,
              "obliquity_signed": -0.0573, "obliquity_abs": 0.3451,
              "heading_turns": 1.8648, "hull_ratio": 0.4784, "forward_mean": 0.4435,
-             "path_to_nine_length": 0.523, "obliquity_signed_ring": -0.0573,
-             "obliquity_abs_ring": 0.3451},
+             "path_to_nine_length": 0.523},
     "course": {"angular_step_cv": 0.3164, "direction_entropy": 0.7739,
                "radial_alignment_R": 0.1139},
 }
@@ -457,8 +424,6 @@ REAL_COURSE_SHAPE = {
 
 def test_shape_metrics_on_a_real_course_are_frozen():
     result = mf.build_course(1, "muirfield", width=300, height=400, width_mode="min")
-    assert result.target_mode == "uniform"
     metrics = shape_metrics(result.layout, front_path=result.front_path,
-                            back_path=result.back_path, front_ring_path=result.front_ring_path,
-                            back_ring_path=result.back_ring_path, outer_ring=result.outer_ring)
+                            back_path=result.back_path, outer_ring=result.outer_ring)
     assert metrics == REAL_COURSE_SHAPE
