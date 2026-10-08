@@ -9,7 +9,11 @@ import pytest
 
 from experiments.elastic_routing.model import ControlPoint, CourseLayout, ElasticHole, NineLayout
 from experiments.elastic_routing import muirfield as mf
-from experiments.elastic_routing.run_muirfield import _planche_title, _shape_stats
+from experiments.elastic_routing.run_muirfield import (
+    _nine_shape_stats,
+    _planche_title,
+    _shape_stats,
+)
 from experiments.elastic_routing.shape_metrics import (
     CV_MIN_PROGRESS,
     angular_step_cv,
@@ -407,6 +411,28 @@ def test_planche_title_keeps_the_legacy_form_outside_r2b_rounds():
     irregular = SimpleNamespace(pattern="muirfield", clubhouse_edge="N", target_mode="irregular")
     assert _planche_title(irregular, "custom", 300, 400, 3, "front", "horaire").endswith(
         "extérieur horaire · cibles irregular")
+    lobed = SimpleNamespace(pattern="muirfield", clubhouse_edge="N", target_mode="uniform",
+                            path_mode="lobed")
+    assert _planche_title(lobed, "r2b2", 300, 400, 3, "front", "horaire") == (
+        "muirfield R2B2 · 300×400 · s3 · bord N · front ext. horaire · chemin lobed")
+    assert _planche_title(lobed, "custom", 300, 400, 3, "front", "horaire").endswith(
+        "extérieur horaire · chemin lobed")
+    ring = SimpleNamespace(pattern="muirfield", clubhouse_edge="N", target_mode="uniform",
+                           path_mode="ring")
+    assert _planche_title(ring, "rc", 300, 400, 3, "front", "horaire") == legacy
+
+
+def test_nine_shape_stats_split_outer_and_inner_nines():
+    def ok(outer, front_turns, back_turns):
+        return {"status": "succes", "outer_nine": outer,
+                "shape": {"front": {"heading_turns": front_turns},
+                          "back": {"heading_turns": back_turns}}}
+    reports = [ok("front", 1.0, 2.0), ok("back", 3.0, 1.2), {"status": "echec"},
+               ok("front", 1.1, 2.2)]
+    stats = _nine_shape_stats(reports)
+    assert stats["outer"]["heading_turns"] == {"median": 1.1, "min": 1.0, "max": 1.2}
+    assert stats["inner"]["heading_turns"] == {"median": 2.2, "min": 2.0, "max": 3.0}
+    assert stats["outer"]["hull_ratio"] is None
 
 
 # -- métriques figées sur un vrai parcours -------------------------------------

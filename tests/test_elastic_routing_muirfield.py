@@ -240,6 +240,13 @@ def test_readable_render_numbers_every_hole(results):
     assert svg.startswith("<svg") and svg.rstrip().endswith("</svg>")
     for order in range(1, 19):
         assert f'text-anchor="middle">{order}</text>' in svg
+    assert "#ffa657" not in svg
+    lobed = mf.lobed_inner_path(result.plan.clubhouse, result.plan.direction, 300, 400,
+                                result.plan.inner_delta_deg, mf.lobe_parameters(1))
+    with_path = render_readable_svg(result.layout, result.violations,
+                                    rings=(result.outer_ring, result.inner_ring),
+                                    paths=(lobed,), title="t")
+    assert with_path.count('stroke="#ffa657"') == 1
 
 
 # ----------------------------------------------------------------------
