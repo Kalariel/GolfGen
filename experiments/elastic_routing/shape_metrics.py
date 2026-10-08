@@ -34,7 +34,8 @@ Round R2b M2 (chemin intérieur à lobes), par nine :
   tee→green successives ; auto-enroulement du nine (≈ 1 pour un tour simple,
   au-delà le nine s'enroule ou zigzague).
 - ``hull_ratio`` (``outer_ring`` fourni) : aire de l'enveloppe convexe des
-  tees et greens du nine / aire du polygone de l'anneau extérieur.
+  tees et greens du nine / aire du polygone de l'anneau extérieur ; non
+  borné à [0, 1] (le nine extérieur dépasse 1).
 - ``path_to_nine_length`` et ``forward_mean`` (chemin fourni) : longueur du
   chemin cible / longueur nominale du nine (``nominal_nine_length``) ;
   moyenne de cos α (trous joués à rebours : cos α < 0).
@@ -282,8 +283,9 @@ def hull_ratio(tees: Sequence[Point], greens: Sequence[Point],
                outer_ring: Sequence[Point]) -> float:
     """Aire de l'enveloppe convexe des tees et greens / aire du polygone
     ``outer_ring`` (anneau extérieur). Petite valeur : nine ramassé (le
-    nine intérieur enroulé au centre) ; ``ValueError`` si l'anneau est
-    d'aire nulle."""
+    nine intérieur enroulé au centre). Pas borné à [0, 1] : le nine
+    extérieur déborde de l'anneau extérieur et dépasse couramment 1.
+    ``ValueError`` si l'anneau est d'aire nulle."""
     ring_area = polygon_area(outer_ring)
     if ring_area <= 0.0:
         raise ValueError("anneau extérieur d'aire nulle")

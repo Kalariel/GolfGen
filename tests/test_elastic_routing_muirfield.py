@@ -822,6 +822,14 @@ def test_lobe_envelope_is_quiet_near_the_clubhouse_and_full_beyond():
     assert np.all(np.diff(ramp) > 0.0)
 
 
+def test_lobe_envelope_wraps_around_theta_ch_near_pi():
+    """θ_ch ≈ ±π : l'écart angulaire est pris modulo 2π, pas en brut."""
+    eps = 1e-3
+    assert mf.lobe_envelope(-math.pi + eps, math.pi) == pytest.approx(0.0)
+    assert mf.lobe_envelope(math.pi - eps, -math.pi) == pytest.approx(0.0)
+    assert mf.lobe_envelope(-math.pi + eps + math.radians(90.0), math.pi) == pytest.approx(1.0)
+
+
 def test_lobe_offsets_stay_within_the_declared_amplitudes():
     theta = np.linspace(-math.pi, math.pi, 2001)
     for order in mf.LOBE_ORDERS:
@@ -874,6 +882,30 @@ def test_lobed_path_refuses_to_leave_the_map_or_collapse(monkeypatch):
         mf.lobed_inner_path(ch, 1, 300, 400, 18.0, (2, 0.0))
 
 
+@pytest.mark.parametrize("size", [(250, 400), (400, 250), (270, 270)])
+def test_lobed_mode_rejects_a_map_too_small_for_the_lobes_upfront(size, monkeypatch):
+    """Carte où l'anneau existe mais où LOBE_IN écraserait le chemin : erreur
+    explicite dès l'entrée de build_course, avant relief et routage."""
+    width, height = size
+    mf.ring_semi_axes(width, height)                      # le mode ring reste possible
+    def forbidden(*args, **kwargs):
+        raise AssertionError("relief chargé malgré une carte trop petite")
+    monkeypatch.setattr(mf, "load_terrain", forbidden)
+    with pytest.raises(ValueError, match="trop petite pour le mode lobed"):
+        mf.build_course(1, "muirfield", width=width, height=height, path_mode="lobed")
+
+
+@pytest.mark.parametrize("size", [(300, 400), (400, 300), (350, 400), (400, 400)])
+def test_lobe_room_accepts_the_measured_formats(size):
+    mf.check_lobe_room(*size)
+
+
+def test_lobe_room_rejects_lobes_leaving_the_map(monkeypatch):
+    monkeypatch.setattr(mf, "LOBE_OUT", 200.0)
+    with pytest.raises(ValueError, match="sortent de la carte"):
+        mf.check_lobe_room(300, 400)
+
+
 def test_unknown_path_mode_raises():
     with pytest.raises(ValueError, match="path_mode"):
         mf.build_course(1, "muirfield", width=300, height=400, path_mode="spirale")
@@ -892,10 +924,22 @@ def test_ring_mode_draws_no_lobes(monkeypatch):
 
 
 @pytest.mark.parametrize("pattern", mf.PATTERNS)
-def test_lobed_mode_only_bends_the_inner_nine(pattern):
+def test_lobed_mode_only_bends_the_inner_nine(pattern, monkeypatch):
     ring = mf.build_course(1, pattern, width=300, height=400, width_mode="min")
+    received: list[tuple] = []
+    original = mf.green_targets
+
+    def recording(path, pars, factors=None):
+        received.append(tuple(path))
+        return original(path, pars, factors)
+
+    monkeypatch.setattr(mf, "green_targets", recording)
     lobed = mf.build_course(1, pattern, width=300, height=400, width_mode="min",
                             path_mode="lobed")
+    # tentative retenue = deux derniers appels (front puis back) : les cibles
+    # du nine intérieur sont calculées sur le chemin à lobes, celles du nine
+    # extérieur sur l'anneau
+    assert received[-2:] == [lobed.front_path, lobed.back_path]
     assert lobed.path_mode == "lobed" and lobed.lobes == mf.lobe_parameters(1)
     assert lobed.violations == ()
     assert (lobed.outer_ring, lobed.inner_ring) == (ring.outer_ring, ring.inner_ring)

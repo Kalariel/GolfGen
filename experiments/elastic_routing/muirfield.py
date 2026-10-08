@@ -410,6 +410,33 @@ def lobed_inner_path(clubhouse: Point, direction: int, width: float = MAP_WIDTH,
             clubhouse]
 
 
+def check_lobe_room(width: float, height: float) -> None:
+    """Validation en amont du mode ``lobed`` : ``ValueError`` explicite si la
+    carte ne laisse pas la place aux lobes, quels que soient le clubhouse,
+    le sens, l'angle de départ et (m, φ).
+
+    Pire cas, enveloppe pleine sur tout le tour : l'anneau intérieur moins
+    ``LOBE_IN`` doit rester ≥ ``LOBE_MIN_RADIUS`` et l'anneau intérieur plus
+    ``LOBE_OUT`` doit rester dans la carte. Condition suffisante : si elle
+    passe, ``lobed_arc`` ne lève jamais sa ``ValueError`` (gardée en filet de
+    sécurité) ; sans elle, un round custom sur une petite carte planterait
+    en entier au lieu d'échouer seed par seed."""
+    center = (width / 2, height / 2)
+    _, (ix, iy) = ring_semi_axes(width, height)
+    thetas = np.linspace(0.0, 2 * math.pi, int(360 / RING_STEP_DEG) + 1)
+    radii = superellipse_radius(thetas, ix, iy)
+    if float(radii.min()) - LOBE_IN < LOBE_MIN_RADIUS:
+        raise ValueError(
+            f"carte {width:g}×{height:g} trop petite pour le mode lobed : anneau intérieur "
+            f"{ix:g}×{iy:g}, il faut un demi-axe ≥ LOBE_IN + LOBE_MIN_RADIUS = "
+            f"{LOBE_IN + LOBE_MIN_RADIUS:g}")
+    outer = radii + LOBE_OUT
+    xs, ys = center[0] + outer * np.cos(thetas), center[1] + outer * np.sin(thetas)
+    if xs.min() < 0.0 or ys.min() < 0.0 or xs.max() > width or ys.max() > height:
+        raise ValueError(f"carte {width:g}×{height:g} trop petite pour le mode lobed : "
+                         f"les lobes extérieurs (LOBE_OUT = {LOBE_OUT:g}) sortent de la carte")
+
+
 @dataclass(frozen=True, slots=True)
 class ClubhouseFrame:
     """Repère local : ``normal`` entrante, ``side`` = tangente vers le premier
@@ -1179,7 +1206,9 @@ def build_course(seed: int, pattern: str = "muirfield", heightmap: np.ndarray | 
     reçoit des lobes radiaux seedés (``lobe_parameters``,
     ``lobed_inner_path``) ; il sert aux cibles des greens et au départage
     des coudes. Anneaux, repère du clubhouse, couloir, cônes et capacité
-    des ancrages restent calculés sur l'anneau.
+    des ancrages restent calculés sur l'anneau. En mode ``lobed``, la taille
+    de carte est validée en amont (``check_lobe_room``) : ``ValueError``
+    immédiate si la carte est trop petite pour les lobes, avant tout calcul.
 
     Le résultat renvoyé a TOUJOURS zéro violation ``validate(layout, rules)`` ;
     les plages de liaison sont dérivées de ``rules`` (``link_bounds``)."""
@@ -1194,6 +1223,8 @@ def build_course(seed: int, pattern: str = "muirfield", heightmap: np.ndarray | 
     target_factors = target_jitter_factors(seed) if target_mode == "irregular" else None
     if path_mode not in PATH_MODES:
         raise ValueError(f"path_mode inconnu : {path_mode!r} (attendu : {', '.join(PATH_MODES)})")
+    if path_mode == "lobed":
+        check_lobe_room(width, height)
     lobes = lobe_parameters(seed) if path_mode == "lobed" else None
     started = time.perf_counter()
     timings: dict[str, float] = {}
