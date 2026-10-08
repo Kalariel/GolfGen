@@ -34,10 +34,13 @@ Verdict par taille (portrait / paysage, patrons poolés, réussites sur 12) :
 p90 de 11,6 s pour `muirfield_inverse`). La zone OK forme un **escalier**, pas
 un rectangle : un grand côté plus long compense un petit côté plus court.
 
+### Bornes proposées (non figées, décision en attente, voir §7)
+
+Petit côté **[300, 350]** × grand côté **[400, 500]**, dans les deux
+orientations.
+
 ## 3. Décisions de l'utilisateur (2026-10-08)
 
-- Bornes proposées : petit côté **[300, 350]** × grand côté **[400, 500]**, dans
-  les deux orientations.
 - Seuil de temps révisé EXPLICITEMENT par l'utilisateur : **p90 ≤ 15 s et
   max ≤ 30 s** hors relief. Le seuil de 10 s excluait 300×400, déjà validé.
 - Maximum 350×500 pour des raisons esthétiques : un parcours doit rester compact.
@@ -73,8 +76,9 @@ lui. Le mécanisme a été abandonné avant toute ligne de code dans le routeur.
 - Sur les 114 seeds rattrapées (le 1er clubhouse échoue, un suivant réussit),
   prendre l'argmax du score (somme) au premier essai donne 78 réussites. L'ordre
   actuel réussit dès le 2e clubhouse dans 103 cas.
-- Cause de fond : dans 37 des 300 couples (seed, taille), le MÊME clubhouse
-  réussit avec un patron et échoue avec l'autre. La limite vient donc de la
+- Cause de fond : dans 37 des 300 couples (seed, taille), le 1er clubhouse
+  réussit avec un patron et échoue avec l'autre (43 en comptant n'importe quel
+  clubhouse). La limite vient donc de la
   recherche des ancrages (k=3), pas du placement.
 - La règle « grands côtés seulement » n'est pas justifiée : 49 % des clubhouses
   en échec sont sur un petit côté (61/124), contre 56 % des clubhouses qui
