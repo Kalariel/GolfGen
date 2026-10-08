@@ -29,6 +29,10 @@ Rounds disponibles (``--round``) :
   30 seeds pour chaque patron et chaque mode, sans planche (le mode ring
   reproduit rc-30 et sert de base aux métriques M2) →
   ``r2b2_<patron>_<mode>_300x400_30seeds/`` ;
+- ``land`` / ``land-30`` : format paysage 400×300, réglages par défaut
+  (largeurs variables, cibles uniform, chemin ring), pour chaque patron —
+  planche 6 seeds → ``land_<patron>_400x300/`` ; 30 seeds sans planche →
+  ``land_<patron>_400x300_30seeds/`` ;
 - ``custom`` : ``--pattern``, ``--size LxH``, ``--seeds 1-6`` →
   ``custom_<patron>_<w>x<h>/``.
 
@@ -286,7 +290,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--round", choices=("r2", "ra", "ra-30", "ra2-30", "ra2-check",
                                             "rb", "rb-30", "rb-check", "rc", "rc-30", "r2b1",
-                                            "r2b1-30", "r2b2", "r2b2-30", "custom"),
+                                            "r2b1-30", "r2b2", "r2b2-30", "land", "land-30",
+                                            "custom"),
                         default="r2")
     parser.add_argument("--pattern", choices=PATTERN_CHOICES, default=None,
                         help="patron explicite (défaut : muirfield ; rb-30/rb-check : les deux)")
@@ -348,6 +353,13 @@ def main() -> None:
                 _run_format(300, 400, seeds=ROBUSTNESS_SEEDS if robust else SEEDS, label="r2b2",
                             out_name=f"r2b2_{pattern}_{mode}_300x400{suffix}", planche=not robust,
                             pattern=pattern, width_mode=args.width_mode, path_mode=mode)
+    elif args.round in ("land", "land-30"):
+        robust = args.round == "land-30"
+        for pattern in patterns:
+            suffix = "_30seeds" if robust else ""
+            _run_format(400, 300, seeds=ROBUSTNESS_SEEDS if robust else SEEDS, label="land",
+                        out_name=f"land_{pattern}_400x300{suffix}", planche=not robust,
+                        pattern=pattern, width_mode=args.width_mode)
     elif args.round == "rb-30":
         for pattern in patterns:
             _run_format(300, 400, seeds=ROBUSTNESS_SEEDS, label="rb",
