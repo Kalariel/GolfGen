@@ -10,14 +10,15 @@ viewer HTML/JS affiche sur un canvas interactif.
 golfgen/ + pipeline.py          pipeline : terrain OpenSimplex, routage loop_router (ruban serpentin)
 golfgen/routing/                routeur « Muirfield » : model, geometry, partial_checks, sites, muirfield
 viewer/                         viewer : ouvrir viewer/index.html (charge output/course.json)
-experiments/elastic_routing/    spike Muirfield : runners, rendus et expériences (cœur dans golfgen/routing/)
-experiments/bean_paving/        spike archivé
-tests/                          tests pytest (pipeline + spikes)
+tools/muirfield/                runner de planches, rendu lisible, métriques de forme ; sorties dans output/
+docs/muirfield-spike.md         historique du spike Muirfield (chemins historiques)
+tests/                          tests pytest (pipeline, cœur test_routing_*, outils test_tools_*)
 ```
 
 Détail de l'architecture, du contrat JSON et des invariants : note vault
 `/home/kalariel/Documents/Git/ObsidianVault/dev-kb/golfgen/_overview.md`, section
-« Pipeline golfgen : contrat JSON et invariants ». Spike : `experiments/elastic_routing/PLAN.md` (chemins historiques).
+« Pipeline golfgen : contrat JSON et invariants ». Spike : `docs/muirfield-spike.md` (chemins historiques ; le code des spikes
+abandonnés est récupérable via les tags git `archive/*`).
 
 ## Démarrage rapide
 
@@ -33,15 +34,15 @@ python -m venv .venv
 
 # Tests
 .venv/bin/python -m pytest tests/ -v
-.venv/bin/python -m pytest tests/ -v -k routing   # Muirfield : cœur (test_routing_*) + spike
+.venv/bin/python -m pytest tests/test_routing_*.py   # cœur Muirfield seul
 ```
 
 Puis ouvrir `viewer/index.html` dans un navigateur.
 
 ## Routeur Muirfield
 
-Le cœur vit dans `golfgen/routing/` (`muirfield.build_course`) ; le runner, les
-rendus et les expériences restent dans `experiments/elastic_routing/`.
+Le cœur vit dans `golfgen/routing/` (`muirfield.build_course`) ; le runner, le
+rendu lisible et les métriques de forme sont dans `tools/muirfield/`.
 
 - Patron explicite, au même titre que la seed : `muirfield`, `muirfield_inverse`,
   ou `random` (choix déterministe par seed).
@@ -55,17 +56,17 @@ rendus et les expériences restent dans `experiments/elastic_routing/`.
 
 ```bash
 # Runner (nécessite rsvg-convert et ImageMagick `magick` pour les planches)
-.venv/bin/python -m experiments.elastic_routing.run_muirfield \
+.venv/bin/python -m tools.muirfield.run_muirfield \
     --round custom --pattern muirfield_inverse --size 300x400 --seeds 1-6
-.venv/bin/python -m experiments.elastic_routing.run_muirfield --round rc-30   # 30 seeds par patron
+.venv/bin/python -m tools.muirfield.run_muirfield --round rc-30   # 30 seeds par patron
 ```
 
-Options : `--round` (r2, ra, ra-30, ra2-30, ra2-check, rb, rb-30, rb-check, rc,
-rc-30, custom), `--pattern`, `--width-mode {variable,min}`, `--size LxH`,
-`--seeds 1-6|3,7`. Sorties : `experiments/elastic_routing/output/muirfield/<round>_…/`
-(SVG/PNG par seed, `planche.png`, `report.json`). Détail : section « Étape M » de
-`experiments/elastic_routing/PLAN.md` (les chemins de modules qui y sont cités
-sont historiques).
+Options : `--round` (rc, rc-30, land, land-30, custom), `--pattern`,
+`--width-mode {variable,min}`, `--size LxH`, `--seeds 1-6|3,7`. Sorties :
+`tools/muirfield/output/<round>_<patron>_<w>x<h>[_30seeds]/` (SVG/PNG par seed,
+`planche.png`, `report.json`). Le relief est mis en cache dans
+`output/.cache/routing/`. Détail : section « Étape M » de `docs/muirfield-spike.md`
+(les chemins de modules qui y sont cités sont historiques).
 
 ## État et prochaines étapes
 

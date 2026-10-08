@@ -3,22 +3,22 @@
 GolfGen : générateur procédural de parcours de golf 18 trous pour Minecraft
 (1 bloc = 3 m) ; un pipeline Python produit un JSON qu'un viewer HTML/JS affiche.
 État : pipeline `golfgen/` + `pipeline.py` avec le routeur `loop_router` ; routeur
-« Muirfield » : cœur dans `golfgen/routing/`, runners et expériences dans
-`experiments/elastic_routing/` ; pas encore branché au pipeline ni au viewer.
+« Muirfield » : cœur dans `golfgen/routing/`, runner et rendus dans
+`tools/muirfield/` ; pas encore branché au pipeline ni au viewer.
 
 ## Commandes
 
 Toujours le venv `.venv` (le python système n'a pas pytest).
 
 ```bash
-.venv/bin/python -m pytest tests/ -v              # tous les tests
-.venv/bin/python -m pytest tests/ -v -k routing   # Muirfield : cœur (test_routing_*) + spike
+.venv/bin/python -m pytest tests/ -v                 # tous les tests
+.venv/bin/python -m pytest tests/test_routing_*.py   # cœur Muirfield seul
 .venv/bin/python pipeline.py --stage holes --seed 42 --output output/course.json
-.venv/bin/python -m experiments.elastic_routing.run_muirfield \
+.venv/bin/python -m tools.muirfield.run_muirfield \
     --round custom --pattern muirfield_inverse --size 300x400 --seeds 1-6
 ```
 
-Options : `pipeline.py --help`, `.venv/bin/python -m experiments.elastic_routing.run_muirfield --help`.
+Options : `pipeline.py --help`, `.venv/bin/python -m tools.muirfield.run_muirfield --help`.
 
 ## Conventions
 
@@ -37,8 +37,8 @@ Options : `pipeline.py --help`, `.venv/bin/python -m experiments.elastic_routing
 ## Où lire
 
 - `README.md` : vue d'ensemble, structure, démarrage.
-- `experiments/elastic_routing/PLAN.md`, section « Étape M » : spike, règles, résultats
-  (chemins historiques : le cœur est désormais dans `golfgen/routing/`).
+- `docs/muirfield-spike.md`, section « Étape M » : historique du spike, règles,
+  résultats (chemins historiques ; code abandonné sous les tags git `archive/*`).
 - Vault Obsidian :
   - `/home/kalariel/Documents/Git/ObsidianVault/dev-kb/golfgen/_overview.md`
   - `/home/kalariel/Documents/Git/ObsidianVault/dev-kb/golfgen/elastic-routing-muirfield.md` (historique et décisions)

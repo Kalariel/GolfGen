@@ -1,5 +1,9 @@
 # Spike `elastic_routing` — parcours global à trous déformables
 
+> Historique du spike (2026-09/10). Les chemins cités sont historiques : le
+> cœur est dans `golfgen/routing/`, les outils dans `tools/muirfield/`, et le
+> code des étapes abandonnées est récupérable via les tags git `archive/*`.
+
 ## Décision
 
 Le spike `bean_paving` reste une source d'oracles géométriques, de règles et
@@ -692,10 +696,6 @@ parcours tirées d'OpenStreetMap (`golf=hole`).
 Le plan détaillé du round Muirfield sera rédigé et validé avant tout code.
 
 ### Étape M — routage Muirfield
-
-> Note (2026-10-08) : le cœur (model, geometry, partial_checks, sites,
-> muirfield) a été déplacé dans `golfgen/routing/` le 2026-10-08 ; les chemins
-> cités dans ce document sont historiques.
 
 #### Décisions validées par l'utilisateur (2026-10-07)
 
