@@ -18,7 +18,7 @@ Toujours le venv `.venv` (le python système n'a pas pytest).
     --round custom --pattern muirfield_inverse --size 300x400 --seeds 1-6
 ```
 
-Options : `pipeline.py --help`, `python -m experiments.elastic_routing.run_muirfield --help`.
+Options : `pipeline.py --help`, `.venv/bin/python -m experiments.elastic_routing.run_muirfield --help`.
 
 ## Conventions
 

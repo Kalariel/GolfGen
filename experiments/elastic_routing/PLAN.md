@@ -767,7 +767,7 @@ Le plan détaillé du round Muirfield sera rédigé et validé avant tout code.
 
 #### R1 — résultat (2026-10-07)
 
-`python -m experiments.elastic_routing.run_muirfield` →
+`.venv/bin/python -m experiments.elastic_routing.run_muirfield` →
 `output/muirfield/r1/seed_<n>.svg|png`, `planche.png`, `report.json`.
 
 | seed | bord | violations | familles | front par / blocs | back par / blocs | doglegs | ms |
@@ -880,7 +880,7 @@ R2b pour isoler l'effet de la carte rectangulaire.
 
 #### R2 — résultat (2026-10-08)
 
-`python -m experiments.elastic_routing.run_muirfield` →
+`.venv/bin/python -m experiments.elastic_routing.run_muirfield` →
 `output/muirfield/r2_300x400/` et `output/muirfield/r2_350x400/` (svg/png
 par seed, `planche.png`, `report.json`) ; `output/muirfield/r1/` conservé.
 
@@ -943,7 +943,7 @@ restent telles quelles ; patron Muirfield inchangé.
 #### Round A (2026-10-08) — formats paysage et robustesse
 
 Aucun mécanisme ni budget modifié (1500 contrôles / 300 nœuds par nine,
-27 tentatives au plus). Runner : `python -m
+27 tentatives au plus). Runner : `.venv/bin/python -m
 experiments.elastic_routing.run_muirfield --round ra` (paysage) et
 `--round ra-30` (robustesse). Versionnés : `planche.png` + `report.json`.
 

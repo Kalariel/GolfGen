@@ -38,7 +38,7 @@ arrière borné, relances). Pour chaque format de carte, produit
 nine, relances, temps). Les sorties R1 (``output/muirfield/r1/``) sont
 conservées telles quelles pour comparaison (commit 9ff957a).
 
-    python -m experiments.elastic_routing.run_muirfield
+    .venv/bin/python -m experiments.elastic_routing.run_muirfield
 """
 
 from __future__ import annotations
