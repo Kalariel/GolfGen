@@ -21,6 +21,11 @@ Rounds disponibles (``--round``), sorties sous ``tools/muirfield/output/`` :
   ``--calib-orientation portrait``. Une ``ValueError`` levée pour la taille
   (géométrie trop petite) y est enregistrée en ``taille_invalide`` au lieu
   d'interrompre le round ; les autres rounds ne capturent rien de plus.
+- ``calib2`` : calibration des tailles (phase 2), même mécanique sur les
+  4 coins et le centre du rectangle retenu (petit 300–350 × grand 400–500),
+  2 orientations × 2 patrons × seeds 1–30 → ``calib_phase2/``. Critère de
+  lecture révisé par l'utilisateur : p90 ≤ 15 s, max ≤ 30 s. Mêmes filtres
+  ``--calib-*`` (restreints aux couples de la phase 2).
 
 Le patron (``--pattern`` : muirfield, muirfield_inverse, random) est un
 paramètre explicite au même titre que la seed. ``--width-mode`` choisit les
@@ -71,9 +76,16 @@ CALIB_SHORT = (240, 260, 280, 300, 325, 350)
 CALIB_LONG = (400, 450, 500)
 CALIB_ORIENTATIONS = ("portrait", "paysage")
 CALIB_PATTERNS = ("muirfield", "muirfield_inverse")
-# critère de lecture d'une taille « OK » (affiché, ne filtre rien)
+# critère de lecture d'une taille « OK » en phase 1 (affiché, ne filtre rien)
 CALIB_OK_P90_SECONDS = 10.0
 CALIB_OK_MAX_SECONDS = 30.0
+
+CALIB2_DIR = "calib_phase2"
+# 4 coins et centre du rectangle retenu après la phase 1 (petit, grand)
+CALIB2_COUPLES = ((300, 400), (300, 500), (350, 400), (350, 500), (325, 450))
+# critère révisé explicitement par l'utilisateur après la phase 1
+CALIB2_OK_P90_SECONDS = 15.0
+CALIB2_OK_MAX_SECONDS = 30.0
 
 
 def _percentile(values: list[float], q: float) -> float:
@@ -280,7 +292,24 @@ def _run_format(width: int, height: int, *, seeds: tuple[int, ...] = SEEDS,
     return summary
 
 
-# --- calibration des tailles (round ``calib``) ------------------------------
+# --- calibration des tailles (rounds ``calib`` et ``calib2``) ---------------
+
+class CalibPhase(NamedTuple):
+    """Paramètres d'une phase de calibration : grille, dossier, critère."""
+    number: int
+    directory: str
+    couples: tuple[tuple[int, int], ...]     # (petit, grand), petit < grand
+    seeds: tuple[int, ...]
+    ok_p90_seconds: float
+    ok_max_seconds: float
+
+
+CALIB_PHASE1 = CalibPhase(1, CALIB_DIR,
+                          tuple((s, l) for s in CALIB_SHORT for l in CALIB_LONG if s < l),
+                          SEEDS, CALIB_OK_P90_SECONDS, CALIB_OK_MAX_SECONDS)
+CALIB_PHASE2 = CalibPhase(2, CALIB2_DIR, CALIB2_COUPLES, ROBUSTNESS_SEEDS,
+                          CALIB2_OK_P90_SECONDS, CALIB2_OK_MAX_SECONDS)
+
 
 class CalibSize(NamedTuple):
     short: int
@@ -293,38 +322,42 @@ class CalibSize(NamedTuple):
 def calib_grid(shorts=CALIB_SHORT, longs=CALIB_LONG,
                orientations=CALIB_ORIENTATIONS) -> list[CalibSize]:
     """Tailles de la grille : couples petit < grand, dans chaque orientation."""
+    return calib_sizes([(s, l) for s in shorts for l in longs if s < l], orientations)
+
+
+def calib_sizes(couples, orientations=CALIB_ORIENTATIONS) -> list[CalibSize]:
+    """Tailles d'une liste de couples (petit, grand), dans chaque orientation."""
     sizes = []
-    for short in shorts:
-        for long in longs:
-            if not short < long:
-                continue
-            for orientation in orientations:
-                if orientation == "portrait":
-                    sizes.append(CalibSize(short, long, orientation, short, long))
-                elif orientation == "paysage":
-                    sizes.append(CalibSize(short, long, orientation, long, short))
-                else:
-                    raise ValueError(f"orientation inconnue : {orientation!r}")
+    for short, long in couples:
+        for orientation in orientations:
+            if orientation == "portrait":
+                sizes.append(CalibSize(short, long, orientation, short, long))
+            elif orientation == "paysage":
+                sizes.append(CalibSize(short, long, orientation, long, short))
+            else:
+                raise ValueError(f"orientation inconnue : {orientation!r}")
     return sizes
 
 
-def calib_out_name(pattern: str, width: int, height: int) -> str:
-    return f"{CALIB_DIR}/{pattern}_{width}x{height}"
+def calib_out_name(pattern: str, width: int, height: int,
+                   phase: CalibPhase = CALIB_PHASE1) -> str:
+    return f"{phase.directory}/{pattern}_{width}x{height}"
 
 
 def run_calib(sizes: list[CalibSize], *, patterns=CALIB_PATTERNS, seeds=SEEDS,
-              width_mode: str = "variable") -> dict:
+              width_mode: str = "variable", phase: CalibPhase = CALIB_PHASE1) -> dict:
     """Route chaque (taille, patron) séquentiellement, puis reconstruit la
     synthèse à partir de tous les report.json présents."""
     for size in sizes:
         for pattern in patterns:
-            _run_format(size.width, size.height, seeds=seeds, label="calib",
-                        out_name=calib_out_name(pattern, size.width, size.height),
+            label = "calib" if phase.number == 1 else f"calib{phase.number}"
+            _run_format(size.width, size.height, seeds=seeds, label=label,
+                        out_name=calib_out_name(pattern, size.width, size.height, phase),
                         planche=False, render=False, size_errors=True,
                         pattern=pattern, width_mode=width_mode,
                         extra={"calib": {"short": size.short, "long": size.long,
                                          "orientation": size.orientation}})
-    return write_calib_summary()
+    return write_calib_summary(phase)
 
 
 def _calib_stats(reports: list[dict]) -> dict:
@@ -358,8 +391,8 @@ def _calib_stats(reports: list[dict]) -> dict:
     }
 
 
-def _calib_verdict(stats: dict) -> list[str]:
-    """Raisons de KO selon le critère de lecture (liste vide : OK)."""
+def _calib_verdict(stats: dict, phase: CalibPhase = CALIB_PHASE1) -> list[str]:
+    """Raisons de KO selon le critère de lecture de la phase (liste vide : OK)."""
     reasons = []
     if stats["statuses"].get("taille_invalide"):
         reasons.append("taille_invalide")
@@ -367,14 +400,14 @@ def _calib_verdict(stats: dict) -> list[str]:
         reasons.append(f"réussites {stats['successes']}/{stats['seeds']}")
     if stats["violations_total"]:
         reasons.append(f"violations {stats['violations_total']}")
-    if stats["seconds_p90"] is not None and stats["seconds_p90"] > CALIB_OK_P90_SECONDS:
+    if stats["seconds_p90"] is not None and stats["seconds_p90"] > phase.ok_p90_seconds:
         reasons.append(f"p90 {stats['seconds_p90']:.1f} s")
-    if stats["seconds_max"] is not None and stats["seconds_max"] > CALIB_OK_MAX_SECONDS:
+    if stats["seconds_max"] is not None and stats["seconds_max"] > phase.ok_max_seconds:
         reasons.append(f"max {stats['seconds_max']:.1f} s")
     return reasons
 
 
-def build_calib_summary(reports: list[dict]) -> dict:
+def build_calib_summary(reports: list[dict], phase: CalibPhase = CALIB_PHASE1) -> dict:
     """Synthèse : une ligne par (petit, grand, orientation, patron), plus une
     ligne agrégée par (petit, grand, orientation), patrons poolés. Le verdict
     agrégé est OK si chaque patron présent est OK ET que les deux sont là."""
@@ -388,7 +421,7 @@ def build_calib_summary(reports: list[dict]) -> dict:
     for report in sorted(reports, key=key):
         c = report["calib"]
         stats = _calib_stats(report["reports"])
-        reasons = _calib_verdict(stats)
+        reasons = _calib_verdict(stats, phase)
         row = {"short": c["short"], "long": c["long"], "orientation": c["orientation"],
                "pattern": report["pattern"], "width": report["width"],
                "height": report["height"], "width_mode": report["width_mode"],
@@ -412,14 +445,19 @@ def build_calib_summary(reports: list[dict]) -> dict:
                                                     for row, _ in members},
                            **stats, "ok": not reasons, "ko_reasons": reasons})
     all_seeds = [r for report in reports for r in report["reports"]]
+    if phase.number == 1:
+        grid = {"short": list(CALIB_SHORT), "long": list(CALIB_LONG)}
+    else:
+        grid = {"couples": [list(c) for c in phase.couples],
+                "seeds": [phase.seeds[0], phase.seeds[-1]]}
     return {
-        "phase": 1,
+        "phase": phase.number,
         "criterion": {"successes": "toutes les seeds, chaque patron et orientation",
-                      "violations": 0, "seconds_p90_max": CALIB_OK_P90_SECONDS,
-                      "seconds_max_max": CALIB_OK_MAX_SECONDS,
+                      "violations": 0, "seconds_p90_max": phase.ok_p90_seconds,
+                      "seconds_max_max": phase.ok_max_seconds,
                       "note": "critère de lecture, temps HORS relief ; ne filtre rien"},
-        "grid": {"short": list(CALIB_SHORT), "long": list(CALIB_LONG),
-                 "orientations": list(CALIB_ORIENTATIONS), "patterns": list(CALIB_PATTERNS)},
+        "grid": {**grid, "orientations": list(CALIB_ORIENTATIONS),
+                 "patterns": list(CALIB_PATTERNS)},
         "totals": {"reports": len(reports), "seeds_run": len(all_seeds),
                    "routing_seconds": round(sum(r["elapsed_seconds"] for r in all_seeds), 1),
                    "terrain_seconds": round(sum(r.get("terrain_seconds_cached_or_built", 0.0)
@@ -436,12 +474,13 @@ def _fmt_seconds(value) -> str:
 def calib_summary_markdown(summary: dict) -> str:
     """Rendu lisible de la synthèse (tableaux markdown)."""
     totals = summary["totals"]
+    criterion = summary["criterion"]
     lines = [
-        "# Calibration Muirfield — phase 1",
+        f"# Calibration Muirfield — phase {summary['phase']}",
         "",
         f"Critère de lecture (ne filtre rien) : toutes les seeds réussies pour chaque patron "
-        f"et orientation, 0 violation, p90 ≤ {CALIB_OK_P90_SECONDS:g} s et max ≤ "
-        f"{CALIB_OK_MAX_SECONDS:g} s, temps HORS relief. Relief : chargé ou construit "
+        f"et orientation, 0 violation, p90 ≤ {criterion['seconds_p90_max']:g} s et max ≤ "
+        f"{criterion['seconds_max_max']:g} s, temps HORS relief. Relief : chargé ou construit "
         f"(construit au 1er patron, en cache au 2e).",
         "",
         f"Total : {totals['reports']} combinaisons, {totals['seeds_run']} seeds, routage "
@@ -484,13 +523,13 @@ def calib_summary_markdown(summary: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
-def write_calib_summary() -> dict:
-    """Relit tous les ``calib_phase1/*/report.json`` (fusion des morceaux) et
-    écrit ``summary.json`` et ``summary.md``."""
-    root = OUTPUT_ROOT / CALIB_DIR
+def write_calib_summary(phase: CalibPhase = CALIB_PHASE1) -> dict:
+    """Relit tous les ``<dossier de la phase>/*/report.json`` (fusion des
+    morceaux) et écrit ``summary.json`` et ``summary.md``."""
+    root = OUTPUT_ROOT / phase.directory
     reports = [json.loads(path.read_text(encoding="utf-8"))
                for path in sorted(root.glob("*/report.json"))]
-    summary = build_calib_summary(reports)
+    summary = build_calib_summary(reports, phase)
     root.mkdir(parents=True, exist_ok=True)
     (root / "summary.json").write_text(json.dumps(summary, indent=2, ensure_ascii=False) + "\n",
                                        encoding="utf-8")
@@ -511,14 +550,16 @@ def _parse_seeds(text: str) -> tuple[int, ...]:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--round", choices=("rc", "rc-30", "land", "land-30", "custom", "calib"),
+    parser.add_argument("--round", choices=("rc", "rc-30", "land", "land-30", "custom", "calib",
+                                            "calib2"),
                         default="rc")
     parser.add_argument("--pattern", choices=PATTERN_CHOICES, default=None,
                         help="patron explicite (défaut : muirfield ; rc-30/land/land-30 : tous)")
     parser.add_argument("--width-mode", choices=("variable", "min"), default="variable",
                         help="largeurs de fairway (défaut : variable ; min : largeur minimale)")
     parser.add_argument("--size", default="300x400", help="format LxH (round custom)")
-    parser.add_argument("--seeds", default="1-6", help="ex. 1-6 ou 3,7 (rounds custom, calib)")
+    parser.add_argument("--seeds", default=None,
+                        help="ex. 1-6 ou 3,7 (rounds custom et calib : défaut 1-6 ; calib2 : 1-30)")
     parser.add_argument("--calib-short", default=None,
                         help="calib : petits côtés à lancer, ex. 240,260 (défaut : toute la grille)")
     parser.add_argument("--calib-long", default=None,
@@ -545,24 +586,30 @@ def main() -> None:
             _run_format(400, 300, seeds=ROBUSTNESS_SEEDS if robust else SEEDS, label="land",
                         out_name=f"land_{pattern}_400x300{suffix}", planche=not robust,
                         pattern=pattern, width_mode=args.width_mode)
-    elif args.round == "calib":
+    elif args.round in ("calib", "calib2"):
+        phase = CALIB_PHASE1 if args.round == "calib" else CALIB_PHASE2
         if args.calib_summary_only:
-            summary = write_calib_summary()
+            summary = write_calib_summary(phase)
         else:
-            for name, values, grid in (("--calib-short", _int_list(args.calib_short), CALIB_SHORT),
-                                       ("--calib-long", _int_list(args.calib_long), CALIB_LONG)):
+            shorts = sorted({s for s, _ in phase.couples})
+            longs = sorted({l for _, l in phase.couples})
+            wanted_short, wanted_long = _int_list(args.calib_short), _int_list(args.calib_long)
+            for name, values, grid in (("--calib-short", wanted_short, shorts),
+                                       ("--calib-long", wanted_long, longs)):
                 if values and not set(values) <= set(grid):
                     parser.error(f"{name} hors grille {grid} : {values}")
-            sizes = calib_grid(_int_list(args.calib_short) or CALIB_SHORT,
-                               _int_list(args.calib_long) or CALIB_LONG,
-                               (args.calib_orientation,) if args.calib_orientation
-                               else CALIB_ORIENTATIONS)
+            couples = [(s, l) for s, l in phase.couples
+                       if (not wanted_short or s in wanted_short)
+                       and (not wanted_long or l in wanted_long)]
+            sizes = calib_sizes(couples, (args.calib_orientation,) if args.calib_orientation
+                                else CALIB_ORIENTATIONS)
+            seeds = _parse_seeds(args.seeds) if args.seeds else phase.seeds
             summary = run_calib(sizes, patterns=(args.pattern,) if args.pattern else CALIB_PATTERNS,
-                                seeds=_parse_seeds(args.seeds), width_mode=args.width_mode)
-        print(f"calib : {summary['totals']}")
+                                seeds=seeds, width_mode=args.width_mode, phase=phase)
+        print(f"{args.round} : {summary['totals']}")
     else:
         width, height = (int(v) for v in args.size.lower().split("x"))
-        seeds = _parse_seeds(args.seeds)
+        seeds = _parse_seeds(args.seeds or "1-6")
         pattern = args.pattern or "muirfield"
         _run_format(width, height, seeds=seeds, label="custom", pattern=pattern,
                     out_name=f"custom_{pattern}_{width}x{height}", width_mode=args.width_mode)

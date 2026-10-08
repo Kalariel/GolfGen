@@ -134,3 +134,42 @@ def test_build_calib_summary_rows_aggregates_and_verdicts():
     markdown = rm.calib_summary_markdown(summary)
     assert markdown.startswith("# Calibration Muirfield")
     assert "| 300 | 400 | portrait | 300×400 | 6 / 6 |" in markdown
+
+
+def test_calib_phase2_grid_is_corners_and_centre_in_both_orientations():
+    phase = rm.CALIB_PHASE2
+    assert phase.directory == "calib_phase2"
+    assert phase.seeds == tuple(range(1, 31))
+    assert (phase.ok_p90_seconds, phase.ok_max_seconds) == (15.0, 30.0)
+    assert set(phase.couples) == {(300, 400), (300, 500), (350, 400), (350, 500), (325, 450)}
+    sizes = rm.calib_sizes(phase.couples)
+    assert len(sizes) == 10
+    assert CalibSize(350, 500, "paysage", 500, 350) in sizes
+
+
+def test_calib_phase1_unchanged_by_phase_parameter():
+    assert rm.CALIB_PHASE1.directory == rm.CALIB_DIR
+    assert len(rm.CALIB_PHASE1.couples) == 18
+    assert rm.CALIB_PHASE1.ok_p90_seconds == rm.CALIB_OK_P90_SECONDS == 10.0
+
+
+def test_calib_phase2_verdict_uses_revised_p90():
+    seeds = [_seed(i, elapsed=12.0) for i in range(1, 11)]
+    reports = [_report(p, 300, 400, "portrait", seeds) for p in rm.CALIB_PATTERNS]
+    phase1 = rm.build_calib_summary(reports)
+    phase2 = rm.build_calib_summary(reports, rm.CALIB_PHASE2)
+    assert not phase1["aggregated"][0]["ok"]
+    assert phase2["aggregated"][0]["ok"] and phase2["phase"] == 2
+    assert phase2["criterion"]["seconds_p90_max"] == 15.0
+    assert rm.calib_summary_markdown(phase2).startswith("# Calibration Muirfield — phase 2")
+    assert "p90 ≤ 15 s" in rm.calib_summary_markdown(phase2)
+
+
+def test_run_calib_phase2_writes_under_its_own_directory(flat_output):
+    rm.run_calib([CalibSize(200, 400, "portrait", 200, 400)], patterns=("muirfield",),
+                 seeds=(1,), phase=rm.CALIB_PHASE2)
+    assert (flat_output / "calib_phase2" / "muirfield_200x400" / "report.json").exists()
+    summary = json.loads((flat_output / "calib_phase2" / "summary.json").read_text(
+        encoding="utf-8"))
+    assert summary["phase"] == 2
+    assert not (flat_output / rm.CALIB_DIR).exists()
