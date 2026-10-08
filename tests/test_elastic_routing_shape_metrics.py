@@ -13,12 +13,19 @@ from experiments.elastic_routing.run_muirfield import _planche_title, _shape_sta
 from experiments.elastic_routing.shape_metrics import (
     CV_MIN_PROGRESS,
     angular_step_cv,
+    convex_hull,
     direction_entropy,
+    forward_mean,
+    heading_turns,
+    hull_ratio,
     nearest_segment,
+    nominal_nine_length,
     obliquity_abs,
     obliquity_signed,
     oriented_angular_steps,
+    path_to_nine_length,
     path_tangent,
+    polygon_area,
     radial_alignment_R,
     shape_metrics,
 )
@@ -167,8 +174,10 @@ def _windmill_course() -> CourseLayout:
 def test_shape_metrics_summary_is_serialisable():
     metrics = shape_metrics(_windmill_course())
     assert set(metrics) == {"front", "back", "course"}
+    base = {"angular_step_cv", "direction_entropy", "radial_alignment_R"}
+    assert set(metrics["course"]) == base
     for scope in metrics.values():
-        assert set(scope) == {"angular_step_cv", "direction_entropy", "radial_alignment_R"}
+        assert set(scope) == (base if scope is metrics["course"] else base | {"heading_turns"})
         assert scope["angular_step_cv"] == pytest.approx(0.0, abs=1e-4)
         assert scope["radial_alignment_R"] == pytest.approx(1.0)
     # 18 orientations distinctes modulo 180° : les 12 cases sont touchées, mais
@@ -283,6 +292,96 @@ def test_obliquity_is_reported_per_nine_only_when_paths_are_given():
     assert json.loads(json.dumps(metrics, allow_nan=False)) == metrics
 
 
+# -- métriques R2b M2 ---------------------------------------------------------
+
+def _square(side: float, origin=(0.0, 0.0)):
+    x, y = origin
+    return [(x, y), (x + side, y), (x + side, y + side), (x, y + side)]
+
+
+def test_heading_turns_counts_absolute_turns_between_successive_chords():
+    straight_tees = [(i * 100.0, 0.0) for i in range(9)]
+    straight_greens = [(i * 100.0 + 80.0, 0.0) for i in range(9)]
+    assert heading_turns(straight_tees, straight_greens) == 0.0
+    # tour régulier : 8 virages de 40° = 320° ; même valeur dans l'autre sens
+    tees, greens = _blades(twist=0.0)
+    tangent_tees = [_polar(100.0, i * 2 * math.pi / 9) for i in range(9)]
+    tangent_greens = [_polar(100.0, (i + 0.5) * 2 * math.pi / 9) for i in range(9)]
+    assert heading_turns(tangent_tees, tangent_greens) == pytest.approx(320.0 / 360.0)
+    assert heading_turns(tangent_tees[::-1], tangent_greens[::-1]) == pytest.approx(320.0 / 360.0)
+    assert heading_turns(tees, greens) == pytest.approx(320.0 / 360.0)
+    # zigzag à ±90° : 8 virages de 90° = 2 tours, sans aucune progression nette
+    zig_tees = [(0.0, 0.0)] * 9
+    zig_greens = [(100.0, 0.0) if i % 2 == 0 else (0.0, 100.0) for i in range(9)]
+    assert heading_turns(zig_tees, zig_greens) == pytest.approx(2.0)
+    # hélice : deux tours en 9 trous → 8 virages de 80°
+    helix_tees = [_polar(100.0, i * 4 * math.pi / 9) for i in range(9)]
+    helix_greens = [_polar(100.0, (i + 0.5) * 4 * math.pi / 9) for i in range(9)]
+    assert heading_turns(helix_tees, helix_greens) == pytest.approx(8 * 80.0 / 360.0)
+    assert heading_turns(tees[:1], greens[:1]) == 0.0
+
+
+def test_hull_ratio_compares_the_convex_hull_to_the_outer_ring():
+    ring = _square(200.0)
+    assert polygon_area(ring) == pytest.approx(40_000.0)
+    assert polygon_area([*ring, ring[0]]) == pytest.approx(40_000.0)   # fermé ou non
+    tees = [(50.0, 50.0), (150.0, 150.0), (100.0, 100.0)]              # point intérieur ignoré
+    greens = [(150.0, 50.0), (50.0, 150.0), (60.0, 60.0)]
+    assert len(convex_hull([*tees, *greens])) == 4
+    assert hull_ratio(tees, greens, ring) == pytest.approx(0.25)
+    assert hull_ratio([(0.0, 0.0), (10.0, 10.0)], [(5.0, 5.0), (20.0, 20.0)], ring) == 0.0
+    circle = _circle(radius=100.0, count=720)
+    assert polygon_area(circle) == pytest.approx(math.pi * 100.0 ** 2, rel=1e-4)
+    with pytest.raises(ValueError):
+        hull_ratio(tees, greens, [(0.0, 0.0), (1.0, 1.0)])
+
+
+def test_path_to_nine_length_uses_the_nominal_nine_length():
+    pars = (4,) * 9
+    nominal = nominal_nine_length(pars)
+    assert nominal == pytest.approx(9 * 122.5 + 10 * mf.LINK_NOMINAL)
+    # même total que celui que green_targets répartit le long du chemin
+    assert nominal == pytest.approx(sum(mf.LINK_NOMINAL + mf._nominal_length(p) for p in pars)
+                                    + mf.LINK_NOMINAL)
+    path = [(0.0, 0.0), (nominal / 2, 0.0), (nominal / 2, nominal / 2)]
+    assert path_to_nine_length(path, pars) == pytest.approx(1.0)
+    assert path_to_nine_length(path[:2], pars) == pytest.approx(0.5)
+
+
+def test_forward_mean_flags_holes_played_backwards():
+    path = [(0.0, 0.0), (1000.0, 0.0)]
+    tees = [(100.0 * i, 5.0) for i in range(4)]
+    forward = [(t[0] + 80.0, 5.0) for t in tees]
+    backward = [(t[0] - 80.0, 5.0) for t in tees]
+    across = [(t[0], 85.0) for t in tees]
+    assert forward_mean(tees, forward, path) == pytest.approx(1.0)
+    assert forward_mean(tees, backward, path) == pytest.approx(-1.0)
+    assert forward_mean(tees, across, path) == pytest.approx(0.0, abs=1e-12)
+    # obliquity_abs ne voit pas la différence : à rebours compte pour 0
+    assert obliquity_abs(tees, backward, path) == pytest.approx(0.0, abs=1e-12)
+    assert obliquity_abs(tees, forward, path) == pytest.approx(0.0, abs=1e-12)
+    assert forward_mean([], [], path) == 0.0
+
+
+def test_ring_obliquity_is_measured_on_the_ring_path():
+    layout = _windmill_course()
+    circle = _circle(radius=105.0)
+    reversed_circle = circle[::-1]
+    metrics = shape_metrics(layout, front_path=circle, back_path=circle,
+                            front_ring_path=reversed_circle, back_ring_path=circle,
+                            outer_ring=_circle(radius=180.0))
+    front, back = metrics["front"], metrics["back"]
+    assert front["obliquity_signed_ring"] == pytest.approx(-front["obliquity_signed"], abs=1e-4)
+    assert back["obliquity_signed_ring"] == back["obliquity_signed"]
+    for nine in (front, back):
+        assert set(nine) >= {"heading_turns", "hull_ratio", "forward_mean",
+                             "path_to_nine_length", "obliquity_signed_ring",
+                             "obliquity_abs_ring"}
+        assert 0.0 < nine["hull_ratio"] < 1.0
+    assert "heading_turns" not in metrics["course"]
+    assert json.loads(json.dumps(metrics, allow_nan=False)) == metrics
+
+
 # -- agrégation du runner --------------------------------------------------------
 
 def test_shape_stats_skip_failures_and_missing_values():
@@ -312,12 +411,19 @@ def test_planche_title_keeps_the_legacy_form_outside_r2b_rounds():
 
 # -- métriques figées sur un vrai parcours -------------------------------------
 
-# muirfield seed 1, 300×400, width_mode="min", target_mode uniform
+# muirfield seed 1, 300×400, width_mode="min", target_mode uniform, path_mode ring
+# (clés R2b M2 ajoutées après ``obliquity_abs`` ; valeurs antérieures inchangées)
 REAL_COURSE_SHAPE = {
     "front": {"angular_step_cv": 0.2681, "direction_entropy": 0.6749, "radial_alignment_R": 0.488,
-              "obliquity_signed": -0.0213, "obliquity_abs": 0.2614},
+              "obliquity_signed": -0.0213, "obliquity_abs": 0.2614,
+              "heading_turns": 1.1867, "hull_ratio": 1.14, "forward_mean": 0.8809,
+              "path_to_nine_length": 0.78, "obliquity_signed_ring": -0.0213,
+              "obliquity_abs_ring": 0.2614},
     "back": {"angular_step_cv": 0.3325, "direction_entropy": 0.6983, "radial_alignment_R": 0.2601,
-             "obliquity_signed": -0.0573, "obliquity_abs": 0.3451},
+             "obliquity_signed": -0.0573, "obliquity_abs": 0.3451,
+             "heading_turns": 1.8648, "hull_ratio": 0.4784, "forward_mean": 0.4435,
+             "path_to_nine_length": 0.523, "obliquity_signed_ring": -0.0573,
+             "obliquity_abs_ring": 0.3451},
     "course": {"angular_step_cv": 0.3164, "direction_entropy": 0.7739,
                "radial_alignment_R": 0.1139},
 }
@@ -327,5 +433,6 @@ def test_shape_metrics_on_a_real_course_are_frozen():
     result = mf.build_course(1, "muirfield", width=300, height=400, width_mode="min")
     assert result.target_mode == "uniform"
     metrics = shape_metrics(result.layout, front_path=result.front_path,
-                            back_path=result.back_path)
+                            back_path=result.back_path, front_ring_path=result.front_ring_path,
+                            back_ring_path=result.back_ring_path, outer_ring=result.outer_ring)
     assert metrics == REAL_COURSE_SHAPE

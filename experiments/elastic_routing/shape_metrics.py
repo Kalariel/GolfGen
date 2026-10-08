@@ -27,6 +27,20 @@ Deux métriques par nine seulement, quand le chemin du nine (``front_path`` /
   corde). ≈ 0 → trous tangents (ou à rebours, ou obliquités qui se
   compensent) ; nettement d'un seul signe → pales de moulinet.
 - ``obliquity_abs`` : moyenne de |sin α| (obliquité sans signe).
+
+Round R2b M2 (chemin intérieur à lobes), par nine :
+
+- ``heading_turns`` (toujours) : Σ|Δcap| / 2π sur la suite des cordes
+  tee→green successives ; auto-enroulement du nine (≈ 1 pour un tour simple,
+  au-delà le nine s'enroule ou zigzague).
+- ``hull_ratio`` (``outer_ring`` fourni) : aire de l'enveloppe convexe des
+  tees et greens du nine / aire du polygone de l'anneau extérieur.
+- ``path_to_nine_length`` et ``forward_mean`` (chemin fourni) : longueur du
+  chemin cible / longueur nominale du nine (``nominal_nine_length``) ;
+  moyenne de cos α (trous joués à rebours : cos α < 0).
+- ``obliquity_signed_ring`` / ``obliquity_abs_ring`` (chemin ANNEAU fourni) :
+  obliquités mesurées sur l'anneau, comparables au round R2b 1 quand le
+  chemin effectif est à lobes.
 """
 
 from __future__ import annotations
@@ -36,7 +50,8 @@ from typing import Sequence
 
 import numpy as np
 
-from experiments.elastic_routing.model import CourseLayout, ElasticHole
+from experiments.elastic_routing.model import PAR_SPECS, CourseLayout, ElasticHole
+from experiments.elastic_routing.muirfield import LINK_NOMINAL
 
 
 Point = tuple[float, float]
@@ -193,9 +208,105 @@ def obliquity_signed(tees: Sequence[Point], greens: Sequence[Point],
 
 def obliquity_abs(tees: Sequence[Point], greens: Sequence[Point],
                   path: Sequence[Point]) -> float:
-    """Moyenne de |sin α| ∈ [0, 1] ; 0.0 sans trou."""
+    """Moyenne de |sin α| ∈ [0, 1] ; 0.0 sans trou.
+
+    Un trou joué à rebours (α ≈ 180°) y compte pour 0, comme un trou
+    tangent : ``forward_mean`` (moyenne de cos α) les distingue."""
     sines = obliquity_sines(tees, greens, path)
     return float(np.abs(sines).mean()) if sines.size else 0.0
+
+
+def hole_cosines(tees: Sequence[Point], greens: Sequence[Point],
+                 path: Sequence[Point]) -> np.ndarray:
+    """cos α par trou (même α que ``obliquity_sines``)."""
+    tee_xy, green_xy = _as_array(tees), _as_array(greens)
+    middle = (tee_xy + green_xy) / 2.0
+    tangent = np.array([path_tangent(path, tuple(m)) for m in middle])
+    return np.cos(_orientations(tee_xy, green_xy) - tangent)
+
+
+def forward_mean(tees: Sequence[Point], greens: Sequence[Point],
+                 path: Sequence[Point]) -> float:
+    """Moyenne de cos α ∈ [-1, 1] ; 0.0 sans trou. 1 = trous joués dans le
+    sens du chemin ; un trou joué à rebours compte pour −1, un trou
+    perpendiculaire pour 0."""
+    cosines = hole_cosines(tees, greens, path)
+    return float(cosines.mean()) if cosines.size else 0.0
+
+
+def heading_turns(tees: Sequence[Point], greens: Sequence[Point]) -> float:
+    """Σ|Δcap| / 2π : somme des virages absolus entre cordes tee→green
+    successives (chaque Δ ramené dans [-π, π)), en tours. 0 sans virage ou
+    avec moins de deux trous. Un nine qui fait un tour régulier vaut à peu
+    près 1 (un peu moins : 8 virages pour 9 trous) ; une hélice ou un zigzag
+    donne plus."""
+    headings = _orientations(tees, greens)
+    if headings.size < 2:
+        return 0.0
+    return float(np.abs(_wrap(np.diff(headings))).sum()) / (2.0 * math.pi)
+
+
+def polygon_area(points: Sequence[Point]) -> float:
+    """Aire (non signée) d'un polygone, formule du lacet ; le polygone est
+    fermé implicitement (un dernier point égal au premier ne change rien)."""
+    arr = _as_array(points)
+    if len(arr) < 3:
+        return 0.0
+    x, y = arr[:, 0], arr[:, 1]
+    return abs(float(np.dot(x, np.roll(y, -1)) - np.dot(y, np.roll(x, -1)))) / 2.0
+
+
+def convex_hull(points: Sequence[Point]) -> np.ndarray:
+    """Enveloppe convexe (chaîne monotone d'Andrew), sommets dans l'ordre ;
+    points alignés retirés."""
+    arr = np.unique(_as_array(points), axis=0)
+    if len(arr) < 3:
+        return arr
+
+    def half(sequence) -> list:
+        chain: list = []
+        for p in sequence:
+            while len(chain) >= 2:
+                (ax, ay), (bx, by) = chain[-2], chain[-1]
+                if (bx - ax) * (p[1] - ay) - (by - ay) * (p[0] - ax) > 0.0:
+                    break
+                chain.pop()
+            chain.append(p)
+        return chain
+
+    lower, upper = half(arr), half(arr[::-1])
+    return np.asarray(lower[:-1] + upper[:-1])
+
+
+def hull_ratio(tees: Sequence[Point], greens: Sequence[Point],
+               outer_ring: Sequence[Point]) -> float:
+    """Aire de l'enveloppe convexe des tees et greens / aire du polygone
+    ``outer_ring`` (anneau extérieur). Petite valeur : nine ramassé (le
+    nine intérieur enroulé au centre) ; ``ValueError`` si l'anneau est
+    d'aire nulle."""
+    ring_area = polygon_area(outer_ring)
+    if ring_area <= 0.0:
+        raise ValueError("anneau extérieur d'aire nulle")
+    return polygon_area(convex_hull([*tees, *greens])) / ring_area
+
+
+def nominal_nine_length(pars: Sequence[int]) -> float:
+    """Longueur nominale d'un nine : milieu de la plage de longueur de
+    chaque par, plus ``LINK_NOMINAL`` par liaison (len(pars) + 1 liaisons,
+    clubhouse compris). C'est le total que ``muirfield.green_targets``
+    répartit le long du chemin cible."""
+    return math.fsum((PAR_SPECS[par].length_min + PAR_SPECS[par].length_max) / 2.0
+                     for par in pars) + (len(pars) + 1) * LINK_NOMINAL
+
+
+def path_to_nine_length(path: Sequence[Point], pars: Sequence[int]) -> float:
+    """Longueur du chemin cible (polyligne complète, liaisons au clubhouse
+    comprises) / ``nominal_nine_length(pars)``. > 1 : les cibles sont plus
+    espacées que la longueur naturelle du nine ; < 1 : le nine doit
+    s'enrouler pour consommer sa longueur."""
+    arr = _as_array(path)
+    length = float(np.hypot(*np.diff(arr, axis=0).T).sum())
+    return length / nominal_nine_length(pars)
 
 
 def _xy(point) -> Point:
@@ -203,7 +314,9 @@ def _xy(point) -> Point:
 
 
 def _nine_metrics(holes: Sequence[ElasticHole], centre: Point,
-                  path: Sequence[Point] | None = None) -> dict[str, float | None]:
+                  path: Sequence[Point] | None = None, *, nine: bool = False,
+                  ring_path: Sequence[Point] | None = None,
+                  outer_ring: Sequence[Point] | None = None) -> dict[str, float | None]:
     tees = [_xy(h.tee) for h in holes]
     greens = [_xy(h.green) for h in holes]
     metrics = {
@@ -214,6 +327,17 @@ def _nine_metrics(holes: Sequence[ElasticHole], centre: Point,
     if path is not None:
         metrics["obliquity_signed"] = obliquity_signed(tees, greens, path)
         metrics["obliquity_abs"] = obliquity_abs(tees, greens, path)
+    if not nine:
+        return metrics
+    metrics["heading_turns"] = heading_turns(tees, greens)
+    if outer_ring is not None:
+        metrics["hull_ratio"] = hull_ratio(tees, greens, outer_ring)
+    if path is not None:
+        metrics["forward_mean"] = forward_mean(tees, greens, path)
+        metrics["path_to_nine_length"] = path_to_nine_length(path, [h.par for h in holes])
+    if ring_path is not None:
+        metrics["obliquity_signed_ring"] = obliquity_signed(tees, greens, ring_path)
+        metrics["obliquity_abs_ring"] = obliquity_abs(tees, greens, ring_path)
     return metrics
 
 
@@ -223,7 +347,10 @@ def _rounded(metrics: dict[str, float | None], digits: int) -> dict[str, float |
 
 def shape_metrics(layout: CourseLayout, digits: int = 4, *,
                   front_path: Sequence[Point] | None = None,
-                  back_path: Sequence[Point] | None = None
+                  back_path: Sequence[Point] | None = None,
+                  front_ring_path: Sequence[Point] | None = None,
+                  back_ring_path: Sequence[Point] | None = None,
+                  outer_ring: Sequence[Point] | None = None,
                   ) -> dict[str, dict[str, float | None]]:
     """Synthèse sérialisable ``{"front": {...}, "back": {...}, "course": {...}}``.
 
@@ -234,6 +361,11 @@ def shape_metrics(layout: CourseLayout, digits: int = 4, *,
     ``front_path`` / ``back_path`` (chemins des nines orientés dans le sens de
     jeu) ajoutent ``obliquity_signed`` et ``obliquity_abs`` au nine
     correspondant ; pas d'obliquité au niveau ``course``.
+
+    Par nine seulement (round R2b M2) : ``heading_turns`` toujours ;
+    ``forward_mean`` et ``path_to_nine_length`` avec le chemin ;
+    ``obliquity_*_ring`` avec ``front_ring_path`` / ``back_ring_path``
+    (chemins sur l'anneau) ; ``hull_ratio`` avec ``outer_ring``.
     """
     centre = (layout.width / 2.0, layout.height / 2.0)
     ordered = sorted(layout.holes, key=lambda h: h.order)
@@ -244,7 +376,11 @@ def shape_metrics(layout: CourseLayout, digits: int = 4, *,
                             for nine in (front, back)])
     course["angular_step_cv"] = _cv(steps)
     return {
-        "front": _rounded(_nine_metrics(front, centre, front_path), digits),
-        "back": _rounded(_nine_metrics(back, centre, back_path), digits),
+        "front": _rounded(_nine_metrics(front, centre, front_path, nine=True,
+                                        ring_path=front_ring_path, outer_ring=outer_ring),
+                          digits),
+        "back": _rounded(_nine_metrics(back, centre, back_path, nine=True,
+                                       ring_path=back_ring_path, outer_ring=outer_ring),
+                         digits),
         "course": _rounded(course, digits),
     }
