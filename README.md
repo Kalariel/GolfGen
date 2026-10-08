@@ -8,15 +8,16 @@ viewer HTML/JS affiche sur un canvas interactif.
 
 ```
 golfgen/ + pipeline.py          pipeline : terrain OpenSimplex, routage loop_router (ruban serpentin)
+golfgen/routing/                routeur « Muirfield » : model, geometry, partial_checks, sites, muirfield
 viewer/                         viewer : ouvrir viewer/index.html (charge output/course.json)
-experiments/elastic_routing/    spike actuel : routeur par patron d'architecte « Muirfield »
+experiments/elastic_routing/    spike Muirfield : runners, rendus et expériences (cœur dans golfgen/routing/)
 experiments/bean_paving/        spike archivé
 tests/                          tests pytest (pipeline + spikes)
 ```
 
 Détail de l'architecture, du contrat JSON et des invariants : note vault
 `/home/kalariel/Documents/Git/ObsidianVault/dev-kb/golfgen/_overview.md`, section
-« Pipeline golfgen : contrat JSON et invariants ». Spike : `experiments/elastic_routing/PLAN.md`.
+« Pipeline golfgen : contrat JSON et invariants ». Spike : `experiments/elastic_routing/PLAN.md` (chemins historiques).
 
 ## Démarrage rapide
 
@@ -32,12 +33,15 @@ python -m venv .venv
 
 # Tests
 .venv/bin/python -m pytest tests/ -v
-.venv/bin/python -m pytest tests/ -v -k elastic   # spike elastic_routing seul
+.venv/bin/python -m pytest tests/ -v -k routing   # Muirfield : cœur (test_routing_*) + spike
 ```
 
 Puis ouvrir `viewer/index.html` dans un navigateur.
 
-## Routeur Muirfield (spike)
+## Routeur Muirfield
+
+Le cœur vit dans `golfgen/routing/` (`muirfield.build_course`) ; le runner, les
+rendus et les expériences restent dans `experiments/elastic_routing/`.
 
 - Patron explicite, au même titre que la seed : `muirfield`, `muirfield_inverse`,
   ou `random` (choix déterministe par seed).
@@ -60,11 +64,12 @@ Options : `--round` (r2, ra, ra-30, ra2-30, ra2-check, rb, rb-30, rb-check, rc,
 rc-30, custom), `--pattern`, `--width-mode {variable,min}`, `--size LxH`,
 `--seeds 1-6|3,7`. Sorties : `experiments/elastic_routing/output/muirfield/<round>_…/`
 (SVG/PNG par seed, `planche.png`, `report.json`). Détail : section « Étape M » de
-`experiments/elastic_routing/PLAN.md`.
+`experiments/elastic_routing/PLAN.md` (les chemins de modules qui y sont cités
+sont historiques).
 
 ## État et prochaines étapes
 
-- Le routeur Muirfield est un spike : pas encore branché sur `pipeline.py` ni sur le viewer.
+- Le routeur Muirfield (`golfgen/routing/`) n'est pas encore branché sur `pipeline.py` ni sur le viewer.
 - Défaut de forme connu : tracé en « hélice » sur certaines seeds.
 - Planifié : largeur de fairway variable à l'intérieur d'un trou.
 - Étapes du pipeline encore à créer : obstacles, végétation, ponts/ruisseaux.

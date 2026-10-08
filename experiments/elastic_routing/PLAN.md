@@ -693,6 +693,10 @@ Le plan détaillé du round Muirfield sera rédigé et validé avant tout code.
 
 ### Étape M — routage Muirfield
 
+> Note (2026-10-08) : le cœur (model, geometry, partial_checks, sites,
+> muirfield) a été déplacé dans `golfgen/routing/` le 2026-10-08 ; les chemins
+> cités dans ce document sont historiques.
+
 #### Décisions validées par l'utilisateur (2026-10-07)
 
 1. **Longueurs de trous réalistes** (1 bloc = 3 m). Les plages d'origine
