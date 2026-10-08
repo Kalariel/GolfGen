@@ -66,6 +66,7 @@ from typing import Callable, Iterator
 
 import numpy as np
 
+from golfgen.config import TerrainConfig
 from golfgen.routing.geometry import ValidationRules, Violation, validate
 from golfgen.routing.model import (
     GLOBAL_PAR_QUOTA,
@@ -1100,7 +1101,8 @@ def build_muirfield(seed: int, heightmap: np.ndarray | None = None, *,
 def build_course(seed: int, pattern: str = "muirfield", heightmap: np.ndarray | None = None, *,
                  width: float = MAP_WIDTH, height: float = MAP_HEIGHT,
                  rules: ValidationRules | None = None,
-                 width_mode: str = "variable") -> MuirfieldResult:
+                 width_mode: str = "variable",
+                 terrain: TerrainConfig | None = None) -> MuirfieldResult:
     """Parcours valide pour (seed, patron), ou ``MuirfieldRoutingError``.
 
     ``pattern`` est un paramètre explicite, au même titre que la seed :
@@ -1112,6 +1114,9 @@ def build_course(seed: int, pattern: str = "muirfield", heightmap: np.ndarray | 
     largeur dans la plage de son par (``hole_width_fractions``) ; ``min`` —
     largeur minimale du par, comportement des rounds A–B.
 
+    ``terrain`` : ``TerrainConfig`` du relief chargé quand ``heightmap`` est
+    absent (défaut : ``TerrainConfig()``) ; ignoré si ``heightmap`` est fourni.
+
     Le résultat renvoyé a TOUJOURS zéro violation ``validate(layout, rules)`` ;
     les plages de liaison sont dérivées de ``rules`` (``link_bounds``)."""
     requested = pattern
@@ -1122,7 +1127,7 @@ def build_course(seed: int, pattern: str = "muirfield", heightmap: np.ndarray | 
     started = time.perf_counter()
     timings: dict[str, float] = {}
     if heightmap is None:
-        heightmap = load_terrain(seed, int(width), int(height))
+        heightmap = load_terrain(seed, int(width), int(height), terrain)
     if heightmap.shape != (int(height), int(width)):
         raise ValueError(f"relief {heightmap.shape}, carte attendue {int(height)}×{int(width)}")
     timings["terrain"] = time.perf_counter() - started

@@ -11,26 +11,20 @@ trois temps :
    s'il est à au moins ``spacing`` blocs de tous les sites déjà retenus
    (12 entre greens — 18 en R1 —, 12 entre tees).
 
-Le relief (7 s par seed en 400×400) est mis en cache sur disque, hors git.
+Le relief (7 s par seed en 400×400) est mis en cache sur disque, hors git, par
+le cache unique ``golfgen.terrain.load_or_generate``.
 """
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
-import hashlib
-import json
+from dataclasses import dataclass
 import math
-from pathlib import Path
 
 import numpy as np
 
 from golfgen.config import CourseConfig, TerrainConfig
-from golfgen.terrain import TerrainGenerator
+from golfgen.terrain import load_or_generate
 
-
-# Sous-dossier dédié du cache du pipeline (output/.cache, ignoré par git) ;
-# la fusion complète avec le cache du pipeline viendra au round R2.
-CACHE_DIR = Path(__file__).resolve().parents[2] / "output" / ".cache" / "routing"
 
 WATER_LEVEL = 60.0             # sous ce niveau : eau (~1 % de la carte, seeds 1–3)
 GRID_STEP = 3.0                # pas de la grille fine de candidats
@@ -62,30 +56,14 @@ class Sites:
         return len(self.points)
 
 
-TERRAIN_CACHE_VERSION = 1      # à incrémenter si TerrainGenerator change d'algorithme
-
-
-def terrain_cache_tag(terrain: TerrainConfig | None = None) -> str:
-    """Empreinte de la configuration de relief : version + hash de ``TerrainConfig``.
-    Toute modification des paramètres de relief invalide donc le cache."""
-    payload = json.dumps({"version": TERRAIN_CACHE_VERSION,
-                          "terrain": asdict(terrain or TerrainConfig())}, sort_keys=True)
-    return hashlib.sha1(payload.encode("utf-8")).hexdigest()[:12]
-
-
 def load_terrain(seed: int, width: int = 400, height: int = 400,
-                 cache_dir: Path | None = CACHE_DIR) -> np.ndarray:
-    """Relief de ``TerrainGenerator`` pour la seed, mis en cache en ``.npy``."""
-    path = None
-    if cache_dir is not None:
-        path = Path(cache_dir) / f"terrain_s{seed}_{width}x{height}_{terrain_cache_tag()}.npy"
-        if path.exists():
-            return np.load(path)
-    heightmap = TerrainGenerator(CourseConfig(width=width, height=height, seed=seed)).generate()
-    if path is not None:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        np.save(path, heightmap)
-    return heightmap
+                 terrain: TerrainConfig | None = None) -> np.ndarray:
+    """Relief de la seed pour la ``TerrainConfig`` donnée (défaut : ``TerrainConfig()``).
+
+    Délègue au cache unique ``golfgen.terrain.load_or_generate``."""
+    config = CourseConfig(width=width, height=height, seed=seed,
+                          terrain=terrain if terrain is not None else TerrainConfig())
+    return load_or_generate(config)
 
 
 def _box_mean(values: np.ndarray, radius: int) -> np.ndarray:

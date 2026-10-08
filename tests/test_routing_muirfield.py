@@ -4,7 +4,7 @@ R2 est une porte de validité : zéro violation de l'oracle final sur les
 seeds 1–6 pour les deux formats de carte rectangulaires (300×400 et
 350×400), par construction (contrôles en ligne, ancrages 1/9/10/18, retour
 arrière borné, relances). Le relief est mis en cache sur disque
-(``output/.cache``) : premier passage ~5 s par seed et par format.
+(``output/.cache/terrain``) : premier passage ~5 s par seed et par format.
 """
 
 from __future__ import annotations
@@ -289,14 +289,41 @@ def test_custom_link_rules_are_honoured():
     assert all(14.0 - 1e-9 <= link.length <= 40.0 + 1e-9 for link in result.layout.links)
 
 
-def test_terrain_cache_key_tracks_terrain_config(tmp_path):
+def test_load_terrain_delegates_to_unified_cache(tmp_path, monkeypatch):
     from golfgen.config import TerrainConfig
-    assert sites_module.terrain_cache_tag() == sites_module.terrain_cache_tag(TerrainConfig())
-    assert sites_module.terrain_cache_tag() != sites_module.terrain_cache_tag(TerrainConfig(octaves=5))
-    small = sites_module.load_terrain(9, 40, 30, cache_dir=tmp_path)
+    from golfgen import terrain as terrain_module
+    monkeypatch.setattr(terrain_module, "TERRAIN_CACHE_DIR", tmp_path)
+    small = sites_module.load_terrain(9, 40, 30)
     files = list(tmp_path.iterdir())
-    assert len(files) == 1 and sites_module.terrain_cache_tag() in files[0].name
-    assert np.array_equal(sites_module.load_terrain(9, 40, 30, cache_dir=tmp_path), small)
+    assert len(files) == 1 and terrain_module.terrain_cache_tag() in files[0].name
+    assert np.array_equal(sites_module.load_terrain(9, 40, 30), small)
+    custom = TerrainConfig(octaves=5)
+    other = sites_module.load_terrain(9, 40, 30, terrain=custom)
+    assert len(list(tmp_path.iterdir())) == 2
+    assert not np.array_equal(other, small)
+
+
+def test_build_course_loads_relief_of_given_terrain_config(monkeypatch):
+    from golfgen.config import TerrainConfig
+    calls = []
+
+    class Stop(Exception):
+        pass
+
+    def fake_load_terrain(seed, width, height, terrain=None):
+        calls.append((seed, width, height, terrain))
+        raise Stop
+
+    monkeypatch.setattr(mf, "load_terrain", fake_load_terrain)
+    custom = TerrainConfig(octaves=5)
+    for terrain in (None, custom):
+        with pytest.raises(Stop):
+            mf.build_course(4, width=300, height=400, terrain=terrain)
+    assert calls == [(4, 300, 400, None), (4, 300, 400, custom)]
+    heightmap = np.full((400, 300), 70.0, dtype=np.float32)
+    with pytest.raises(ValueError):    # relief fourni : terrain ignoré, forme vérifiée
+        mf.build_course(4, heightmap=heightmap[:10], width=300, height=400, terrain=custom)
+    assert len(calls) == 2
 
 
 # -- PartialLayout.check : un cas minimal rejeté par famille ---------------
