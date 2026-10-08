@@ -598,28 +598,41 @@ def test_dogleg_prefilter_keeps_the_free_corner_only():
 
 # -- round C : nits B et largeurs variables (C1) -------------------------------
 
-# Empreinte du patron muirfield au round B (largeur minimale), 300×400.
+# Empreinte (largeur minimale, 300×400) : patron muirfield au round B, plus
+# muirfield_inverse seed 1 et le nombre de coudes par trou (R2b round 0).
 MUIRFIELD_FINGERPRINT = {
-    1: (("N", 1, 2, 2), (3, 5, 4, 5, 4, 4, 4, 3, 5), (5, 3, 4, 4, 4, 4, 3, 4, 4),
+    ("muirfield", 1): (
+        ("N", 1, 2, 2), (3, 5, 4, 5, 4, 4, 4, 3, 5), (5, 3, 4, 4, 4, 4, 3, 4, 4),
         (49.18, 147.0, 102.86, 147.0, 103.2, 141.97, 133.2, 47.0, 147.0,
-         147.0, 62.9, 102.0, 103.87, 102.45, 106.26, 45.63, 102.0, 100.62), 18),
-    2: (("S", 0, 0, 0), (4, 4, 5, 3, 5, 4, 4, 4, 5), (4, 3, 4, 3, 3, 4, 4, 5, 4),
+         147.0, 62.9, 102.0, 103.87, 102.45, 106.26, 45.63, 102.0, 100.62), 18,
+        (0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 1, 0)),
+    ("muirfield", 2): (
+        ("S", 0, 0, 0), (4, 4, 5, 3, 5, 4, 4, 4, 5), (4, 3, 4, 3, 3, 4, 4, 5, 4),
         (101.62, 104.71, 147.0, 57.94, 152.63, 114.92, 101.02, 102.0, 147.0,
-         102.0, 47.0, 102.0, 66.22, 69.43, 102.0, 102.0, 145.1, 102.0), 1),
-    3: (("S", 0, 0, 0), (4, 3, 5, 3, 5, 3, 5, 4, 4), (4, 4, 4, 3, 5, 4, 4, 4, 4),
+         102.0, 47.0, 102.0, 66.22, 69.43, 102.0, 102.0, 145.1, 102.0), 1,
+        (0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1)),
+    ("muirfield", 3): (
+        ("S", 0, 0, 0), (4, 3, 5, 3, 5, 3, 5, 4, 4), (4, 4, 4, 3, 5, 4, 4, 4, 4),
         (102.0, 50.49, 147.0, 47.0, 147.0, 56.63, 173.76, 104.58, 102.0,
-         102.0, 102.0, 102.0, 45.98, 147.0, 102.0, 102.0, 110.39, 102.0), 1),
+         102.0, 102.0, 102.0, 45.98, 147.0, 102.0, 102.0, 110.39, 102.0), 1,
+        (1, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1)),
+    ("muirfield_inverse", 1): (
+        ("W", 0, 1, 0), (4, 5, 4, 4, 5, 4, 3, 5, 3), (4, 4, 3, 3, 4, 4, 5, 4, 4),
+        (102.0, 147.0, 102.0, 104.31, 147.0, 102.0, 47.0, 147.0, 57.82,
+         100.73, 102.0, 55.77, 54.38, 100.06, 102.0, 147.0, 109.83, 110.67), 4,
+        (1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0)),
 }
 
 
-@pytest.mark.parametrize("seed", sorted(MUIRFIELD_FINGERPRINT))
-def test_muirfield_fingerprint_is_stable_in_min_width_mode(seed):
-    result = mf.build_course(seed, "muirfield", width=300, height=400, width_mode="min")
+@pytest.mark.parametrize("pattern,seed", sorted(MUIRFIELD_FINGERPRINT))
+def test_muirfield_fingerprint_is_stable_in_min_width_mode(pattern, seed):
+    result = mf.build_course(seed, pattern, width=300, height=400, width_mode="min")
     plan = result.plan
     got = ((plan.edge, plan.clubhouse_index, plan.permutation_index, plan.angle_index),
            plan.front_pars, plan.back_pars,
-           tuple(round(h.length, 2) for h in result.layout.holes), len(result.attempts))
-    assert got == MUIRFIELD_FINGERPRINT[seed]
+           tuple(round(h.length, 2) for h in result.layout.holes), len(result.attempts),
+           tuple(len(h.doglegs) for h in result.layout.holes))
+    assert got == MUIRFIELD_FINGERPRINT[(pattern, seed)]
 
 
 def test_unresolved_or_unknown_pattern_raises():
