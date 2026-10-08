@@ -448,6 +448,11 @@ def check_lobe_room(width: float, height: float) -> None:
             f"carte {width:g}×{height:g} trop petite pour le mode lobed : anneau intérieur "
             f"{ix:g}×{iy:g}, il faut un demi-axe ≥ LOBE_IN + LOBE_MIN_RADIUS = "
             f"{LOBE_IN + LOBE_MIN_RADIUS:g}")
+    # Branche inatteignable avec les constantes actuelles : l'anneau
+    # intérieur est à OUTER_INSET + RING_GAP du bord, les lobes extérieurs en
+    # restent donc à OUTER_INSET + RING_GAP − LOBE_OUT = 82 blocs (vérifié
+    # numériquement de 50 à 1000 blocs). Gardée en filet de sécurité ;
+    # couverte seulement par monkeypatch dans les tests.
     outer = radii + LOBE_OUT
     xs, ys = center[0] + outer * np.cos(thetas), center[1] + outer * np.sin(thetas)
     if xs.min() < 0.0 or ys.min() < 0.0 or xs.max() > width or ys.max() > height:
