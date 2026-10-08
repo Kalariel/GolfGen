@@ -1,48 +1,33 @@
-"""Étape M — planches du routage Muirfield.
+"""Planches et rapports du routage Muirfield.
 
-Rounds disponibles (``--round``) :
+Rounds disponibles (``--round``), sorties sous ``tools/muirfield/output/`` :
 
-- ``r2`` (défaut) : 300×400 et 350×400, seeds 1–6 → ``r2_<w>x<h>/`` ;
-- ``ra`` : formats paysage 400×300 et 400×350, seeds 1–6 → ``ra_<w>x<h>/`` ;
-- ``ra-30`` : robustesse 300×400 sur les seeds 1–30 →
-  ``ra_300x400_30seeds/`` (taux de réussite, relances, temps médian/p90/max,
-  planche 6×5 réduite) ;
-- ``ra2-30`` : idem après le round A2 → ``ra2_300x400_30seeds/`` ;
-- ``ra2-check`` : non-régression A2 sur 350×400, 400×300, 400×350 (seeds
-  1–6) → ``ra2_check_<w>x<h>/report.json`` (pas de planche) ;
-- ``rb`` : patron ``muirfield_inverse`` en 300×400, seeds 1–6 →
-  ``rb_inverse_300x400/`` ;
-- ``rb-30`` / ``rb-check`` : robustesse 30 seeds (300×400) et non-régression
-  (350×400, 400×300, 400×350, seeds 1–6) pour chaque patron (ou celui de
-  ``--pattern``) → ``rb_<patron>_300x400_30seeds/``, ``rb_check_<patron>_<w>x<h>/`` ;
-- ``rc`` / ``rc-30`` : largeurs variables (C1, ``--width-mode``) — planche
-  6 seeds muirfield 300×400 → ``rc_<patron>_300x400/`` ; 30 seeds par
-  patron → ``rc_<patron>_300x400_30seeds/`` ;
-- ``land`` / ``land-30`` : format paysage 400×300, réglages par défaut
-  (largeurs variables), pour chaque patron —
+- ``rc`` (défaut) : planche 6 seeds en 300×400 pour un patron (``--pattern``,
+  défaut muirfield) → ``rc_<patron>_300x400/`` ;
+- ``rc-30`` : robustesse 300×400 sur les seeds 1–30, pour chaque patron (ou
+  celui de ``--pattern``), sans planche → ``rc_<patron>_300x400_30seeds/`` ;
+- ``land`` / ``land-30`` : format paysage 400×300, pour chaque patron —
   planche 6 seeds → ``land_<patron>_400x300/`` ; 30 seeds sans planche →
   ``land_<patron>_400x300_30seeds/`` ;
 - ``custom`` : ``--pattern``, ``--size LxH``, ``--seeds 1-6`` →
   ``custom_<patron>_<w>x<h>/``.
 
 Le patron (``--pattern`` : muirfield, muirfield_inverse, random) est un
-paramètre explicite au même titre que la seed.
+paramètre explicite au même titre que la seed. ``--width-mode`` choisit les
+largeurs de fairway (``variable`` par défaut, ``min`` pour les reproduire à
+la largeur minimale).
+
+Chaque dossier contient un SVG (+ PNG) par seed, ``planche.png`` (sauf
+rounds 30 seeds) et ``report.json`` (violations par famille, longueurs par
+nine, relances, métriques de forme, temps). Seuls ``planche.png`` et
+``report.json`` sont versionnés ; les png/svg par seed sont régénérés
+localement (``.gitignore``).
 
 Les temps sont mesurés sur la machine qui exécute le runner (dépendants du
 matériel) : chronomètre unique autour de ``build_course``, succès comme
 échecs, relief en cache exclu.
 
-Seuls ``planche.png`` et ``report.json`` sont versionnés ; les png/svg par
-seed sont régénérés localement (``.gitignore``).
-
-R2 : construction valide (contrôles en ligne, ancrages 1/9/10/18, retour
-arrière borné, relances). Pour chaque format de carte, produit
-``output/muirfield/r2_<w>x<h>/`` : un SVG (+ PNG) par seed, ``planche.png``
-(3 par ligne) et ``report.json`` (violations par famille, longueurs par
-nine, relances, temps). Les sorties R1 (``output/muirfield/r1/``) sont
-conservées telles quelles pour comparaison (commit 9ff957a).
-
-    .venv/bin/python -m tools.muirfield.run_muirfield
+    .venv/bin/python -m tools.muirfield.run_muirfield --round rc-30
 """
 
 from __future__ import annotations
@@ -68,8 +53,6 @@ from golfgen.routing.sites import WATER_LEVEL, load_terrain
 
 OUTPUT_ROOT = Path(__file__).resolve().parent / "output"
 SEEDS = (1, 2, 3, 4, 5, 6)
-FORMATS = ((300, 400), (350, 400))
-LANDSCAPE_FORMATS = ((400, 300), (400, 350))
 ROBUSTNESS_SEEDS = tuple(range(1, 31))
 
 
@@ -127,13 +110,9 @@ def _planche_title(result, label: str, width: int, height: int, seed: int,
             f"{result.clubhouse_edge} · {outer_nine} extérieur {side}")
 
 
-# Rounds r2…rb : largeur minimale (``width_mode="min"``, défaut ici, pour
-# rester reproductibles) ; rc et custom passent ``--width-mode`` (défaut
-# variable).
 def _run_format(width: int, height: int, *, seeds: tuple[int, ...] = SEEDS,
-                label: str = "r2", out_name: str | None = None, tile: str = "3x",
-                thumb: str | None = None, planche: bool = True,
-                pattern: str = "muirfield", width_mode: str = "min") -> dict:
+                label: str = "custom", out_name: str | None = None, planche: bool = True,
+                pattern: str = "muirfield", width_mode: str = "variable") -> dict:
     out_dir = OUTPUT_ROOT / (out_name or f"{label}_{width}x{height}")
     out_dir.mkdir(parents=True, exist_ok=True)
     reports, pngs = [], []
@@ -211,12 +190,9 @@ def _run_format(width: int, height: int, *, seeds: tuple[int, ...] = SEEDS,
               f"{result.relaunches} relance(s) · front {lengths['front']['total']:.0f} / back "
               f"{lengths['back']['total']:.0f} blocs · {elapsed * 1000:.0f} ms")
     if pngs and planche:
-        geometry = f"{thumb}+3+3" if thumb else "+6+6"
-        # vignettes réduites en palette 8 bits : la planche des 30 seeds reste < 1 Mo
-        target = f"PNG8:{out_dir / 'planche.png'}" if thumb else str(out_dir / "planche.png")
         subprocess.run(
-            ["magick", "montage", *pngs, "-tile", tile, "-geometry", geometry,
-             "-background", "#0d1117", target],
+            ["magick", "montage", *pngs, "-tile", "3x", "-geometry", "+6+6",
+             "-background", "#0d1117", str(out_dir / "planche.png")],
             check=True,
         )
     times = [r["elapsed_seconds"] for r in reports]
@@ -250,38 +226,17 @@ def _run_format(width: int, height: int, *, seeds: tuple[int, ...] = SEEDS,
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--round", choices=("r2", "ra", "ra-30", "ra2-30", "ra2-check",
-                                            "rb", "rb-30", "rb-check", "rc", "rc-30", "land",
-                                            "land-30", "custom"),
-                        default="r2")
+    parser.add_argument("--round", choices=("rc", "rc-30", "land", "land-30", "custom"),
+                        default="rc")
     parser.add_argument("--pattern", choices=PATTERN_CHOICES, default=None,
-                        help="patron explicite (défaut : muirfield ; rb-30/rb-check : les deux)")
+                        help="patron explicite (défaut : muirfield ; rc-30/land/land-30 : tous)")
     parser.add_argument("--width-mode", choices=("variable", "min"), default="variable",
-                        help="largeurs de fairway (C1 : variable ; rounds A–B : min)")
+                        help="largeurs de fairway (défaut : variable ; min : largeur minimale)")
     parser.add_argument("--size", default="300x400", help="format LxH (round custom)")
     parser.add_argument("--seeds", default="1-6", help="ex. 1-6 ou 3,7 (round custom)")
     args = parser.parse_args()
     patterns = (args.pattern,) if args.pattern else PATTERNS
-    if args.round == "r2":
-        for width, height in FORMATS:
-            _run_format(width, height, label="r2")
-    elif args.round == "ra":
-        for width, height in LANDSCAPE_FORMATS:
-            _run_format(width, height, label="ra")
-    elif args.round == "ra-30":
-        _run_format(300, 400, seeds=ROBUSTNESS_SEEDS, label="ra",
-                    out_name="ra_300x400_30seeds", tile="6x", thumb="340x")
-    elif args.round == "ra2-30":
-        _run_format(300, 400, seeds=ROBUSTNESS_SEEDS, label="ra2",
-                    out_name="ra2_300x400_30seeds", tile="6x", thumb="340x")
-    elif args.round == "ra2-check":
-        for width, height in ((350, 400), *LANDSCAPE_FORMATS):
-            _run_format(width, height, label="ra2", out_name=f"ra2_check_{width}x{height}",
-                        planche=False)
-    elif args.round == "rb":
-        _run_format(300, 400, label="rb", out_name="rb_inverse_300x400",
-                    pattern=args.pattern or "muirfield_inverse", width_mode="min")
-    elif args.round == "rc":
+    if args.round == "rc":
         pattern = args.pattern or "muirfield"
         _run_format(300, 400, label="rc", out_name=f"rc_{pattern}_300x400", pattern=pattern,
                     width_mode=args.width_mode)
@@ -297,16 +252,6 @@ def main() -> None:
             _run_format(400, 300, seeds=ROBUSTNESS_SEEDS if robust else SEEDS, label="land",
                         out_name=f"land_{pattern}_400x300{suffix}", planche=not robust,
                         pattern=pattern, width_mode=args.width_mode)
-    elif args.round == "rb-30":
-        for pattern in patterns:
-            _run_format(300, 400, seeds=ROBUSTNESS_SEEDS, label="rb",
-                        out_name=f"rb_{pattern}_300x400_30seeds", planche=False, pattern=pattern,
-                        width_mode="min")
-    elif args.round == "rb-check":
-        for pattern in patterns:
-            for width, height in ((350, 400), *LANDSCAPE_FORMATS):
-                _run_format(width, height, label="rb", planche=False, pattern=pattern,
-                            out_name=f"rb_check_{pattern}_{width}x{height}", width_mode="min")
     else:
         width, height = (int(v) for v in args.size.lower().split("x"))
         if "-" in args.seeds:
