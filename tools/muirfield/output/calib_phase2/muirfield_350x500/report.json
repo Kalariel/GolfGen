@@ -1,0 +1,5922 @@
+{
+  "calib": {
+    "long": 500,
+    "orientation": "portrait",
+    "short": 350
+  },
+  "height": 500,
+  "pattern": "muirfield",
+  "reports": [
+    {
+      "attempts": [
+        {
+          "anchor_truncated": true,
+          "angle_index": 0,
+          "checks": 588,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 3
+          },
+          "edge": "W",
+          "nodes": 40,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "anchor_lookahead": 36,
+            "fairway_gap": 468,
+            "link_blocked": 45
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 1,
+          "checks": 687,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 3
+          },
+          "edge": "W",
+          "nodes": 40,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "anchor_lookahead": 27,
+            "fairway_gap": 621
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 2,
+          "checks": 579,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 3
+          },
+          "edge": "W",
+          "nodes": 40,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "anchor_lookahead": 27,
+            "fairway_gap": 468,
+            "link_blocked": 45
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 0,
+          "checks": 588,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 3
+          },
+          "edge": "W",
+          "nodes": 40,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "anchor_lookahead": 36,
+            "fairway_gap": 468,
+            "link_blocked": 45
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 1,
+          "checks": 687,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 3
+          },
+          "edge": "W",
+          "nodes": 40,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "anchor_lookahead": 27,
+            "fairway_gap": 621
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 2,
+          "checks": 579,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 3
+          },
+          "edge": "W",
+          "nodes": 40,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "anchor_lookahead": 27,
+            "fairway_gap": 468,
+            "link_blocked": 45
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 0,
+          "checks": 588,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 3
+          },
+          "edge": "W",
+          "nodes": 40,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "anchor_lookahead": 36,
+            "fairway_gap": 468,
+            "link_blocked": 45
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 1,
+          "checks": 687,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 3
+          },
+          "edge": "W",
+          "nodes": 40,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "anchor_lookahead": 27,
+            "fairway_gap": 621
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 2,
+          "checks": 579,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 3
+          },
+          "edge": "W",
+          "nodes": 40,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "anchor_lookahead": 27,
+            "fairway_gap": 468,
+            "link_blocked": 45
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 23,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 10,
+            "10": 17
+          },
+          "edge": "N",
+          "nodes": 18,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 5
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        112.79,
+        6.0
+      ],
+      "clubhouse_edge": "N",
+      "doglegs": 6,
+      "elapsed_seconds": 3.9451,
+      "hole_lengths": [
+        47.3,
+        64.0,
+        171.8,
+        126.4,
+        184.1,
+        111.1,
+        151.8,
+        102.0,
+        133.4,
+        102.0,
+        102.0,
+        100.7,
+        102.0,
+        137.6,
+        147.0,
+        55.4,
+        59.6,
+        102.0
+      ],
+      "hole_widths": [
+        12.0,
+        11.5,
+        15.5,
+        11.5,
+        12.5,
+        15.5,
+        16.0,
+        14.5,
+        13.5,
+        12.0,
+        11.5,
+        15.0,
+        14.5,
+        13.0,
+        16.5,
+        10.0,
+        10.0,
+        12.5
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 908.3,
+          "links": 381.7,
+          "par": 35,
+          "total": 1290.0
+        },
+        "front": {
+          "holes": 1091.7,
+          "links": 310.0,
+          "par": 37,
+          "total": 1401.7
+        }
+      },
+      "outer_direction": -1,
+      "outer_nine": "front",
+      "pars": {
+        "back": [
+          4,
+          4,
+          4,
+          4,
+          4,
+          5,
+          3,
+          3,
+          4
+        ],
+        "front": [
+          3,
+          3,
+          5,
+          4,
+          5,
+          4,
+          5,
+          4,
+          4
+        ]
+      },
+      "pattern": "muirfield",
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 1,
+        "permutation_index": 0
+      },
+      "relaunches": 9,
+      "seed": 1,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.5844,
+          "direction_entropy": 0.7369,
+          "forward_mean": 0.8852,
+          "heading_turns": 1.2567,
+          "hull_ratio": 0.4776,
+          "obliquity_abs": 0.3804,
+          "obliquity_signed": 0.0925,
+          "path_to_nine_length": 0.7207,
+          "radial_alignment_R": 0.5568
+        },
+        "course": {
+          "angular_step_cv": 0.4887,
+          "direction_entropy": 0.8298,
+          "radial_alignment_R": 0.3566
+        },
+        "front": {
+          "angular_step_cv": 0.3708,
+          "direction_entropy": 0.7603,
+          "forward_mean": 0.9731,
+          "heading_turns": 0.9854,
+          "hull_ratio": 1.0998,
+          "obliquity_abs": 0.1886,
+          "obliquity_signed": -0.0918,
+          "path_to_nine_length": 0.972,
+          "radial_alignment_R": 0.747
+        }
+      },
+      "skipped": [],
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 7.984,
+      "timings": {
+        "routing": 3.7769,
+        "sites": 0.1679,
+        "terrain": 0.0,
+        "validate": 0.0195
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 25,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 17
+          },
+          "edge": "S",
+          "nodes": 18,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "anchor_lookahead": 5,
+            "fairway_gap": 2
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        210.99,
+        494.0
+      ],
+      "clubhouse_edge": "S",
+      "doglegs": 2,
+      "elapsed_seconds": 0.3459,
+      "hole_lengths": [
+        106.7,
+        107.6,
+        166.4,
+        67.3,
+        147.0,
+        114.2,
+        105.9,
+        115.0,
+        166.0,
+        102.0,
+        47.9,
+        114.5,
+        51.9,
+        65.4,
+        123.6,
+        104.8,
+        153.6,
+        101.1
+      ],
+      "hole_widths": [
+        12.0,
+        13.0,
+        12.5,
+        13.0,
+        17.0,
+        15.0,
+        16.5,
+        12.0,
+        13.0,
+        13.5,
+        12.0,
+        16.5,
+        13.5,
+        13.5,
+        13.5,
+        12.5,
+        13.5,
+        16.0
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 864.7,
+          "links": 339.1,
+          "par": 34,
+          "total": 1203.8
+        },
+        "front": {
+          "holes": 1096.1,
+          "links": 320.9,
+          "par": 38,
+          "total": 1416.9
+        }
+      },
+      "outer_direction": -1,
+      "outer_nine": "front",
+      "pars": {
+        "back": [
+          4,
+          3,
+          4,
+          3,
+          3,
+          4,
+          4,
+          5,
+          4
+        ],
+        "front": [
+          4,
+          4,
+          5,
+          3,
+          5,
+          4,
+          4,
+          4,
+          5
+        ]
+      },
+      "pattern": "muirfield",
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 0,
+        "permutation_index": 0
+      },
+      "relaunches": 0,
+      "seed": 2,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.4873,
+          "direction_entropy": 0.8222,
+          "forward_mean": 0.7268,
+          "heading_turns": 1.7815,
+          "hull_ratio": 0.4454,
+          "obliquity_abs": 0.3742,
+          "obliquity_signed": -0.0447,
+          "path_to_nine_length": 0.7444,
+          "radial_alignment_R": 0.3196
+        },
+        "course": {
+          "angular_step_cv": 0.405,
+          "direction_entropy": 0.8608,
+          "radial_alignment_R": 0.2307
+        },
+        "front": {
+          "angular_step_cv": 0.282,
+          "direction_entropy": 0.8222,
+          "forward_mean": 0.9798,
+          "heading_turns": 0.9554,
+          "hull_ratio": 1.0822,
+          "obliquity_abs": 0.169,
+          "obliquity_signed": -0.0134,
+          "path_to_nine_length": 0.9255,
+          "radial_alignment_R": 0.7355
+        }
+      },
+      "skipped": [],
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 11.698,
+      "timings": {
+        "routing": 0.1891,
+        "sites": 0.1563,
+        "terrain": 0.0,
+        "validate": 0.0099
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "anchor_truncated": true,
+          "angle_index": 0,
+          "checks": 444,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 3
+          },
+          "edge": "S",
+          "nodes": 40,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 405
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 1,
+          "checks": 444,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 3
+          },
+          "edge": "S",
+          "nodes": 40,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 405
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 2,
+          "checks": 444,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 3
+          },
+          "edge": "S",
+          "nodes": 40,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 405
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 27,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 17
+          },
+          "edge": "S",
+          "nodes": 18,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "anchor_lookahead": 7,
+            "fairway_gap": 2
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        189.02,
+        494.0
+      ],
+      "clubhouse_edge": "S",
+      "doglegs": 8,
+      "elapsed_seconds": 1.058,
+      "hole_lengths": [
+        147.0,
+        67.5,
+        171.4,
+        58.0,
+        47.0,
+        167.8,
+        144.8,
+        108.4,
+        117.5,
+        102.0,
+        102.0,
+        115.9,
+        114.3,
+        47.5,
+        102.0,
+        102.0,
+        102.0,
+        147.0
+      ],
+      "hole_widths": [
+        14.0,
+        13.5,
+        15.0,
+        12.0,
+        15.0,
+        15.5,
+        16.5,
+        14.0,
+        15.5,
+        14.5,
+        12.0,
+        11.5,
+        13.0,
+        12.0,
+        13.5,
+        17.0,
+        15.5,
+        13.5
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 934.7,
+          "links": 370.5,
+          "par": 36,
+          "total": 1305.2
+        },
+        "front": {
+          "holes": 1029.4,
+          "links": 328.4,
+          "par": 36,
+          "total": 1357.8
+        }
+      },
+      "outer_direction": -1,
+      "outer_nine": "front",
+      "pars": {
+        "back": [
+          4,
+          4,
+          4,
+          4,
+          3,
+          4,
+          4,
+          4,
+          5
+        ],
+        "front": [
+          5,
+          3,
+          5,
+          3,
+          3,
+          5,
+          4,
+          4,
+          4
+        ]
+      },
+      "pattern": "muirfield",
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 0,
+        "permutation_index": 1
+      },
+      "relaunches": 3,
+      "seed": 3,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.3391,
+          "direction_entropy": 0.7603,
+          "forward_mean": 0.9099,
+          "heading_turns": 1.1204,
+          "hull_ratio": 0.3903,
+          "obliquity_abs": 0.338,
+          "obliquity_signed": -0.1774,
+          "path_to_nine_length": 0.6641,
+          "radial_alignment_R": 0.1479
+        },
+        "course": {
+          "angular_step_cv": 0.381,
+          "direction_entropy": 0.8415,
+          "radial_alignment_R": 0.316
+        },
+        "front": {
+          "angular_step_cv": 0.4197,
+          "direction_entropy": 0.6749,
+          "forward_mean": 0.9819,
+          "heading_turns": 0.9373,
+          "hull_ratio": 1.0043,
+          "obliquity_abs": 0.1644,
+          "obliquity_signed": -0.0594,
+          "path_to_nine_length": 1.0188,
+          "radial_alignment_R": 0.7121
+        }
+      },
+      "skipped": [],
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 7.872,
+      "timings": {
+        "routing": 0.9106,
+        "sites": 0.1471,
+        "terrain": 0.0,
+        "validate": 0.0112
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 40,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 17
+          },
+          "edge": "W",
+          "nodes": 18,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "anchor_lookahead": 1,
+            "fairway_gap": 21
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        6.0,
+        219.47
+      ],
+      "clubhouse_edge": "W",
+      "doglegs": 5,
+      "elapsed_seconds": 0.3796,
+      "hole_lengths": [
+        104.5,
+        53.9,
+        132.9,
+        67.7,
+        128.2,
+        151.0,
+        135.7,
+        129.1,
+        68.1,
+        102.0,
+        103.8,
+        147.0,
+        102.0,
+        114.2,
+        147.0,
+        115.8,
+        48.4,
+        147.0
+      ],
+      "hole_widths": [
+        15.0,
+        12.0,
+        11.5,
+        13.0,
+        15.5,
+        13.5,
+        16.0,
+        12.0,
+        10.5,
+        12.5,
+        15.0,
+        12.5,
+        14.5,
+        17.0,
+        15.5,
+        11.5,
+        14.5,
+        17.5
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 1027.1,
+          "links": 362.5,
+          "par": 38,
+          "total": 1389.6
+        },
+        "front": {
+          "holes": 971.1,
+          "links": 346.6,
+          "par": 34,
+          "total": 1317.7
+        }
+      },
+      "outer_direction": 1,
+      "outer_nine": "front",
+      "pars": {
+        "back": [
+          4,
+          4,
+          5,
+          4,
+          4,
+          5,
+          4,
+          3,
+          5
+        ],
+        "front": [
+          4,
+          3,
+          4,
+          3,
+          4,
+          5,
+          4,
+          4,
+          3
+        ]
+      },
+      "pattern": "muirfield",
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 0,
+        "permutation_index": 0
+      },
+      "relaunches": 0,
+      "seed": 4,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.8076,
+          "direction_entropy": 0.7603,
+          "forward_mean": 0.6645,
+          "heading_turns": 2.1443,
+          "hull_ratio": 0.4709,
+          "obliquity_abs": 0.3432,
+          "obliquity_signed": 0.0782,
+          "path_to_nine_length": 0.642,
+          "radial_alignment_R": 0.3423
+        },
+        "course": {
+          "angular_step_cv": 0.6462,
+          "direction_entropy": 0.8491,
+          "radial_alignment_R": 0.4936
+        },
+        "front": {
+          "angular_step_cv": 0.3572,
+          "direction_entropy": 0.6749,
+          "forward_mean": 0.9778,
+          "heading_turns": 1.0117,
+          "hull_ratio": 0.95,
+          "obliquity_abs": 0.1851,
+          "obliquity_signed": -0.0079,
+          "path_to_nine_length": 1.0965,
+          "radial_alignment_R": 0.6537
+        }
+      },
+      "skipped": [],
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 7.997,
+      "timings": {
+        "routing": 0.2318,
+        "sites": 0.1475,
+        "terrain": 0.0,
+        "validate": 0.0102
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "anchor_truncated": true,
+          "angle_index": 0,
+          "checks": 332,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 17
+          },
+          "edge": "E",
+          "nodes": 31,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 301
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        344.0,
+        208.45
+      ],
+      "clubhouse_edge": "E",
+      "doglegs": 4,
+      "elapsed_seconds": 0.4724,
+      "hole_lengths": [
+        147.0,
+        139.3,
+        120.9,
+        174.0,
+        61.7,
+        129.2,
+        123.3,
+        114.7,
+        65.4,
+        102.0,
+        112.2,
+        107.1,
+        52.8,
+        159.7,
+        112.2,
+        54.9,
+        102.0,
+        147.0
+      ],
+      "hole_widths": [
+        12.5,
+        16.0,
+        11.5,
+        15.5,
+        12.0,
+        17.0,
+        13.0,
+        13.5,
+        11.5,
+        16.5,
+        11.5,
+        17.0,
+        11.0,
+        14.0,
+        14.5,
+        13.5,
+        13.0,
+        14.5
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 949.8,
+          "links": 348.6,
+          "par": 36,
+          "total": 1298.4
+        },
+        "front": {
+          "holes": 1075.5,
+          "links": 341.3,
+          "par": 36,
+          "total": 1416.7
+        }
+      },
+      "outer_direction": -1,
+      "outer_nine": "front",
+      "pars": {
+        "back": [
+          4,
+          4,
+          4,
+          3,
+          5,
+          4,
+          3,
+          4,
+          5
+        ],
+        "front": [
+          5,
+          4,
+          4,
+          5,
+          3,
+          4,
+          4,
+          4,
+          3
+        ]
+      },
+      "pattern": "muirfield",
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 0,
+        "permutation_index": 0
+      },
+      "relaunches": 0,
+      "seed": 5,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.4181,
+          "direction_entropy": 0.6983,
+          "forward_mean": 0.8643,
+          "heading_turns": 1.2217,
+          "hull_ratio": 0.4843,
+          "obliquity_abs": 0.4343,
+          "obliquity_signed": 0.1568,
+          "path_to_nine_length": 0.6958,
+          "radial_alignment_R": 0.3109
+        },
+        "course": {
+          "angular_step_cv": 0.3808,
+          "direction_entropy": 0.7988,
+          "radial_alignment_R": 0.4526
+        },
+        "front": {
+          "angular_step_cv": 0.3148,
+          "direction_entropy": 0.7603,
+          "forward_mean": 0.9754,
+          "heading_turns": 1.0262,
+          "hull_ratio": 1.1353,
+          "obliquity_abs": 0.191,
+          "obliquity_signed": -0.1469,
+          "path_to_nine_length": 1.0062,
+          "radial_alignment_R": 0.7602
+        }
+      },
+      "skipped": [],
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 7.969,
+      "timings": {
+        "routing": 0.3202,
+        "sites": 0.1519,
+        "terrain": 0.0,
+        "validate": 0.0098
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 23,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 17
+          },
+          "edge": "W",
+          "nodes": 18,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "anchor_lookahead": 2,
+            "fairway_gap": 3
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        6.0,
+        154.14
+      ],
+      "clubhouse_edge": "W",
+      "doglegs": 5,
+      "elapsed_seconds": 0.3474,
+      "hole_lengths": [
+        103.7,
+        161.1,
+        47.0,
+        101.2,
+        147.4,
+        114.2,
+        102.0,
+        133.4,
+        122.1,
+        147.0,
+        59.2,
+        102.0,
+        114.2,
+        53.5,
+        126.3,
+        119.0,
+        147.0,
+        58.6
+      ],
+      "hole_widths": [
+        16.0,
+        16.5,
+        13.0,
+        15.5,
+        14.5,
+        15.0,
+        13.0,
+        14.5,
+        14.0,
+        14.0,
+        14.5,
+        16.0,
+        15.0,
+        12.0,
+        13.0,
+        14.0,
+        18.0,
+        13.5
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 926.8,
+          "links": 380.4,
+          "par": 35,
+          "total": 1307.3
+        },
+        "front": {
+          "holes": 1032.2,
+          "links": 341.3,
+          "par": 37,
+          "total": 1373.5
+        }
+      },
+      "outer_direction": 1,
+      "outer_nine": "front",
+      "pars": {
+        "back": [
+          5,
+          3,
+          4,
+          4,
+          3,
+          4,
+          4,
+          5,
+          3
+        ],
+        "front": [
+          4,
+          5,
+          3,
+          4,
+          5,
+          4,
+          4,
+          4,
+          4
+        ]
+      },
+      "pattern": "muirfield",
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 0,
+        "permutation_index": 0
+      },
+      "relaunches": 0,
+      "seed": 6,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.4684,
+          "direction_entropy": 0.8222,
+          "forward_mean": 0.6235,
+          "heading_turns": 1.5937,
+          "hull_ratio": 0.469,
+          "obliquity_abs": 0.4372,
+          "obliquity_signed": -0.201,
+          "path_to_nine_length": 0.7409,
+          "radial_alignment_R": 0.1453
+        },
+        "course": {
+          "angular_step_cv": 0.4201,
+          "direction_entropy": 0.9035,
+          "radial_alignment_R": 0.3935
+        },
+        "front": {
+          "angular_step_cv": 0.3233,
+          "direction_entropy": 0.7369,
+          "forward_mean": 0.9717,
+          "heading_turns": 0.981,
+          "hull_ratio": 1.0609,
+          "obliquity_abs": 0.1986,
+          "obliquity_signed": 0.0843,
+          "path_to_nine_length": 0.9579,
+          "radial_alignment_R": 0.6812
+        }
+      },
+      "skipped": [],
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 8.027,
+      "timings": {
+        "routing": 0.1972,
+        "sites": 0.1498,
+        "terrain": 0.0,
+        "validate": 0.0103
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "anchor_truncated": true,
+          "angle_index": 0,
+          "checks": 390,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 2
+          },
+          "edge": "N",
+          "nodes": 13,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "anchor_lookahead": 378
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 1,
+          "checks": 390,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 2
+          },
+          "edge": "N",
+          "nodes": 13,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "anchor_lookahead": 378
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 2,
+          "checks": 390,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 2
+          },
+          "edge": "N",
+          "nodes": 13,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "anchor_lookahead": 378
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 0,
+          "checks": 426,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 2
+          },
+          "edge": "N",
+          "nodes": 13,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "anchor_lookahead": 414
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 1,
+          "checks": 426,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 2
+          },
+          "edge": "N",
+          "nodes": 13,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "anchor_lookahead": 414
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 2,
+          "checks": 426,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 2
+          },
+          "edge": "N",
+          "nodes": 13,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "anchor_lookahead": 414
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 0,
+          "checks": 427,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 2
+          },
+          "edge": "N",
+          "nodes": 13,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "anchor_lookahead": 414,
+            "bounds": 1
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 1,
+          "checks": 427,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 2
+          },
+          "edge": "N",
+          "nodes": 13,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "anchor_lookahead": 414,
+            "bounds": 1
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 2,
+          "checks": 427,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 2
+          },
+          "edge": "N",
+          "nodes": 13,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "anchor_lookahead": 414,
+            "bounds": 1
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 34,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 10,
+            "10": 17
+          },
+          "edge": "W",
+          "nodes": 18,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "bounds": 1,
+            "bridge_lookahead": 3,
+            "fairway_gap": 12
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        6.0,
+        245.48
+      ],
+      "clubhouse_edge": "W",
+      "doglegs": 6,
+      "elapsed_seconds": 3.0896,
+      "hole_lengths": [
+        108.0,
+        101.4,
+        128.7,
+        126.1,
+        118.8,
+        123.3,
+        148.9,
+        128.8,
+        64.3,
+        102.0,
+        47.0,
+        103.0,
+        147.0,
+        53.8,
+        147.0,
+        63.5,
+        102.0,
+        147.0
+      ],
+      "hole_widths": [
+        15.0,
+        17.0,
+        12.0,
+        15.0,
+        14.0,
+        14.5,
+        13.5,
+        14.5,
+        11.5,
+        12.0,
+        11.5,
+        12.0,
+        16.0,
+        13.0,
+        12.5,
+        13.5,
+        16.0,
+        15.0
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 912.2,
+          "links": 343.2,
+          "par": 36,
+          "total": 1255.4
+        },
+        "front": {
+          "holes": 1048.2,
+          "links": 334.4,
+          "par": 36,
+          "total": 1382.7
+        }
+      },
+      "outer_direction": 1,
+      "outer_nine": "front",
+      "pars": {
+        "back": [
+          4,
+          3,
+          4,
+          5,
+          3,
+          5,
+          3,
+          4,
+          5
+        ],
+        "front": [
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          5,
+          4,
+          3
+        ]
+      },
+      "pattern": "muirfield",
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 1,
+        "permutation_index": 0
+      },
+      "relaunches": 9,
+      "seed": 7,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.8949,
+          "direction_entropy": 0.5895,
+          "forward_mean": 0.6074,
+          "heading_turns": 2.2475,
+          "hull_ratio": 0.4011,
+          "obliquity_abs": 0.4552,
+          "obliquity_signed": 0.0109,
+          "path_to_nine_length": 0.7057,
+          "radial_alignment_R": 0.2465
+        },
+        "course": {
+          "angular_step_cv": 0.6643,
+          "direction_entropy": 0.7562,
+          "radial_alignment_R": 0.4155
+        },
+        "front": {
+          "angular_step_cv": 0.2096,
+          "direction_entropy": 0.6983,
+          "forward_mean": 0.9728,
+          "heading_turns": 1.1338,
+          "hull_ratio": 1.0722,
+          "obliquity_abs": 0.1988,
+          "obliquity_signed": 0.0496,
+          "path_to_nine_length": 0.9895,
+          "radial_alignment_R": 0.6636
+        }
+      },
+      "skipped": [],
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 7.982,
+      "timings": {
+        "routing": 2.9395,
+        "sites": 0.1496,
+        "terrain": 0.0,
+        "validate": 0.0105
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 26,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 17
+          },
+          "edge": "W",
+          "nodes": 18,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 8
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        6.0,
+        225.86
+      ],
+      "clubhouse_edge": "W",
+      "doglegs": 4,
+      "elapsed_seconds": 0.3521,
+      "hole_lengths": [
+        145.6,
+        57.2,
+        102.0,
+        135.7,
+        130.4,
+        114.2,
+        140.3,
+        102.0,
+        143.6,
+        147.0,
+        63.6,
+        153.6,
+        132.6,
+        108.7,
+        102.3,
+        55.6,
+        47.7,
+        147.0
+      ],
+      "hole_widths": [
+        13.5,
+        12.5,
+        12.0,
+        14.0,
+        15.5,
+        16.5,
+        12.5,
+        12.0,
+        16.0,
+        13.5,
+        10.5,
+        15.5,
+        14.0,
+        14.5,
+        11.5,
+        11.5,
+        11.0,
+        14.0
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 958.2,
+          "links": 385.1,
+          "par": 36,
+          "total": 1343.3
+        },
+        "front": {
+          "holes": 1070.9,
+          "links": 323.4,
+          "par": 36,
+          "total": 1394.3
+        }
+      },
+      "outer_direction": 1,
+      "outer_nine": "front",
+      "pars": {
+        "back": [
+          5,
+          3,
+          5,
+          4,
+          4,
+          4,
+          3,
+          3,
+          5
+        ],
+        "front": [
+          5,
+          3,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4
+        ]
+      },
+      "pattern": "muirfield",
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 0,
+        "permutation_index": 0
+      },
+      "relaunches": 0,
+      "seed": 8,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.9381,
+          "direction_entropy": 0.8222,
+          "forward_mean": 0.6188,
+          "heading_turns": 2.2396,
+          "hull_ratio": 0.4974,
+          "obliquity_abs": 0.6228,
+          "obliquity_signed": -0.125,
+          "path_to_nine_length": 0.7064,
+          "radial_alignment_R": 0.3267
+        },
+        "course": {
+          "angular_step_cv": 0.6544,
+          "direction_entropy": 0.7912,
+          "radial_alignment_R": 0.4958
+        },
+        "front": {
+          "angular_step_cv": 0.2834,
+          "direction_entropy": 0.6749,
+          "forward_mean": 0.9624,
+          "heading_turns": 0.9779,
+          "hull_ratio": 1.0755,
+          "obliquity_abs": 0.2355,
+          "obliquity_signed": 0.1472,
+          "path_to_nine_length": 0.9894,
+          "radial_alignment_R": 0.7275
+        }
+      },
+      "skipped": [],
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 8.016,
+      "timings": {
+        "routing": 0.2046,
+        "sites": 0.1471,
+        "terrain": 0.0,
+        "validate": 0.0097
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "angle_index": 0,
+          "checks": 0,
+          "clubhouse_index": 0,
+          "nodes": 0,
+          "permutation_index": 0,
+          "status": "infaisable_ancrage"
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 0,
+          "checks": 363,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 1,
+            "10": 2
+          },
+          "edge": "W",
+          "nodes": 13,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "anchor_lookahead": 351
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 1,
+          "checks": 363,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 1,
+            "10": 2
+          },
+          "edge": "W",
+          "nodes": 13,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "anchor_lookahead": 351
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 2,
+          "checks": 363,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 1,
+            "10": 2
+          },
+          "edge": "W",
+          "nodes": 13,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "anchor_lookahead": 351
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 0,
+          "checks": 363,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 1,
+            "10": 2
+          },
+          "edge": "W",
+          "nodes": 13,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "anchor_lookahead": 351
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 1,
+          "checks": 363,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 1,
+            "10": 2
+          },
+          "edge": "W",
+          "nodes": 13,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "anchor_lookahead": 351
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 2,
+          "checks": 363,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 1,
+            "10": 2
+          },
+          "edge": "W",
+          "nodes": 13,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "anchor_lookahead": 351
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 128,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 10,
+            "10": 17
+          },
+          "edge": "W",
+          "nodes": 20,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "anchor_lookahead": 79,
+            "fairway_gap": 29
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        6.0,
+        281.94
+      ],
+      "clubhouse_edge": "W",
+      "doglegs": 4,
+      "elapsed_seconds": 2.0383,
+      "hole_lengths": [
+        103.4,
+        132.2,
+        149.4,
+        65.7,
+        164.3,
+        122.6,
+        134.5,
+        136.7,
+        61.4,
+        102.0,
+        113.5,
+        147.0,
+        52.8,
+        110.6,
+        100.9,
+        54.3,
+        102.0,
+        147.0
+      ],
+      "hole_widths": [
+        13.0,
+        13.5,
+        16.5,
+        12.0,
+        12.0,
+        15.5,
+        17.0,
+        14.0,
+        14.5,
+        12.0,
+        16.0,
+        14.5,
+        13.0,
+        12.5,
+        16.5,
+        14.0,
+        16.0,
+        13.5
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 930.2,
+          "links": 361.2,
+          "par": 36,
+          "total": 1291.3
+        },
+        "front": {
+          "holes": 1070.2,
+          "links": 355.4,
+          "par": 36,
+          "total": 1425.6
+        }
+      },
+      "outer_direction": -1,
+      "outer_nine": "front",
+      "pars": {
+        "back": [
+          4,
+          4,
+          5,
+          3,
+          4,
+          4,
+          3,
+          4,
+          5
+        ],
+        "front": [
+          4,
+          4,
+          5,
+          3,
+          5,
+          4,
+          4,
+          4,
+          3
+        ]
+      },
+      "pattern": "muirfield",
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 1,
+        "permutation_index": 2
+      },
+      "relaunches": 7,
+      "seed": 9,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.3997,
+          "direction_entropy": 0.8842,
+          "forward_mean": 0.8885,
+          "heading_turns": 1.474,
+          "hull_ratio": 0.4456,
+          "obliquity_abs": 0.3614,
+          "obliquity_signed": 0.0374,
+          "path_to_nine_length": 0.6949,
+          "radial_alignment_R": 0.2443
+        },
+        "course": {
+          "angular_step_cv": 0.3824,
+          "direction_entropy": 0.9035,
+          "radial_alignment_R": 0.3201
+        },
+        "front": {
+          "angular_step_cv": 0.3509,
+          "direction_entropy": 0.6749,
+          "forward_mean": 0.9759,
+          "heading_turns": 1.1241,
+          "hull_ratio": 1.0897,
+          "obliquity_abs": 0.1905,
+          "obliquity_signed": -0.1029,
+          "path_to_nine_length": 1.0063,
+          "radial_alignment_R": 0.6645
+        }
+      },
+      "skipped": [],
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 7.908,
+      "timings": {
+        "routing": 1.8911,
+        "sites": 0.1467,
+        "terrain": 0.0,
+        "validate": 0.0096
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 20,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 17
+          },
+          "edge": "E",
+          "nodes": 18,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "bridge_lookahead": 1,
+            "fairway_gap": 1
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        344.0,
+        331.74
+      ],
+      "clubhouse_edge": "E",
+      "doglegs": 5,
+      "elapsed_seconds": 0.3762,
+      "hole_lengths": [
+        112.8,
+        58.4,
+        53.0,
+        114.7,
+        127.7,
+        110.3,
+        141.9,
+        145.7,
+        141.3,
+        102.0,
+        147.0,
+        104.1,
+        55.6,
+        145.8,
+        55.3,
+        147.0,
+        102.0,
+        102.0
+      ],
+      "hole_widths": [
+        13.5,
+        15.0,
+        12.5,
+        15.5,
+        13.5,
+        11.0,
+        15.0,
+        15.0,
+        12.5,
+        13.5,
+        15.5,
+        15.0,
+        10.5,
+        16.0,
+        11.5,
+        12.5,
+        15.5,
+        16.5
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 960.7,
+          "links": 380.8,
+          "par": 37,
+          "total": 1341.5
+        },
+        "front": {
+          "holes": 1005.9,
+          "links": 339.3,
+          "par": 35,
+          "total": 1345.2
+        }
+      },
+      "outer_direction": 1,
+      "outer_nine": "front",
+      "pars": {
+        "back": [
+          4,
+          5,
+          4,
+          3,
+          5,
+          3,
+          5,
+          4,
+          4
+        ],
+        "front": [
+          4,
+          3,
+          3,
+          4,
+          4,
+          4,
+          4,
+          5,
+          4
+        ]
+      },
+      "pattern": "muirfield",
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 0,
+        "permutation_index": 0
+      },
+      "relaunches": 0,
+      "seed": 10,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.4827,
+          "direction_entropy": 0.8222,
+          "forward_mean": 0.735,
+          "heading_turns": 1.9173,
+          "hull_ratio": 0.5171,
+          "obliquity_abs": 0.5397,
+          "obliquity_signed": -0.0748,
+          "path_to_nine_length": 0.6794,
+          "radial_alignment_R": 0.1294
+        },
+        "course": {
+          "angular_step_cv": 0.4051,
+          "direction_entropy": 0.8918,
+          "radial_alignment_R": 0.2608
+        },
+        "front": {
+          "angular_step_cv": 0.292,
+          "direction_entropy": 0.8222,
+          "forward_mean": 0.9587,
+          "heading_turns": 1.1721,
+          "hull_ratio": 1.0593,
+          "obliquity_abs": 0.2436,
+          "obliquity_signed": 0.0064,
+          "path_to_nine_length": 1.0393,
+          "radial_alignment_R": 0.6458
+        }
+      },
+      "skipped": [],
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 7.914,
+      "timings": {
+        "routing": 0.2257,
+        "sites": 0.1501,
+        "terrain": 0.0,
+        "validate": 0.01
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 23,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 17
+          },
+          "edge": "S",
+          "nodes": 18,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 5
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        165.63,
+        494.0
+      ],
+      "clubhouse_edge": "S",
+      "doglegs": 8,
+      "elapsed_seconds": 0.3565,
+      "hole_lengths": [
+        147.0,
+        142.9,
+        57.9,
+        122.2,
+        136.5,
+        126.8,
+        120.3,
+        62.6,
+        129.1,
+        147.0,
+        102.0,
+        102.0,
+        147.0,
+        102.0,
+        47.0,
+        134.8,
+        147.0,
+        50.0
+      ],
+      "hole_widths": [
+        12.5,
+        14.0,
+        15.0,
+        15.0,
+        13.5,
+        15.5,
+        13.0,
+        14.5,
+        17.0,
+        14.0,
+        15.0,
+        14.0,
+        13.0,
+        12.0,
+        13.0,
+        16.0,
+        14.0,
+        14.0
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 978.8,
+          "links": 383.6,
+          "par": 37,
+          "total": 1362.4
+        },
+        "front": {
+          "holes": 1045.3,
+          "links": 327.8,
+          "par": 35,
+          "total": 1373.1
+        }
+      },
+      "outer_direction": 1,
+      "outer_nine": "front",
+      "pars": {
+        "back": [
+          5,
+          4,
+          4,
+          5,
+          4,
+          3,
+          4,
+          5,
+          3
+        ],
+        "front": [
+          5,
+          4,
+          3,
+          4,
+          4,
+          4,
+          4,
+          3,
+          4
+        ]
+      },
+      "pattern": "muirfield",
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 0,
+        "permutation_index": 0
+      },
+      "relaunches": 0,
+      "seed": 11,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.5384,
+          "direction_entropy": 0.7369,
+          "forward_mean": 0.8558,
+          "heading_turns": 1.1639,
+          "hull_ratio": 0.4355,
+          "obliquity_abs": 0.4291,
+          "obliquity_signed": -0.0847,
+          "path_to_nine_length": 0.6535,
+          "radial_alignment_R": 0.1901
+        },
+        "course": {
+          "angular_step_cv": 0.4343,
+          "direction_entropy": 0.8918,
+          "radial_alignment_R": 0.4143
+        },
+        "front": {
+          "angular_step_cv": 0.287,
+          "direction_entropy": 0.8222,
+          "forward_mean": 0.9408,
+          "heading_turns": 1.094,
+          "hull_ratio": 1.044,
+          "obliquity_abs": 0.2433,
+          "obliquity_signed": -0.0685,
+          "path_to_nine_length": 1.0348,
+          "radial_alignment_R": 0.6627
+        }
+      },
+      "skipped": [],
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 7.922,
+      "timings": {
+        "routing": 0.2062,
+        "sites": 0.1499,
+        "terrain": 0.0,
+        "validate": 0.0113
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "anchor_truncated": true,
+          "angle_index": 0,
+          "checks": 672,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 3
+          },
+          "edge": "E",
+          "nodes": 40,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 633
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 1,
+          "checks": 672,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 3
+          },
+          "edge": "E",
+          "nodes": 40,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 633
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 2,
+          "checks": 675,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 3
+          },
+          "edge": "E",
+          "nodes": 40,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 636
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 19,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 17
+          },
+          "edge": "E",
+          "nodes": 18,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "fairway_gap": 1
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        344.0,
+        164.34
+      ],
+      "clubhouse_edge": "E",
+      "doglegs": 6,
+      "elapsed_seconds": 1.2074,
+      "hole_lengths": [
+        156.4,
+        122.5,
+        50.6,
+        132.6,
+        142.9,
+        151.2,
+        47.9,
+        102.0,
+        140.7,
+        147.0,
+        102.0,
+        102.0,
+        136.4,
+        66.0,
+        102.0,
+        147.0,
+        117.8,
+        50.1
+      ],
+      "hole_widths": [
+        16.5,
+        12.5,
+        12.5,
+        14.5,
+        15.0,
+        16.5,
+        13.5,
+        12.5,
+        15.0,
+        14.0,
+        13.5,
+        11.5,
+        13.0,
+        14.5,
+        12.0,
+        14.5,
+        16.0,
+        13.5
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 970.2,
+          "links": 367.7,
+          "par": 36,
+          "total": 1338.0
+        },
+        "front": {
+          "holes": 1046.8,
+          "links": 349.2,
+          "par": 36,
+          "total": 1396.0
+        }
+      },
+      "outer_direction": 1,
+      "outer_nine": "front",
+      "pars": {
+        "back": [
+          5,
+          4,
+          4,
+          4,
+          3,
+          4,
+          5,
+          4,
+          3
+        ],
+        "front": [
+          5,
+          4,
+          3,
+          4,
+          4,
+          5,
+          3,
+          4,
+          4
+        ]
+      },
+      "pattern": "muirfield",
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 0,
+        "permutation_index": 1
+      },
+      "relaunches": 3,
+      "seed": 12,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.6267,
+          "direction_entropy": 0.6749,
+          "forward_mean": 0.6655,
+          "heading_turns": 1.7734,
+          "hull_ratio": 0.451,
+          "obliquity_abs": 0.473,
+          "obliquity_signed": 0.125,
+          "path_to_nine_length": 0.7022,
+          "radial_alignment_R": 0.4547
+        },
+        "course": {
+          "angular_step_cv": 0.5052,
+          "direction_entropy": 0.8918,
+          "radial_alignment_R": 0.2648
+        },
+        "front": {
+          "angular_step_cv": 0.3268,
+          "direction_entropy": 0.8222,
+          "forward_mean": 0.9665,
+          "heading_turns": 1.0972,
+          "hull_ratio": 1.0526,
+          "obliquity_abs": 0.1967,
+          "obliquity_signed": 0.1139,
+          "path_to_nine_length": 1.0055,
+          "radial_alignment_R": 0.6463
+        }
+      },
+      "skipped": [],
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 7.969,
+      "timings": {
+        "routing": 1.0585,
+        "sites": 0.1484,
+        "terrain": 0.0,
+        "validate": 0.0104
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 27,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 17
+          },
+          "edge": "S",
+          "nodes": 19,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 8
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        236.64,
+        494.0
+      ],
+      "clubhouse_edge": "S",
+      "doglegs": 6,
+      "elapsed_seconds": 0.3709,
+      "hole_lengths": [
+        54.7,
+        139.8,
+        170.3,
+        122.5,
+        136.1,
+        127.5,
+        48.0,
+        134.6,
+        132.9,
+        147.0,
+        102.0,
+        102.0,
+        147.0,
+        60.1,
+        102.0,
+        52.0,
+        147.0,
+        107.8
+      ],
+      "hole_widths": [
+        10.0,
+        12.5,
+        14.5,
+        17.0,
+        16.0,
+        13.0,
+        11.0,
+        14.0,
+        17.0,
+        16.5,
+        14.0,
+        15.0,
+        12.5,
+        10.5,
+        12.5,
+        14.5,
+        16.5,
+        13.5
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 966.9,
+          "links": 351.2,
+          "par": 37,
+          "total": 1318.1
+        },
+        "front": {
+          "holes": 1066.4,
+          "links": 342.1,
+          "par": 35,
+          "total": 1408.5
+        }
+      },
+      "outer_direction": -1,
+      "outer_nine": "front",
+      "pars": {
+        "back": [
+          5,
+          4,
+          4,
+          5,
+          3,
+          4,
+          3,
+          5,
+          4
+        ],
+        "front": [
+          3,
+          4,
+          5,
+          4,
+          4,
+          4,
+          3,
+          4,
+          4
+        ]
+      },
+      "pattern": "muirfield",
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 0,
+        "permutation_index": 0
+      },
+      "relaunches": 0,
+      "seed": 13,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.4119,
+          "direction_entropy": 0.8222,
+          "forward_mean": 0.8077,
+          "heading_turns": 1.3001,
+          "hull_ratio": 0.4766,
+          "obliquity_abs": 0.4218,
+          "obliquity_signed": 0.0774,
+          "path_to_nine_length": 0.6749,
+          "radial_alignment_R": 0.263
+        },
+        "course": {
+          "angular_step_cv": 0.3297,
+          "direction_entropy": 0.8725,
+          "radial_alignment_R": 0.3082
+        },
+        "front": {
+          "angular_step_cv": 0.2249,
+          "direction_entropy": 0.7603,
+          "forward_mean": 0.9827,
+          "heading_turns": 1.036,
+          "hull_ratio": 1.1135,
+          "obliquity_abs": 0.1465,
+          "obliquity_signed": -0.0225,
+          "path_to_nine_length": 1.0372,
+          "radial_alignment_R": 0.6554
+        }
+      },
+      "skipped": [],
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 7.892,
+      "timings": {
+        "routing": 0.22,
+        "sites": 0.1503,
+        "terrain": 0.0,
+        "validate": 0.0111
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 22,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 17
+          },
+          "edge": "N",
+          "nodes": 18,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "anchor_lookahead": 1,
+            "fairway_gap": 3
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        142.6,
+        6.0
+      ],
+      "clubhouse_edge": "N",
+      "doglegs": 7,
+      "elapsed_seconds": 0.3447,
+      "hole_lengths": [
+        102.0,
+        136.5,
+        127.4,
+        124.3,
+        107.3,
+        68.6,
+        122.6,
+        147.0,
+        135.3,
+        102.0,
+        147.0,
+        56.4,
+        47.0,
+        147.0,
+        59.2,
+        102.0,
+        147.0,
+        104.0
+      ],
+      "hole_widths": [
+        12.5,
+        12.5,
+        16.5,
+        16.5,
+        13.0,
+        12.5,
+        13.5,
+        12.5,
+        16.5,
+        12.5,
+        16.0,
+        12.0,
+        12.0,
+        15.0,
+        14.0,
+        15.0,
+        17.5,
+        13.5
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 911.6,
+          "links": 365.3,
+          "par": 36,
+          "total": 1276.8
+        },
+        "front": {
+          "holes": 1071.1,
+          "links": 357.0,
+          "par": 36,
+          "total": 1428.1
+        }
+      },
+      "outer_direction": -1,
+      "outer_nine": "front",
+      "pars": {
+        "back": [
+          4,
+          5,
+          3,
+          3,
+          5,
+          3,
+          4,
+          5,
+          4
+        ],
+        "front": [
+          4,
+          4,
+          4,
+          4,
+          4,
+          3,
+          4,
+          5,
+          4
+        ]
+      },
+      "pattern": "muirfield",
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 0,
+        "permutation_index": 0
+      },
+      "relaunches": 0,
+      "seed": 14,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.3864,
+          "direction_entropy": 0.5123,
+          "forward_mean": 0.8256,
+          "heading_turns": 1.3236,
+          "hull_ratio": 0.3817,
+          "obliquity_abs": 0.4717,
+          "obliquity_signed": 0.0535,
+          "path_to_nine_length": 0.6936,
+          "radial_alignment_R": 0.4067
+        },
+        "course": {
+          "angular_step_cv": 0.3427,
+          "direction_entropy": 0.8166,
+          "radial_alignment_R": 0.2073
+        },
+        "front": {
+          "angular_step_cv": 0.2797,
+          "direction_entropy": 0.7603,
+          "forward_mean": 0.9655,
+          "heading_turns": 1.0835,
+          "hull_ratio": 1.085,
+          "obliquity_abs": 0.2293,
+          "obliquity_signed": -0.037,
+          "path_to_nine_length": 0.9845,
+          "radial_alignment_R": 0.6531
+        }
+      },
+      "skipped": [],
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 7.889,
+      "timings": {
+        "routing": 0.1929,
+        "sites": 0.1513,
+        "terrain": 0.0,
+        "validate": 0.0109
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 20,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 17
+          },
+          "edge": "S",
+          "nodes": 18,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 2
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        169.44,
+        494.0
+      ],
+      "clubhouse_edge": "S",
+      "doglegs": 5,
+      "elapsed_seconds": 0.3451,
+      "hole_lengths": [
+        102.1,
+        175.2,
+        136.6,
+        147.0,
+        68.9,
+        114.2,
+        126.9,
+        135.1,
+        147.0,
+        102.0,
+        102.0,
+        63.6,
+        47.0,
+        101.0,
+        103.9,
+        109.6,
+        154.2,
+        56.0
+      ],
+      "hole_widths": [
+        13.0,
+        14.5,
+        13.5,
+        17.5,
+        14.5,
+        12.5,
+        11.5,
+        13.5,
+        12.5,
+        16.0,
+        12.0,
+        10.5,
+        11.0,
+        16.5,
+        14.0,
+        12.5,
+        12.0,
+        12.0
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 839.3,
+          "links": 328.8,
+          "par": 34,
+          "total": 1168.1
+        },
+        "front": {
+          "holes": 1152.9,
+          "links": 343.6,
+          "par": 38,
+          "total": 1496.5
+        }
+      },
+      "outer_direction": -1,
+      "outer_nine": "front",
+      "pars": {
+        "back": [
+          4,
+          4,
+          3,
+          3,
+          4,
+          4,
+          4,
+          5,
+          3
+        ],
+        "front": [
+          4,
+          5,
+          4,
+          5,
+          3,
+          4,
+          4,
+          4,
+          5
+        ]
+      },
+      "pattern": "muirfield",
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 0,
+        "permutation_index": 0
+      },
+      "relaunches": 0,
+      "seed": 15,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.4193,
+          "direction_entropy": 0.6749,
+          "forward_mean": 0.8882,
+          "heading_turns": 1.1385,
+          "hull_ratio": 0.4374,
+          "obliquity_abs": 0.3431,
+          "obliquity_signed": 0.105,
+          "path_to_nine_length": 0.7346,
+          "radial_alignment_R": 0.0672
+        },
+        "course": {
+          "angular_step_cv": 0.3452,
+          "direction_entropy": 0.7562,
+          "radial_alignment_R": 0.2953
+        },
+        "front": {
+          "angular_step_cv": 0.2308,
+          "direction_entropy": 0.6983,
+          "forward_mean": 0.9632,
+          "heading_turns": 1.1201,
+          "hull_ratio": 1.1397,
+          "obliquity_abs": 0.2509,
+          "obliquity_signed": -0.1274,
+          "path_to_nine_length": 0.9251,
+          "radial_alignment_R": 0.5922
+        }
+      },
+      "skipped": [],
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 7.979,
+      "timings": {
+        "routing": 0.1937,
+        "sites": 0.1508,
+        "terrain": 0.0,
+        "validate": 0.0101
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 21,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 17
+          },
+          "edge": "N",
+          "nodes": 18,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "anchor_lookahead": 1,
+            "fairway_gap": 2
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        126.96,
+        6.0
+      ],
+      "clubhouse_edge": "N",
+      "doglegs": 2,
+      "elapsed_seconds": 0.3261,
+      "hole_lengths": [
+        109.1,
+        166.0,
+        125.0,
+        159.1,
+        121.3,
+        57.9,
+        180.7,
+        51.3,
+        65.3,
+        102.0,
+        147.0,
+        114.1,
+        105.7,
+        100.1,
+        118.4,
+        100.4,
+        64.3,
+        102.5
+      ],
+      "hole_widths": [
+        13.5,
+        17.0,
+        13.5,
+        18.0,
+        13.5,
+        12.5,
+        16.0,
+        11.5,
+        14.5,
+        11.5,
+        16.5,
+        13.0,
+        15.0,
+        14.5,
+        13.5,
+        12.0,
+        11.0,
+        12.0
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 954.5,
+          "links": 325.8,
+          "par": 36,
+          "total": 1280.3
+        },
+        "front": {
+          "holes": 1035.7,
+          "links": 363.9,
+          "par": 36,
+          "total": 1399.6
+        }
+      },
+      "outer_direction": 1,
+      "outer_nine": "front",
+      "pars": {
+        "back": [
+          4,
+          5,
+          4,
+          4,
+          4,
+          4,
+          4,
+          3,
+          4
+        ],
+        "front": [
+          4,
+          5,
+          4,
+          5,
+          4,
+          3,
+          5,
+          3,
+          3
+        ]
+      },
+      "pattern": "muirfield",
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 0,
+        "permutation_index": 0
+      },
+      "relaunches": 0,
+      "seed": 16,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.4594,
+          "direction_entropy": 0.6363,
+          "forward_mean": 0.9155,
+          "heading_turns": 1.0575,
+          "hull_ratio": 0.4846,
+          "obliquity_abs": 0.3131,
+          "obliquity_signed": -0.1882,
+          "path_to_nine_length": 0.6775,
+          "radial_alignment_R": 0.3152
+        },
+        "course": {
+          "angular_step_cv": 0.454,
+          "direction_entropy": 0.7486,
+          "radial_alignment_R": 0.4045
+        },
+        "front": {
+          "angular_step_cv": 0.445,
+          "direction_entropy": 0.6129,
+          "forward_mean": 0.9693,
+          "heading_turns": 1.0296,
+          "hull_ratio": 1.0941,
+          "obliquity_abs": 0.2019,
+          "obliquity_signed": 0.1093,
+          "path_to_nine_length": 1.0197,
+          "radial_alignment_R": 0.7012
+        }
+      },
+      "skipped": [],
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 7.851,
+      "timings": {
+        "routing": 0.1824,
+        "sites": 0.1433,
+        "terrain": 0.0,
+        "validate": 0.009
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 21,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 17
+          },
+          "edge": "N",
+          "nodes": 18,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 3
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        142.59,
+        6.0
+      ],
+      "clubhouse_edge": "N",
+      "doglegs": 3,
+      "elapsed_seconds": 0.3335,
+      "hole_lengths": [
+        102.1,
+        113.8,
+        167.5,
+        138.0,
+        108.4,
+        181.9,
+        58.3,
+        115.7,
+        129.3,
+        102.0,
+        60.3,
+        147.0,
+        45.9,
+        102.0,
+        67.3,
+        117.8,
+        145.2,
+        101.4
+      ],
+      "hole_widths": [
+        13.0,
+        12.0,
+        12.5,
+        15.5,
+        13.0,
+        15.5,
+        11.5,
+        12.0,
+        15.5,
+        17.0,
+        12.0,
+        17.0,
+        14.0,
+        16.0,
+        10.5,
+        17.0,
+        13.0,
+        12.5
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 888.9,
+          "links": 355.9,
+          "par": 35,
+          "total": 1244.9
+        },
+        "front": {
+          "holes": 1115.1,
+          "links": 352.3,
+          "par": 37,
+          "total": 1467.5
+        }
+      },
+      "outer_direction": -1,
+      "outer_nine": "front",
+      "pars": {
+        "back": [
+          4,
+          3,
+          5,
+          3,
+          4,
+          3,
+          4,
+          5,
+          4
+        ],
+        "front": [
+          4,
+          4,
+          5,
+          4,
+          4,
+          5,
+          3,
+          4,
+          4
+        ]
+      },
+      "pattern": "muirfield",
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 0,
+        "permutation_index": 0
+      },
+      "relaunches": 0,
+      "seed": 17,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.6584,
+          "direction_entropy": 0.4624,
+          "forward_mean": 0.8073,
+          "heading_turns": 0.8513,
+          "hull_ratio": 0.4327,
+          "obliquity_abs": 0.4098,
+          "obliquity_signed": 0.157,
+          "path_to_nine_length": 0.7173,
+          "radial_alignment_R": 0.3844
+        },
+        "course": {
+          "angular_step_cv": 0.5105,
+          "direction_entropy": 0.7871,
+          "radial_alignment_R": 0.267
+        },
+        "front": {
+          "angular_step_cv": 0.2656,
+          "direction_entropy": 0.7603,
+          "forward_mean": 0.9715,
+          "heading_turns": 1.0771,
+          "hull_ratio": 1.1364,
+          "obliquity_abs": 0.2136,
+          "obliquity_signed": -0.0038,
+          "path_to_nine_length": 0.954,
+          "radial_alignment_R": 0.6279
+        }
+      },
+      "skipped": [],
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 7.88,
+      "timings": {
+        "routing": 0.1861,
+        "sites": 0.1468,
+        "terrain": 0.0,
+        "validate": 0.0094
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 32,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 17
+          },
+          "edge": "E",
+          "nodes": 18,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 14
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        344.0,
+        206.75
+      ],
+      "clubhouse_edge": "E",
+      "doglegs": 6,
+      "elapsed_seconds": 0.3557,
+      "hole_lengths": [
+        110.0,
+        137.7,
+        68.6,
+        150.5,
+        132.6,
+        126.2,
+        51.8,
+        140.8,
+        144.5,
+        103.3,
+        102.0,
+        147.0,
+        47.0,
+        49.0,
+        147.0,
+        111.8,
+        102.0,
+        147.0
+      ],
+      "hole_widths": [
+        16.0,
+        15.0,
+        14.0,
+        12.0,
+        14.5,
+        12.0,
+        14.5,
+        11.5,
+        16.0,
+        11.0,
+        17.0,
+        15.5,
+        14.0,
+        11.5,
+        15.0,
+        17.0,
+        13.0,
+        15.5
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 956.1,
+          "links": 319.7,
+          "par": 37,
+          "total": 1275.8
+        },
+        "front": {
+          "holes": 1062.7,
+          "links": 331.1,
+          "par": 35,
+          "total": 1393.7
+        }
+      },
+      "outer_direction": 1,
+      "outer_nine": "front",
+      "pars": {
+        "back": [
+          4,
+          4,
+          5,
+          3,
+          3,
+          5,
+          4,
+          4,
+          5
+        ],
+        "front": [
+          4,
+          4,
+          3,
+          5,
+          4,
+          4,
+          3,
+          4,
+          4
+        ]
+      },
+      "pattern": "muirfield",
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 0,
+        "permutation_index": 0
+      },
+      "relaunches": 0,
+      "seed": 18,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.4421,
+          "direction_entropy": 0.7603,
+          "forward_mean": 0.9177,
+          "heading_turns": 1.9691,
+          "hull_ratio": 0.4871,
+          "obliquity_abs": 0.3468,
+          "obliquity_signed": -0.1042,
+          "path_to_nine_length": 0.6741,
+          "radial_alignment_R": 0.2762
+        },
+        "course": {
+          "angular_step_cv": 0.3953,
+          "direction_entropy": 0.9345,
+          "radial_alignment_R": 0.3329
+        },
+        "front": {
+          "angular_step_cv": 0.3363,
+          "direction_entropy": 0.8222,
+          "forward_mean": 0.9674,
+          "heading_turns": 1.0741,
+          "hull_ratio": 1.0307,
+          "obliquity_abs": 0.2296,
+          "obliquity_signed": 0.0785,
+          "path_to_nine_length": 1.04,
+          "radial_alignment_R": 0.6599
+        }
+      },
+      "skipped": [],
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 7.841,
+      "timings": {
+        "routing": 0.2096,
+        "sites": 0.1457,
+        "terrain": 0.0,
+        "validate": 0.0106
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 20,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 17
+          },
+          "edge": "N",
+          "nodes": 18,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 2
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        108.18,
+        6.0
+      ],
+      "clubhouse_edge": "N",
+      "doglegs": 5,
+      "elapsed_seconds": 0.3572,
+      "hole_lengths": [
+        147.0,
+        142.8,
+        114.4,
+        147.0,
+        128.5,
+        111.7,
+        102.0,
+        147.1,
+        67.7,
+        109.2,
+        106.8,
+        65.6,
+        151.9,
+        50.9,
+        58.0,
+        102.0,
+        106.5,
+        102.0
+      ],
+      "hole_widths": [
+        13.0,
+        12.0,
+        13.0,
+        15.5,
+        16.0,
+        11.5,
+        13.5,
+        16.5,
+        15.0,
+        15.0,
+        11.5,
+        10.5,
+        17.5,
+        13.0,
+        10.0,
+        13.5,
+        11.5,
+        12.0
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 852.9,
+          "links": 364.8,
+          "par": 34,
+          "total": 1217.7
+        },
+        "front": {
+          "holes": 1108.2,
+          "links": 316.7,
+          "par": 38,
+          "total": 1424.9
+        }
+      },
+      "outer_direction": 1,
+      "outer_nine": "front",
+      "pars": {
+        "back": [
+          4,
+          4,
+          3,
+          5,
+          3,
+          3,
+          4,
+          4,
+          4
+        ],
+        "front": [
+          5,
+          4,
+          4,
+          5,
+          4,
+          4,
+          4,
+          5,
+          3
+        ]
+      },
+      "pattern": "muirfield",
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 0,
+        "permutation_index": 0
+      },
+      "relaunches": 0,
+      "seed": 19,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.4955,
+          "direction_entropy": 0.6983,
+          "forward_mean": 0.8587,
+          "heading_turns": 1.2672,
+          "hull_ratio": 0.4026,
+          "obliquity_abs": 0.4164,
+          "obliquity_signed": -0.2521,
+          "path_to_nine_length": 0.7628,
+          "radial_alignment_R": 0.1907
+        },
+        "course": {
+          "angular_step_cv": 0.4071,
+          "direction_entropy": 0.7988,
+          "radial_alignment_R": 0.2698
+        },
+        "front": {
+          "angular_step_cv": 0.261,
+          "direction_entropy": 0.6749,
+          "forward_mean": 0.9865,
+          "heading_turns": 0.9138,
+          "hull_ratio": 1.1227,
+          "obliquity_abs": 0.1213,
+          "obliquity_signed": 0.1198,
+          "path_to_nine_length": 0.9279,
+          "radial_alignment_R": 0.7274
+        }
+      },
+      "skipped": [],
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 7.886,
+      "timings": {
+        "routing": 0.2107,
+        "sites": 0.146,
+        "terrain": 0.0,
+        "validate": 0.0103
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 21,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 17
+          },
+          "edge": "N",
+          "nodes": 18,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 3
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        140.61,
+        6.0
+      ],
+      "clubhouse_edge": "N",
+      "doglegs": 4,
+      "elapsed_seconds": 0.3578,
+      "hole_lengths": [
+        109.0,
+        180.0,
+        60.8,
+        126.7,
+        162.0,
+        56.9,
+        135.2,
+        46.9,
+        175.9,
+        147.0,
+        102.0,
+        101.5,
+        109.3,
+        58.4,
+        102.0,
+        117.0,
+        113.2,
+        102.0
+      ],
+      "hole_widths": [
+        12.0,
+        14.0,
+        11.0,
+        16.5,
+        15.5,
+        11.0,
+        17.0,
+        11.5,
+        14.0,
+        13.5,
+        13.0,
+        14.0,
+        12.5,
+        11.0,
+        16.0,
+        16.0,
+        12.0,
+        13.0
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 952.3,
+          "links": 338.5,
+          "par": 36,
+          "total": 1290.8
+        },
+        "front": {
+          "holes": 1053.4,
+          "links": 309.0,
+          "par": 36,
+          "total": 1362.5
+        }
+      },
+      "outer_direction": -1,
+      "outer_nine": "front",
+      "pars": {
+        "back": [
+          5,
+          4,
+          4,
+          4,
+          3,
+          4,
+          4,
+          4,
+          4
+        ],
+        "front": [
+          4,
+          5,
+          3,
+          4,
+          5,
+          3,
+          4,
+          3,
+          5
+        ]
+      },
+      "pattern": "muirfield",
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 0,
+        "permutation_index": 0
+      },
+      "relaunches": 0,
+      "seed": 20,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.5518,
+          "direction_entropy": 0.6983,
+          "forward_mean": 0.9656,
+          "heading_turns": 0.9032,
+          "hull_ratio": 0.4225,
+          "obliquity_abs": 0.1946,
+          "obliquity_signed": 0.0466,
+          "path_to_nine_length": 0.671,
+          "radial_alignment_R": 0.2677
+        },
+        "course": {
+          "angular_step_cv": 0.4773,
+          "direction_entropy": 0.8476,
+          "radial_alignment_R": 0.4146
+        },
+        "front": {
+          "angular_step_cv": 0.3842,
+          "direction_entropy": 0.7369,
+          "forward_mean": 0.9553,
+          "heading_turns": 0.9714,
+          "hull_ratio": 1.0836,
+          "obliquity_abs": 0.2641,
+          "obliquity_signed": -0.0941,
+          "path_to_nine_length": 1.0191,
+          "radial_alignment_R": 0.7808
+        }
+      },
+      "skipped": [],
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 7.813,
+      "timings": {
+        "routing": 0.2099,
+        "sites": 0.1475,
+        "terrain": 0.0,
+        "validate": 0.0097
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 35,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 17
+          },
+          "edge": "W",
+          "nodes": 18,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "bridge_lookahead": 1,
+            "fairway_gap": 16
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        6.0,
+        259.57
+      ],
+      "clubhouse_edge": "W",
+      "doglegs": 6,
+      "elapsed_seconds": 0.3677,
+      "hole_lengths": [
+        103.9,
+        102.0,
+        147.0,
+        66.2,
+        69.4,
+        160.0,
+        128.0,
+        114.6,
+        169.7,
+        102.0,
+        101.2,
+        51.6,
+        112.3,
+        54.4,
+        102.0,
+        105.8,
+        102.0,
+        147.0
+      ],
+      "hole_widths": [
+        13.0,
+        15.0,
+        15.0,
+        10.5,
+        13.5,
+        13.0,
+        16.5,
+        16.0,
+        16.0,
+        14.0,
+        14.5,
+        10.5,
+        15.0,
+        11.5,
+        15.5,
+        15.5,
+        15.5,
+        16.5
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 878.2,
+          "links": 377.8,
+          "par": 35,
+          "total": 1256.0
+        },
+        "front": {
+          "holes": 1060.8,
+          "links": 325.7,
+          "par": 37,
+          "total": 1386.5
+        }
+      },
+      "outer_direction": -1,
+      "outer_nine": "front",
+      "pars": {
+        "back": [
+          4,
+          4,
+          3,
+          4,
+          3,
+          4,
+          4,
+          4,
+          5
+        ],
+        "front": [
+          4,
+          4,
+          5,
+          3,
+          3,
+          5,
+          4,
+          4,
+          5
+        ]
+      },
+      "pattern": "muirfield",
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 0,
+        "permutation_index": 0
+      },
+      "relaunches": 0,
+      "seed": 21,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.4459,
+          "direction_entropy": 0.8222,
+          "forward_mean": 0.7485,
+          "heading_turns": 1.9248,
+          "hull_ratio": 0.479,
+          "obliquity_abs": 0.5188,
+          "obliquity_signed": 0.1184,
+          "path_to_nine_length": 0.7169,
+          "radial_alignment_R": 0.2317
+        },
+        "course": {
+          "angular_step_cv": 0.3925,
+          "direction_entropy": 0.8725,
+          "radial_alignment_R": 0.2627
+        },
+        "front": {
+          "angular_step_cv": 0.3211,
+          "direction_entropy": 0.6749,
+          "forward_mean": 0.9476,
+          "heading_turns": 1.1961,
+          "hull_ratio": 1.0574,
+          "obliquity_abs": 0.2832,
+          "obliquity_signed": -0.0557,
+          "path_to_nine_length": 0.9748,
+          "radial_alignment_R": 0.691
+        }
+      },
+      "skipped": [],
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 7.845,
+      "timings": {
+        "routing": 0.2202,
+        "sites": 0.1471,
+        "terrain": 0.0,
+        "validate": 0.0105
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "anchor_truncated": true,
+          "angle_index": 0,
+          "checks": 588,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 3
+          },
+          "edge": "W",
+          "nodes": 40,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 549
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 1,
+          "checks": 588,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 3
+          },
+          "edge": "W",
+          "nodes": 40,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 549
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 2,
+          "checks": 588,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 3
+          },
+          "edge": "W",
+          "nodes": 40,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 549
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 0,
+          "checks": 631,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 3
+          },
+          "edge": "W",
+          "nodes": 40,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "anchor_lookahead": 18,
+            "bounds": 7,
+            "fairway_gap": 567
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 1,
+          "checks": 633,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 3
+          },
+          "edge": "W",
+          "nodes": 40,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "anchor_lookahead": 18,
+            "bounds": 9,
+            "fairway_gap": 567
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 2,
+          "checks": 629,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 3
+          },
+          "edge": "W",
+          "nodes": 40,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "anchor_lookahead": 18,
+            "bounds": 5,
+            "fairway_gap": 567
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 0,
+          "checks": 595,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 3
+          },
+          "edge": "W",
+          "nodes": 40,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "bounds": 7,
+            "fairway_gap": 549
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 1,
+          "checks": 597,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 3
+          },
+          "edge": "W",
+          "nodes": 40,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "bounds": 9,
+            "fairway_gap": 549
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 2,
+          "checks": 593,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 3
+          },
+          "edge": "W",
+          "nodes": 40,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "bounds": 5,
+            "fairway_gap": 549
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 77,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 10,
+            "10": 17
+          },
+          "edge": "W",
+          "nodes": 20,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "anchor_lookahead": 1,
+            "fairway_gap": 56
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        6.0,
+        192.59
+      ],
+      "clubhouse_edge": "W",
+      "doglegs": 5,
+      "elapsed_seconds": 2.8061,
+      "hole_lengths": [
+        123.6,
+        100.4,
+        181.0,
+        49.7,
+        181.1,
+        113.3,
+        63.7,
+        102.0,
+        69.8,
+        103.5,
+        47.0,
+        147.0,
+        113.5,
+        102.3,
+        119.8,
+        100.7,
+        147.0,
+        102.0
+      ],
+      "hole_widths": [
+        16.5,
+        15.5,
+        16.5,
+        14.5,
+        12.0,
+        16.0,
+        11.5,
+        12.0,
+        14.5,
+        14.5,
+        13.5,
+        14.0,
+        16.0,
+        15.5,
+        12.5,
+        13.0,
+        15.5,
+        17.0
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 982.8,
+          "links": 361.2,
+          "par": 37,
+          "total": 1344.0
+        },
+        "front": {
+          "holes": 984.7,
+          "links": 358.0,
+          "par": 35,
+          "total": 1342.7
+        }
+      },
+      "outer_direction": -1,
+      "outer_nine": "front",
+      "pars": {
+        "back": [
+          4,
+          3,
+          5,
+          4,
+          4,
+          4,
+          4,
+          5,
+          4
+        ],
+        "front": [
+          4,
+          4,
+          5,
+          3,
+          5,
+          4,
+          3,
+          4,
+          3
+        ]
+      },
+      "pattern": "muirfield",
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 1,
+        "permutation_index": 0
+      },
+      "relaunches": 9,
+      "seed": 22,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.6039,
+          "direction_entropy": 0.8222,
+          "forward_mean": 0.7192,
+          "heading_turns": 2.1598,
+          "hull_ratio": 0.4528,
+          "obliquity_abs": 0.4322,
+          "obliquity_signed": 0.1568,
+          "path_to_nine_length": 0.6647,
+          "radial_alignment_R": 0.5067
+        },
+        "course": {
+          "angular_step_cv": 0.531,
+          "direction_entropy": 0.8491,
+          "radial_alignment_R": 0.4243
+        },
+        "front": {
+          "angular_step_cv": 0.4355,
+          "direction_entropy": 0.6983,
+          "forward_mean": 0.9623,
+          "heading_turns": 1.2,
+          "hull_ratio": 1.0095,
+          "obliquity_abs": 0.2517,
+          "obliquity_signed": -0.0981,
+          "path_to_nine_length": 1.0586,
+          "radial_alignment_R": 0.6807
+        }
+      },
+      "skipped": [],
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 7.804,
+      "timings": {
+        "routing": 2.6578,
+        "sites": 0.1478,
+        "terrain": 0.0,
+        "validate": 0.0102
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 19,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 17
+          },
+          "edge": "N",
+          "nodes": 18,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 1
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        182.41,
+        6.0
+      ],
+      "clubhouse_edge": "N",
+      "doglegs": 6,
+      "elapsed_seconds": 0.3544,
+      "hole_lengths": [
+        147.4,
+        50.5,
+        141.5,
+        118.3,
+        63.8,
+        182.7,
+        134.1,
+        159.4,
+        122.0,
+        102.0,
+        102.0,
+        128.8,
+        147.0,
+        102.0,
+        102.0,
+        60.6,
+        46.8,
+        102.0
+      ],
+      "hole_widths": [
+        13.5,
+        15.0,
+        15.5,
+        13.0,
+        10.5,
+        17.5,
+        14.5,
+        17.0,
+        16.5,
+        11.0,
+        14.5,
+        12.5,
+        13.5,
+        12.5,
+        11.5,
+        11.5,
+        13.0,
+        13.5
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 893.2,
+          "links": 353.8,
+          "par": 35,
+          "total": 1247.0
+        },
+        "front": {
+          "holes": 1119.7,
+          "links": 327.4,
+          "par": 37,
+          "total": 1447.1
+        }
+      },
+      "outer_direction": -1,
+      "outer_nine": "front",
+      "pars": {
+        "back": [
+          4,
+          4,
+          4,
+          5,
+          4,
+          4,
+          3,
+          3,
+          4
+        ],
+        "front": [
+          5,
+          3,
+          4,
+          4,
+          3,
+          5,
+          4,
+          5,
+          4
+        ]
+      },
+      "pattern": "muirfield",
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 0,
+        "permutation_index": 0
+      },
+      "relaunches": 0,
+      "seed": 23,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.5396,
+          "direction_entropy": 0.6749,
+          "forward_mean": 0.927,
+          "heading_turns": 0.8928,
+          "hull_ratio": 0.3809,
+          "obliquity_abs": 0.2954,
+          "obliquity_signed": -0.031,
+          "path_to_nine_length": 0.6971,
+          "radial_alignment_R": 0.0524
+        },
+        "course": {
+          "angular_step_cv": 0.4656,
+          "direction_entropy": 0.8166,
+          "radial_alignment_R": 0.2326
+        },
+        "front": {
+          "angular_step_cv": 0.3561,
+          "direction_entropy": 0.8222,
+          "forward_mean": 0.953,
+          "heading_turns": 1.2479,
+          "hull_ratio": 1.0411,
+          "obliquity_abs": 0.2613,
+          "obliquity_signed": -0.0915,
+          "path_to_nine_length": 0.9697,
+          "radial_alignment_R": 0.5167
+        }
+      },
+      "skipped": [],
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 7.871,
+      "timings": {
+        "routing": 0.2086,
+        "sites": 0.1454,
+        "terrain": 0.0,
+        "validate": 0.0105
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 34,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 17
+          },
+          "edge": "S",
+          "nodes": 18,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "anchor_lookahead": 16
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        204.26,
+        494.0
+      ],
+      "clubhouse_edge": "S",
+      "doglegs": 7,
+      "elapsed_seconds": 0.3616,
+      "hole_lengths": [
+        102.0,
+        144.2,
+        164.8,
+        52.1,
+        163.6,
+        102.0,
+        163.3,
+        109.3,
+        118.4,
+        147.0,
+        102.0,
+        47.0,
+        107.8,
+        49.4,
+        102.0,
+        50.8,
+        102.0,
+        112.0
+      ],
+      "hole_widths": [
+        14.5,
+        12.5,
+        16.0,
+        14.5,
+        15.5,
+        13.0,
+        13.0,
+        11.0,
+        12.5,
+        17.0,
+        13.5,
+        13.0,
+        16.0,
+        12.5,
+        13.0,
+        13.0,
+        11.0,
+        13.5
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 820.0,
+          "links": 364.8,
+          "par": 34,
+          "total": 1184.8
+        },
+        "front": {
+          "holes": 1119.7,
+          "links": 348.5,
+          "par": 38,
+          "total": 1468.2
+        }
+      },
+      "outer_direction": 1,
+      "outer_nine": "front",
+      "pars": {
+        "back": [
+          5,
+          4,
+          3,
+          4,
+          3,
+          4,
+          3,
+          4,
+          4
+        ],
+        "front": [
+          4,
+          4,
+          5,
+          3,
+          5,
+          4,
+          5,
+          4,
+          4
+        ]
+      },
+      "pattern": "muirfield",
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 0,
+        "permutation_index": 0
+      },
+      "relaunches": 0,
+      "seed": 24,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.3095,
+          "direction_entropy": 0.6983,
+          "forward_mean": 0.8534,
+          "heading_turns": 1.2847,
+          "hull_ratio": 0.4684,
+          "obliquity_abs": 0.439,
+          "obliquity_signed": -0.2109,
+          "path_to_nine_length": 0.7413,
+          "radial_alignment_R": 0.3027
+        },
+        "course": {
+          "angular_step_cv": 0.3311,
+          "direction_entropy": 0.8298,
+          "radial_alignment_R": 0.2968
+        },
+        "front": {
+          "angular_step_cv": 0.3512,
+          "direction_entropy": 0.7603,
+          "forward_mean": 0.9666,
+          "heading_turns": 0.969,
+          "hull_ratio": 1.168,
+          "obliquity_abs": 0.1991,
+          "obliquity_signed": 0.1418,
+          "path_to_nine_length": 0.9253,
+          "radial_alignment_R": 0.7156
+        }
+      },
+      "skipped": [],
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 7.912,
+      "timings": {
+        "routing": 0.2157,
+        "sites": 0.1454,
+        "terrain": 0.0,
+        "validate": 0.0111
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 41,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 17
+          },
+          "edge": "E",
+          "nodes": 20,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "anchor_lookahead": 4,
+            "bridge_lookahead": 13,
+            "fairway_gap": 4
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        344.0,
+        184.67
+      ],
+      "clubhouse_edge": "E",
+      "doglegs": 7,
+      "elapsed_seconds": 0.4508,
+      "hole_lengths": [
+        110.3,
+        140.2,
+        47.6,
+        60.7,
+        170.5,
+        114.9,
+        63.8,
+        102.0,
+        141.4,
+        101.3,
+        147.0,
+        102.0,
+        102.0,
+        146.7,
+        55.7,
+        102.0,
+        147.0,
+        102.0
+      ],
+      "hole_widths": [
+        13.0,
+        13.0,
+        13.5,
+        11.0,
+        16.0,
+        16.0,
+        14.5,
+        16.0,
+        12.0,
+        15.5,
+        15.5,
+        11.5,
+        12.0,
+        16.0,
+        10.0,
+        13.0,
+        14.5,
+        14.0
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 1005.8,
+          "links": 375.1,
+          "par": 38,
+          "total": 1380.8
+        },
+        "front": {
+          "holes": 951.3,
+          "links": 373.0,
+          "par": 34,
+          "total": 1324.3
+        }
+      },
+      "outer_direction": -1,
+      "outer_nine": "front",
+      "pars": {
+        "back": [
+          4,
+          5,
+          4,
+          4,
+          5,
+          3,
+          4,
+          5,
+          4
+        ],
+        "front": [
+          4,
+          4,
+          3,
+          3,
+          5,
+          4,
+          3,
+          4,
+          4
+        ]
+      },
+      "pattern": "muirfield",
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 0,
+        "permutation_index": 0
+      },
+      "relaunches": 0,
+      "seed": 25,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.4793,
+          "direction_entropy": 0.7603,
+          "forward_mean": 0.9503,
+          "heading_turns": 1.7973,
+          "hull_ratio": 0.5142,
+          "obliquity_abs": 0.2433,
+          "obliquity_signed": 0.0236,
+          "path_to_nine_length": 0.6458,
+          "radial_alignment_R": 0.2608
+        },
+        "course": {
+          "angular_step_cv": 0.467,
+          "direction_entropy": 0.8491,
+          "radial_alignment_R": 0.2896
+        },
+        "front": {
+          "angular_step_cv": 0.4472,
+          "direction_entropy": 0.7603,
+          "forward_mean": 0.9723,
+          "heading_turns": 1.0088,
+          "hull_ratio": 1.0372,
+          "obliquity_abs": 0.2069,
+          "obliquity_signed": -0.0876,
+          "path_to_nine_length": 1.0959,
+          "radial_alignment_R": 0.7563
+        }
+      },
+      "skipped": [],
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 7.863,
+      "timings": {
+        "routing": 0.3029,
+        "sites": 0.1473,
+        "terrain": 0.0,
+        "validate": 0.0109
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 20,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 17
+          },
+          "edge": "S",
+          "nodes": 18,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 2
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        129.67,
+        494.0
+      ],
+      "clubhouse_edge": "S",
+      "doglegs": 6,
+      "elapsed_seconds": 0.3489,
+      "hole_lengths": [
+        147.0,
+        124.2,
+        54.3,
+        147.0,
+        130.3,
+        110.9,
+        134.3,
+        136.7,
+        109.4,
+        147.0,
+        66.7,
+        125.6,
+        47.0,
+        147.0,
+        111.0,
+        59.2,
+        110.3,
+        102.0
+      ],
+      "hole_widths": [
+        14.0,
+        11.5,
+        12.0,
+        16.0,
+        17.0,
+        15.5,
+        11.5,
+        14.0,
+        13.0,
+        12.5,
+        11.5,
+        15.0,
+        10.0,
+        13.5,
+        16.5,
+        10.0,
+        15.0,
+        16.0
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 915.8,
+          "links": 330.3,
+          "par": 35,
+          "total": 1246.1
+        },
+        "front": {
+          "holes": 1093.9,
+          "links": 357.0,
+          "par": 37,
+          "total": 1450.9
+        }
+      },
+      "outer_direction": -1,
+      "outer_nine": "front",
+      "pars": {
+        "back": [
+          5,
+          3,
+          4,
+          3,
+          5,
+          4,
+          3,
+          4,
+          4
+        ],
+        "front": [
+          5,
+          4,
+          3,
+          5,
+          4,
+          4,
+          4,
+          4,
+          4
+        ]
+      },
+      "pattern": "muirfield",
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 0,
+        "permutation_index": 0
+      },
+      "relaunches": 0,
+      "seed": 26,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.4893,
+          "direction_entropy": 0.7603,
+          "forward_mean": 0.9189,
+          "heading_turns": 1.2847,
+          "hull_ratio": 0.4328,
+          "obliquity_abs": 0.3386,
+          "obliquity_signed": -0.0567,
+          "path_to_nine_length": 0.7237,
+          "radial_alignment_R": 0.122
+        },
+        "course": {
+          "angular_step_cv": 0.3835,
+          "direction_entropy": 0.8725,
+          "radial_alignment_R": 0.3067
+        },
+        "front": {
+          "angular_step_cv": 0.2004,
+          "direction_entropy": 0.6749,
+          "forward_mean": 0.9652,
+          "heading_turns": 1.2049,
+          "hull_ratio": 1.1225,
+          "obliquity_abs": 0.2246,
+          "obliquity_signed": -0.0463,
+          "path_to_nine_length": 0.9545,
+          "radial_alignment_R": 0.5596
+        }
+      },
+      "skipped": [],
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 7.985,
+      "timings": {
+        "routing": 0.2025,
+        "sites": 0.146,
+        "terrain": 0.0,
+        "validate": 0.0104
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 42,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 17
+          },
+          "edge": "S",
+          "nodes": 20,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 18,
+            "link_blocked": 4
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        142.36,
+        494.0
+      ],
+      "clubhouse_edge": "S",
+      "doglegs": 8,
+      "elapsed_seconds": 0.3922,
+      "hole_lengths": [
+        112.9,
+        69.9,
+        168.7,
+        132.2,
+        147.0,
+        59.2,
+        65.2,
+        135.8,
+        130.8,
+        102.0,
+        105.1,
+        147.0,
+        102.0,
+        102.0,
+        147.0,
+        102.0,
+        49.0,
+        102.0
+      ],
+      "hole_widths": [
+        12.5,
+        13.0,
+        16.5,
+        13.5,
+        18.0,
+        10.5,
+        13.0,
+        12.0,
+        12.0,
+        12.0,
+        12.0,
+        13.5,
+        15.5,
+        11.5,
+        12.0,
+        13.0,
+        14.0,
+        12.5
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 958.1,
+          "links": 353.6,
+          "par": 37,
+          "total": 1311.7
+        },
+        "front": {
+          "holes": 1021.5,
+          "links": 358.7,
+          "par": 35,
+          "total": 1380.3
+        }
+      },
+      "outer_direction": 1,
+      "outer_nine": "front",
+      "pars": {
+        "back": [
+          4,
+          4,
+          5,
+          4,
+          4,
+          5,
+          4,
+          3,
+          4
+        ],
+        "front": [
+          4,
+          3,
+          5,
+          4,
+          5,
+          3,
+          3,
+          4,
+          4
+        ]
+      },
+      "pattern": "muirfield",
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 0,
+        "permutation_index": 0
+      },
+      "relaunches": 0,
+      "seed": 27,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.5119,
+          "direction_entropy": 0.6983,
+          "forward_mean": 0.8719,
+          "heading_turns": 1.2817,
+          "hull_ratio": 0.4798,
+          "obliquity_abs": 0.3701,
+          "obliquity_signed": -0.0543,
+          "path_to_nine_length": 0.6495,
+          "radial_alignment_R": 0.2347
+        },
+        "course": {
+          "angular_step_cv": 0.4444,
+          "direction_entropy": 0.7871,
+          "radial_alignment_R": 0.3263
+        },
+        "front": {
+          "angular_step_cv": 0.3377,
+          "direction_entropy": 0.6983,
+          "forward_mean": 0.9625,
+          "heading_turns": 1.1435,
+          "hull_ratio": 1.0541,
+          "obliquity_abs": 0.2393,
+          "obliquity_signed": -0.0293,
+          "path_to_nine_length": 1.0539,
+          "radial_alignment_R": 0.5227
+        }
+      },
+      "skipped": [],
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 7.901,
+      "timings": {
+        "routing": 0.2411,
+        "sites": 0.1506,
+        "terrain": 0.0,
+        "validate": 0.0116
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 26,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 10,
+            "10": 17
+          },
+          "edge": "N",
+          "nodes": 18,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "fairway_gap": 8
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        211.96,
+        6.0
+      ],
+      "clubhouse_edge": "N",
+      "doglegs": 7,
+      "elapsed_seconds": 0.3512,
+      "hole_lengths": [
+        102.0,
+        180.2,
+        59.7,
+        152.2,
+        113.3,
+        161.2,
+        144.0,
+        47.2,
+        130.4,
+        102.0,
+        102.0,
+        57.4,
+        147.0,
+        63.6,
+        102.0,
+        103.2,
+        102.0,
+        102.0
+      ],
+      "hole_widths": [
+        11.5,
+        15.0,
+        12.0,
+        16.0,
+        14.0,
+        12.5,
+        15.0,
+        12.0,
+        12.5,
+        16.5,
+        14.5,
+        15.0,
+        14.5,
+        14.5,
+        15.5,
+        16.5,
+        15.5,
+        16.5
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 881.3,
+          "links": 321.3,
+          "par": 35,
+          "total": 1202.6
+        },
+        "front": {
+          "holes": 1090.2,
+          "links": 334.5,
+          "par": 37,
+          "total": 1424.8
+        }
+      },
+      "outer_direction": 1,
+      "outer_nine": "front",
+      "pars": {
+        "back": [
+          4,
+          4,
+          3,
+          5,
+          3,
+          4,
+          4,
+          4,
+          4
+        ],
+        "front": [
+          4,
+          5,
+          3,
+          5,
+          4,
+          5,
+          4,
+          3,
+          4
+        ]
+      },
+      "pattern": "muirfield",
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 0,
+        "permutation_index": 0
+      },
+      "relaunches": 0,
+      "seed": 28,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.426,
+          "direction_entropy": 0.8222,
+          "forward_mean": 0.9087,
+          "heading_turns": 1.1289,
+          "hull_ratio": 0.4209,
+          "obliquity_abs": 0.3266,
+          "obliquity_signed": -0.0628,
+          "path_to_nine_length": 0.7066,
+          "radial_alignment_R": 0.2897
+        },
+        "course": {
+          "angular_step_cv": 0.4046,
+          "direction_entropy": 0.8918,
+          "radial_alignment_R": 0.373
+        },
+        "front": {
+          "angular_step_cv": 0.3788,
+          "direction_entropy": 0.7603,
+          "forward_mean": 0.9625,
+          "heading_turns": 1.1039,
+          "hull_ratio": 1.0991,
+          "obliquity_abs": 0.2028,
+          "obliquity_signed": -0.031,
+          "path_to_nine_length": 0.9701,
+          "radial_alignment_R": 0.6018
+        }
+      },
+      "skipped": [],
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 7.995,
+      "timings": {
+        "routing": 0.2014,
+        "sites": 0.1493,
+        "terrain": 0.0,
+        "validate": 0.0109
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "anchor_truncated": true,
+          "angle_index": 0,
+          "checks": 432,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 3
+          },
+          "edge": "W",
+          "nodes": 16,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "anchor_lookahead": 276,
+            "fairway_gap": 141
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 1,
+          "checks": 432,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 3
+          },
+          "edge": "W",
+          "nodes": 16,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "anchor_lookahead": 276,
+            "fairway_gap": 141
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 2,
+          "checks": 432,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 3
+          },
+          "edge": "W",
+          "nodes": 16,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "anchor_lookahead": 276,
+            "fairway_gap": 141
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 0,
+          "checks": 417,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 2
+          },
+          "edge": "W",
+          "nodes": 13,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "anchor_lookahead": 279,
+            "fairway_gap": 126
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 1,
+          "checks": 417,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 2
+          },
+          "edge": "W",
+          "nodes": 13,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "anchor_lookahead": 279,
+            "fairway_gap": 126
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 2,
+          "checks": 417,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 2
+          },
+          "edge": "W",
+          "nodes": 13,
+          "pattern": "muirfield",
+          "permutation_index": 1,
+          "rejections": {
+            "anchor_lookahead": 279,
+            "fairway_gap": 126
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 0,
+          "checks": 552,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 2
+          },
+          "edge": "W",
+          "nodes": 13,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "anchor_lookahead": 366,
+            "fairway_gap": 174
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 1,
+          "checks": 552,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 2
+          },
+          "edge": "W",
+          "nodes": 13,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "anchor_lookahead": 366,
+            "fairway_gap": 174
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 2,
+          "checks": 552,
+          "clubhouse_index": 0,
+          "deepest": {
+            "1": 1,
+            "10": 2
+          },
+          "edge": "W",
+          "nodes": 13,
+          "pattern": "muirfield",
+          "permutation_index": 2,
+          "rejections": {
+            "anchor_lookahead": 366,
+            "fairway_gap": 174
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": true,
+          "angle_index": 0,
+          "checks": 201,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 1,
+            "10": 3
+          },
+          "edge": "S",
+          "nodes": 40,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "anchor_lookahead": 9,
+            "clubhouse_clear": 9,
+            "fairway_gap": 18,
+            "link_blocked": 126
+          },
+          "status": "echec_ancrages",
+          "violations": {}
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 1,
+          "checks": 36,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 10,
+            "10": 17
+          },
+          "edge": "S",
+          "nodes": 20,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "anchor_lookahead": 1,
+            "clubhouse_clear": 2,
+            "fairway_gap": 1,
+            "link_blocked": 12
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        183.47,
+        494.0
+      ],
+      "clubhouse_edge": "S",
+      "doglegs": 6,
+      "elapsed_seconds": 2.845,
+      "hole_lengths": [
+        147.0,
+        56.1,
+        142.4,
+        130.7,
+        131.8,
+        63.1,
+        128.7,
+        105.5,
+        121.0,
+        102.0,
+        147.0,
+        102.8,
+        51.9,
+        100.2,
+        147.0,
+        103.8,
+        147.0,
+        47.0
+      ],
+      "hole_widths": [
+        14.0,
+        11.5,
+        13.5,
+        15.0,
+        15.5,
+        11.5,
+        11.5,
+        14.5,
+        15.0,
+        15.5,
+        13.5,
+        15.0,
+        13.5,
+        15.5,
+        15.0,
+        14.5,
+        18.0,
+        11.5
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 948.7,
+          "links": 380.6,
+          "par": 37,
+          "total": 1329.3
+        },
+        "front": {
+          "holes": 1026.3,
+          "links": 350.4,
+          "par": 35,
+          "total": 1376.7
+        }
+      },
+      "outer_direction": 1,
+      "outer_nine": "front",
+      "pars": {
+        "back": [
+          4,
+          5,
+          4,
+          3,
+          4,
+          5,
+          4,
+          5,
+          3
+        ],
+        "front": [
+          5,
+          3,
+          4,
+          4,
+          4,
+          3,
+          4,
+          4,
+          4
+        ]
+      },
+      "pattern": "muirfield",
+      "plan": {
+        "angle_index": 1,
+        "clubhouse_index": 1,
+        "permutation_index": 0
+      },
+      "relaunches": 10,
+      "seed": 29,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.4865,
+          "direction_entropy": 0.6749,
+          "forward_mean": 0.9288,
+          "heading_turns": 0.9759,
+          "hull_ratio": 0.4794,
+          "obliquity_abs": 0.2695,
+          "obliquity_signed": -0.009,
+          "path_to_nine_length": 0.6513,
+          "radial_alignment_R": 0.0672
+        },
+        "course": {
+          "angular_step_cv": 0.4153,
+          "direction_entropy": 0.8608,
+          "radial_alignment_R": 0.3156
+        },
+        "front": {
+          "angular_step_cv": 0.3076,
+          "direction_entropy": 0.7603,
+          "forward_mean": 0.9677,
+          "heading_turns": 0.9429,
+          "hull_ratio": 1.0536,
+          "obliquity_abs": 0.2175,
+          "obliquity_signed": 0.0814,
+          "path_to_nine_length": 1.0296,
+          "radial_alignment_R": 0.6898
+        }
+      },
+      "skipped": [],
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 7.929,
+      "timings": {
+        "routing": 2.6958,
+        "sites": 0.1487,
+        "terrain": 0.0,
+        "validate": 0.0104
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    },
+    {
+      "attempts": [
+        {
+          "angle_index": 0,
+          "checks": 0,
+          "clubhouse_index": 0,
+          "nodes": 0,
+          "permutation_index": 0,
+          "status": "infaisable_ancrage"
+        },
+        {
+          "anchor_truncated": false,
+          "angle_index": 0,
+          "checks": 26,
+          "clubhouse_index": 1,
+          "deepest": {
+            "1": 10,
+            "10": 17
+          },
+          "edge": "W",
+          "nodes": 20,
+          "pattern": "muirfield",
+          "permutation_index": 0,
+          "rejections": {
+            "bridge_lookahead": 1,
+            "fairway_gap": 5
+          },
+          "status": "succes",
+          "violations": {}
+        }
+      ],
+      "clubhouse": [
+        6.0,
+        262.89
+      ],
+      "clubhouse_edge": "W",
+      "doglegs": 6,
+      "elapsed_seconds": 0.4195,
+      "hole_lengths": [
+        105.2,
+        58.5,
+        59.8,
+        171.7,
+        57.1,
+        180.5,
+        117.1,
+        147.0,
+        137.3,
+        102.0,
+        105.6,
+        104.6,
+        107.1,
+        102.0,
+        102.0,
+        147.0,
+        102.0,
+        60.7
+      ],
+      "hole_widths": [
+        15.0,
+        14.5,
+        12.5,
+        15.5,
+        11.0,
+        15.0,
+        16.5,
+        17.0,
+        12.5,
+        13.5,
+        14.5,
+        16.5,
+        12.0,
+        11.5,
+        12.0,
+        12.5,
+        16.0,
+        11.5
+      ],
+      "nine_lengths": {
+        "back": {
+          "holes": 932.9,
+          "links": 338.1,
+          "par": 36,
+          "total": 1271.1
+        },
+        "front": {
+          "holes": 1034.3,
+          "links": 319.5,
+          "par": 36,
+          "total": 1353.8
+        }
+      },
+      "outer_direction": -1,
+      "outer_nine": "front",
+      "pars": {
+        "back": [
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          5,
+          4,
+          3
+        ],
+        "front": [
+          4,
+          3,
+          3,
+          5,
+          3,
+          5,
+          4,
+          5,
+          4
+        ]
+      },
+      "pattern": "muirfield",
+      "plan": {
+        "angle_index": 0,
+        "clubhouse_index": 1,
+        "permutation_index": 0
+      },
+      "relaunches": 1,
+      "seed": 30,
+      "shape": {
+        "back": {
+          "angular_step_cv": 0.3884,
+          "direction_entropy": 0.6983,
+          "forward_mean": 0.8259,
+          "heading_turns": 1.4169,
+          "hull_ratio": 0.4311,
+          "obliquity_abs": 0.386,
+          "obliquity_signed": 0.0272,
+          "path_to_nine_length": 0.682,
+          "radial_alignment_R": 0.1623
+        },
+        "course": {
+          "angular_step_cv": 0.3955,
+          "direction_entropy": 0.8918,
+          "radial_alignment_R": 0.2906
+        },
+        "front": {
+          "angular_step_cv": 0.3966,
+          "direction_entropy": 0.8222,
+          "forward_mean": 0.9574,
+          "heading_turns": 1.1371,
+          "hull_ratio": 1.0125,
+          "obliquity_abs": 0.2508,
+          "obliquity_signed": -0.1377,
+          "path_to_nine_length": 1.0241,
+          "radial_alignment_R": 0.7088
+        }
+      },
+      "skipped": [],
+      "status": "succes",
+      "terrain_seconds_cached_or_built": 7.833,
+      "timings": {
+        "routing": 0.2706,
+        "sites": 0.1484,
+        "terrain": 0.0,
+        "validate": 0.0106
+      },
+      "violations_by_kind": {},
+      "violations_total": 0
+    }
+  ],
+  "round": "CALIB2",
+  "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30
+  ],
+  "stats": {
+    "attempts_mean": 2.7,
+    "failures": [],
+    "relaunches_total": 51,
+    "seconds_max": 3.945,
+    "seconds_median": 0.365,
+    "seconds_p90": 2.81,
+    "seeds_over_2s": [
+      1,
+      7,
+      9,
+      22,
+      29
+    ],
+    "shape_course": {
+      "angular_step_cv": {
+        "max": 0.6643,
+        "median": 0.4112,
+        "min": 0.3297
+      },
+      "direction_entropy": {
+        "max": 0.9345,
+        "median": 0.8491,
+        "min": 0.7486
+      },
+      "radial_alignment_R": {
+        "max": 0.4958,
+        "median": 0.3158,
+        "min": 0.2073
+      }
+    },
+    "shape_nines": {
+      "inner": {
+        "angular_step_cv": {
+          "max": 0.9381,
+          "median": 0.4846,
+          "min": 0.3095
+        },
+        "direction_entropy": {
+          "max": 0.8842,
+          "median": 0.7369,
+          "min": 0.4624
+        },
+        "forward_mean": {
+          "max": 0.9656,
+          "median": 0.8573,
+          "min": 0.6074
+        },
+        "heading_turns": {
+          "max": 2.2475,
+          "median": 1.2924,
+          "min": 0.8513
+        },
+        "hull_ratio": {
+          "max": 0.5171,
+          "median": 0.4519,
+          "min": 0.3809
+        },
+        "obliquity_abs": {
+          "max": 0.6228,
+          "median": 0.3832,
+          "min": 0.1946
+        },
+        "obliquity_signed": {
+          "max": 0.157,
+          "median": 0.001,
+          "min": -0.2521
+        },
+        "path_to_nine_length": {
+          "max": 0.7628,
+          "median": 0.6953,
+          "min": 0.642
+        },
+        "radial_alignment_R": {
+          "max": 0.5568,
+          "median": 0.2619,
+          "min": 0.0524
+        }
+      },
+      "outer": {
+        "angular_step_cv": {
+          "max": 0.4472,
+          "median": 0.325,
+          "min": 0.2004
+        },
+        "direction_entropy": {
+          "max": 0.8222,
+          "median": 0.7603,
+          "min": 0.6129
+        },
+        "forward_mean": {
+          "max": 0.9865,
+          "median": 0.967,
+          "min": 0.9408
+        },
+        "heading_turns": {
+          "max": 1.2479,
+          "median": 1.0756,
+          "min": 0.9138
+        },
+        "hull_ratio": {
+          "max": 1.168,
+          "median": 1.0738,
+          "min": 0.95
+        },
+        "obliquity_abs": {
+          "max": 0.2832,
+          "median": 0.2102,
+          "min": 0.1213
+        },
+        "obliquity_signed": {
+          "max": 0.1472,
+          "median": -0.0301,
+          "min": -0.1469
+        },
+        "path_to_nine_length": {
+          "max": 1.0965,
+          "median": 1.0059,
+          "min": 0.9251
+        },
+        "radial_alignment_R": {
+          "max": 0.7808,
+          "median": 0.6726,
+          "min": 0.5167
+        }
+      }
+    },
+    "skipped_total": 0,
+    "successes": 30,
+    "violations_total": 0
+  },
+  "width": 350,
+  "width_mode": "variable"
+}
