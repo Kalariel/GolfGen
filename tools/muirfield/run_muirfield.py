@@ -42,7 +42,7 @@ arrière borné, relances). Pour chaque format de carte, produit
 nine, relances, temps). Les sorties R1 (``output/muirfield/r1/``) sont
 conservées telles quelles pour comparaison (commit 9ff957a).
 
-    .venv/bin/python -m experiments.elastic_routing.run_muirfield
+    .venv/bin/python -m tools.muirfield.run_muirfield
 """
 
 from __future__ import annotations
@@ -61,12 +61,12 @@ from golfgen.routing.muirfield import (
     build_course,
     outer_start,
 )
-from experiments.elastic_routing.render_readable import render_readable_svg
-from experiments.elastic_routing.shape_metrics import shape_metrics
+from tools.muirfield.render_readable import render_readable_svg
+from tools.muirfield.shape_metrics import shape_metrics
 from golfgen.routing.sites import WATER_LEVEL, load_terrain
 
 
-OUTPUT_ROOT = Path(__file__).resolve().parent / "output" / "muirfield"
+OUTPUT_ROOT = Path(__file__).resolve().parent / "output"
 SEEDS = (1, 2, 3, 4, 5, 6)
 FORMATS = ((300, 400), (350, 400))
 LANDSCAPE_FORMATS = ((400, 300), (400, 350))

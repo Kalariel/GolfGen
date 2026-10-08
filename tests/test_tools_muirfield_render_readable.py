@@ -7,7 +7,7 @@ import re
 
 import pytest
 
-from experiments.elastic_routing.render_readable import render_readable_svg
+from tools.muirfield.render_readable import render_readable_svg
 from golfgen.routing import muirfield as mf
 
 

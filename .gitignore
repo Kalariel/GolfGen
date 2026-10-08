@@ -19,6 +19,6 @@ output/steps/
 
 # cache de relief du spike elastic_routing (etape M)
 experiments/elastic_routing/output/.cache/
-# rendus par seed de l etape M (reproduits par run_muirfield ; seuls planche.png et report.json sont versionnes)
-experiments/elastic_routing/output/muirfield/*/seed_*.png
-experiments/elastic_routing/output/muirfield/*/seed_*.svg
+# rendus par seed du runner Muirfield (reproduits par run_muirfield ; seuls planche.png et report.json sont versionnes)
+tools/muirfield/output/*/seed_*.png
+tools/muirfield/output/*/seed_*.svg

@@ -9,12 +9,12 @@ import pytest
 
 from golfgen.routing.model import ControlPoint, CourseLayout, ElasticHole, NineLayout
 from golfgen.routing import muirfield as mf
-from experiments.elastic_routing.run_muirfield import (
+from tools.muirfield.run_muirfield import (
     _nine_shape_stats,
     _planche_title,
     _shape_stats,
 )
-from experiments.elastic_routing.shape_metrics import (
+from tools.muirfield.shape_metrics import (
     CV_MIN_PROGRESS,
     angular_step_cv,
     convex_hull,
