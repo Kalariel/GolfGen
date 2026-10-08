@@ -627,6 +627,8 @@ def test_dogleg_prefilter_keeps_the_free_corner_only():
 
 # Empreinte (largeur minimale, 300×400) : patron muirfield au round B, plus
 # muirfield_inverse seed 1 et le nombre de coudes par trou (R2b round 0).
+# Revérifiée après le saut des échecs prouvés : aucune entrée modifiée (ni
+# plan, ni pars, ni longueurs, ni nombre de tentatives).
 MUIRFIELD_FINGERPRINT = {
     ("muirfield", 1): (
         ("N", 1, 2, 2), (3, 5, 4, 5, 4, 4, 4, 3, 5), (5, 3, 4, 4, 4, 4, 3, 4, 4),
@@ -972,3 +974,170 @@ def test_lobed_mode_only_bends_the_inner_nine(pattern, monkeypatch):
                                                 plan.outer_delta_deg, plan.inner_delta_deg,
                                                 pattern)
     assert (lobed.front_ring_path, lobed.back_ring_path) == (tuple(front_ring), tuple(back_ring))
+
+
+# -- tentatives sans doublon (échecs prouvés sautés) ---------------------------
+
+def _outcome(pattern: str, seed: int, width: int, height: int):
+    """(attempts, skipped, plan ou None) d'un build_course."""
+    try:
+        result = mf.build_course(seed, pattern, width=width, height=height)
+    except mf.MuirfieldRoutingError as error:
+        return tuple(error.attempts), tuple(error.skipped), None
+    return result.attempts, result.skipped, result.plan
+
+
+@pytest.fixture(scope="module")
+def dedup_cases():
+    # inverse 17 (300×400) : échecs d'ancrage SANS coupure au clubhouse 0 ;
+    # inverse 20 (400×300) : échecs d'ancrage coupés (k enfants) aux clubhouses
+    # 0 et 2, clubhouse 1 infaisable
+    return {key: _outcome(*key) for key in (("muirfield_inverse", 17, 300, 400),
+                                            ("muirfield_inverse", 20, 400, 300))}
+
+
+def _key(entry: dict) -> tuple[int, int, int]:
+    return entry["clubhouse_index"], entry["permutation_index"], entry["angle_index"]
+
+
+def test_attempt_keys_are_unique_and_capped(results, dedup_cases):
+    outcomes = [(r.attempts, r.skipped) for r in results.values()]
+    outcomes += [(attempts, skipped) for attempts, skipped, _ in dedup_cases.values()]
+    for attempts, skipped in outcomes:
+        keys = [_key(a) for a in attempts]
+        assert len(keys) == len(set(keys))
+        assert len(attempts) <= mf.MAX_ATTEMPTS
+        skipped_keys = [_key(s) for s in skipped]
+        assert len(skipped_keys) == len(set(skipped_keys))
+        assert not set(keys) & set(skipped_keys)        # sautées : hors de attempts
+
+
+def test_dedup_is_deterministic(dedup_cases):
+    key = ("muirfield_inverse", 17, 300, 400)
+    assert _outcome(*key) == dedup_cases[key]
+
+
+def test_only_exhaustive_anchor_failures_are_skipped(dedup_cases):
+    attempts, skipped, plan = dedup_cases[("muirfield_inverse", 17, 300, 400)]
+    by_key = {_key(a): a for a in attempts}
+    assert plan is not None and skipped
+    for entry in skipped:
+        assert entry["reason"] == "echec_ancrages_prouve"
+        proof = by_key[tuple(entry["proven_by"])]
+        assert proof["status"] == "echec_ancrages" and proof["anchor_truncated"] is False
+        assert proof["clubhouse_index"] == entry["clubhouse_index"]
+        assert entry["key"]["clubhouse_index"] == entry["clubhouse_index"]
+    # angles 1 et 2 du clubhouse 0 sautés pour chaque permutation
+    assert {_key(s) for s in skipped} == {(0, p, a) for p in range(3) for a in (1, 2)}
+
+
+def test_truncated_anchor_failures_are_not_skipped(dedup_cases):
+    attempts, skipped, plan = dedup_cases[("muirfield_inverse", 20, 400, 300)]
+    for ch in (0, 2):
+        entries = [a for a in attempts if a["clubhouse_index"] == ch]
+        assert len(entries) == 9                         # toutes les variantes tentées
+        assert all(a["status"] == "echec_ancrages" and a["anchor_truncated"] for a in entries)
+    assert not [s for s in skipped if s["clubhouse_index"] in (0, 2)]
+    # au-delà des clubhouses 0-2 : la position 3 prend le relais
+    assert plan is not None and plan.clubhouse_index == 3
+
+
+@pytest.mark.parametrize("children", (mf.CHILDREN_PER_NODE, 10 ** 6))
+def test_truncation_is_flagged_and_prevents_skips(monkeypatch, children):
+    """Cas construit (muirfield 19, 400×300, clubhouse 0, permutations 0 et
+    1 seules — la permutation 2 réussit) : avec k = 3
+    la pose du trou 1 est coupée (plus de 3 enfants), rien n'est sauté ;
+    avec k levé DANS CE TEST, la même recherche devient exhaustive et les
+    angles 1 et 2 sont sautés."""
+    real = mf.iter_plans
+    monkeypatch.setattr(mf, "iter_plans", lambda *args, **kwargs: (
+        item for item in real(*args, **{**kwargs, "clubhouses": 1}) if item[0][1] < 2))
+    monkeypatch.setattr(mf, "CHILDREN_PER_NODE", children)
+    attempts, skipped, plan = _outcome("muirfield", 19, 400, 300)
+    assert plan is None and {a["status"] for a in attempts} == {"echec_ancrages"}
+    truncated = children == 3
+    assert all(a["anchor_truncated"] is truncated for a in attempts)
+    if truncated:
+        assert skipped == () and len(attempts) == 6
+    else:
+        assert {_key(a)[2] for a in attempts} == {0}
+        assert {_key(s)[2] for s in skipped} == {1, 2}
+        assert {s["reason"] for s in skipped} == {"echec_ancrages_prouve"}
+        assert len(attempts) + len(skipped) == 6
+
+
+def test_infeasible_clubhouse_yields_a_single_attempt(dedup_cases):
+    attempts, _, _ = dedup_cases[("muirfield_inverse", 20, 400, 300)]
+    infeasible = [a for a in attempts if a["status"] == "infaisable_ancrage"]
+    assert [_key(a) for a in infeasible] == [(1, 0, 0)]
+    assert all(a["clubhouse_index"] != 1 for a in attempts if a["status"] != "infaisable_ancrage")
+
+
+def test_identical_plan_is_skipped(monkeypatch):
+    real = mf.iter_plans
+
+    def twice(*args, **kwargs):
+        indices, plan = next(iter(real(*args, **kwargs)))
+        yield indices, plan
+        yield (indices[0], indices[1] + 1, indices[2]), dataclasses.replace(
+            plan, permutation_index=indices[1] + 1)
+
+    monkeypatch.setattr(mf, "iter_plans", twice)
+    monkeypatch.setattr(mf, "validate",
+                        lambda layout, rules: [Violation("length", (1,), "injectée")])
+    with pytest.raises(mf.MuirfieldRoutingError) as info:
+        mf.build_muirfield(3, width=350, height=400)
+    assert [a["status"] for a in info.value.attempts] == ["echec_validate"]
+    assert [(s["reason"], s["proven_by"]) for s in info.value.skipped] == [
+        ("plan_identique", list(_key(info.value.attempts[0])))]
+
+
+def test_clubhouse_positions_beyond_the_first_three_follow_the_seeded_stream():
+    plans = list(mf.iter_plans(5, 300, 400, clubhouses=5))
+    assert [p.clubhouse_index for _, p in plans] == [ch for ch in range(5) for _ in range(9)]
+    for _, plan in plans[27:]:
+        rng = np.random.default_rng([5, 11, plan.clubhouse_index])
+        assert (plan.edge, plan.clubhouse) == mf.place_clubhouse(rng, 300, 400)
+
+
+def _forced_attempt(monkeypatch, pattern, seed, width, height, target):
+    """Une variante relancée seule (aucun saut possible)."""
+    real = mf.iter_plans
+
+    def only(*args, **kwargs):
+        for indices, plan in real(*args, **kwargs):
+            if indices == target:
+                yield indices, plan
+                return
+
+    monkeypatch.setattr(mf, "iter_plans", only)
+    attempts, _, _ = _outcome(pattern, seed, width, height)
+    monkeypatch.undo()
+    return attempts[0]
+
+
+@pytest.mark.parametrize("perm", range(3))
+def test_exhaustive_anchor_failure_is_angle_invariant(monkeypatch, perm):
+    """Preuve empirique de l'hypothèse sur un vrai cas sans coupure (inverse
+    17, 300×400, clubhouse 0) : les trois angles relancés de force donnent
+    le même échec, compteurs compris."""
+    forced = [_forced_attempt(monkeypatch, "muirfield_inverse", 17, 300, 400, (0, perm, angle))
+              for angle in range(3)]
+    assert all(a["status"] == "echec_ancrages" and not a["anchor_truncated"] for a in forced)
+    summary = {(a["checks"], a["nodes"], tuple(a["rejections"].items()),
+                tuple(a["deepest"].items())) for a in forced}
+    assert len(summary) == 1
+
+
+def test_exhaustive_anchor_failure_is_angle_invariant_on_a_deeper_tree(monkeypatch):
+    """Même invariant sur un arbre d'ancrages plus profond (muirfield 19,
+    400×300, 94 nœuds) : k est levé DANS CE TEST SEULEMENT pour que la
+    recherche des ancrages soit exhaustive (aucun budget de production
+    modifié)."""
+    forced = []
+    for angle in range(3):
+        monkeypatch.setattr(mf, "CHILDREN_PER_NODE", 10 ** 6)
+        forced.append(_forced_attempt(monkeypatch, "muirfield", 19, 400, 300, (0, 0, angle)))
+    assert all(a["status"] == "echec_ancrages" and not a["anchor_truncated"] for a in forced)
+    assert len({(a["checks"], a["nodes"], tuple(a["rejections"].items())) for a in forced}) == 1
+    assert forced[0]["nodes"] > 50
