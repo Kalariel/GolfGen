@@ -1218,6 +1218,41 @@ Plan de C2 :
    pré-filtres nécessaires (propriété) ; 0 violation 30 seeds × 2 patrons ;
    lecture/écriture JSON v1 et v2.
 
+#### R2b — Round 0 et Round 1 (M1, cibles irrégulières) : résultat négatif
+
+**Round 0 — mesure.** Ajout de `shape_metrics.py` : CV des pas angulaires,
+entropie des directions et R. Base `rc-30` : layouts inchangés. Constat
+clé : les métriques au niveau parcours masquent le défaut, il faut les lire
+nine par nine. Boucle extérieure : CV ≈ 0.33–0.34, R ≈ 0.60–0.62 (pas très
+régulier). Boucle intérieure : CV ≈ 1.1–1.3 (pas erratique, retours en
+arrière, zigzag au centre de l'inversé).
+
+**Round 1 — M1.** `target_mode="irregular"` : pas nominaux × U[0.5, 1.5]
+(`TARGET_JITTER=0.5`, flux `[seed, 37]`, total conservé) ; ajout de la
+métrique d'obliquité signée par nine.
+
+| patron, 300×400 s1–30 | cibles | réussis | médiane | max | CV boucle ext. |
+|---|---|---|---|---|---|
+| muirfield (`rc-30`) | uniform | 30/30 | 2.28 s | 17.4 s | 0.34 |
+| muirfield (`r2b1-30`) | irregular | 29/30 (échec s13) | 2.20 s | 44.8 s | 0.42 |
+| muirfield_inverse (`rc-30`) | uniform | 30/30 | 2.42 s | 18.2 s | 0.33 |
+| muirfield_inverse (`r2b1-30`) | irregular | 29/30 (échec s21) | 4.52 s | 32.9 s | 0.41 |
+
+Entropie et R quasi inchangés. Lecture des planches r2b1 : aucun gain,
+l'enroulement persiste ; l'inversé seed 6 irregular est même plus
+tourbillonnant au centre.
+
+**Diagnostic.** L'obliquité signée médiane est ≈ 0 même en uniform : les
+trous suivent les anneaux, ce ne sont pas des pales inclinées. L'hélice
+vient donc de la forme des chemins cibles (anneaux concentriques, anneau
+intérieur trop petit : ~470 blocs de tour pour un nine de ~1500 blocs), pas
+du rythme des cibles.
+
+**Décision (utilisateur, 2026-10-08).** M1 est conservé comme mode
+optionnel, `uniform` par défaut (sans effet sur l'empreinte) ; pas de
+réglage du jitter. Prochaine étape : M2, chemin cible déformé, décentré ou
+agrandi. M3 (variété dans le score) n'est plus qu'un palliatif éventuel.
+
 ### Étape 4 — trous élastiques et mutations locales
 
 Note (2026-10-07) : cette étape reste valable (score incrémental), mais la
