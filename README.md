@@ -42,10 +42,10 @@ Puis ouvrir `viewer/index.html` dans un navigateur.
 - Clubhouse sur un bord de carte ; front = boucle extérieure, back = boucle
   intérieure en sens inverse (`muirfield_inverse` : l'inverse).
 - Règles dures garanties : zéro croisement, écart de 5 blocs entre fairways,
-  liaisons 12–45 blocs, quota de pars 4/10/4, par d'un nine 34–38, jamais 3 par 5
+  liaisons 12–45 blocs (18–45 depuis/vers le clubhouse), quota de pars 4/10/4, par d'un nine 34–38, jamais 3 par 5
   ni 3 par 3 consécutifs, pas de série de ≥ 4 trous consécutifs côte à côte.
 - Longueurs de trous réalistes ; cartes rectangulaires (ex. 300×400) ;
-  30/30 seeds réussies en quelques secondes.
+  30/30 seeds réussies, médiane ≈ 2 s par seed (jusqu'à ~18 s en largeurs variables).
 
 ```bash
 # Runner (nécessite rsvg-convert et ImageMagick `magick` pour les planches)
