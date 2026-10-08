@@ -984,6 +984,73 @@ Pistes (non appliquées, à valider) : interdire un par 5 aux trous 1/9 quand
 le clubhouse est sur un bord court ou placer le clubhouse sur un bord long
 en 300×400 ; anneau intérieur plus large en portrait étroit (R2b).
 
+#### Round A2 (2026-10-08) — robustesse 300×400 : 30/30
+
+Condition de l'utilisateur pour la suite (Muirfield inversé) : les 30 seeds
+passent. Même famille (validité/faisabilité), AUCUNE règle assouplie, AUCUN
+budget relevé (1500 contrôles / 300 nœuds par nine, k = 3, 150 candidats
+par niveau, 27 tentatives), patron inchangé.
+
+Causes trouvées et corrections :
+
+1. **Front, seeds 19 et 28 — capacité des cônes.** Clubhouse sur un bord
+   court (N/S, 300) et trou 1 par 5 dans toutes les permutations : aucun
+   par 5 ne tient dans le cône φ ≥ 58° le long d'un bord court. Correction :
+   avant toute construction, `anchor_fits` évalue pour chaque position de
+   clubhouse les pars qui tiennent dans les cônes de 1, 9, 10, 18 (sites,
+   cône, liaison au clubhouse, pré-filtres ; sans autre trou posé :
+   condition nécessaire) ; la permutation des pars est tirée sous cette
+   contrainte (`order_nine(first=, last=)`, identique au round A quand rien
+   n'est exclu) ; un plan sans permutation admissible n'est pas tenté
+   (`infaisable_ancrage`). Un bord court reste permis : 19 et 28 passent
+   avec leur clubhouse de base, pars réordonnées.
+2. **Back, seeds 8, 25, 27 — espace consommé avant les derniers trous.**
+   Diagnostic (états les plus profonds rendus) : (a) les trous 11–16 se
+   placent vers leurs cibles et occupent l'espace entre le green 16 et le
+   tee 18 ancré : le trou 17 n'a plus aucun candidat (67 à 153 nœuds sur
+   ~300 perdus en niveaux 17 vides) ou seulement des doglegs en collision ;
+   l'ancienne borne de retour (distance en ligne droite) ne voyait rien ;
+   (b) pour les clubhouses W/E de la seed 27, le trou 10 prenait l'emprise du
+   18 (cônes adjacents) après que le front a occupé les abords du
+   clubhouse. Corrections, toutes des conditions nécessaires :
+   - ordre de construction : les quatre ancrages 1, 9, 10, 18 d'abord, avec
+     anticipation (un ancrage qui ne laisse aucun candidat à un ancrage
+     restant est écarté), puis 2–8, puis 11–17 en phase séparée (un échec
+     du back ne fait pas remonter dans le front : la relance s'en charge) ;
+   - borne de retour stricte pour l'antépénultième trou (7 / 16) : son green
+     doit permettre un trou-pont (8 / 17) jusqu'au tee ancré (sites libres,
+     longueur de par, liaisons non bloquées), revérifiée après sa pose ;
+   - doglegs pré-filtrés comme les tirs droits (les deux coudes construits
+     et testés contre axes et liaisons) : moins de contrôles gaspillés.
+3. Nits de revue : `ValueError` inatteignable de `draw_par_counts` retirée
+   (règle 34–38 garantie par construction, testée exhaustivement) ; test
+   `width` au-dessus du max + cas valide ; statut `echec_ancrages` distinct.
+
+**Mesure des temps** : chronomètre unique autour de `build_muirfield`
+(sites + recherche + oracle, relief en cache exclu), identique pour succès
+et échecs (`run_muirfield.py`) ; valeurs propres à la machine de mesure
+(poste de dev), à comparer entre elles, pas en absolu.
+
+Résultats (`--round ra2-30` → `output/muirfield/ra2_300x400_30seeds/`,
+`--round ra2-check` → `output/muirfield/ra2_check_<w>x<h>/report.json`) :
+
+| cas | réussis | violations | relances | médiane | p90 | max |
+|---|---|---|---|---|---|---|
+| 300×400 s1–30, round A | 25/30 | 0 | 322 | 2.0 s | 8.5 s | 20.2 s |
+| **300×400 s1–30, A2** | **30/30** | 0 | 37 | 0.37 s | 3.5 s | 4.1 s |
+| 350×400 s1–6, A2 | 6/6 | 0 | 18 | 0.38 s | 2.0 s | 2.2 s |
+| 400×300 s1–6, A2 | 6/6 | 0 | 3 | 1.0 s | 2.9 s | 3.7 s |
+| 400×350 s1–6, A2 | 6/6 | 0 | 0 | 0.35 s | 0.40 s | 0.41 s |
+
+300×400 : 25 seeds sans relance ; relances restantes = 24 `echec_ancrages`
+(seeds 1 et 29 : ancrages incompatibles entre eux à certaines positions de
+clubhouse — la capacité est évaluée cône par cône, pas conjointement), 9
+`infaisable_ancrage` (seed 30, gratuits) et 4 `echec_back`. 300×400 s1–6
+reste à 0 violation (tests). Les layouts changent par rapport à R2/RA
+(nouvel ordre de construction) ; les planches R2/RA versionnées restent
+celles de leur round. Forme : toujours l'hélice et des faisceaux de trous
+parallèles (hors périmètre A2).
+
 ### Étape 4 — trous élastiques et mutations locales
 
 Note (2026-10-07) : cette étape reste valable (score incrémental), mais la
