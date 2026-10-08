@@ -18,6 +18,11 @@ Rounds disponibles (``--round``) :
 - ``rc`` / ``rc-30`` : largeurs variables (C1, ``--width-mode``) — planche
   6 seeds muirfield 300×400 → ``rc_<patron>_300x400/`` ; 30 seeds par
   patron → ``rc_<patron>_300x400_30seeds/`` ;
+- ``r2b1`` / ``r2b1-30`` : cibles irrégulières (R2b M1, ``target_mode``) —
+  planches 6 seeds 300×400 pour chaque patron et chaque mode (uniform,
+  irregular) → ``r2b1_<patron>_<mode>_300x400/`` ; 30 seeds en mode
+  irregular par patron, sans planche (base uniform : rc-30) →
+  ``r2b1_<patron>_irregular_300x400_30seeds/`` ;
 - ``custom`` : ``--pattern``, ``--size LxH``, ``--seeds 1-6`` →
   ``custom_<patron>_<w>x<h>/``.
 
@@ -53,6 +58,7 @@ import time
 from experiments.elastic_routing.muirfield import (
     PATTERN_CHOICES,
     PATTERNS,
+    TARGET_MODES,
     MuirfieldRoutingError,
     build_course,
     outer_start,
@@ -96,7 +102,8 @@ def _shape_stats(reports: list[dict]) -> dict:
 def _run_format(width: int, height: int, *, seeds: tuple[int, ...] = SEEDS,
                 label: str = "r2", out_name: str | None = None, tile: str = "3x",
                 thumb: str | None = None, planche: bool = True,
-                pattern: str = "muirfield", width_mode: str = "min") -> dict:
+                pattern: str = "muirfield", width_mode: str = "min",
+                target_mode: str = "uniform") -> dict:
     out_dir = OUTPUT_ROOT / (out_name or f"{label}_{width}x{height}")
     out_dir.mkdir(parents=True, exist_ok=True)
     reports, pngs = [], []
@@ -109,7 +116,7 @@ def _run_format(width: int, height: int, *, seeds: tuple[int, ...] = SEEDS,
         t1 = time.perf_counter()
         try:
             result = build_course(seed, pattern, heightmap, width=width, height=height,
-                                  width_mode=width_mode)
+                                  width_mode=width_mode, target_mode=target_mode)
             elapsed = time.perf_counter() - t1
         except MuirfieldRoutingError as error:
             elapsed = time.perf_counter() - t1
@@ -130,7 +137,8 @@ def _run_format(width: int, height: int, *, seeds: tuple[int, ...] = SEEDS,
             result.layout, result.violations, heightmap=heightmap, water_level=WATER_LEVEL,
             rings=(result.outer_ring, result.inner_ring),
             title=(f"{result.pattern} {label.upper()} · {width}×{height} · seed {seed} · bord "
-                   f"{result.clubhouse_edge} · {outer_nine} extérieur {side}"),
+                   f"{result.clubhouse_edge} · {outer_nine} extérieur {side} · cibles "
+                   f"{result.target_mode}"),
             subtitle=(f"front par {lengths['front']['par']} · {lengths['front']['total']:.0f} blocs  |  "
                       f"back par {lengths['back']['par']} · {lengths['back']['total']:.0f} blocs  |  "
                       f"{result.relaunches} relance(s) · {elapsed * 1000:.0f} ms"),
@@ -183,6 +191,7 @@ def _run_format(width: int, height: int, *, seeds: tuple[int, ...] = SEEDS,
     succeeded = [r for r in reports if r["status"] == "succes"]
     summary = {
         "round": label.upper(), "pattern": pattern, "width_mode": width_mode,
+        "target_mode": target_mode,
         "width": width, "height": height,
         "seeds": list(seeds),
         "stats": {
@@ -207,7 +216,8 @@ def _run_format(width: int, height: int, *, seeds: tuple[int, ...] = SEEDS,
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--round", choices=("r2", "ra", "ra-30", "ra2-30", "ra2-check",
-                                            "rb", "rb-30", "rb-check", "rc", "rc-30", "custom"),
+                                            "rb", "rb-30", "rb-check", "rc", "rc-30", "r2b1",
+                                            "r2b1-30", "custom"),
                         default="r2")
     parser.add_argument("--pattern", choices=PATTERN_CHOICES, default=None,
                         help="patron explicite (défaut : muirfield ; rb-30/rb-check : les deux)")
@@ -245,6 +255,16 @@ def main() -> None:
             _run_format(300, 400, seeds=ROBUSTNESS_SEEDS, label="rc", planche=False,
                         out_name=f"rc_{pattern}_300x400_30seeds", pattern=pattern,
                         width_mode=args.width_mode)
+    elif args.round == "r2b1":
+        for pattern in patterns:
+            for mode in TARGET_MODES:
+                _run_format(300, 400, label="r2b1", out_name=f"r2b1_{pattern}_{mode}_300x400",
+                            pattern=pattern, width_mode=args.width_mode, target_mode=mode)
+    elif args.round == "r2b1-30":
+        for pattern in patterns:
+            _run_format(300, 400, seeds=ROBUSTNESS_SEEDS, label="r2b1", planche=False,
+                        out_name=f"r2b1_{pattern}_irregular_300x400_30seeds", pattern=pattern,
+                        width_mode=args.width_mode, target_mode="irregular")
     elif args.round == "rb-30":
         for pattern in patterns:
             _run_format(300, 400, seeds=ROBUSTNESS_SEEDS, label="rb",
