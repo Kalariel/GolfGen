@@ -227,6 +227,31 @@ def test_calib_verdict_flags_incomplete_seeds():
     assert "seeds incomplètes 6/30" in phase2["rows"][0]["ko_reasons"]
 
 
+def test_calib_verdict_compares_seed_sets_not_counts():
+    shifted = [_seed(i) for i in range(7, 13)]
+    summary = rm.build_calib_summary([_report("muirfield", 300, 400, "portrait", shifted)])
+    row = summary["rows"][0]
+    assert row["seeds"] == 6
+    assert not row["ok"]
+    assert row["ko_reasons"] == ["seeds incomplètes 0/6",
+                                 "seeds hors phase [7, 8, 9, 10, 11, 12]"]
+    extra = [_seed(i) for i in range(1, 8)]
+    row = rm.build_calib_summary([_report("muirfield", 300, 400, "portrait", extra)])["rows"][0]
+    assert row["ko_reasons"] == ["seeds hors phase [7]"]
+
+
+@pytest.mark.parametrize("extra", [[], ["--calib-summary-only"]])
+def test_calib_cli_rejects_width_mode_of_another_phase(flat_output, monkeypatch, capsys,
+                                                       extra):
+    monkeypatch.setattr("sys.argv", ["run_muirfield", "--round", "calib",
+                                     "--width-mode", "min", *extra])
+    with pytest.raises(SystemExit) as exit_info:
+        rm.main()
+    assert exit_info.value.code == 2
+    assert "--width-mode min : la phase 1 est calibrée en variable" in capsys.readouterr().err
+    assert not (flat_output / rm.CALIB_DIR).exists()
+
+
 def test_build_calib_summary_rejects_mixed_width_modes():
     seeds = [_seed(i) for i in range(1, 7)]
     other = _report("muirfield", 400, 300, "paysage", seeds)

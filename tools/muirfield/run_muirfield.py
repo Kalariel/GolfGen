@@ -55,7 +55,7 @@ import json
 from pathlib import Path
 import subprocess
 import time
-from typing import NamedTuple
+from typing import Iterable, NamedTuple
 
 from golfgen.routing.muirfield import (
     PATTERN_CHOICES,
@@ -317,10 +317,12 @@ class CalibPhase(NamedTuple):
     il borne la pire seed acceptable, pas le temps typique, et ne doit pas
     être resserré sans décision explicite.
 
-    ``seeds`` est la liste attendue : une taille dont un patron a moins de
-    seeds mesurées sort en KO (« seeds incomplètes »). ``width_mode`` est le
-    mode de largeurs unique de la phase : ``run_calib`` refuse d'en lancer un
-    autre et la synthèse rejette tout rapport mesuré dans un autre mode.
+    ``seeds`` est l'ensemble attendu : une taille dont un patron n'a pas
+    exactement ces seeds sort en KO (« seeds incomplètes », « seeds hors
+    phase »). ``width_mode`` est le mode de largeurs unique de la phase :
+    ``run_calib`` refuse d'en lancer un autre (la CLI le refuse aussi, même
+    avec ``--calib-summary-only``) et la synthèse rejette tout rapport mesuré
+    dans un autre mode.
     """
     number: int
     directory: str
@@ -425,11 +427,19 @@ def _calib_stats(reports: list[dict]) -> dict:
     }
 
 
-def _calib_verdict(stats: dict, phase: CalibPhase = CALIB_PHASE1) -> list[str]:
-    """Raisons de KO selon le critère de lecture de la phase (liste vide : OK)."""
+def _calib_verdict(stats: dict, seeds: Iterable[int],
+                   phase: CalibPhase = CALIB_PHASE1) -> list[str]:
+    """Raisons de KO selon le critère de lecture de la phase (liste vide : OK).
+
+    ``seeds`` : seeds présentes dans le rapport. La complétude compare
+    l'ENSEMBLE à celui de la phase (``--seeds 7-12`` en phase 1 compte bien
+    six seeds, mais pas les bonnes)."""
     reasons = []
-    if stats["seeds"] < len(phase.seeds):
-        reasons.append(f"seeds incomplètes {stats['seeds']}/{len(phase.seeds)}")
+    present, expected = set(seeds), set(phase.seeds)
+    if not expected <= present:
+        reasons.append(f"seeds incomplètes {len(present & expected)}/{len(expected)}")
+    if present - expected:
+        reasons.append(f"seeds hors phase {sorted(present - expected)}")
     if stats["statuses"].get("taille_invalide"):
         reasons.append("taille_invalide")
     if stats["successes"] < stats["seeds"]:
@@ -465,7 +475,7 @@ def build_calib_summary(reports: list[dict], phase: CalibPhase = CALIB_PHASE1) -
     for report in sorted(reports, key=key):
         c = report["calib"]
         stats = _calib_stats(report["reports"])
-        reasons = _calib_verdict(stats, phase)
+        reasons = _calib_verdict(stats, (r["seed"] for r in report["reports"]), phase)
         row = {"short": c["short"], "long": c["long"], "orientation": c["orientation"],
                "pattern": report["pattern"], "width": report["width"],
                "height": report["height"], "width_mode": report["width_mode"],
@@ -632,6 +642,9 @@ def main() -> None:
                         pattern=pattern, width_mode=args.width_mode)
     elif args.round in ("calib", "calib2"):
         phase = CALIB_PHASE1 if args.round == "calib" else CALIB_PHASE2
+        if args.width_mode != phase.width_mode:
+            parser.error(f"--width-mode {args.width_mode} : la phase {phase.number} est "
+                         f"calibrée en {phase.width_mode}")
         if args.calib_summary_only:
             summary = write_calib_summary(phase)
         else:
