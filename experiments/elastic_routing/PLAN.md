@@ -922,7 +922,15 @@ Lecture des planches :
   ne s'est jamais déclenché sur les 18 cas).
 - Plages de liaison dérivées des `ValidationRules` (`link_bounds`) : entre
   trous `[link_min, link_max]`, clubhouse `[max(link_min, rayon dégagé +
-  demi-fairway max + 2), link_max]` (18–45 par défaut).
+  max(width_min)/2 + 2), link_max]` (18–45 par défaut : 10 + 12/2 + 2). La
+  demi-largeur est celle de la plus grande largeur MINIMALE des pars (12,
+  par 5), pas le demi-fairway max.
+- *Piste d'amélioration (perf)* : prendre `width_max/2` (9 → liaison
+  clubhouse ≥ 21), ou la demi-largeur réelle du trou, réduirait les
+  candidats rejetés par l'oracle `clubhouse_clear` (`geometry.py`, cœur du
+  trou à moins du rayon dégagé). Ce n'est pas un trou de validité : l'oracle
+  mesure la géométrie réelle et rejette toujours un cœur trop proche ; seul
+  le nombre de candidats gaspillés est en jeu.
 - Cache du relief : clé = seed + taille + empreinte (version + hash de
   `TerrainConfig`).
 - Artefacts : seuls `planche.png` et `report.json` sont versionnés pour

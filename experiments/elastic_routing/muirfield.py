@@ -104,7 +104,7 @@ ANCHOR_BACK_MAX_DEG = 32.0
 CORRIDOR_HALF_DEG = 45.0
 CORRIDOR_EXTRA = 30.0               # le couloir dépasse l'anneau intérieur de 30 blocs
 
-CLUBHOUSE_LINK_MARGIN = 2.0        # liaison clubhouse ≥ rayon dégagé + demi-fairway max + 2
+CLUBHOUSE_LINK_MARGIN = 2.0        # liaison clubhouse ≥ rayon dégagé + max(width_min)/2 + 2
 LINK_NOMINAL = 25.0                 # liaison nominale pour les fractions cibles
 USED_POINT_CLEARANCE = 10.0         # un site trop près d'un tee/green déjà posé est consommé
 DOGLEG_MAX_DEG = 55.0
