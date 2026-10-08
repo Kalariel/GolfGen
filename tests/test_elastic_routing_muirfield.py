@@ -594,3 +594,86 @@ def test_dogleg_prefilter_keeps_the_free_corner_only():
     kept = list(search.candidates(level, 4, [], np.zeros((1, 2))))
     assert len(kept) == 1 and kept[0].doglegs[0].y < 200.0
     assert search.partial.check(kept[0], ()) is None             # le coude gardé est valide
+
+
+# -- round C : nits B et largeurs variables (C1) -------------------------------
+
+# Empreinte du patron muirfield au round B (largeur minimale), 300×400.
+MUIRFIELD_FINGERPRINT = {
+    1: (("N", 1, 2, 2), (3, 5, 4, 5, 4, 4, 4, 3, 5), (5, 3, 4, 4, 4, 4, 3, 4, 4),
+        (49.18, 147.0, 102.86, 147.0, 103.2, 141.97, 133.2, 47.0, 147.0,
+         147.0, 62.9, 102.0, 103.87, 102.45, 106.26, 45.63, 102.0, 100.62), 18),
+    2: (("S", 0, 0, 0), (4, 4, 5, 3, 5, 4, 4, 4, 5), (4, 3, 4, 3, 3, 4, 4, 5, 4),
+        (101.62, 104.71, 147.0, 57.94, 152.63, 114.92, 101.02, 102.0, 147.0,
+         102.0, 47.0, 102.0, 66.22, 69.43, 102.0, 102.0, 145.1, 102.0), 1),
+    3: (("S", 0, 0, 0), (4, 3, 5, 3, 5, 3, 5, 4, 4), (4, 4, 4, 3, 5, 4, 4, 4, 4),
+        (102.0, 50.49, 147.0, 47.0, 147.0, 56.63, 173.76, 104.58, 102.0,
+         102.0, 102.0, 102.0, 45.98, 147.0, 102.0, 102.0, 110.39, 102.0), 1),
+}
+
+
+@pytest.mark.parametrize("seed", sorted(MUIRFIELD_FINGERPRINT))
+def test_muirfield_fingerprint_is_stable_in_min_width_mode(seed):
+    result = mf.build_course(seed, "muirfield", width=300, height=400, width_mode="min")
+    plan = result.plan
+    got = ((plan.edge, plan.clubhouse_index, plan.permutation_index, plan.angle_index),
+           plan.front_pars, plan.back_pars,
+           tuple(round(h.length, 2) for h in result.layout.holes), len(result.attempts))
+    assert got == MUIRFIELD_FINGERPRINT[seed]
+
+
+def test_unresolved_or_unknown_pattern_raises():
+    for bad in ("random", "spirale"):
+        with pytest.raises(ValueError):
+            mf.outer_start(bad)
+        with pytest.raises(ValueError):
+            mf.anchor_bounds(1, bad)
+    with pytest.raises(ValueError):
+        mf.build_course(1, "spirale", width=300, height=400)
+    with pytest.raises(ValueError):
+        mf.build_course(1, "muirfield", width=300, height=400, width_mode="large")
+
+
+def test_distinct_orders_is_cached():
+    first = mf._distinct_orders(3, 3)
+    assert mf._distinct_orders(3, 3) is first
+    assert len(first) == 1680 and len(set(first)) == 1680
+
+
+def _mean_center_distance(nine, center):
+    points = np.array([(p.x, p.y) for hole in nine.holes for p in hole.axis])
+    return float(np.hypot(*(points - center).T).mean())
+
+
+@pytest.mark.parametrize("seed", SEEDS)
+def test_roles_on_actual_holes(results, inverse_results, seed):
+    """Les trous eux-mêmes (pas seulement les chemins cibles) : le nine
+    extérieur est en moyenne plus loin du centre de la carte que l'autre."""
+    center = np.array([150.0, 200.0])
+    normal = results[(300, 400, seed)].layout
+    inverse = inverse_results[seed].layout
+    assert _mean_center_distance(normal.front, center) > _mean_center_distance(normal.back, center)
+    assert _mean_center_distance(inverse.back, center) > _mean_center_distance(inverse.front, center)
+
+
+def test_hole_widths_are_seeded_within_par_range():
+    fractions = mf.hole_width_fractions(7)
+    assert fractions == mf.hole_width_fractions(7) != mf.hole_width_fractions(8)
+    for par, spec in PAR_SPECS.items():
+        assert mf.hole_width(par, None) == spec.width_min
+        assert mf.hole_width(par, 0.0) == spec.width_min
+        assert mf.hole_width(par, 1.0) == spec.width_max
+        for fraction in fractions.values():
+            width = mf.hole_width(par, fraction)
+            assert spec.width_min <= width <= spec.width_max and (width * 2).is_integer()
+
+
+@pytest.mark.parametrize("seed", SEEDS)
+def test_variable_widths_are_used_and_valid(results, seed):
+    result = results[(300, 400, seed)]
+    assert result.width_mode == "variable"
+    fractions = mf.hole_width_fractions(seed)
+    widths = [hole.width for hole in result.layout.holes]
+    assert widths == [mf.hole_width(h.par, fractions[h.order]) for h in result.layout.holes]
+    assert len(set(widths)) > 3
+    assert result.violations == ()

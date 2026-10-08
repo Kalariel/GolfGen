@@ -53,6 +53,7 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import dataclass, field
+from functools import lru_cache
 from itertools import permutations, product
 import math
 import time
@@ -122,6 +123,29 @@ CHECK_BUDGET_PER_NINE = 1500        # contrôles en ligne au plus par nine et pa
 NODE_BUDGET_PER_NINE = 300          # nœuds de recherche au plus par nine et par tentative
 
 
+WIDTH_MODES = ("variable", "min")
+WIDTH_STEP = 0.5                    # largeurs arrondies au demi-bloc
+
+
+def hole_width_fractions(seed: int) -> dict[int, float]:
+    """Round C1 : position seedée de chaque trou (ordre 1..18) dans la plage
+    de largeur de son par, tirée une fois par seed (indépendante des
+    relances, qui peuvent changer le par d'un ordre)."""
+    fractions = np.random.default_rng([seed, 31]).uniform(0.0, 1.0, size=18)
+    return {order: float(fractions[order - 1]) for order in range(1, 19)}
+
+
+def hole_width(par: int, fraction: float | None) -> float:
+    """Largeur du trou : minimum du par (``fraction`` None, comportement des
+    rounds A–B) ou point seedé de la plage [width_min, width_max]."""
+    spec = PAR_SPECS[par]
+    if fraction is None:
+        return spec.width_min
+    width = spec.width_min + fraction * (spec.width_max - spec.width_min)
+    width = round(width / WIDTH_STEP) * WIDTH_STEP
+    return float(min(max(width, spec.width_min), spec.width_max))
+
+
 PATTERNS = ("muirfield", "muirfield_inverse")
 PATTERN_CHOICES = (*PATTERNS, "random")
 
@@ -139,7 +163,11 @@ def resolve_pattern(seed: int, pattern: str) -> str:
 
 def outer_start(pattern: str) -> int:
     """Premier trou du nine qui fait le grand tour extérieur : le front (1)
-    pour ``muirfield``, le back (10) pour ``muirfield_inverse``."""
+    pour ``muirfield``, le back (10) pour ``muirfield_inverse``. Le patron
+    doit être résolu (``random`` compris : passer par ``resolve_pattern``)."""
+    if pattern not in PATTERNS:
+        raise ValueError(f"patron non résolu ou inconnu : {pattern!r} (attendu : "
+                         f"{', '.join(PATTERNS)} ; 'random' passe par resolve_pattern)")
     return 1 if pattern == "muirfield" else 10
 
 
@@ -191,6 +219,7 @@ class MuirfieldResult:
     elapsed_seconds: float
     timings: dict[str, float] = field(default_factory=dict)
     requested_pattern: str = "muirfield"
+    width_mode: str = "variable"
 
     @property
     def pattern(self) -> str:
@@ -397,10 +426,11 @@ def draw_par_counts(rng: np.random.Generator) -> tuple[tuple[int, int], tuple[in
             (GLOBAL_PAR_QUOTA[3] - p3_front, GLOBAL_PAR_QUOTA[5] - p5_front))
 
 
-def _distinct_orders(p3: int, p5: int) -> list[tuple[int, ...]]:
+@lru_cache(maxsize=None)
+def _distinct_orders(p3: int, p5: int) -> tuple[tuple[int, ...], ...]:
     """Toutes les permutations distinctes d'un nine (≤ 1680), ordre lexicographique."""
     base = sorted([3] * p3 + [5] * p5 + [4] * (9 - p3 - p5))
-    return sorted(set(permutations(base)))
+    return tuple(sorted(set(permutations(base))))
 
 
 def order_nine(p3: int, p5: int, rng: np.random.Generator, tries: int = 200,
@@ -571,6 +601,7 @@ class _Search:
     deepest: dict[int, int] = field(default_factory=dict)
     budget_used: tuple[dict[int, int], dict[int, int]] = field(default_factory=lambda: ({}, {}))
     pattern: str = "muirfield"
+    width_fractions: dict[int, float] | None = None
     anchors_done: bool = False
     outer_done: bool = False
 
@@ -589,6 +620,10 @@ class _Search:
         phi = self.frame.phi_deg(points)
         return (phi >= bounds[0]) & (phi <= bounds[1])
 
+    def width_for(self, order: int, par: int) -> float:
+        return hole_width(par, None if self.width_fractions is None
+                          else self.width_fractions[order])
+
     def is_outer(self, order: int) -> bool:
         return nine_start(order) == outer_start(self.pattern)
 
@@ -606,7 +641,8 @@ class _Search:
         order = level.order
         outer = self.is_outer(order)
         obstacles = Obstacles.from_partial(self.partial)
-        radius, gap = spec.width_min / 2.0, self.partial.rules.fairway_gap
+        width = self.width_for(order, par)
+        radius, gap = width / 2.0, self.partial.rules.fairway_gap
 
         tee_ok = self._available(self.tees.points, self.outer_tee_ok if outer
                                  else np.ones(len(self.tees), dtype=bool), used)
@@ -701,14 +737,14 @@ class _Search:
             green_cp = ControlPoint(float(green[0]), float(green[1]))
             if straight[ti, gi]:
                 yield ElasticHole(order=order, par=par, tee=tee_cp, green=green_cp,
-                                  width=spec.width_min)
+                                  width=width)
                 continue
             options = list(side_ok[(int(ti), int(gi))])
             options.sort(key=lambda p: float(np.min(np.hypot(*(path_arr - p).T))))
             for corner in options:
                 yield ElasticHole(order=order, par=par, tee=tee_cp, green=green_cp,
                                   doglegs=(ControlPoint(float(corner[0]), float(corner[1])),),
-                                  width=spec.width_min)
+                                  width=width)
 
     def _bridge_reachable(self, greens: np.ndarray, level: _Level, used: list[np.ndarray],
                           obstacles: Obstacles) -> np.ndarray:
@@ -718,8 +754,8 @@ class _Search:
         trou, sur les sites libres et sans heurter ce qui est posé. Toutes les
         conditions sont nécessaires (pré-filtres), jamais suffisantes."""
         spec = PAR_SPECS[level.bridge_par]
-        radius, gap = spec.width_min / 2.0, self.partial.rules.fairway_gap
         order = level.order + 1
+        radius, gap = self.width_for(order, level.bridge_par) / 2.0, self.partial.rules.fairway_gap
         outer = self.is_outer(order)
         end = level.bridge_end
         lo, hi = self.links.minimum, self.links.maximum
@@ -999,14 +1035,16 @@ def iter_plans(seed: int, width: float = MAP_WIDTH, height: float = MAP_HEIGHT,
 def build_muirfield(seed: int, heightmap: np.ndarray | None = None, *,
                     width: float = MAP_WIDTH, height: float = MAP_HEIGHT,
                     rules: ValidationRules | None = None,
-                    pattern: str = "muirfield") -> MuirfieldResult:
+                    pattern: str = "muirfield", width_mode: str = "variable") -> MuirfieldResult:
     """Alias historique de ``build_course`` (patron ``muirfield`` par défaut)."""
-    return build_course(seed, pattern, heightmap, width=width, height=height, rules=rules)
+    return build_course(seed, pattern, heightmap, width=width, height=height, rules=rules,
+                        width_mode=width_mode)
 
 
 def build_course(seed: int, pattern: str = "muirfield", heightmap: np.ndarray | None = None, *,
                  width: float = MAP_WIDTH, height: float = MAP_HEIGHT,
-                 rules: ValidationRules | None = None) -> MuirfieldResult:
+                 rules: ValidationRules | None = None,
+                 width_mode: str = "variable") -> MuirfieldResult:
     """Parcours valide pour (seed, patron), ou ``MuirfieldRoutingError``.
 
     ``pattern`` est un paramètre explicite, au même titre que la seed :
@@ -1014,10 +1052,17 @@ def build_course(seed: int, pattern: str = "muirfield", heightmap: np.ndarray | 
     (front intérieur, back extérieur) ou ``random`` (patron tiré de façon
     déterministe à partir de la seed, cf. ``resolve_pattern``).
 
+    ``width_mode`` : ``variable`` (round C1, défaut) — chaque trou tire sa
+    largeur dans la plage de son par (``hole_width_fractions``) ; ``min`` —
+    largeur minimale du par, comportement des rounds A–B.
+
     Le résultat renvoyé a TOUJOURS zéro violation ``validate(layout, rules)`` ;
     les plages de liaison sont dérivées de ``rules`` (``link_bounds``)."""
     requested = pattern
     pattern = resolve_pattern(seed, pattern)
+    if width_mode not in WIDTH_MODES:
+        raise ValueError(f"width_mode inconnu : {width_mode!r} (attendu : {', '.join(WIDTH_MODES)})")
+    fractions = hole_width_fractions(seed) if width_mode == "variable" else None
     started = time.perf_counter()
     timings: dict[str, float] = {}
     if heightmap is None:
@@ -1044,7 +1089,7 @@ def build_course(seed: int, pattern: str = "muirfield", heightmap: np.ndarray | 
             partial=PartialLayout(rules, clubhouse),
             outer_tee_ok=~frame.in_corridor(tee_sites.points),
             outer_green_ok=~frame.in_corridor(green_sites.points),
-            links=links, pattern=pattern,
+            links=links, pattern=pattern, width_fractions=fractions,
         )
 
     def capacity(edge: str, clubhouse: Point, direction: int) -> AnchorCapacity:
@@ -1108,6 +1153,6 @@ def build_course(seed: int, pattern: str = "muirfield", heightmap: np.ndarray | 
             plan=plan, outer_ring=tuple(outer), inner_ring=tuple(inner),
             front_path=tuple(front_path), back_path=tuple(back_path),
             attempts=tuple(attempts), elapsed_seconds=time.perf_counter() - started,
-            timings=timings, requested_pattern=requested,
+            timings=timings, requested_pattern=requested, width_mode=width_mode,
         )
     raise MuirfieldRoutingError(seed, attempts)
