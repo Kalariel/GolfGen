@@ -1253,6 +1253,48 @@ optionnel, `uniform` par défaut (sans effet sur l'empreinte) ; pas de
 réglage du jitter. Prochaine étape : M2, chemin cible déformé, décentré ou
 agrandi. M3 (variété dans le score) n'est plus qu'un palliatif éventuel.
 
+#### R2b — Round 2 (M2, chemin intérieur à lobes) : résultat négatif
+
+**Paramètres.** `path_mode="lobed"` : le chemin cible du seul nine
+intérieur reçoit des lobes radiaux, m ∈ {2, 3} lobes et phase φ tirés sur
+le flux `[seed, 41]`, `LOBE_OUT=30` (vers l'extérieur), `LOBE_IN=20` (vers
+le centre) ; enveloppe nulle à moins de 40° du clubhouse, pleine à 80°.
+L'anneau reste le repère du clubhouse, du couloir et des cônes. En mode
+`lobed`, `build_course` refuse en amont une carte trop petite pour les
+lobes (`check_lobe_room`).
+
+**r2b2-30, ring → lobed** (300×400, s1–30) :
+
+| patron | réussis (ring → lobed) | médiane | max |
+|---|---|---|---|
+| muirfield | 30/30 → 29/30 (s18 refusé après 27 tentatives) | 2.31 → 1.24 s | 17.4 → 16.7 s |
+| muirfield_inverse | 30/30 → 30/30 | 2.48 → 1.35 s | 18.4 → 33.0 s |
+
+Nine intérieur : heading_turns 2.20 → 2.18 (muirfield) et 2.46 → 2.36
+(inversé) ; path_to_nine_length 0.50 → 0.56 ; hull_ratio, entropie et
+obliquité quasi inchangés. Nine extérieur : inchangé.
+
+**Visuel.** L'enroulement persiste (muirfield seeds 1, 4, 5 ; inversé
+seeds 1, 5).
+
+**Diagnostic.** Deux perturbations très différentes des cibles (rythme en
+M1, forme en M2) laissent les métriques quasi intactes. La forme est
+dominée par la contrainte d'espace, pas par les cibles : le nine intérieur
+doit loger environ 1500 blocs dans moins de la moitié de la surface,
+autour d'un nine extérieur contra-rotatif. C'est en partie l'ADN du patron
+Muirfield.
+
+**Observation de l'utilisateur (2026-10-08).** En 400×300 (paysage),
+l'hélice s'atténue (planches 6 seeds).
+
+**Décision.**
+- M2 est conservé en mode optionnel, `ring` par défaut (sans effet sur
+  l'empreinte) ;
+- validation du 400×300 sur 30 seeds (rounds `land` et `land-30`) ;
+- puis M3 (pénalité d'enroulement dans le score) en 300×400 et 400×300 ;
+- si tout est validé, le spike devient le routage par défaut, avec à terme
+  le pattern, l'orientation et la taille paramétrables par l'utilisateur.
+
 ### Étape 4 — trous élastiques et mutations locales
 
 Note (2026-10-07) : cette étape reste valable (score incrémental), mais la
