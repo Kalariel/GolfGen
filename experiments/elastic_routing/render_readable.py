@@ -1,6 +1,6 @@
 """Rendu lisible d'un ``CourseLayout`` : bandes de fairway, trous numérotés.
 
-Reprend le langage visuel du rendu « bandes + flèches » de ``regions.py``
+Reprend le langage visuel du rendu « bandes + flèches » de l'étape 3 du spike
 (bandes épaisses, flèches de sens, clubhouse en losange) mais pour des trous
 réels : bande par trou colorée par par, tee (carré blanc) et green (disque)
 visibles, numéro du trou dans un cercle derrière le tee, liaisons en
@@ -18,7 +18,6 @@ import numpy as np
 
 from golfgen.routing.geometry import Violation, build_hole_geometry
 from golfgen.routing.model import CourseLayout
-from experiments.elastic_routing.regions import _point_and_tangent
 
 
 Point = tuple[float, float]
@@ -27,6 +26,20 @@ PAR_COLORS = {3: "#58a6ff", 4: "#56d364", 5: "#f2cc60"}
 VIOLATION_COLOR = "#ff2d7a"
 RELIEF_CELL = 8                 # blocs par case de fond
 LABEL_BACKOFF = 11.0            # le numéro est posé derrière le tee (blocs)
+
+
+def _point_and_tangent(path: list[Point], arclength: float) -> tuple[Point, Point]:
+    travelled = 0.0
+    for a, b in zip(path, path[1:]):
+        step = math.dist(a, b)
+        if step > 1e-9 and travelled + step >= arclength:
+            t = (arclength - travelled) / step
+            return ((a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t),
+                    ((b[0] - a[0]) / step, (b[1] - a[1]) / step))
+        travelled += step
+    a, b = path[-2], path[-1]
+    step = max(math.dist(a, b), 1e-9)
+    return b, ((b[0] - a[0]) / step, (b[1] - a[1]) / step)
 
 
 def _relief_rects(heightmap: np.ndarray, pt, scale: float, water_level: float | None) -> list[str]:
