@@ -1051,6 +1051,75 @@ reste à 0 violation (tests). Les layouts changent par rapport à R2/RA
 celles de leur round. Forme : toujours l'hélice et des faisceaux de trous
 parallèles (hors périmètre A2).
 
+#### Round B (2026-10-08) — patron explicite et Muirfield inversé
+
+**Décision de l'utilisateur : le patron est un paramètre explicite**, au
+même titre que la seed (futur site Minecraft : l'utilisateur choisit seed +
+patron), PAS une variable tirée par la seed. Valeurs :
+
+- `muirfield` : front = grand tour extérieur, back = boucle intérieure ;
+- `muirfield_inverse` : front = boucle intérieure, back = grand tour
+  extérieur (sens opposés, clubhouse sur un bord, mêmes cônes 1/9/10/18 mais
+  rôles échangés : 10 et 18 longent le bord, 1 et 9 plongent entre eux) ;
+- `random` : patron tiré de façon déterministe depuis la seed
+  (`resolve_pattern`, flux `[seed, 23]` indépendant du routage) ;
+  `build_course(seed, "random")` est identique à `build_course(seed, <patron
+  résolu>)` (testé).
+
+API : `build_course(seed, pattern, heightmap, width, height, rules)`
+(`build_muirfield` reste un alias, patron `muirfield` par défaut) ; runner
+`--pattern {muirfield, muirfield_inverse, random}` (+ `--round custom
+--size LxH --seeds 1-6`). Pas de config JSON ajoutée : le spike n'en a pas
+et le pipeline `golfgen/` n'utilise pas encore ce routage.
+
+Mécanisme : aucune copie de code, les rôles extérieur/intérieur sont des
+paramètres (`outer_start(pattern)`) : chemins cibles (`nine_paths`), repère
+du clubhouse (côté = départ du nine extérieur), cônes (`anchor_bounds(order,
+pattern)`), couloir réservé au nine intérieur, ordre de recherche (phase A :
+ancrages puis milieu du nine EXTÉRIEUR ; phase B : milieu du nine
+intérieur). Le patron `muirfield` donne exactement les mêmes parcours qu'en
+A2 (37 relances, mêmes temps sur 300×400).
+
+Nits de revue A2 traités : repère du clubhouse invariant par angle de départ
+(note + test) ; `order_nine` contraint : repli par énumération EXHAUSTIVE des
+permutations distinctes si les 200 tirages échouent (les 9
+`infaisable_ancrage` de la seed 30 sont donc réellement infaisables) ;
+statut par phase atteinte (`echec_ancrages` tant que les quatre ancrages
+n'ont jamais été posés ensemble, puis `echec_<nine extérieur>`, puis
+`echec_<nine intérieur>`) ; tests de `_bridge_reachable` et du pré-filtre des
+doglegs (coude libre conservé et valide, coude bloqué écarté).
+
+Résultats (`--round rb`, `rb-30`, `rb-check` →
+`output/muirfield/rb_inverse_300x400/` [planche + report],
+`rb_<patron>_300x400_30seeds/`, `rb_check_<patron>_<w>x<h>/`). Relances
+séparées en **tentées** (une recherche lancée) et **gratuites** (plan écarté
+par la capacité des cônes, aucune recherche) ; temps machine de dev,
+chronomètre homogène succès/échec :
+
+| patron | cas | réussis | violations | relances tentées | gratuites | médiane | p90 | max |
+|---|---|---|---|---|---|---|---|---|
+| muirfield | 300×400 s1–30 | 30/30 | 0 | 28 | 9 | 0.37 s | 3.5 s | 4.2 s |
+| muirfield_inverse | 300×400 s1–30 | **30/30** | 0 | 23 | 9 | 0.38 s | 3.5 s | 17.7 s |
+| muirfield | 350×400 s1–6 | 6/6 | 0 | 18 | 0 | 0.38 s | 2.0 s | 2.2 s |
+| muirfield | 400×300 s1–6 | 6/6 | 0 | 3 | 0 | 1.0 s | 2.9 s | 3.7 s |
+| muirfield | 400×350 s1–6 | 6/6 | 0 | 0 | 0 | 0.35 s | 0.41 s | 0.41 s |
+| muirfield_inverse | 350×400 s1–6 | 6/6 | 0 | 18 | 0 | 0.36 s | 2.4 s | 2.7 s |
+| muirfield_inverse | 400×300 s1–6 | 6/6 | 0 | 6 | 0 | 0.36 s | 7.6 s | 14.2 s |
+| muirfield_inverse | 400×350 s1–6 | 6/6 | 0 | 0 | 0 | 0.34 s | 0.39 s | 0.40 s |
+
+Inversé 300×400 : relances aux seeds 1, 2, 19, 23, 29, 30 — 12
+`echec_ancrages`, 11 `echec_front` (milieu du nine intérieur, ici le front,
+budget épuisé : ~4 s par tentative, d'où 13 s pour s19 et 17.7 s pour s23),
+9 gratuites (s30). Aucune règle assouplie, aucun budget relevé.
+
+Lecture de la planche inversée (300×400, s1–6) : le back fait bien le grand
+tour le long du bord (10 et 18 longent le bord de part et d'autre du
+clubhouse), le front sort entre eux (1 vers l'intérieur, 9 qui revient) et
+reste au centre. Le front intérieur est valide mais peu lisible comme une
+boucle : ses trous se regroupent en faisceaux et en zigzags au centre (s2,
+s3), comme le back intérieur du Muirfield normal — l'hélice / le
+remplissage du centre reste le défaut de forme commun aux deux patrons.
+
 ### Étape 4 — trous élastiques et mutations locales
 
 Note (2026-10-07) : cette étape reste valable (score incrémental), mais la
