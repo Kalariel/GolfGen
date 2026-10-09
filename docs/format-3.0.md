@@ -2,10 +2,8 @@
 
 Référence du JSON produit par `golfgen.exporter.muirfield_to_dict(result,
 heightmap, *, seed, seed_input=None)` et lu par le viewer (`viewer/`, qui
-refuse tout `metadata.version` hors 3.x). Le format 2.0 (`JSONExporter`)
-n'est plus écrit que par `pipeline.py --stage terrain` (relief seul) et
-disparaît au R7 ; le pipeline n'utilise plus `loop_router`. Seul le bloc
-`terrain` est commun aux deux formats (le 3.0 y ajoute `water_level`).
+refuse tout `metadata.version` hors 3.x). C'est le seul format écrit par
+`pipeline.py`.
 
 `muirfield_to_dict` est pure (ni I/O, ni état global, ni aléa) : même entrée,
 même dict. Le dict passe `json.dumps` sans encodeur (aucun type numpy).
@@ -51,7 +49,7 @@ même dict. Le dict passe `json.dumps` sans encodeur (aucun type numpy).
 
 ## `terrain`
 
-Bloc 2.0 (même fonction `terrain_block`) plus `water_level`, propre au 3.0.
+Relief encodé par `golfgen.exporter.terrain_block`, plus `water_level`.
 
 | Champ | Type | Unité |
 |---|---|---|

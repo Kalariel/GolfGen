@@ -56,9 +56,11 @@ défaut de la config (42) marche aussi mais prend ≈ 19 s de routage.
 - `--short N` (300 à 350, défaut 300) et `--long N` (400 à 500, défaut 400) :
   petit et grand côté en blocs. `--width`/`--height` en sont des alias,
   exclusifs de `--orientation`/`--short`/`--long`.
-- `--output CHEMIN` (défaut `output/course.json`), `--config FICHIER.json`,
-  `--stage {terrain,holes}` (défaut `holes` ; `terrain` écrit le relief seul
-  au format 2.0, que le viewer refuse).
+- `--output CHEMIN` (défaut `output/course.json`), `--config FICHIER.json`
+  (défaut `default_config.json` s'il existe dans le répertoire courant ; une
+  section `routing` d'une ancienne config est ignorée, avec un avertissement).
+
+Le pipeline fait toujours le relief puis le parcours, et écrit le JSON 3.0.
 
 Codes de sortie : `0` succès ; `2` paramètre invalide (rien n'est calculé) ;
 `3` aucun parcours valide pour cette seed, ce patron et cette taille (rien
@@ -78,7 +80,7 @@ Il charge `output/course.json` au démarrage ; un autre fichier se charge par
 le bouton « Choisir un JSON... » ou par l'URL
 `http://localhost:8000/viewer/?json=../chemin/vers/parcours.json`. Il n'accepte
 que le format 3.x (`metadata.version`) et affiche un message clair pour tout
-autre fichier (2.0 compris). Affichage : relief, couloir de chaque trou (axe
+autre fichier. Affichage : relief, couloir de chaque trou (axe
 tee → doglegs → green, largeur totale du fairway) coloré par par, numéro,
 sens de jeu, tee, green, liaisons, clubhouse ; panneau seed, patron, taille,
 sens des nines, stats par nine et tableaux des trous ; survol d'un trou :
@@ -115,7 +117,7 @@ Options : `--round` (rc, rc-30, land, land-30, custom), `--pattern`,
 
 ## État et prochaines étapes
 
-- `pipeline.py` et le viewer passent par le routeur Muirfield et le format 3.0 ; le pipeline n'utilise plus `loop_router` (retiré au R7, avec le format 2.0).
+- Chaîne unique : seed → relief → routeur Muirfield → JSON 3.0 → viewer.
 - Défaut de forme connu : tracé en « hélice » sur certaines seeds.
 - Planifié : largeur de fairway variable à l'intérieur d'un trou.
 - Étapes du pipeline encore à créer : obstacles, végétation, ponts/ruisseaux.

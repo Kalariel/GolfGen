@@ -5,7 +5,6 @@ GolfGen : générateur procédural de parcours de golf 18 trous pour Minecraft
 État : `pipeline.py` (paquet `golfgen/`) route avec le routeur « Muirfield »
 (cœur dans `golfgen/routing/`) et écrit le JSON 3.0 (`docs/format-3.0.md`), que
 lit le viewer 3.x (`viewer/`) ; runner et rendus PNG dans `tools/muirfield/`.
-Le pipeline n'utilise plus `loop_router` (retiré au R7 avec le format 2.0).
 
 ## Commandes
 
