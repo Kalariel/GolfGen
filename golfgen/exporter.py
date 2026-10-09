@@ -16,6 +16,7 @@ from . import __version__
 from .config import CourseConfig
 from .routing.model import ElasticHole, NineLayout, WalkingLink
 from .routing.muirfield import MuirfieldResult, outer_start
+from .routing.sites import WATER_LEVEL
 
 
 def terrain_block(heightmap: np.ndarray) -> dict[str, Any]:
@@ -152,7 +153,8 @@ def muirfield_to_dict(result: MuirfieldResult, heightmap: np.ndarray, *, seed: i
                 "relaunches": result.relaunches,
             },
         },
-        "terrain": terrain_block(heightmap),
+        # 3.0 seul : le bloc 2.0 (``terrain_block``) reste inchangé.
+        "terrain": {**terrain_block(heightmap), "water_level": _r2(WATER_LEVEL)},
         "routing": {
             "clubhouse": {**_point(layout.clubhouse), "edge": result.clubhouse_edge},
             "direction": {

@@ -5,7 +5,7 @@ heightmap, *, seed, seed_input=None)` et lu par le viewer (`viewer/`, qui
 refuse tout `metadata.version` hors 3.x). Le format 2.0 (`JSONExporter`)
 n'est plus écrit que par `pipeline.py --stage terrain` (relief seul) et
 disparaît au R7 ; le pipeline n'utilise plus `loop_router`. Seul le bloc
-`terrain` est commun aux deux formats.
+`terrain` est commun aux deux formats (le 3.0 y ajoute `water_level`).
 
 `muirfield_to_dict` est pure (ni I/O, ni état global, ni aléa) : même entrée,
 même dict. Le dict passe `json.dumps` sans encodeur (aucun type numpy).
@@ -51,7 +51,7 @@ même dict. Le dict passe `json.dumps` sans encodeur (aucun type numpy).
 
 ## `terrain`
 
-Identique au format 2.0 (même fonction `terrain_block`).
+Bloc 2.0 (même fonction `terrain_block`) plus `water_level`, propre au 3.0.
 
 | Champ | Type | Unité |
 |---|---|---|
@@ -59,6 +59,7 @@ Identique au format 2.0 (même fonction `terrain_block`).
 | `elevation.encoding` | chaîne | `"base64_uint8"` |
 | `elevation.data` | chaîne | base64 de `width × height` octets, ligne par ligne (`y` puis `x`) ; 0..255 normalisé sur [min, max] (tout à 0 si le relief est plat) |
 | `elevation.min_elevation`, `elevation.max_elevation` | nombre | altitude min / max (unités de la heightmap), 2 décimales |
+| `water_level` | nombre | niveau d'eau (mêmes unités que `min_elevation`/`max_elevation`) : un pixel d'altitude strictement inférieure est de l'eau, pour le routeur (`golfgen.routing.sites.WATER_LEVEL`), les planches PNG et le viewer ; peut être hors de [min, max] (aucune eau) |
 
 Altitude d'un pixel : `min + octet / 255 × (max − min)`.
 
@@ -112,7 +113,7 @@ clubhouse, clubhouse → 10, …, 18 → clubhouse.
 ```json
 {
   "metadata": {
-    "version": "3.0", "generator": "golfgen 0.0.2",
+    "version": "3.0", "generator": "golfgen 0.0.3",
     "seed": "4", "seed_input": "4",
     "pattern": {"requested": "random", "resolved": "muirfield_inverse"},
     "orientation": "landscape", "short_side": 300.0, "long_side": 400.0,
@@ -126,7 +127,8 @@ clubhouse, clubhouse → 10, …, 18 → clubhouse.
   "terrain": {
     "width": 400, "height": 300,
     "elevation": {"encoding": "base64_uint8", "data": "o621u8DDx8nMz9LU…",
-                  "min_elevation": 58.0, "max_elevation": 82.0}
+                  "min_elevation": 58.0, "max_elevation": 82.0},
+    "water_level": 60.0
   },
   "routing": {
     "clubhouse": {"x": 6.0, "y": 131.68, "edge": "W"},

@@ -15,7 +15,7 @@ import golfgen
 from golfgen.config import CourseConfig
 from golfgen.exporter import JSONExporter, muirfield_to_dict, terrain_block
 from golfgen.routing import muirfield as mf
-from golfgen.routing.sites import load_terrain
+from golfgen.routing.sites import WATER_LEVEL, load_terrain
 
 
 # seed 4 en 400×300 : « random » résolu en muirfield_inverse, sans relance,
@@ -271,13 +271,24 @@ def test_no_waypoints_anywhere(data):
 
 def test_terrain_identical_to_v2_helper(built, data):
     _, heightmap = built
-    assert data["terrain"] == terrain_block(heightmap)
+    terrain = {k: v for k, v in data["terrain"].items() if k != "water_level"}
+    assert terrain == terrain_block(heightmap)
     exporter = JSONExporter(CourseConfig(seed=SEED, width=WIDTH, height=HEIGHT))
     exporter.add_terrain(heightmap)
-    assert exporter.data["terrain"] == data["terrain"]
+    assert exporter.data["terrain"] == terrain
+    assert "water_level" not in exporter.data["terrain"]
     raw = base64.b64decode(data["terrain"]["elevation"]["data"])
     assert len(raw) == WIDTH * HEIGHT
     assert (data["terrain"]["width"], data["terrain"]["height"]) == (WIDTH, HEIGHT)
+
+
+def test_terrain_water_level(data):
+    """Niveau d'eau du routeur (``sites.WATER_LEVEL``), en unités d'altitude,
+    3.0 seul : sous ce niveau le routeur et les planches PNG voient de l'eau."""
+    water = data["terrain"]["water_level"]
+    assert isinstance(water, float)
+    assert water == WATER_LEVEL
+    assert list(data["terrain"]) == ["width", "height", "elevation", "water_level"]
 
 
 # ----------------------------------------------------------------------
