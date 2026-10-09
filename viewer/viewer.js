@@ -206,26 +206,64 @@ function onMouseLeave() {
 
 // === File Loading ===
 // `?json=<url>` remplace le chargement automatique de ../output/course.json
-// (utile pour comparer deux fichiers ou tester le refus d'un format).
+// (utile pour comparer deux fichiers ou tester le refus d'un format) ; seule
+// une URL de même origine que le viewer est acceptée.
 async function tryAutoLoad() {
   const param = new URLSearchParams(window.location.search).get('json');
-  const url = param || '../output/course.json';
+  const fileLabel = document.getElementById('filename');
+  let url;
+  if (param) {
+    let target = null;
+    try {
+      target = new URL(param, window.location.href);
+    } catch (e) {
+      target = null;
+    }
+    if (!target || target.origin !== window.location.origin) {
+      rejectData([
+        '?json= refuse',
+        `URL hors de l'origine du viewer : ${param}`,
+        `Seules les URL de ${window.location.origin} sont acceptees.`,
+      ]);
+      fileLabel.textContent = '?json= refuse';
+      return;
+    }
+    url = target.href;
+  } else {
+    url = '../output/course.json';
+  }
+  const name = url.split('?')[0].split('/').pop();
+
+  let resp;
   try {
-    const resp = await fetch(url);
-    if (!resp.ok) {
+    resp = await fetch(url);
+  } catch (err) {
+    if (!param) {
       showNoData();
       return;
     }
-    const json = await resp.json();
-    const name = url.split('/').pop();
-    if (loadCourseData(json)) {
-      document.getElementById('filename').textContent = `${name} (auto)`;
-    } else {
-      document.getElementById('filename').textContent = `${name} (refuse)`;
-    }
-  } catch (e) {
-    showNoData();
+    rejectData(['Chargement impossible', `${name} : ${String(err.message)}`]);
+    fileLabel.textContent = `${name} (refuse)`;
+    return;
   }
+  if (!resp.ok) {
+    if (!param && resp.status === 404) {
+      showNoData();  // pas encore de output/course.json : écran d'accueil
+      return;
+    }
+    rejectData(['Chargement impossible', `${name} : HTTP ${resp.status} ${resp.statusText}`.trim()]);
+    fileLabel.textContent = `${name} (refuse)`;
+    return;
+  }
+  let json;
+  try {
+    json = JSON.parse(await resp.text());
+  } catch (err) {
+    rejectData(['JSON illisible', String(err.message)]);
+    fileLabel.textContent = `${name} (refuse)`;
+    return;
+  }
+  fileLabel.textContent = loadCourseData(json) ? `${name} (auto)` : `${name} (refuse)`;
 }
 
 function handleFileLoad(e) {
@@ -297,9 +335,9 @@ function loadCourseData(json) {
     highlightedHole = null;
 
     const meta = json.metadata;
-    mapW = (json.terrain && json.terrain.width) || meta.width;
-    mapH = (json.terrain && json.terrain.height) || meta.height;
-    blockM = meta.block_m || 3;
+    mapW = Number((json.terrain && json.terrain.width) || meta.width);
+    mapH = Number((json.terrain && json.terrain.height) || meta.height);
+    blockM = Number(meta.block_m) || 3;
 
     if (json.terrain && json.terrain.elevation && json.terrain.elevation.data) {
       const binary = atob(json.terrain.elevation.data);
@@ -327,11 +365,30 @@ function loadCourseData(json) {
 }
 
 // Relief : rampe de couleur sur l'octet normalisé (0 = min, 255 = max du
-// bloc terrain). Le 3.0 n'a pas de niveau de base ni de niveau d'eau : on
-// ne dessine donc pas d'eau, seulement la hauteur relative.
+// bloc terrain). Sous `terrain.water_level` (altitude, mêmes unités que
+// min/max_elevation), le pixel est de l'eau, comme pour le routeur et les
+// planches PNG (même couleur que render_readable) ; sans ce champ, pas d'eau.
+const WATER_RGB = [0x1d, 0x4f, 0x73];
+
+/** Octet seuil : un pixel d'octet < seuil est sous l'eau ; 0 = pas d'eau. */
+function waterThreshold(terrain) {
+  const level = Number(terrain.water_level);
+  const elev = terrain.elevation || {};
+  const lo = Number(elev.min_elevation);
+  const hi = Number(elev.max_elevation);
+  if (terrain.water_level === undefined || terrain.water_level === null
+      || !Number.isFinite(level) || !Number.isFinite(lo) || !Number.isFinite(hi)) {
+    return 0;
+  }
+  if (hi - lo < 1e-10) return level > lo ? 256 : 0;  // relief plat
+  // altitude = min + octet / 255 × (max − min) < level
+  return Math.max(0, Math.min(256, Math.ceil((level - lo) / (hi - lo) * 255)));
+}
+
 function buildTerrainCache() {
   const w = courseData.terrain.width;
   const h = courseData.terrain.height;
+  const water = waterThreshold(courseData.terrain);
   const oc = document.createElement('canvas');
   oc.width = w;
   oc.height = h;
@@ -340,7 +397,8 @@ function buildTerrainCache() {
   const pixels = imageData.data;
 
   for (let idx = 0; idx < w * h; idx++) {
-    const [r, g, b] = reliefColor(heightmapPixels[idx] / 255);
+    const v = heightmapPixels[idx];
+    const [r, g, b] = v < water ? WATER_RGB : reliefColor(v / 255);
     const p = idx * 4;
     pixels[p] = r;
     pixels[p + 1] = g;
@@ -472,21 +530,21 @@ function createHoleTable(title, holes) {
   let totalPar = 0;
   let totalBlocks = 0;
   holes.forEach(h => {
-    totalPar += h.par;
-    totalBlocks += h.length;
+    totalPar += Number(h.par);
+    totalBlocks += Number(h.length);
     const row = document.createElement('tr');
-    row.className = `par${h.par}`;
+    row.className = `par${Number(h.par)}`;
     row.dataset.holeId = h.id;
     row.innerHTML = `<td><strong>${esc(h.id)}</strong></td><td>${esc(h.par)}</td>`
-      + `<td>${esc(Number(h.length).toFixed(1))}</td><td>${esc(Math.round(h.length * blockM))}</td>`;
+      + `<td>${esc(Number(h.length).toFixed(1))}</td><td>${esc(Math.round(Number(h.length) * blockM))}</td>`;
     row.addEventListener('mouseenter', () => setHighlight(h.id));
     row.addEventListener('mouseleave', () => setHighlight(null));
     tbody.appendChild(row);
   });
   const totalRow = document.createElement('tr');
   totalRow.className = 'total-row';
-  totalRow.innerHTML = `<td></td><td>${totalPar}</td><td>${totalBlocks.toFixed(1)}</td>`
-    + `<td>${Math.round(totalBlocks * blockM)}</td>`;
+  totalRow.innerHTML = `<td></td><td>${esc(totalPar)}</td><td>${esc(totalBlocks.toFixed(1))}</td>`
+    + `<td>${esc(Math.round(totalBlocks * blockM))}</td>`;
   tbody.appendChild(totalRow);
 
   table.appendChild(tbody);

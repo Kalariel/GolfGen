@@ -63,6 +63,8 @@ body {
   border-right: 1px solid rgba(255,255,255,0.08);
   background: rgba(0,0,0,0.2);
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.15) transparent;
   font-size: 11px;
 }
 
@@ -286,6 +288,7 @@ body {
 .legend .swatch.par3 { background: #58a6ff; }
 .legend .swatch.par4 { background: #56d364; }
 .legend .swatch.par5 { background: #f2cc60; }
+.legend .swatch.water { background: #1d4f73; }
 
 .legend .sym {
   display: inline-block;
