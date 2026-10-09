@@ -67,7 +67,7 @@ from golfgen.routing.muirfield import (
 )
 from tools.muirfield.render_readable import render_readable_svg
 from tools.muirfield.shape_metrics import shape_metrics
-from golfgen.routing.sites import WATER_LEVEL, load_terrain
+from golfgen.routing.sites import WATER_LEVEL, DryMask, dry_mask, load_terrain
 
 
 OUTPUT_ROOT = Path(__file__).resolve().parent / "output"
@@ -135,6 +135,21 @@ def _nine_shape_stats(reports: list[dict]) -> dict:
             stats[role][metric] = ({"median": round(_percentile(values, 0.5), 4),
                                     "min": min(values), "max": max(values)} if values else None)
     return stats
+
+
+def wet_doglegs(layout, mask: DryMask) -> list[dict]:
+    """Coudes de dogleg posés sur une cellule mouillée au sens de ``DryMask``
+    (même critère que les sites de tee et de green) : ``[{"hole", "x", "y"}]``
+    dans l'ordre des trous puis des coudes. Instrumentation seule : le
+    routeur ne contrôle pas encore l'eau sous les coudes."""
+    found = []
+    for hole in layout.holes:
+        if not hole.doglegs:
+            continue
+        dry = mask.is_dry([(p.x, p.y) for p in hole.doglegs])
+        found.extend({"hole": hole.order, "x": round(p.x, 2), "y": round(p.y, 2)}
+                     for p, ok in zip(hole.doglegs, dry) if not ok)
+    return found
 
 
 def _size_error(width: int, height: int) -> ValueError | None:
@@ -237,6 +252,7 @@ def _run_format(width: int, height: int, *, seeds: tuple[int, ...] = SEEDS,
             subprocess.run(["rsvg-convert", "-o", str(png_path), str(svg_path)], check=True)
             pngs.append(str(png_path))
         plan = result.plan
+        wet = wet_doglegs(result.layout, dry_mask(heightmap))
         reports.append({
             "seed": seed,
             "status": "succes",
@@ -252,6 +268,9 @@ def _run_format(width: int, height: int, *, seeds: tuple[int, ...] = SEEDS,
             "nine_lengths": lengths,
             "hole_lengths": [round(h.length, 1) for h in result.layout.holes],
             "doglegs": sum(1 for h in result.layout.holes if h.doglegs),
+            # coudes mouillés (critère DryMask des sites), détail trou + coordonnées
+            "wet_doglegs": len(wet),
+            "wet_dogleg_details": wet,
             "shape": shape_metrics(result.layout, front_path=result.front_path,
                                    back_path=result.back_path,
                                    outer_ring=result.outer_ring),
@@ -267,6 +286,7 @@ def _run_format(width: int, height: int, *, seeds: tuple[int, ...] = SEEDS,
             "timings": {k: round(v, 4) for k, v in result.timings.items()},
         })
         print(f"{width}x{height} seed {seed}: {len(result.violations)} violation(s) {kinds} · "
+              f"{len(wet)} coude(s) mouillé(s) · "
               f"{result.relaunches} relance(s) · front {lengths['front']['total']:.0f} / back "
               f"{lengths['back']['total']:.0f} blocs · {elapsed * 1000:.0f} ms")
     if pngs and planche:
@@ -289,6 +309,8 @@ def _run_format(width: int, height: int, *, seeds: tuple[int, ...] = SEEDS,
             "attempts_mean": (round(sum(len(r["attempts"]) for r in reports) / len(reports), 3)
                               if reports else None),
             "skipped_total": sum(len(r["skipped"]) for r in reports),
+            "wet_doglegs_total": sum(r["wet_doglegs"] for r in succeeded),
+            "wet_dogleg_seeds": [r["seed"] for r in succeeded if r["wet_doglegs"]],
             "seconds_median": round(_percentile(times, 0.5), 3),
             "seconds_p90": round(_percentile(times, 0.9), 3),
             "seconds_max": round(max(times), 3) if times else None,
