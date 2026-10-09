@@ -1,9 +1,11 @@
 # Format JSON 3.0 — parcours Muirfield
 
 Référence du JSON produit par `golfgen.exporter.muirfield_to_dict(result,
-heightmap, *, seed, seed_input=None)` et lu par le viewer (R6). Le format 2.0
-(`JSONExporter`, routeur `loop_router`) reste en place jusqu'au R7 ; seul le
-bloc `terrain` est commun aux deux formats.
+heightmap, *, seed, seed_input=None)` et lu par le viewer (`viewer/`, qui
+refuse tout `metadata.version` hors 3.x). Le format 2.0 (`JSONExporter`)
+n'est plus écrit que par `pipeline.py --stage terrain` (relief seul) et
+disparaît au R7 ; le pipeline n'utilise plus `loop_router`. Seul le bloc
+`terrain` est commun aux deux formats.
 
 `muirfield_to_dict` est pure (ni I/O, ni état global, ni aléa) : même entrée,
 même dict. Le dict passe `json.dumps` sans encodeur (aucun type numpy).

@@ -1,16 +1,18 @@
 # GolfGen
 
 Générateur procédural de parcours de golf 18 trous pour Minecraft (1 bloc = 3 m).
-Un pipeline Python produit le terrain et le routage des trous dans un JSON, qu'un
-viewer HTML/JS affiche sur un canvas interactif.
+Un pipeline Python (`pipeline.py`) produit le relief et le routage des 18 trous
+avec le routeur « Muirfield », et les écrit dans un JSON au format 3.0
+(`docs/format-3.0.md`) ; un viewer HTML/JS l'affiche sur un canvas interactif.
 
 ## Structure
 
 ```
-golfgen/ + pipeline.py          pipeline : terrain OpenSimplex, routage loop_router (ruban serpentin)
+golfgen/ + pipeline.py          pipeline : terrain OpenSimplex, routage Muirfield, export JSON 3.0
 golfgen/routing/                routeur « Muirfield » : model, geometry, partial_checks, sites, muirfield
-viewer/                         viewer : ouvrir viewer/index.html (charge output/course.json)
+viewer/                         viewer 3.x (servi en http, charge output/course.json)
 tools/muirfield/                runner de planches, rendu lisible, métriques de forme ; sorties dans output/
+docs/format-3.0.md              contrat du JSON 3.0 (champs, unités, repère)
 docs/muirfield-spike.md         historique du spike Muirfield (chemins historiques)
 docs/calibration-tailles.md     calibration des tailles de terrain (R3, R3b) et pistes ouvertes
 tests/                          tests pytest (pipeline, cœur test_routing_*, outils test_tools_*)
@@ -28,17 +30,59 @@ abandonnés est récupérable via les tags git `archive/*`).
 python -m venv .venv
 .venv/bin/pip install -r requirements.txt
 
-# Pipeline (sortie par défaut : output/course.json)
-.venv/bin/python pipeline.py --stage terrain      # terrain seul
-.venv/bin/python pipeline.py --stage holes        # terrain + 18 trous
-.venv/bin/python pipeline.py --seed 123 --stage holes --output output/v2.json
+# Parcours complet (relief + 18 trous) -> output/course.json, format 3.0
+.venv/bin/python pipeline.py --seed 4
 
 # Tests
 .venv/bin/python -m pytest tests/ -v
 .venv/bin/python -m pytest tests/test_routing_*.py   # cœur Muirfield seul
 ```
 
-Puis ouvrir `viewer/index.html` dans un navigateur.
+La seed 4 sert d'exemple car elle est rapide avec les options par défaut
+(400×300, patron `random`, tiré en `muirfield_inverse`) : ≈ 0,4 s avec le
+relief en cache, ≈ 6 s au premier lancement (calcul du relief). La seed par
+défaut de la config (42) marche aussi mais prend ≈ 19 s de routage.
+
+### Options de `pipeline.py`
+
+- `--seed TEXTE` : seed façon Minecraft Java. Blancs de tête et de queue
+  retirés, puis entier signé 64 bits s'il se lit comme tel (`42`, `-7`),
+  sinon texte haché par `String.hashCode` (`--seed golf`). Vide : seed de la
+  config (42). Même seed, mêmes options : même parcours.
+- `--pattern {muirfield,muirfield_inverse,random}` : patron du parcours
+  (défaut `random`, tirage déterministe par seed).
+- `--orientation {landscape,portrait}` : `landscape` = largeur sur le grand
+  côté (défaut), `portrait` = l'inverse.
+- `--short N` (300 à 350, défaut 300) et `--long N` (400 à 500, défaut 400) :
+  petit et grand côté en blocs. `--width`/`--height` en sont des alias,
+  exclusifs de `--orientation`/`--short`/`--long`.
+- `--output CHEMIN` (défaut `output/course.json`), `--config FICHIER.json`,
+  `--stage {terrain,holes}` (défaut `holes` ; `terrain` écrit le relief seul
+  au format 2.0, que le viewer refuse).
+
+Codes de sortie : `0` succès ; `2` paramètre invalide (rien n'est calculé) ;
+`3` aucun parcours valide pour cette seed, ce patron et cette taille (rien
+n'est écrit, essayer une autre seed).
+
+### Viewer
+
+Le viewer lit le JSON par `fetch` : il doit être servi en http depuis la
+racine du dépôt (ouvrir `viewer/index.html` en `file://` ne charge rien).
+
+```bash
+.venv/bin/python -m http.server 8000      # depuis la racine du dépôt
+# puis ouvrir http://localhost:8000/viewer/
+```
+
+Il charge `output/course.json` au démarrage ; un autre fichier se charge par
+le bouton « Choisir un JSON... » ou par l'URL
+`http://localhost:8000/viewer/?json=../chemin/vers/parcours.json`. Il n'accepte
+que le format 3.x (`metadata.version`) et affiche un message clair pour tout
+autre fichier (2.0 compris). Affichage : relief, couloir de chaque trou (axe
+tee → doglegs → green, largeur totale du fairway) coloré par par, numéro,
+sens de jeu, tee, green, liaisons, clubhouse ; panneau seed, patron, taille,
+sens des nines, stats par nine et tableaux des trous ; survol d'un trou :
+numéro, nine, par, longueur et largeur (blocs et mètres).
 
 ## Routeur Muirfield
 
@@ -71,7 +115,7 @@ Options : `--round` (rc, rc-30, land, land-30, custom), `--pattern`,
 
 ## État et prochaines étapes
 
-- Le routeur Muirfield (`golfgen/routing/`) n'est pas encore branché sur `pipeline.py` ni sur le viewer.
+- `pipeline.py` et le viewer passent par le routeur Muirfield et le format 3.0 ; le pipeline n'utilise plus `loop_router` (retiré au R7, avec le format 2.0).
 - Défaut de forme connu : tracé en « hélice » sur certaines seeds.
 - Planifié : largeur de fairway variable à l'intérieur d'un trou.
 - Étapes du pipeline encore à créer : obstacles, végétation, ponts/ruisseaux.

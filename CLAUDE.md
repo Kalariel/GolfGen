@@ -2,9 +2,10 @@
 
 GolfGen : générateur procédural de parcours de golf 18 trous pour Minecraft
 (1 bloc = 3 m) ; un pipeline Python produit un JSON qu'un viewer HTML/JS affiche.
-État : pipeline `golfgen/` + `pipeline.py` avec le routeur `loop_router` ; routeur
-« Muirfield » : cœur dans `golfgen/routing/`, runner et rendus dans
-`tools/muirfield/` ; pas encore branché au pipeline ni au viewer.
+État : `pipeline.py` (paquet `golfgen/`) route avec le routeur « Muirfield »
+(cœur dans `golfgen/routing/`) et écrit le JSON 3.0 (`docs/format-3.0.md`), que
+lit le viewer 3.x (`viewer/`) ; runner et rendus PNG dans `tools/muirfield/`.
+Le pipeline n'utilise plus `loop_router` (retiré au R7 avec le format 2.0).
 
 ## Commandes
 
@@ -13,7 +14,8 @@ Toujours le venv `.venv` (le python système n'a pas pytest).
 ```bash
 .venv/bin/python -m pytest tests/ -v                 # tous les tests
 .venv/bin/python -m pytest tests/test_routing_*.py   # cœur Muirfield seul
-.venv/bin/python pipeline.py --stage holes --seed 42 --output output/course.json
+.venv/bin/python pipeline.py --seed 4                # -> output/course.json (3.0), ≈ 0,4 s
+.venv/bin/python -m http.server 8000                 # viewer : http://localhost:8000/viewer/
 .venv/bin/python -m tools.muirfield.run_muirfield \
     --round custom --pattern muirfield_inverse --size 300x400 --seeds 1-6
 ```
