@@ -14,8 +14,7 @@ include/
 pyvenv.cfg
 
 # artefacts de generation
-output/.cache/
-output/steps/
+/output/
 
 # rendus par seed du runner Muirfield (reproduits par run_muirfield ; seuls planche.png et report.json sont versionnes)
 tools/muirfield/output/*/seed_*.png
