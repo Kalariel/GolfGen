@@ -780,7 +780,9 @@ class _Search:
         n'est gardé que si un trou-pont du par ``level.bridge_par`` peut
         encore relier un tee à liaison de ce green au tee ancré du dernier
         trou, sur les sites libres et sans heurter ce qui est posé. Toutes les
-        conditions sont nécessaires (pré-filtres), jamais suffisantes."""
+        conditions sont nécessaires (pré-filtres), jamais suffisantes. L'eau
+        sous les coudes du pont y est volontairement ignorée (condition
+        nécessaire, jamais suffisante)."""
         spec = PAR_SPECS[level.bridge_par]
         order = level.order + 1
         radius, gap = self.width_for(order, level.bridge_par) / 2.0, self.partial.rules.fairway_gap

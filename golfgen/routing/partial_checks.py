@@ -91,6 +91,11 @@ class PartialLayout:
     _stack: list[tuple[int, int]] = field(default_factory=list)
     checks: int = 0
 
+    def __post_init__(self) -> None:
+        # même contrôle que ``validate`` : ``is_dry`` borne les indices, un
+        # masque d'une autre taille passerait sinon en silence
+        self.dry.require_size(self.rules.width, self.rules.height)
+
     def nine_holes(self, start_order: int) -> list[ElasticHole]:
         return [p.hole for p in self.holes if start_order <= p.hole.order < start_order + 9]
 

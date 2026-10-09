@@ -11,9 +11,8 @@ from __future__ import annotations
 
 from collections import Counter
 import dataclasses
-import math
-
 import hashlib
+import math
 
 import numpy as np
 import pytest
@@ -188,13 +187,16 @@ def test_hole_lengths_within_realistic_par_specs(results, case):
         assert len(hole.doglegs) <= 1
 
 
-def test_prefilters_only_reject_what_the_checks_reject(results):
+@pytest.mark.parametrize("mask", ("all_dry", "real"))
+def test_prefilters_only_reject_what_the_checks_reject(results, mask):
     """Les pré-filtres vectorisés sont des conditions nécessaires : tout
-    candidat qu'ils écartent est aussi rejeté par ``PartialLayout.check``."""
+    candidat qu'ils écartent est aussi rejeté par ``PartialLayout.check``.
+    Avec le masque réel, des coudes candidats tombent dans l'eau : le
+    pré-filtre « coude sec » est alors exercé lui aussi."""
     layout = results[(350, 400, 3)].layout
+    dry = DryMask.all_dry(350, 400) if mask == "all_dry" else _dry(3, 350, 400)
     partial = PartialLayout(ValidationRules(width=350, height=400),
-                            (layout.clubhouse.x, layout.clubhouse.y),
-                            dry=DryMask.all_dry(350, 400))
+                            (layout.clubhouse.x, layout.clubhouse.y), dry=dry)
     for hole in layout.front.holes:
         partial.push(hole, ())
     for link in layout.front.links:
@@ -221,6 +223,40 @@ def test_prefilters_only_reject_what_the_checks_reject(results):
             rejected += 1
             assert partial.check(hole, ()) is not None
     assert rejected > 50
+
+    # doglegs : un coude sur deux est tiré sur une cellule mouillée (s'il y
+    # en a), pour exercer le pré-filtre « coude sec » de ``_candidates``
+    wet_cells = np.argwhere(~dry.dry)[:, ::-1] + 0.5          # (x, y)
+    wet = wet_rejected = 0
+    for k in range(400):
+        if k % 2 and len(wet_cells):
+            corner = wet_cells[rng.integers(len(wet_cells))]
+        else:
+            corner = rng.uniform(40, 310, size=2)
+        angle = rng.uniform(0, 2 * math.pi)
+        bend = angle + rng.uniform(-0.5, 0.5)
+        tee = corner - 60.0 * np.array([math.cos(angle), math.sin(angle)])
+        green = corner + 60.0 * np.array([math.cos(bend), math.sin(bend)])
+        if not all(5 < p[0] < 345 and 5 < p[1] < 395 for p in (tee, green)):
+            continue
+        hole = ElasticHole(order=12, par=4, tee=ControlPoint(*map(float, tee)),
+                           green=ControlPoint(*map(float, green)), width=11.0,
+                           doglegs=(ControlPoint(*map(float, corner)),))
+        corner_dry = bool(dry.is_dry(corner)[0])
+        wet += not corner_dry
+        clear = (corner_dry
+                 and obstacles.points_clear(np.array([tee, green]), 5.5, 5.0).all()
+                 and obstacles.chords_clear(tee[None], corner[None], 5.5, 5.0)[0]
+                 and obstacles.chords_clear(corner[None], green[None], 5.5, 5.0)[0])
+        if not clear:
+            verdict = partial.check(hole, ())
+            assert verdict is not None, (tee, corner, green)
+            wet_rejected += verdict == "dogleg_water"
+    if mask == "real":
+        # sinon le cas « masque réel » ne prouverait rien de plus que l'autre
+        assert wet > 0 and wet_rejected > 0, (wet, wet_rejected)
+    else:
+        assert wet == 0 and wet_rejected == 0
 
 
 @pytest.mark.parametrize("seed", (1, 4))
@@ -255,6 +291,17 @@ def test_sites_match_the_golden_fingerprint_bit_for_bit(kind):
         sites = build_sites(heightmap, 1, kind, mask=mask)
         digest = hashlib.sha256(np.ascontiguousarray(sites.points, dtype="<f8").tobytes()).hexdigest()
         assert (len(sites), digest) == SITES_FINGERPRINT[kind]
+
+
+def test_partial_layout_rejects_a_mask_of_another_size():
+    """Comme ``validate`` : ``is_dry`` borne les indices, un masque d'une autre
+    taille passerait sinon en silence côté DFS."""
+    rules = ValidationRules(width=350, height=400)
+    with pytest.raises(ValueError, match="masque sec"):
+        PartialLayout(rules, (175.0, 395.0), dry=DryMask.all_dry(400, 400))
+    with pytest.raises(ValueError, match="masque sec"):
+        PartialLayout(rules, (175.0, 395.0), dry=DryMask.all_dry(400, 350))
+    PartialLayout(rules, (175.0, 395.0), dry=DryMask.all_dry(350, 400))
 
 
 def test_build_sites_rejects_a_mask_of_another_size():

@@ -94,6 +94,15 @@ class DryMask:
     def height(self) -> int:
         return int(self.dry.shape[0])
 
+    def require_size(self, width: float, height: float) -> None:
+        """Lève ``ValueError`` si le masque n'a pas la taille de la carte
+        ``width × height`` (``is_dry`` borne les indices : un masque d'une
+        autre taille passerait sinon en silence)."""
+        expected = (int(height), int(width))
+        if tuple(self.dry.shape) != expected:
+            raise ValueError(f"masque sec {tuple(self.dry.shape)}, carte attendue "
+                             f"{expected[0]}×{expected[1]}")
+
     def is_dry(self, points: npt.ArrayLike) -> np.ndarray:
         """``(n,)`` bool : chaque point ``(x, y)`` tombe-t-il sur une cellule
         sèche ? Même indexation (tronquée, bornée) que les sites."""

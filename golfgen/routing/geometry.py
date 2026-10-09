@@ -375,10 +375,7 @@ def validate(layout: CourseLayout, rules: ValidationRules | None = None, *,
     contrôle) est le masque sec du relief de la carte ; un coude de dogleg
     posé sur une cellule mouillée viole ``dogleg_water``. Les segments
     droits peuvent franchir l'eau."""
-    expected = (int(layout.height), int(layout.width))
-    if tuple(dry.dry.shape) != expected:
-        raise ValueError(f"masque sec {tuple(dry.dry.shape)}, carte attendue "
-                         f"{expected[0]}×{expected[1]}")
+    dry.require_size(layout.width, layout.height)
     rules = rules or ValidationRules(width=layout.width, height=layout.height)
     geometries = {hole.order: build_hole_geometry(hole) for hole in layout.holes}
     violations: list[Violation] = []
