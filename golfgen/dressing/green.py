@@ -23,7 +23,7 @@ import math
 import numpy as np
 
 from golfgen.routing.model import PAR_SPECS, ElasticHole
-from golfgen.dressing.model import GreenShape, StyleSpec
+from golfgen.dressing.model import DressingError, GreenShape, StyleSpec
 
 
 GREEN_VERTICES = 32
@@ -118,9 +118,9 @@ def target_area(hole: ElasticHole, u: float, spec: StyleSpec) -> float:
 def green_shape(hole: ElasticHole, core, rng: np.random.Generator,
                 spec: StyleSpec) -> GreenShape:
     """Green du trou, inclus dans ``core`` (polygone du cœur) et contenant le
-    drapeau (``hole.green``). Lève ``RuntimeError`` si l'invariant ne peut
-    être tenu (impossible si le drapeau est intérieur au cœur), et
-    ``ValueError`` si le segment final de l'axe est de longueur nulle
+    drapeau (``hole.green``). Lève ``DressingError`` si l'invariant ne peut
+    être tenu (impossible si le drapeau est intérieur au cœur), ou si le
+    segment final de l'axe est de longueur nulle
     (``ElasticHole`` refuse deux points égaux, pas deux points si proches
     que la norme s'annule en flottant)."""
     axis = hole.axis
@@ -129,8 +129,8 @@ def green_shape(hole: ElasticHole, core, rng: np.random.Generator,
     tangent = flag - before
     norm = np.linalg.norm(tangent)
     if not norm > 0.0 or not math.isfinite(norm):
-        raise ValueError(f"trou {hole.order} : segment final nul, direction d'approche "
-                         "indéfinie")
+        raise DressingError(f"trou {hole.order} : segment final nul, direction d'approche "
+                            "indéfinie")
     tangent /= norm
     normal = np.array((-tangent[1], tangent[0]))
 
@@ -149,10 +149,10 @@ def green_shape(hole: ElasticHole, core, rng: np.random.Generator,
             break
         steps += 1
         if steps > SHRINK_MAX_STEPS:
-            raise RuntimeError(f"trou {hole.order} : green impossible à inclure dans le cœur")
+            raise DressingError(f"trou {hole.order} : green impossible à inclure dans le cœur")
         scale *= SHRINK_FACTOR
     if not points_in_polygon(flag_point, outline)[0]:
-        raise RuntimeError(f"trou {hole.order} : le green ne contient pas le drapeau")
+        raise DressingError(f"trou {hole.order} : le green ne contient pas le drapeau")
 
     shown_center = np.round(flag + scale * (center - flag), 2)
     return GreenShape(

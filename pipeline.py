@@ -67,11 +67,11 @@ def run_pipeline(config: CourseConfig, output: Path, *,
           f"{result.relaunches} relance(s)  ({time.time() - t0:.1f}s)")
 
     # --- Habillage (après le tracé, flux aléatoire séparé) ---
-    from golfgen.dressing import dress_course
+    from golfgen.dressing import DressingError, dress_course
     t0 = time.perf_counter()
     try:
         dressing = dress_course(result, seed=numpy_seed, style=style)
-    except (RuntimeError, ValueError) as exc:
+    except DressingError as exc:
         print(f"Habillage impossible pour la seed {seed} (style {style}) : {exc}. "
               "Aucun fichier écrit ; essayez une autre seed.", file=sys.stderr)
         return EXIT_ROUTING_FAILED

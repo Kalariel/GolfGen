@@ -14,6 +14,7 @@ import pipeline
 from golfgen import exporter as exporter_module
 from golfgen import terrain as terrain_module
 from golfgen.config import COURSE_PATTERNS, STYLES, CourseConfig
+from golfgen.dressing import DressingError
 from golfgen.exporter import write_json_atomic
 from golfgen.routing import muirfield as mf
 from golfgen.routing.sites import load_terrain
@@ -326,8 +327,8 @@ def test_routing_failure_keeps_existing_output(tmp_path, no_default_config, cach
             "essayez une autre seed.") in err
 
 
-@pytest.mark.parametrize("error", [RuntimeError("trou 7 : green impossible à inclure dans le cœur"),
-                                   ValueError("trou 7 : segment final nul")])
+@pytest.mark.parametrize("error", [DressingError("trou 7 : green impossible à inclure dans le cœur"),
+                                   DressingError("trou 7 : segment final nul")])
 def test_dressing_failure_exits_cleanly(error, tmp_path, no_default_config, cached_relief,
                                         monkeypatch, capsys):
     import golfgen.dressing as dressing_module
@@ -346,6 +347,25 @@ def test_dressing_failure_exits_cleanly(error, tmp_path, no_default_config, cach
     err = capsys.readouterr().err
     assert f"Habillage impossible pour la seed {SEED} (style links) : {error}." in err
     assert "Traceback" not in err
+
+
+@pytest.mark.parametrize("error", [ValueError("bogue interne"), RuntimeError("bogue interne")])
+def test_dressing_bug_is_not_swallowed(error, tmp_path, no_default_config, cached_relief,
+                                       monkeypatch):
+    # Seule DressingError est un échec attendu : un autre type (bogue numpy,
+    # shapely…) remonte au lieu d'être déguisé en « essayez une autre seed »
+    import golfgen.dressing as dressing_module
+
+    def buggy_dress(*args, **kwargs):
+        raise error
+
+    monkeypatch.setattr(dressing_module, "dress_course", buggy_dress)
+    output = tmp_path / "course.json"
+    previous = b'{"ancien": "parcours"}\n'
+    output.write_bytes(previous)
+    with pytest.raises(type(error), match="bogue interne"):
+        pipeline.main(["--seed", str(SEED), "--output", str(output)])
+    assert output.read_bytes() == previous
 
 
 def test_failed_write_keeps_existing_output(tmp_path, no_default_config, cached_relief,

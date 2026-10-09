@@ -15,6 +15,12 @@ from types import MappingProxyType
 Point = tuple[float, float]
 
 
+class DressingError(Exception):
+    """Échec ATTENDU de l'habillage (segment final nul, green impossible à
+    inclure dans le cœur…) : l'appelant peut proposer une autre seed. Toute
+    autre exception levée pendant l'habillage est un bogue et doit remonter."""
+
+
 @dataclass(frozen=True, slots=True)
 class StyleSpec:
     """Paramètres d'un style d'habillage.

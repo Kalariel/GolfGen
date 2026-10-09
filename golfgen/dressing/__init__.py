@@ -5,8 +5,8 @@ parcours et ne le modifie pas.
 """
 
 from golfgen.dressing.course import RNG_LABEL, dress_course
-from golfgen.dressing.model import (STYLE_SPECS, CourseDressing, GreenShape,
-                                    HoleDressing, StyleSpec)
+from golfgen.dressing.model import (STYLE_SPECS, CourseDressing, DressingError,
+                                    GreenShape, HoleDressing, StyleSpec)
 
-__all__ = ["RNG_LABEL", "STYLE_SPECS", "CourseDressing", "GreenShape", "HoleDressing",
-           "StyleSpec", "dress_course"]
+__all__ = ["RNG_LABEL", "STYLE_SPECS", "CourseDressing", "DressingError", "GreenShape",
+           "HoleDressing", "StyleSpec", "dress_course"]

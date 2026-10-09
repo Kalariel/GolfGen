@@ -13,7 +13,8 @@ import numpy as np
 import pytest
 
 from golfgen import config as config_module
-from golfgen.dressing import RNG_LABEL, STYLE_SPECS, CourseDressing, dress_course
+from golfgen.dressing import (RNG_LABEL, STYLE_SPECS, CourseDressing, DressingError,
+                              dress_course)
 from golfgen.dressing.green import (GREEN_VERTICES, green_shape, points_in_polygon,
                                     polygon_inside, shoelace)
 from golfgen.exporter import muirfield_to_dict
@@ -176,7 +177,16 @@ def test_null_final_segment_raises():
     hole = ElasticHole(order=1, par=3, tee=ControlPoint(0.0, 0.0),
                        green=ControlPoint(1e-200, 0.0))
     core = np.array([(-10.0, -10.0), (10.0, -10.0), (10.0, 10.0), (-10.0, 10.0)])
-    with pytest.raises(ValueError, match="segment final nul"):
+    with pytest.raises(DressingError, match="segment final nul"):
+        green_shape(hole, core, np.random.default_rng(0), STYLE_SPECS["links"])
+
+
+def test_shrink_without_convergence_raises_dressing_error():
+    # Drapeau HORS du cœur : l'homothétie centrée sur lui ne converge jamais
+    hole = ElasticHole(order=2, par=3, tee=ControlPoint(0.0, 0.0),
+                       green=ControlPoint(120.0, 0.0))
+    core = np.array([(-10.0, -10.0), (10.0, -10.0), (10.0, 10.0), (-10.0, 10.0)])
+    with pytest.raises(DressingError, match="green impossible"):
         green_shape(hole, core, np.random.default_rng(0), STYLE_SPECS["links"])
 
 
