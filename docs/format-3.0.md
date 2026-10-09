@@ -154,11 +154,14 @@ sa normalisation éventuelle (u64) relève du pipeline (R5), pas du format.
 `seed_input` garde en plus le texte brut quand l'entrée n'était pas un entier.
 
 Le pipeline (`pipeline.py`, `golfgen/seed.py`) le garantit : la saisie
-(`--seed` ou `seed` du JSON de config) est lue comme Minecraft Java,
-`Long.parseLong` si elle réussit, sinon `String.hashCode()` (entier signé
-32 bits sur les unités UTF-16), ce qui donne toujours un entier de
-[−2^63, 2^63 − 1] ; `seed_input` est alors le texte haché, et `null` dès que
-`Long.parseLong` a réussi (même pour `"-007"` ou `"+5"`). Le routage reçoit
+(`--seed` ou `seed` du JSON de config) est lue comme Minecraft Java : blancs
+de tête et de queue retirés (`String.trim()`, `" 42 "` vaut 42 ; vide après
+trim → seed par défaut), puis `Long.parseLong` si elle réussit (chiffres du
+plan de base Unicode seulement), sinon `String.hashCode()` du texte trimé
+(entier signé 32 bits sur les unités UTF-16), ce qui donne toujours un entier
+de [−2^63, 2^63 − 1] ; `seed_input` est alors le texte tel que saisi (non
+trimé), et `null` dès que `Long.parseLong` a réussi (même pour `"-007"` ou
+`"+5"`). Le routage reçoit
 `seed & 0xFFFF_FFFF_FFFF_FFFF` (égal à `seed` si `seed ≥ 0`).
 
 ## Extension

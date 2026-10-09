@@ -9,12 +9,13 @@ from pathlib import Path
 
 from golfgen.config import COURSE_PATTERNS, ORIENTATIONS, CourseConfig
 from golfgen.exporter import JSONExporter, muirfield_to_dict, write_json_atomic
-from golfgen.seed import parse_seed, seed_u64
+from golfgen.seed import java_trim, parse_seed, seed_u64
 from golfgen.terrain import load_or_compute
 
 
 STAGES = ["terrain", "holes"]
-EXIT_ROUTING_FAILED = 2         # aucun parcours valide pour (seed, patron, taille)
+EXIT_BAD_PARAMETER = 2          # paramètre invalide (code d'argparse)
+EXIT_ROUTING_FAILED = 3         # aucun parcours valide pour (seed, patron, taille)
 
 
 def run_pipeline(config: CourseConfig, stage: str, output: Path, *,
@@ -22,9 +23,10 @@ def run_pipeline(config: CourseConfig, stage: str, output: Path, *,
     """Exécute le pipeline jusqu'à l'étape indiquée ; renvoie le code de sortie.
 
     ``config`` doit être résolue et validée (cf. ``resolve_config``) :
-    ``config.seed`` est l'entier signé 64 bits. ``holes`` route avec le
-    routeur Muirfield et écrit le format 3.0 de façon atomique ; en cas
-    d'échec du routage, rien n'est écrit et le code vaut 2."""
+    ``config.seed`` est l'entier signé 64 bits. ``terrain`` écrit le format
+    2.0 et ``holes`` le format 3.0 (routeur Muirfield), tous deux de façon
+    atomique ; en cas d'échec du routage, rien n'est écrit et le code vaut
+    ``EXIT_ROUTING_FAILED`` (3)."""
     stage_idx = STAGES.index(stage)
     seed = config.seed
     pattern = config.course.pattern
@@ -45,7 +47,7 @@ def run_pipeline(config: CourseConfig, stage: str, output: Path, *,
     if stage_idx < 1:
         exporter = JSONExporter(config)
         exporter.add_terrain(heightmap)
-        exporter.export(output)
+        exporter.export(output)         # écriture atomique (write_json_atomic)
         return 0
 
     # --- Holes (routeur Muirfield, format 3.0) ---
@@ -82,11 +84,15 @@ def run_pipeline(config: CourseConfig, stage: str, output: Path, *,
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Generateur procedural de parcours de golf Minecraft"
+        description="Generateur procedural de parcours de golf Minecraft",
+        epilog=f"Codes de sortie : 0 succes, {EXIT_BAD_PARAMETER} parametre invalide, "
+               f"{EXIT_ROUTING_FAILED} aucun parcours valide pour la seed (essayer "
+               "une autre seed)."
     )
     parser.add_argument("--seed", type=str, default=None,
-                        help="Seed facon Minecraft Java : entier signe 64 bits, sinon "
-                             "texte hache par String.hashCode (defaut : config, 42)")
+                        help="Seed facon Minecraft Java : blancs de tete et de queue "
+                             "retires, puis entier signe 64 bits, sinon texte hache par "
+                             "String.hashCode ; vide : defaut (config, 42)")
     parser.add_argument("--stage", choices=STAGES, default="holes",
                         help="Etape finale du pipeline (defaut: holes)")
     parser.add_argument("--config", type=str, default=None,
@@ -114,7 +120,9 @@ def resolve_config(args: argparse.Namespace) -> tuple[CourseConfig, str | None]:
 
     Lève ``ValueError`` (message en français) pour tout paramètre invalide,
     AVANT tout calcul de relief. Renvoie la config avec ``seed`` résolue en
-    entier signé, et ``seed_input`` (texte haché, sinon None)."""
+    entier signé, et ``seed_input`` (texte haché, sinon None). ``--seed``
+    vide ou blanc garde la seed de la config, déjà normalisée par
+    ``CourseConfig.from_json``."""
     if args.config:
         config = CourseConfig.from_json(args.config)
     else:
@@ -148,12 +156,9 @@ def resolve_config(args: argparse.Namespace) -> tuple[CourseConfig, str | None]:
         config.height = args.height
     config.validate()
 
-    raw = args.seed if args.seed not in (None, "") else config.seed
-    try:
-        config.seed, seed_input = parse_seed(raw)
-    except TypeError as exc:
-        raise ValueError(str(exc)) from None
-    return config, seed_input
+    if args.seed is not None and java_trim(args.seed) != "":
+        config.seed, config.seed_input = parse_seed(args.seed)
+    return config, config.seed_input
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -162,7 +167,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         config, seed_input = resolve_config(args)
     except ValueError as exc:
-        # Même code (2) et même forme qu'une erreur d'argparse.
+        # Même code (EXIT_BAD_PARAMETER = 2) et même forme qu'une erreur d'argparse.
         parser.error(str(exc))
 
     output = Path(args.output)

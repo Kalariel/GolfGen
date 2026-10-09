@@ -7,6 +7,8 @@ from dataclasses import dataclass, field, asdict
 from pathlib import Path
 from typing import Optional
 
+from golfgen.seed import parse_seed
+
 
 # Patrons du routeur Muirfield (égal à ``golfgen.routing.muirfield.PATTERN_CHOICES``,
 # recopié ici car ``routing`` dépend de ``config`` et jamais l'inverse ; vérifié
@@ -110,11 +112,14 @@ class CourseConfig:
     pipeline les dérivent de ``course``, sauf si elles sont données
     explicitement (alias, exclusifs de l'orientation et des côtés).
 
-    ``seed`` : entier ou texte tel que lu (JSON) ; le pipeline le résout en
-    entier signé 64 bits avec ``golfgen.seed.parse_seed``."""
+    ``seed`` : toujours l'entier signé 64 bits normalisé
+    (``golfgen.seed.parse_seed``) ; ``from_json`` résout la saisie du JSON dès
+    le chargement, donc aucun texte n'atteint le relief. ``seed_input`` : le
+    texte d'origine quand la seed est passée par ``hashCode``, sinon None."""
     width: int = 400
     height: int = 300
-    seed: int | str = 42
+    seed: int = 42
+    seed_input: Optional[str] = None
     num_holes: int = 18
     total_par: int = 72
     scale_ratio: float = 3.0
@@ -133,14 +138,16 @@ class CourseConfig:
         Dimensions : ``width``/``height`` (alias) OU les clés ``orientation``,
         ``short_side``, ``long_side`` de la section ``course``, jamais les deux
         (``ValueError``). Sans alias, ``width``/``height`` sont dérivées de
-        ``course``. Les bornes ne sont pas vérifiées ici (cf. ``validate``)."""
+        ``course``. Les bornes ne sont pas vérifiées ici (cf. ``validate``).
+
+        ``seed`` est normalisée ici par ``parse_seed`` (``seed_input`` en
+        découle) ; une seed ni entière ni texte lève ``ValueError``."""
         with open(path, 'r') as f:
             data = json.load(f)
 
         config = cls()
 
-        for key in ('width', 'height', 'seed', 'num_holes', 'total_par',
-                     'scale_ratio'):
+        for key in ('width', 'height', 'num_holes', 'total_par', 'scale_ratio'):
             if key in data:
                 setattr(config, key, data[key])
 
@@ -154,6 +161,11 @@ class CourseConfig:
                 for k, v in data[section].items():
                     if hasattr(obj, k):
                         setattr(obj, k, v)
+
+        try:
+            config.seed, config.seed_input = parse_seed(data.get('seed'))
+        except TypeError as exc:
+            raise ValueError(f"{path} : {exc}") from None
 
         aliases = [key for key in ('width', 'height') if key in data]
         shape = [key for key in ('orientation', 'short_side', 'long_side')

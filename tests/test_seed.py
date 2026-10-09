@@ -9,8 +9,8 @@ from __future__ import annotations
 
 import pytest
 
-from golfgen.seed import (DEFAULT_SEED, java_string_hash, parse_java_long, parse_seed,
-                          seed_u64)
+from golfgen.seed import (DEFAULT_SEED, java_string_hash, java_trim, parse_java_long,
+                          parse_seed, seed_u64)
 
 INT64_MIN, INT64_MAX = -2**63, 2**63 - 1
 
@@ -23,7 +23,7 @@ JAVA_HASHES = {
     "é": 233,                               # U+00E9 : une unité UTF-16
     "\U0001F3CC": 1773328,                  # 🏌 : deux unités (paire de substitution)
     "golfé\U0001F3CC": 206210583,
-    " 42": 32414,                           # pas de trim (Long.parseLong refuse)
+    " 42": 32414,                           # hash brut (parse_seed trime avant)
     "-": 45,
     "+": 43,
 }
@@ -59,7 +59,7 @@ def test_java_string_hash(text):
 
 
 @pytest.mark.parametrize("text", ["golf", "Golf", "é", "\U0001F3CC", "golfé\U0001F3CC",
-                                  " 42", "-", "+", "4 2", "1e3", "0x10", "1_000"])
+                                  "-", "+", "4 2", "1e3", "0x10", "1_000"])
 def test_text_goes_through_hashcode(text):
     assert parse_seed(text) == (java_string_hash(text), text)
 
@@ -70,7 +70,41 @@ def test_hash_is_signed_32_bits():
         assert -2**31 <= value < 2**31
 
 
-@pytest.mark.parametrize("raw", [None, ""])
+@pytest.mark.parametrize("text, value", [(" 42 ", 42), ("\t-7\n", -7), ("  +5", 5),
+                                         ("\x0042\x1f", 42)])
+def test_trimmed_like_minecraft(text, value):
+    # String.trim() puis Long.parseLong : seed_input None, comme sans blancs
+    assert parse_seed(text) == (value, None)
+
+
+def test_trimmed_text_hashes_trimmed_but_keeps_input():
+    assert parse_seed("  golf ") == (JAVA_HASHES["golf"], "  golf ")
+
+
+@pytest.mark.parametrize("text", ["\u00a042", "42\u3000", "\u200942"])
+def test_trim_only_ascii_blanks(text):
+    # String.trim() ne retire que les caractères ≤ U+0020
+    assert java_trim(text) == text
+    assert parse_seed(text) == (java_string_hash(text), text)
+
+
+def test_java_trim():
+    assert java_trim(" \t\n\r\x00a b\x1f ") == "a b"
+    assert java_trim("   ") == ""
+    assert java_trim("x") == "x"
+
+
+@pytest.mark.parametrize("text", ["\U0001D7CF", "4\U0001D7D0", "-\U0001D7CF",
+                                  "\U0001D7D9\U0001D7CF"])
+def test_supplementary_digits_go_through_hashcode(text):
+    # "𝟏" (U+1D7CF) est Nd pour Python mais deux unités UTF-16 pour Java :
+    # Long.parseLong refuse, Minecraft prend hashCode
+    assert int(text) is not None                        # Python l'accepterait
+    assert parse_java_long(text) is None
+    assert parse_seed(text) == (java_string_hash(text), text)
+
+
+@pytest.mark.parametrize("raw", [None, "", "   ", "\t\n"])
 def test_empty_falls_back_to_default(raw):
     assert parse_seed(raw) == (DEFAULT_SEED, None) == (42, None)
     assert parse_seed(raw, default=-5) == (-5, None)

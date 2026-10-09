@@ -169,14 +169,21 @@ def muirfield_to_dict(result: MuirfieldResult, heightmap: np.ndarray, *, seed: i
 
 def write_json_atomic(path: str | Path, data: dict[str, Any]) -> None:
     """Écrit ``data`` en JSON (indenté, UTF-8) de façon atomique : fichier
-    temporaire du même dossier puis ``os.replace``. En cas d'échec, un fichier
-    existant à ``path`` reste intact et aucun temporaire ne subsiste."""
+    temporaire du même dossier, ``flush`` + ``os.fsync``, puis ``os.replace``.
+    En cas d'échec, un fichier existant à ``path`` reste intact et aucun
+    temporaire ne subsiste.
+
+    Si ``path`` est un lien symbolique, le lien lui-même est remplacé par un
+    fichier ordinaire (sa cible n'est pas modifiée). Le fichier est créé à
+    neuf : ses permissions viennent de l'umask, pas d'un fichier existant."""
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(f".{path.name}.{os.getpid()}.{uuid.uuid4().hex}.tmp")
     try:
         with open(tmp, "x", encoding="utf-8") as handle:
             json.dump(data, handle, indent=2, ensure_ascii=False)
+            handle.flush()
+            os.fsync(handle.fileno())
         os.replace(tmp, path)
     except BaseException:
         tmp.unlink(missing_ok=True)
@@ -249,9 +256,7 @@ class JSONExporter:
             }
 
     def export(self, path: str | Path) -> None:
-        """Écrit le JSON sur disque."""
+        """Écrit le JSON sur disque, de façon atomique (``write_json_atomic``)."""
         path = Path(path)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        with open(path, 'w', encoding='utf-8') as f:
-            json.dump(self.data, f, indent=2, ensure_ascii=False)
+        write_json_atomic(path, self.data)
         print(f"Export: {path} ({path.stat().st_size / 1024:.1f} Ko)")

@@ -4,14 +4,17 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from pathlib import Path
 
 import numpy as np
 import pytest
 
 import pipeline
+from golfgen import exporter as exporter_module
 from golfgen import terrain as terrain_module
 from golfgen.config import COURSE_PATTERNS, CourseConfig
+from golfgen.exporter import write_json_atomic
 from golfgen.routing import muirfield as mf
 from golfgen.routing.sites import load_terrain
 from golfgen.seed import seed_u64
@@ -110,7 +113,7 @@ def test_out_of_bounds_rejected_before_terrain(argv, no_default_config, terrain_
     output = tmp_path / "course.json"
     with pytest.raises(SystemExit) as exc:
         pipeline.main([*argv, "--output", str(output)])
-    assert exc.value.code == 2
+    assert exc.value.code == pipeline.EXIT_BAD_PARAMETER == 2
     assert terrain_forbidden == []
     assert not output.exists()
     assert "hors bornes" in capsys.readouterr().err
@@ -124,7 +127,7 @@ def test_out_of_bounds_rejected_before_terrain(argv, no_default_config, terrain_
 def test_aliases_exclusive_with_shape(argv, no_default_config, terrain_forbidden, capsys):
     with pytest.raises(SystemExit) as exc:
         pipeline.main(argv)
-    assert exc.value.code == 2
+    assert exc.value.code == pipeline.EXIT_BAD_PARAMETER
     assert terrain_forbidden == []
     assert "exclusifs" in capsys.readouterr().err
 
@@ -137,6 +140,7 @@ def test_course_section_read_from_json(tmp_path, no_default_config):
     config = CourseConfig.from_json(path)
     assert (config.width, config.height) == (310, 420)
     assert config.course.pattern == "muirfield"
+    assert (config.seed, config.seed_input) == (3178594, "golf")
 
     config, seed_input = resolve(["--config", str(path)])
     assert (config.width, config.height) == (310, 420)
@@ -144,8 +148,50 @@ def test_course_section_read_from_json(tmp_path, no_default_config):
     config, seed_input = resolve(["--config", str(path), "--seed", "-3", "--long", "480"])
     assert (config.width, config.height) == (310, 480)
     assert (config.seed, seed_input) == (-3, None)
-    config, seed_input = resolve(["--config", str(path), "--seed", ""])
-    assert (config.seed, seed_input) == (3178594, "golf")
+    for blank in ("", "   ", "\t"):
+        config, seed_input = resolve(["--config", str(path), "--seed", blank])
+        assert (config.seed, seed_input) == (3178594, "golf")
+    config, seed_input = resolve(["--config", str(path), "--seed", " 42 "])
+    assert (config.seed, seed_input) == (42, None)
+    config, seed_input = resolve(["--config", str(path), "--seed", " golf "])
+    assert (config.seed, seed_input) == (3178594, " golf ")
+
+
+@pytest.mark.parametrize("raw, seed, seed_input", [
+    ("golf", 3178594, "golf"), (" 42 ", 42, None), ("-007", -7, None), (7, 7, None),
+    ("", 42, None), ("  ", 42, None), (None, 42, None), (2**63, -1773151197, str(2**63)),
+    ("\U0001D7CF", 1773114, "\U0001D7CF"),        # hashCode : 0xD835·31 + 0xDFCF
+])
+def test_from_json_normalizes_seed(raw, seed, seed_input, tmp_path, no_default_config):
+    # toute config chargée a une seed entière normalisée : aucun texte vers le relief
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps({} if raw is None else {"seed": raw}), encoding="utf-8")
+    config = CourseConfig.from_json(path)
+    assert type(config.seed) is int
+    assert (config.seed, config.seed_input) == (seed, seed_input)
+    assert terrain_cache_path(config).name.startswith(f"terrain_s{seed}_")
+
+
+@pytest.mark.parametrize("raw", [4.5, True, [4], {"a": 1}])
+def test_bad_json_seed_rejected_before_terrain(raw, tmp_path, no_default_config,
+                                              terrain_forbidden, capsys):
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps({"seed": raw}), encoding="utf-8")
+    with pytest.raises(ValueError, match="seed"):
+        CourseConfig.from_json(path)
+    with pytest.raises(SystemExit) as exc:
+        pipeline.main(["--config", str(path)])
+    assert exc.value.code == pipeline.EXIT_BAD_PARAMETER
+    assert terrain_forbidden == []
+    assert "seed" in capsys.readouterr().err
+
+
+def test_help_lists_exit_codes(capsys):
+    with pytest.raises(SystemExit) as exc:
+        pipeline.main(["--help"])
+    assert exc.value.code == 0
+    out = " ".join(capsys.readouterr().out.split())
+    assert "Codes de sortie : 0 succes, 2 parametre invalide, 3 aucun parcours valide" in out
 
 
 def test_json_aliases_exclusive_with_course_sides(tmp_path):
@@ -167,7 +213,7 @@ def test_invalid_json_course_rejected_before_terrain(course, message, tmp_path,
     path.write_text(json.dumps({"course": course}), encoding="utf-8")
     with pytest.raises(SystemExit) as exc:
         pipeline.main(["--config", str(path)])
-    assert exc.value.code == 2
+    assert exc.value.code == pipeline.EXIT_BAD_PARAMETER
     assert terrain_forbidden == []
     assert message in capsys.readouterr().err
 
@@ -226,7 +272,7 @@ def test_routing_failure_keeps_existing_output(tmp_path, no_default_config, cach
     output.write_bytes(previous)
     code = pipeline.main(["--seed", "-42", "--pattern", "muirfield_inverse",
                           "--output", str(output)])
-    assert code == 2
+    assert code == pipeline.EXIT_ROUTING_FAILED == 3
     assert output.read_bytes() == previous
     assert sorted(p.name for p in tmp_path.iterdir()) == ["course.json"]
     err = capsys.readouterr().err
@@ -247,6 +293,46 @@ def test_failed_write_keeps_existing_output(tmp_path, no_default_config, cached_
         pipeline.main(["--seed", str(SEED), "--output", str(output)])
     assert output.read_bytes() == b"ancien"
     assert sorted(p.name for p in tmp_path.iterdir()) == ["course.json"]
+
+
+def test_terrain_stage_failed_write_keeps_existing_output(cache_dir, tmp_path, monkeypatch):
+    output = tmp_path / "terrain.json"
+    output.write_bytes(b"ancien")
+    config = CourseConfig(seed=-42, width=40, height=30)
+    terrain_module.load_or_compute(config)              # relief en cache avant la panne
+
+    def broken_dump(*args, **kwargs):
+        raise OSError("disque plein")
+
+    monkeypatch.setattr(json, "dump", broken_dump)
+    with pytest.raises(OSError):
+        pipeline.run_pipeline(config, "terrain", output)
+    assert output.read_bytes() == b"ancien"
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["cache", "terrain.json"]
+
+
+def test_write_json_atomic_fsyncs_before_replace(tmp_path, monkeypatch):
+    events = []
+    real_fsync, real_replace = os.fsync, os.replace
+    monkeypatch.setattr(exporter_module.os, "fsync",
+                        lambda fd: (events.append("fsync"), real_fsync(fd))[1])
+    monkeypatch.setattr(exporter_module.os, "replace",
+                        lambda a, b: (events.append("replace"), real_replace(a, b))[1])
+    path = tmp_path / "course.json"
+    write_json_atomic(path, {"a": 1})
+    assert events == ["fsync", "replace"]
+    assert json.loads(path.read_text(encoding="utf-8")) == {"a": 1}
+
+
+def test_write_json_atomic_replaces_symlink(tmp_path):
+    target = tmp_path / "target.json"
+    target.write_bytes(b"cible")
+    link = tmp_path / "course.json"
+    link.symlink_to(target)
+    write_json_atomic(link, {"a": 1})
+    assert not link.is_symlink()
+    assert json.loads(link.read_text(encoding="utf-8")) == {"a": 1}
+    assert target.read_bytes() == b"cible"
 
 
 # ----------------------------------------------------------------------
