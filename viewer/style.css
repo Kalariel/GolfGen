@@ -205,9 +205,9 @@ body {
   color: rgba(255,255,255,0.7);
 }
 
-.hole-table tr.par3 td:first-child { color: #5bc8ef; }
-.hole-table tr.par5 td:first-child { color: #f5a623; }
-.hole-table tr.par4 td:first-child { color: #8dd68a; }
+.hole-table tr.par3 td:first-child { color: #58a6ff; }
+.hole-table tr.par4 td:first-child { color: #56d364; }
+.hole-table tr.par5 td:first-child { color: #f2cc60; }
 
 .hole-table tr:hover { background: rgba(255,255,255,0.04); }
 .hole-table tr.active { background: rgba(78,207,95,0.12); }
@@ -233,6 +233,107 @@ body {
 }
 
 .info-box strong { color: var(--accent); }
+
+.info-box.error-box {
+  border: 1px solid rgba(229,83,75,0.5);
+  color: rgba(255,255,255,0.7);
+}
+
+.info-box.error-box strong { color: #e5534b; }
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.info-row strong {
+  font-weight: 500;
+  text-align: right;
+}
+
+.info-sub {
+  margin-top: 6px;
+  color: rgba(255,255,255,0.8);
+  font-weight: 600;
+}
+
+.info-sub:first-child { margin-top: 0; }
+
+/* Legend */
+.legend {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 8px;
+  margin-bottom: 8px;
+  color: rgba(255,255,255,0.7);
+  font-size: 10px;
+}
+
+.legend div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend .swatch {
+  display: inline-block;
+  width: 18px;
+  height: 8px;
+  border-radius: 1px;
+}
+
+.legend .swatch.par3 { background: #58a6ff; }
+.legend .swatch.par4 { background: #56d364; }
+.legend .swatch.par5 { background: #f2cc60; }
+
+.legend .sym {
+  display: inline-block;
+  width: 18px;
+  text-align: center;
+}
+
+.legend .sym.tee::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: #f0f6fc;
+  border: 1px solid #0d1117;
+}
+
+.legend .sym.green::before {
+  content: '';
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #3dbd4e;
+  border: 1.5px solid #f0f6fc;
+}
+
+.legend .sym.club::before {
+  content: '';
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  background: #e5534b;
+  border: 1.5px solid #f0f6fc;
+  transform: rotate(45deg);
+}
+
+.legend .sym.link::before {
+  content: '';
+  display: inline-block;
+  width: 16px;
+  border-top: 1.5px dashed #e6edf3;
+  vertical-align: middle;
+}
+
+.legend .sym.arrow {
+  font-size: 9px;
+  color: #f0f6fc;
+}
 
 /* --- Map area --- */
 .map-area {

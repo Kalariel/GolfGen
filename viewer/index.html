@@ -13,9 +13,9 @@
   <div class="stats">
     <span>Seed: <strong id="stat-seed">—</strong></span>
     <span>Taille: <strong id="stat-size">—</strong></span>
-    <span>Trous: <strong id="stat-holes">—</strong></span>
-    <span>Pipeline: <strong id="stat-stages">—</strong></span>
-    <span>Positions: <strong id="position-mode">Optimisées</strong></span>
+    <span>Patron: <strong id="stat-pattern">—</strong></span>
+    <span>Parcours: <strong id="stat-course">—</strong></span>
+    <span>Format: <strong id="stat-format">—</strong></span>
   </div>
 </div>
 
@@ -30,37 +30,38 @@
 
     <h2>COUCHES</h2>
     <div class="layer-toggles">
-      <button id="btn-terrain" class="active" onclick="toggle('terrain')">Terrain</button>
-      <button id="btn-routing" class="active" onclick="toggle('routing')">Routing</button>
-      <button id="btn-hazards" class="active" onclick="toggle('hazards')">Obstacles</button>
-      <button id="btn-vegetation" class="active" onclick="toggle('vegetation')">Arbres</button>
-      <button id="btn-features" class="active" onclick="toggle('features')">Features</button>
-    </div>
-
-    <h2>AFFICHAGE</h2>
-    <div class="layer-toggles">
+      <button id="btn-terrain" class="active" onclick="toggle('terrain')">Relief</button>
+      <button id="btn-holes" class="active" onclick="toggle('holes')">Trous</button>
+      <button id="btn-links" class="active" onclick="toggle('links')">Liaisons</button>
       <button id="btn-grid" class="active" onclick="toggle('grid')">Grille</button>
       <button id="btn-nums" class="active" onclick="toggle('nums')">Numeros</button>
-    </div>
-    
-    <h2>POSITIONS</h2>
-    <div class="layer-toggles">
-      <button id="btn-positions" onclick="toggleOriginalPositions()" disabled>Originales</button>
     </div>
 
     <h2>ZOOM</h2>
     <div class="zoom-controls">
       <button onclick="zoomOut()" title="Dezoom">&minus;</button>
-      <span id="zoom-level">200%</span>
+      <span id="zoom-level">100%</span>
       <button onclick="zoomIn()" title="Zoom">+</button>
       <button onclick="resetView()" title="Recentrer" class="reset-btn">Reset</button>
     </div>
     <div class="zoom-hint">Molette = zoom &middot; Glisser = deplacer</div>
 
-    <div id="hole-tables">
+    <h2>LEGENDE</h2>
+    <div class="legend">
+      <div><span class="swatch par3"></span>Par 3</div>
+      <div><span class="swatch par4"></span>Par 4</div>
+      <div><span class="swatch par5"></span>Par 5</div>
+      <div><span class="sym tee"></span>Tee</div>
+      <div><span class="sym green"></span>Green (drapeau)</div>
+      <div><span class="sym club"></span>Clubhouse</div>
+      <div><span class="sym link"></span>Liaison a pied</div>
+      <div><span class="sym arrow">&#9654;</span>Sens de jeu</div>
+    </div>
+
+    <div id="course-info">
       <div class="info-box">
-        Charger un fichier JSON pour voir les trous.<br><br>
-        <code>python pipeline.py --stage terrain</code>
+        Charger un JSON 3.x pour voir le parcours.<br><br>
+        <code>python pipeline.py --seed 4</code>
       </div>
     </div>
   </div>
