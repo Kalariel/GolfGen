@@ -219,11 +219,15 @@ async function tryAutoLoad() {
     } catch (e) {
       target = null;
     }
-    if (!target || target.origin !== window.location.origin) {
+    // En file://, les deux origines valent « null », comme celle d'une URL
+    // data: : une origine opaque est donc toujours refusée.
+    if (!target || target.origin === 'null' || target.origin !== window.location.origin) {
       rejectData([
         '?json= refuse',
         `URL hors de l'origine du viewer : ${param}`,
-        `Seules les URL de ${window.location.origin} sont acceptees.`,
+        window.location.origin === 'null'
+          ? 'Viewer ouvert en file:// : le servir en http pour utiliser ?json=.'
+          : `Seules les URL de ${window.location.origin} sont acceptees.`,
       ]);
       fileLabel.textContent = '?json= refuse';
       return;
@@ -317,6 +321,7 @@ function rejectData(lines) {
   const info = document.getElementById('course-info');
   info.innerHTML = `<div class="info-box error-box"><strong>${esc(lines[0])}</strong><br>`
     + lines.slice(1).map(esc).join('<br>') + '</div>';
+  resetHoleList();
   showMessage(lines);
 }
 
@@ -506,14 +511,27 @@ function updateSidebar() {
     html += '</div>';
   }
   container.insertAdjacentHTML('beforeend', html);
+  updateHoleList(routing.holes || []);
+}
 
-  const holes = routing.holes || [];
+// Panneau droit : tableaux aller / retour (trou, par, longueur).
+function resetHoleList() {
+  document.getElementById('hole-list').innerHTML =
+    '<h2>TROUS</h2><div class="info-box">Aucun parcours charge.</div>';
+}
+
+function updateHoleList(holes) {
+  const panel = document.getElementById('hole-list');
+  panel.innerHTML = '';
   ['front', 'back'].forEach(nine => {
     const subset = holes.filter(h => h.nine === nine);
     if (subset.length > 0) {
-      container.appendChild(createHoleTable(nineLabel(nine).toUpperCase(), subset));
+      panel.appendChild(createHoleTable(nineLabel(nine).toUpperCase(), subset));
     }
   });
+  if (!panel.firstChild) {
+    panel.innerHTML = '<h2>TROUS</h2><div class="info-box">Aucun trou dans ce JSON.</div>';
+  }
 }
 
 function createHoleTable(title, holes) {
