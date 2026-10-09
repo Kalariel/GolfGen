@@ -2,17 +2,19 @@
 
 Générateur procédural de parcours de golf 18 trous pour Minecraft (1 bloc = 3 m).
 Un pipeline Python (`pipeline.py`) produit le relief et le routage des 18 trous
-avec le routeur « Muirfield », et les écrit dans un JSON au format 3.0
-(`docs/format-3.0.md`) ; un viewer HTML/JS l'affiche sur un canvas interactif.
+avec le routeur « Muirfield », les habille (formes de greens), et les écrit
+dans un JSON au format 3.1 (`docs/format-3.0.md`) ; un viewer HTML/JS l'affiche sur un canvas interactif.
 
 ## Structure
 
 ```
-golfgen/ + pipeline.py          pipeline : terrain OpenSimplex, routage Muirfield, export JSON 3.0
+golfgen/ + pipeline.py          pipeline : terrain OpenSimplex, routage Muirfield, habillage, export JSON 3.1
 golfgen/routing/                routeur « Muirfield » : model, geometry, partial_checks, sites, muirfield
+golfgen/dressing/               habillage post-routage (greens), sans effet sur le tracé
 viewer/                         viewer 3.x (servi en http, charge output/course.json)
 tools/muirfield/                runner de planches, rendu lisible, métriques de forme ; sorties dans output/
-docs/format-3.0.md              contrat du JSON 3.0 (champs, unités, repère)
+tools/dressing/                 mesures et planches de l'habillage ; sorties dans output/
+docs/format-3.0.md              contrat du JSON 3.0 et de son extension 3.1 (champs, unités, repère)
 docs/muirfield-spike.md         historique du spike Muirfield (chemins historiques)
 docs/calibration-tailles.md     calibration des tailles de terrain (R3, R3b) et pistes ouvertes
 tests/                          tests pytest (pipeline, cœur test_routing_*, outils test_tools_*)
@@ -30,7 +32,7 @@ abandonnés est récupérable via les tags git `archive/*`).
 python -m venv .venv
 .venv/bin/pip install -r requirements.txt
 
-# Parcours complet (relief + 18 trous) -> output/course.json, format 3.0
+# Parcours complet (relief + 18 trous + habillage) -> output/course.json, format 3.1
 .venv/bin/python pipeline.py --seed 4
 
 # Tests
@@ -51,6 +53,8 @@ défaut de la config (42) marche aussi mais prend ≈ 19 s de routage.
   config (42). Même seed, mêmes options : même parcours.
 - `--pattern {muirfield,muirfield_inverse,random}` : patron du parcours
   (défaut `random`, tirage déterministe par seed).
+- `--style {links,parkland}` : style d'habillage (défaut `links`) ; ne change
+  jamais le tracé, seulement les formes (greens).
 - `--orientation {landscape,portrait}` : `landscape` = largeur sur le grand
   côté (défaut), `portrait` = l'inverse.
 - `--short N` (300 à 350, défaut 300) et `--long N` (400 à 500, défaut 400) :
@@ -60,7 +64,8 @@ défaut de la config (42) marche aussi mais prend ≈ 19 s de routage.
   (défaut `default_config.json` s'il existe dans le répertoire courant ; une
   section `routing` d'une ancienne config est ignorée, avec un avertissement).
 
-Le pipeline fait toujours le relief puis le parcours, et écrit le JSON 3.0.
+Le pipeline fait toujours le relief, le parcours puis l'habillage, et écrit le
+JSON 3.1.
 
 Codes de sortie : `0` succès ; `2` paramètre invalide (rien n'est calculé) ;
 `3` aucun parcours valide pour cette seed, ce patron et cette taille (rien
@@ -117,7 +122,7 @@ Options : `--round` (rc, rc-30, land, land-30, custom), `--pattern`,
 
 ## État et prochaines étapes
 
-- Chaîne unique : seed → relief → routeur Muirfield → JSON 3.0 → viewer.
+- Chaîne unique : seed → relief → routeur Muirfield → habillage → JSON 3.1 → viewer.
 - Défaut de forme connu : tracé en « hélice » sur certaines seeds.
 - Planifié : largeur de fairway variable à l'intérieur d'un trou.
 - Étapes du pipeline encore à créer : obstacles, végétation, ponts/ruisseaux.

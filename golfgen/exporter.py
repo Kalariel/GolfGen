@@ -13,6 +13,7 @@ import uuid
 import numpy as np
 
 from . import __version__
+from .dressing.model import CourseDressing, HoleDressing
 from .routing.model import ElasticHole, NineLayout, WalkingLink
 from .routing.muirfield import MuirfieldResult, outer_start
 from .routing.sites import WATER_LEVEL
@@ -46,6 +47,7 @@ def terrain_block(heightmap: np.ndarray) -> dict[str, Any]:
 
 
 FORMAT_VERSION = "3.0"
+DRESSED_FORMAT_VERSION = "3.1"  # 3.0 + habillage (metadata.style, holes[].features)
 BLOCK_M = 3                     # 1 bloc Minecraft = 3 m (model.py)
 # Sens de rotation du nine extérieur selon ``Plan.direction`` : +1 = angle
 # croissant autour du centre de carte ; repère carte en y vers le bas (rendus
@@ -61,8 +63,24 @@ def _point(point) -> dict[str, float]:
     return {"x": _r2(point.x), "y": _r2(point.y)}
 
 
-def _hole_v3(hole: ElasticHole, nine: str) -> dict[str, Any]:
+def _xy(point: tuple[float, float]) -> dict[str, float]:
+    return {"x": _r2(point[0]), "y": _r2(point[1])}
+
+
+def _features_v31(dressing: HoleDressing) -> dict[str, Any]:
+    green = dressing.green
     return {
+        "green": {
+            "outline": [_xy(p) for p in green.outline],
+            "center": _xy(green.center),
+            "area": _r2(green.area),
+        },
+    }
+
+
+def _hole_v3(hole: ElasticHole, nine: str,
+             dressing: HoleDressing | None = None) -> dict[str, Any]:
+    data = {
         "id": hole.order,
         "nine": nine,
         "par": hole.par,
@@ -72,6 +90,9 @@ def _hole_v3(hole: ElasticHole, nine: str) -> dict[str, Any]:
         "green": _point(hole.green),
         "doglegs": [_point(p) for p in hole.doglegs],
     }
+    if dressing is not None:
+        data["features"] = _features_v31(dressing)
+    return data
 
 
 def _link_v3(link: WalkingLink) -> dict[str, Any]:
@@ -94,8 +115,11 @@ def _nine_stats(nine: NineLayout) -> tuple[dict[str, Any], float, int]:
 
 
 def muirfield_to_dict(result: MuirfieldResult, heightmap: np.ndarray, *, seed: int,
-                      seed_input: str | None = None) -> dict[str, Any]:
-    """Parcours Muirfield au format JSON 3.0 (référence : ``docs/format-3.0.md``).
+                      seed_input: str | None = None,
+                      dressing: CourseDressing | None = None) -> dict[str, Any]:
+    """Parcours Muirfield au format JSON 3.0 (référence : ``docs/format-3.0.md``),
+    ou 3.1 si ``dressing`` est donné (``metadata.style`` et
+    ``holes[].features`` en plus ; le reste est identique, octet pour octet).
 
     Fonction pure : ni I/O, ni état global, ni aléa. ``seed`` est l'entier
     signé 64 bits tel que saisi (exporté en chaîne, exact au-delà de 2^53),
@@ -107,6 +131,12 @@ def muirfield_to_dict(result: MuirfieldResult, heightmap: np.ndarray, *, seed: i
         raise TypeError("seed doit être un entier")
     if seed_input is not None and not isinstance(seed_input, str):
         raise TypeError("seed_input doit être une chaîne ou None")
+    if dressing is not None:
+        if not isinstance(dressing, CourseDressing):
+            raise TypeError("dressing doit être un CourseDressing ou None")
+        expected = sorted(hole.order for hole in result.layout.holes)
+        if sorted(dressing.holes) != expected:
+            raise ValueError("l'habillage ne couvre pas exactement les trous du parcours")
     width, height = float(result.width), float(result.height)
     if heightmap.shape != (int(height), int(width)):
         raise ValueError(f"relief {heightmap.shape}, carte attendue {int(height)}×{int(width)}")
@@ -125,33 +155,39 @@ def muirfield_to_dict(result: MuirfieldResult, heightmap: np.ndarray, *, seed: i
     direction = TURNS[result.direction]
     opposite = TURNS[-result.direction]
 
-    holes = [_hole_v3(hole, name)
+    holes = [_hole_v3(hole, name, None if dressing is None else dressing[hole.order])
              for name, nine in (("front", layout.front), ("back", layout.back))
              for hole in nine.holes]
     holes.sort(key=lambda hole: hole["id"])
 
-    return {
-        "metadata": {
-            "version": FORMAT_VERSION,
-            "generator": f"golfgen {__version__}",
-            "seed": str(seed),
-            "seed_input": seed_input,
-            "pattern": {"requested": result.requested_pattern, "resolved": result.pattern},
-            "orientation": orientation,
-            "short_side": _r2(min(width, height)),
-            "long_side": _r2(max(width, height)),
-            "width": _r2(width),
-            "height": _r2(height),
-            "block_m": BLOCK_M,
-            "stats": {
-                "front": front,
-                "back": back,
-                "total": _r2(front_total + back_total),
-                "par": front_par + back_par,
-                "elapsed_seconds": _r2(result.elapsed_seconds),
-                "relaunches": result.relaunches,
-            },
+    metadata: dict[str, Any] = {
+        "version": FORMAT_VERSION if dressing is None else DRESSED_FORMAT_VERSION,
+        "generator": f"golfgen {__version__}",
+        "seed": str(seed),
+        "seed_input": seed_input,
+        "pattern": {"requested": result.requested_pattern, "resolved": result.pattern},
+    }
+    if dressing is not None:
+        metadata["style"] = dressing.style
+    metadata.update({
+        "orientation": orientation,
+        "short_side": _r2(min(width, height)),
+        "long_side": _r2(max(width, height)),
+        "width": _r2(width),
+        "height": _r2(height),
+        "block_m": BLOCK_M,
+        "stats": {
+            "front": front,
+            "back": back,
+            "total": _r2(front_total + back_total),
+            "par": front_par + back_par,
+            "elapsed_seconds": _r2(result.elapsed_seconds),
+            "relaunches": result.relaunches,
         },
+    })
+
+    return {
+        "metadata": metadata,
         "terrain": {**terrain_block(heightmap), "water_level": _r2(WATER_LEVEL)},
         "routing": {
             "clubhouse": {**_point(layout.clubhouse), "edge": result.clubhouse_edge},

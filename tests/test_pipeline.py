@@ -13,7 +13,7 @@ import pytest
 import pipeline
 from golfgen import exporter as exporter_module
 from golfgen import terrain as terrain_module
-from golfgen.config import COURSE_PATTERNS, CourseConfig
+from golfgen.config import COURSE_PATTERNS, STYLES, CourseConfig
 from golfgen.exporter import write_json_atomic
 from golfgen.routing import muirfield as mf
 from golfgen.routing.sites import load_terrain
@@ -219,6 +219,7 @@ def test_json_aliases_exclusive_with_course_sides(tmp_path):
 @pytest.mark.parametrize("course, message", [
     ({"pattern": "links"}, "patron inconnu"),
     ({"orientation": "square"}, "orientation inconnue"),
+    ({"style": "desert"}, "style inconnu"),
     ({"long_side": 380}, "hors bornes"),
 ])
 def test_invalid_json_course_rejected_before_terrain(course, message, tmp_path,
@@ -233,7 +234,7 @@ def test_invalid_json_course_rejected_before_terrain(course, message, tmp_path,
 
 
 # ----------------------------------------------------------------------
-# Étape holes : routeur Muirfield, format 3.0, écriture atomique
+# Étape holes : routeur Muirfield, format 3.1, écriture atomique
 # ----------------------------------------------------------------------
 
 def test_happy_path_writes_valid_v3(tmp_path, no_default_config, cached_relief, capsys):
@@ -241,7 +242,7 @@ def test_happy_path_writes_valid_v3(tmp_path, no_default_config, cached_relief, 
     assert pipeline.main(["--seed", str(SEED), "--output", str(output)]) == 0
     data = json.loads(output.read_text(encoding="utf-8"))
     meta = data["metadata"]
-    assert meta["version"] == "3.0"
+    assert meta["version"] == "3.1"
     assert (meta["seed"], meta["seed_input"]) == ("4", None)
     assert meta["pattern"] == {"requested": "random", "resolved": "muirfield_inverse"}
     assert (meta["width"], meta["height"], meta["orientation"]) == (400.0, 300.0, "landscape")
@@ -250,7 +251,37 @@ def test_happy_path_writes_valid_v3(tmp_path, no_default_config, cached_relief, 
     assert len(data["routing"]["links"]) == 20
     assert "waypoints" not in output.read_text(encoding="utf-8")
     assert sorted(p.name for p in output.parent.iterdir()) == ["course.json"]
-    assert "1/2  Terrain (cached)" in capsys.readouterr().out
+    assert "1/3  Terrain (cached)" in capsys.readouterr().out
+    assert meta["style"] == "links"
+    assert all(set(hole["features"]) == {"green"} for hole in data["routing"]["holes"])
+
+
+def test_style_default_and_cli(no_default_config):
+    assert resolve([])[0].course.style == "links"
+    for style in STYLES:
+        assert resolve(["--style", style])[0].course.style == style
+
+
+def test_invalid_style_rejected_before_terrain(no_default_config, terrain_forbidden, capsys):
+    with pytest.raises(SystemExit) as exc:
+        pipeline.main(["--style", "desert"])
+    assert exc.value.code == pipeline.EXIT_BAD_PARAMETER == 2
+    assert terrain_forbidden == []
+    assert "--style" in capsys.readouterr().err
+
+
+def test_style_never_changes_routing(tmp_path, no_default_config, cached_relief):
+    routing = {}
+    for style in STYLES:
+        output = tmp_path / f"{style}.json"
+        assert pipeline.main(["--seed", str(SEED), "--style", style,
+                              "--output", str(output)]) == 0
+        data = json.loads(output.read_text(encoding="utf-8"))
+        assert data["metadata"]["style"] == style
+        for hole in data["routing"]["holes"]:
+            hole.pop("features")
+        routing[style] = json.dumps(data["routing"])
+    assert routing["links"] == routing["parkland"]
 
 
 @pytest.mark.parametrize("text, signed, seed_input", [
@@ -365,12 +396,12 @@ def test_cached_message_miss_then_hit(cache_dir, router_reliefs, tmp_path, capsy
     output = tmp_path / "course.json"
     assert pipeline.run_pipeline(CourseConfig(seed=-42, width=40, height=30),
                                  output) == pipeline.EXIT_ROUTING_FAILED
-    assert "1/2  Terrain (Perlin noise)" in capsys.readouterr().out
+    assert "1/3  Terrain (Perlin noise)" in capsys.readouterr().out
     assert [p.name for p in cache_dir.iterdir()] == [terrain_cache_path(SMALL).name]
     assert terrain_cache_path(SMALL).name.startswith("terrain_s-42_40x30_")
     assert pipeline.run_pipeline(CourseConfig(seed=-42, width=40, height=30),
                                  output) == pipeline.EXIT_ROUTING_FAILED
-    assert "1/2  Terrain (cached)" in capsys.readouterr().out
+    assert "1/3  Terrain (cached)" in capsys.readouterr().out
     reference = TerrainGenerator(SMALL).generate()
     assert len(router_reliefs) == 2
     assert all(np.array_equal(relief, reference) for relief in router_reliefs)
@@ -384,7 +415,7 @@ def test_wrong_shape_cache_is_recomputed(cache_dir, router_reliefs, tmp_path, ca
     assert pipeline.run_pipeline(CourseConfig(seed=-42, width=40, height=30),
                                  tmp_path / "course.json") == pipeline.EXIT_ROUTING_FAILED
     captured = capsys.readouterr()
-    assert "1/2  Terrain (Perlin noise)" in captured.out
+    assert "1/3  Terrain (Perlin noise)" in captured.out
     assert "relief recalculé" in captured.err
     reference = TerrainGenerator(SMALL).generate()
     assert np.array_equal(router_reliefs[0], reference)

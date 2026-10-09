@@ -7,7 +7,7 @@ import sys
 import time
 from pathlib import Path
 
-from golfgen.config import COURSE_PATTERNS, ORIENTATIONS, CourseConfig
+from golfgen.config import COURSE_PATTERNS, ORIENTATIONS, STYLES, CourseConfig
 from golfgen.exporter import muirfield_to_dict, write_json_atomic
 from golfgen.seed import java_trim, parse_seed, seed_u64
 from golfgen.terrain import load_or_compute
@@ -19,33 +19,38 @@ EXIT_ROUTING_FAILED = 3         # aucun parcours valide pour (seed, patron, tail
 
 def run_pipeline(config: CourseConfig, output: Path, *,
                  seed_input: str | None = None) -> int:
-    """Exécute le pipeline complet (relief puis parcours) ; renvoie le code de sortie.
+    """Exécute le pipeline complet (relief, parcours, habillage) ; renvoie le
+    code de sortie.
 
     ``config`` doit être résolue et validée (cf. ``resolve_config``) :
     ``config.seed`` est l'entier signé 64 bits. Le relief passe par le cache
-    (``load_or_compute``), le parcours par le routeur Muirfield, et ``output``
-    reçoit le JSON 3.0, écrit de façon atomique ; en cas d'échec du routage,
-    rien n'est écrit et le code vaut ``EXIT_ROUTING_FAILED`` (3)."""
+    (``load_or_compute``), le parcours par le routeur Muirfield, l'habillage
+    par ``dress_course`` (style ``config.course.style``, flux aléatoire
+    propre : sans effet sur le tracé), et ``output`` reçoit le JSON 3.1, écrit
+    de façon atomique ; en cas d'échec du routage, rien n'est écrit et le
+    code vaut ``EXIT_ROUTING_FAILED`` (3)."""
     seed = config.seed
     pattern = config.course.pattern
+    style = config.course.style
 
     shown = f"{seed} (« {seed_input} »)" if seed_input is not None else f"{seed}"
-    print(f"Seed: {shown} | Taille: {config.width}x{config.height} | Patron: {pattern}")
+    print(f"Seed: {shown} | Taille: {config.width}x{config.height} | Patron: {pattern} "
+          f"| Style: {style}")
     print()
 
     # --- Terrain (cache unique, clé seed signée + taille + config de relief) ---
     t0 = time.time()
     heightmap, from_cache = load_or_compute(config)
-    print(f"1/2  Terrain ({'cached' if from_cache else 'Perlin noise'})...")
+    print(f"1/3  Terrain ({'cached' if from_cache else 'Perlin noise'})...")
     print(f"     Heightmap {heightmap.shape[1]}x{heightmap.shape[0]}, "
           f"elev [{heightmap.min():.1f}, {heightmap.max():.1f}]  "
           f"({time.time() - t0:.1f}s)")
 
-    # --- Holes (routeur Muirfield, format 3.0) ---
+    # --- Holes (routeur Muirfield) ---
     from golfgen.routing.muirfield import (MuirfieldRoutingError, build_course,
                                            resolve_pattern)
     t0 = time.time()
-    print("2/2  Holes (routeur Muirfield)...")
+    print("2/3  Holes (routeur Muirfield)...")
     numpy_seed = seed_u64(seed)
     try:
         result = build_course(numpy_seed, pattern, heightmap,
@@ -57,16 +62,26 @@ def run_pipeline(config: CourseConfig, output: Path, *,
               f"{config.width}x{config.height}) : essayez une autre seed.", file=sys.stderr)
         return EXIT_ROUTING_FAILED
 
-    data = muirfield_to_dict(result, heightmap, seed=int(seed), seed_input=seed_input)
+    print(f"     Patron {result.pattern}, clubhouse {result.clubhouse_edge}, "
+          f"{result.relaunches} relance(s)  ({time.time() - t0:.1f}s)")
+
+    # --- Habillage (après le tracé, flux aléatoire séparé) ---
+    from golfgen.dressing import dress_course
+    t0 = time.perf_counter()
+    dressing = dress_course(result, seed=numpy_seed, style=style)
+    reduced = sum(hole.green.reduced for hole in dressing.holes.values())
+    print(f"3/3  Habillage (style {style}) : 18 greens, {reduced} réduit(s) par le cœur  "
+          f"({(time.perf_counter() - t0) * 1000:.0f} ms)")
+
+    data = muirfield_to_dict(result, heightmap, seed=int(seed), seed_input=seed_input,
+                             dressing=dressing)
     meta = data["metadata"]
-    print(f"     Patron {meta['pattern']['resolved']}, clubhouse "
-          f"{data['routing']['clubhouse']['edge']}, {result.relaunches} relance(s)  "
-          f"({time.time() - t0:.1f}s)")
     for hole in data["routing"]["holes"]:
         print(f"     #{hole['id']:2d}  {hole['nine']:5s}  par {hole['par']}  "
               f"{hole['length']:6.1f}blocs  "
               f"tee=({hole['tee']['x']:.0f},{hole['tee']['y']:.0f}) "
-              f"green=({hole['green']['x']:.0f},{hole['green']['y']:.0f})")
+              f"green=({hole['green']['x']:.0f},{hole['green']['y']:.0f}) "
+              f"{hole['features']['green']['area']:.0f}blocs²")
 
     write_json_atomic(output, data)
     print(f"Export: {output} ({output.stat().st_size / 1024:.1f} Ko, format {meta['version']})")
@@ -90,6 +105,9 @@ def build_parser() -> argparse.ArgumentParser:
                         help="Fichier de sortie JSON")
     parser.add_argument("--pattern", choices=COURSE_PATTERNS, default=None,
                         help="Patron du parcours (defaut : config, random)")
+    parser.add_argument("--style", choices=STYLES, default=None,
+                        help="Style d'habillage, sans effet sur le trace "
+                             "(defaut : config, links)")
     parser.add_argument("--orientation", choices=ORIENTATIONS, default=None,
                         help="landscape : largeur = grand cote ; portrait : l'inverse "
                              "(defaut : config, landscape)")
@@ -130,6 +148,8 @@ def resolve_config(args: argparse.Namespace) -> tuple[CourseConfig, str | None]:
 
     if args.pattern is not None:
         config.course.pattern = args.pattern
+    if args.style is not None:
+        config.course.style = args.style
     if shape:
         if args.orientation is not None:
             config.course.orientation = args.orientation

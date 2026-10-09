@@ -16,6 +16,9 @@ from golfgen.seed import parse_seed
 # par tests/test_pipeline.py).
 COURSE_PATTERNS = ("muirfield", "muirfield_inverse", "random")
 ORIENTATIONS = ("landscape", "portrait")
+# Styles d'habillage (égal aux clés de ``golfgen.dressing.STYLE_SPECS``, vérifié
+# par tests/test_dressing.py). Le style ne change jamais le tracé.
+STYLES = ("links", "parkland")
 # Bornes des côtés de carte (blocs), issues de la calibration (docs/muirfield-spike.md).
 SHORT_SIDE_RANGE = (300, 350)
 LONG_SIDE_RANGE = (400, 500)
@@ -37,11 +40,13 @@ class TerrainConfig:
 
 @dataclass
 class CourseShapeConfig:
-    """Patron et dimensions de la carte (section JSON ``course``).
+    """Patron, style et dimensions de la carte (section JSON ``course``).
 
     ``landscape`` : largeur = ``long_side``, hauteur = ``short_side`` ;
-    ``portrait`` : l'inverse."""
+    ``portrait`` : l'inverse. ``style`` : style d'habillage (``STYLES``),
+    sans effet sur le routage."""
     pattern: str = "random"
+    style: str = "links"
     orientation: str = "landscape"
     short_side: int = 300
     long_side: int = 400
@@ -58,10 +63,13 @@ class CourseShapeConfig:
         check_sides(self.short_side, self.long_side)
 
     def validate_choices(self) -> None:
-        """``ValueError`` si le patron ou l'orientation est inconnu."""
+        """``ValueError`` si le patron, le style ou l'orientation est inconnu."""
         if self.pattern not in COURSE_PATTERNS:
             raise ValueError(f"patron inconnu : {self.pattern!r} "
                              f"(attendu : {', '.join(COURSE_PATTERNS)})")
+        if self.style not in STYLES:
+            raise ValueError(f"style inconnu : {self.style!r} "
+                             f"(attendu : {', '.join(STYLES)})")
         if self.orientation not in ORIENTATIONS:
             raise ValueError(f"orientation inconnue : {self.orientation!r} "
                              f"(attendu : {', '.join(ORIENTATIONS)})")
@@ -157,7 +165,7 @@ class CourseConfig:
         return config
 
     def validate(self) -> None:
-        """``ValueError`` si le patron, l'orientation ou les dimensions
+        """``ValueError`` si le patron, le style, l'orientation ou les dimensions
         effectives (``width``/``height``) sont hors domaine. À appeler avant
         tout calcul de relief. Les côtés vérifiés sont ceux de la carte
         effective : avec les alias, ``course.short_side``/``long_side`` sont
