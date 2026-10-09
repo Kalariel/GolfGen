@@ -1,0 +1,240 @@
+{
+  "dressing_ms": {
+    "max": 6.2,
+    "mean": 5.6,
+    "median": 5.6,
+    "min": 5.3,
+    "q25": 5.5,
+    "q75": 5.7
+  },
+  "pattern": "random",
+  "planches": [
+    "zoom_seed1_links.png",
+    "zoom_seed1_parkland.png",
+    "zoom_seed4_links.png",
+    "zoom_seed4_parkland.png",
+    "overview_seed4.png"
+  ],
+  "routing_failures": [],
+  "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30
+  ],
+  "sizes": [
+    "400x300",
+    "300x400"
+  ],
+  "styles": {
+    "links": {
+      "area": {
+        "max": 91.0,
+        "mean": 75.9,
+        "median": 76.1,
+        "min": 56.8,
+        "q25": 71.0,
+        "q75": 81.1
+      },
+      "by_par": {
+        "3": {
+          "area": {
+            "max": 80.0,
+            "mean": 69.2,
+            "median": 68.7,
+            "min": 56.8,
+            "q25": 64.5,
+            "q75": 73.6
+          },
+          "greens": 240,
+          "max_shrink_steps": 2,
+          "reduced": 6,
+          "reduced_pct": 2.5,
+          "reduced_widths": [
+            10.0,
+            10.0,
+            10.5,
+            10.5,
+            10.5,
+            10.5
+          ],
+          "target_area": {
+            "max": 80.0,
+            "mean": 69.4,
+            "median": 69.1,
+            "min": 60.5,
+            "q25": 64.7,
+            "q75": 73.6
+          }
+        },
+        "4": {
+          "area": {
+            "max": 86.7,
+            "mean": 76.3,
+            "median": 76.7,
+            "min": 67.1,
+            "q25": 71.8,
+            "q75": 80.6
+          },
+          "greens": 600,
+          "max_shrink_steps": 1,
+          "reduced": 1,
+          "reduced_pct": 0.2,
+          "reduced_widths": [
+            11.5
+          ],
+          "target_area": {
+            "max": 86.7,
+            "mean": 76.3,
+            "median": 76.7,
+            "min": 67.2,
+            "q25": 71.8,
+            "q75": 80.6
+          }
+        },
+        "5": {
+          "area": {
+            "max": 91.0,
+            "mean": 81.9,
+            "median": 82.1,
+            "min": 72.8,
+            "q25": 77.5,
+            "q75": 86.4
+          },
+          "greens": 240,
+          "max_shrink_steps": 0,
+          "reduced": 0,
+          "reduced_pct": 0.0,
+          "reduced_widths": [],
+          "target_area": {
+            "max": 91.0,
+            "mean": 81.9,
+            "median": 82.1,
+            "min": 72.8,
+            "q25": 77.5,
+            "q75": 86.4
+          }
+        }
+      },
+      "greens": 1080,
+      "range": [
+        60.0,
+        95.0
+      ],
+      "reduced": 7
+    },
+    "parkland": {
+      "area": {
+        "max": 72.2,
+        "mean": 61.4,
+        "median": 61.6,
+        "min": 50.3,
+        "q25": 57.9,
+        "q75": 65.0
+      },
+      "by_par": {
+        "3": {
+          "area": {
+            "max": 64.3,
+            "mean": 56.7,
+            "median": 56.5,
+            "min": 50.3,
+            "q25": 53.3,
+            "q75": 59.7
+          },
+          "greens": 240,
+          "max_shrink_steps": 0,
+          "reduced": 0,
+          "reduced_pct": 0.0,
+          "reduced_widths": [],
+          "target_area": {
+            "max": 64.3,
+            "mean": 56.7,
+            "median": 56.5,
+            "min": 50.3,
+            "q25": 53.4,
+            "q75": 59.7
+          }
+        },
+        "4": {
+          "area": {
+            "max": 69.1,
+            "mean": 61.6,
+            "median": 61.9,
+            "min": 55.1,
+            "q25": 58.4,
+            "q75": 64.7
+          },
+          "greens": 600,
+          "max_shrink_steps": 0,
+          "reduced": 0,
+          "reduced_pct": 0.0,
+          "reduced_widths": [],
+          "target_area": {
+            "max": 69.1,
+            "mean": 61.6,
+            "median": 61.9,
+            "min": 55.1,
+            "q25": 58.4,
+            "q75": 64.7
+          }
+        },
+        "5": {
+          "area": {
+            "max": 72.2,
+            "mean": 65.7,
+            "median": 65.8,
+            "min": 59.2,
+            "q25": 62.5,
+            "q75": 68.9
+          },
+          "greens": 240,
+          "max_shrink_steps": 0,
+          "reduced": 0,
+          "reduced_pct": 0.0,
+          "reduced_widths": [],
+          "target_area": {
+            "max": 72.2,
+            "mean": 65.7,
+            "median": 65.8,
+            "min": 59.2,
+            "q25": 62.5,
+            "q75": 68.9
+          }
+        }
+      },
+      "greens": 1080,
+      "range": [
+        50.0,
+        75.0
+      ],
+      "reduced": 0
+    }
+  }
+}

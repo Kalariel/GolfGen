@@ -69,11 +69,13 @@ def render_readable_svg(layout: CourseLayout, violations: Sequence[Violation] = 
                         water_level: float | None = None,
                         rings: Sequence[Sequence[Point]] = (),
                         overlays: Sequence[tuple[Sequence[Point], str]] = (),
+                        green_disks: bool = True,
                         title: str = "", subtitle: str = "") -> str:
     """SVG lisible du layout. ``overlays`` : polygones ``(points en blocs,
     couleur)`` dessinés en surimpression translucide au-dessus des bandes et
     des liaisons, sous les tees et les greens (vide par défaut : rendu
-    inchangé)."""
+    inchangé). ``green_disks=False`` remplace le disque du green par un point
+    au pied du drapeau (pour laisser voir des greens dessinés en overlay)."""
     size, padding, footer = 800, 24, 88
     scale = (size - 2 * padding) / max(layout.width, layout.height)
     # hauteur de la zone carte : ``size`` en portrait et au carré (rendu
@@ -156,8 +158,11 @@ def render_readable_svg(layout: CourseLayout, violations: Sequence[Violation] = 
         g = pt(green)
         out.append(f'<rect x="{t[0] - 4:.1f}" y="{t[1] - 4:.1f}" width="8" height="8" fill="#f0f6fc" '
                    'stroke="#0d1117" stroke-width="1"/>')
-        out.append(f'<circle cx="{g[0]:.1f}" cy="{g[1]:.1f}" r="{4.5 * scale:.1f}" fill="#3dbd4e" '
-                   'stroke="#f0f6fc" stroke-width="1.5"/>')
+        if green_disks:
+            out.append(f'<circle cx="{g[0]:.1f}" cy="{g[1]:.1f}" r="{4.5 * scale:.1f}" '
+                       'fill="#3dbd4e" stroke="#f0f6fc" stroke-width="1.5"/>')
+        else:
+            out.append(f'<circle cx="{g[0]:.1f}" cy="{g[1]:.1f}" r="1.6" fill="#0d1117"/>')
         out.append(f'<line x1="{g[0]:.1f}" y1="{g[1]:.1f}" x2="{g[0]:.1f}" y2="{g[1] - 13:.1f}" '
                    'stroke="#f0f6fc" stroke-width="1.2"/>')
         out.append(f'<polygon points="{g[0]:.1f},{g[1] - 13:.1f} {g[0] + 7:.1f},{g[1] - 10.5:.1f} '
