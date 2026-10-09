@@ -1,7 +1,11 @@
 {
-  "width": 350,
-  "height": 350,
   "seed": 42,
+  "course": {
+    "pattern": "random",
+    "orientation": "landscape",
+    "short_side": 300,
+    "long_side": 400
+  },
   "num_holes": 18,
   "total_par": 72,
   "scale_ratio": 3.0,

@@ -8,8 +8,8 @@ from golfgen.terrain import TerrainGenerator
 
 @pytest.fixture(scope="session")
 def config():
-    """Config par défaut (seed 42)."""
-    return CourseConfig(seed=42)
+    """Config de référence des tests de relief : seed 42, 350×350."""
+    return CourseConfig(seed=42, width=350, height=350)
 
 
 @pytest.fixture(scope="session")

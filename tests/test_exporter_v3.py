@@ -18,8 +18,12 @@ from golfgen.routing import muirfield as mf
 from golfgen.routing.sites import load_terrain
 
 
-# seed 4 en 400×300 : « random » résolu en muirfield_inverse, sans relance
+# seed 4 en 400×300 : « random » résolu en muirfield_inverse, sans relance,
+# Plan.direction = +1 (sens horaire)
 SEED, WIDTH, HEIGHT = 4, 400, 300
+# seed 42 en 400×300, patron muirfield : Plan.direction = −1 (sens antihoraire),
+# pour couvrir les deux branches de ``direction``
+SEED_CCW = 42
 
 
 @pytest.fixture(scope="module")
@@ -33,6 +37,23 @@ def built():
 def data(built):
     result, heightmap = built
     return muirfield_to_dict(result, heightmap, seed=SEED, seed_input="4")
+
+
+@pytest.fixture(scope="module")
+def built_ccw():
+    heightmap = load_terrain(SEED_CCW, WIDTH, HEIGHT)
+    result = mf.build_course(SEED_CCW, "muirfield", heightmap, width=WIDTH, height=HEIGHT)
+    return result, heightmap
+
+
+@pytest.fixture(scope="module", params=["inverse_cw", "muirfield_ccw"])
+def case(request, built, data, built_ccw):
+    """Les deux branches de ``direction`` : (résultat, dict, patron, sens attendu)."""
+    if request.param == "inverse_cw":
+        return built[0], data, "muirfield_inverse", "clockwise"
+    result, heightmap = built_ccw
+    return (result, muirfield_to_dict(result, heightmap, seed=SEED_CCW), "muirfield",
+            "counterclockwise")
 
 
 def _keys(node):
@@ -177,11 +198,14 @@ def _signed_area(points):
     return sum(a[0] * b[1] - b[0] * a[1] for a, b in zip(points, points[1:] + points[:1])) / 2
 
 
-def test_direction_matches_geometry(built, data):
-    result, _ = built
+def test_direction_matches_geometry(case):
+    result, data, pattern, outer_turn = case
+    assert result.pattern == data["metadata"]["pattern"]["resolved"] == pattern
     direction = data["routing"]["direction"]
-    assert direction["outer_nine"] == "back"          # muirfield_inverse
-    assert direction["inner_nine"] == "front"
+    outer = "front" if pattern == "muirfield" else "back"
+    assert direction["outer_nine"] == outer
+    assert direction["inner_nine"] == ("back" if outer == "front" else "front")
+    assert direction["outer_turn"] == outer_turn
     assert {direction["outer_turn"], direction["inner_turn"]} == {"clockwise",
                                                                    "counterclockwise"}
     # Repère y vers le bas : aire signée positive = sens horaire à l'écran.

@@ -8,6 +8,16 @@ from pathlib import Path
 from typing import Optional
 
 
+# Patrons du routeur Muirfield (égal à ``golfgen.routing.muirfield.PATTERN_CHOICES``,
+# recopié ici car ``routing`` dépend de ``config`` et jamais l'inverse ; vérifié
+# par tests/test_pipeline.py).
+COURSE_PATTERNS = ("muirfield", "muirfield_inverse", "random")
+ORIENTATIONS = ("landscape", "portrait")
+# Bornes des côtés de carte (blocs), issues de la calibration (docs/muirfield-spike.md).
+SHORT_SIDE_RANGE = (300, 350)
+LONG_SIDE_RANGE = (400, 500)
+
+
 @dataclass
 class TerrainConfig:
     """Paramètres de génération du terrain."""
@@ -49,24 +59,81 @@ class RoutingConfig:
 
 
 @dataclass
+class CourseShapeConfig:
+    """Patron et dimensions de la carte (section JSON ``course``).
+
+    ``landscape`` : largeur = ``long_side``, hauteur = ``short_side`` ;
+    ``portrait`` : l'inverse."""
+    pattern: str = "random"
+    orientation: str = "landscape"
+    short_side: int = 300
+    long_side: int = 400
+
+    def dimensions(self) -> tuple[int, int]:
+        """``(width, height)`` de la carte selon l'orientation."""
+        if self.orientation == "landscape":
+            return self.long_side, self.short_side
+        return self.short_side, self.long_side
+
+    def validate(self) -> None:
+        """``ValueError`` (message en français) si un champ est hors domaine."""
+        self.validate_choices()
+        check_sides(self.short_side, self.long_side)
+
+    def validate_choices(self) -> None:
+        """``ValueError`` si le patron ou l'orientation est inconnu."""
+        if self.pattern not in COURSE_PATTERNS:
+            raise ValueError(f"patron inconnu : {self.pattern!r} "
+                             f"(attendu : {', '.join(COURSE_PATTERNS)})")
+        if self.orientation not in ORIENTATIONS:
+            raise ValueError(f"orientation inconnue : {self.orientation!r} "
+                             f"(attendu : {', '.join(ORIENTATIONS)})")
+
+
+def check_sides(short_side: int, long_side: int) -> None:
+    """``ValueError`` si un côté n'est pas un entier dans ses bornes
+    (``SHORT_SIDE_RANGE``, ``LONG_SIDE_RANGE``)."""
+    for name, value, (lo, hi) in (("petit côté", short_side, SHORT_SIDE_RANGE),
+                                  ("grand côté", long_side, LONG_SIDE_RANGE)):
+        if isinstance(value, bool) or not isinstance(value, int):
+            raise ValueError(f"{name} : entier attendu, pas {value!r}")
+        if not lo <= value <= hi:
+            raise ValueError(f"{name} {value} hors bornes : attendu entre {lo} et {hi} blocs")
+
+
+@dataclass
 class CourseConfig:
-    """Configuration complète du parcours."""
-    width: int = 350
-    height: int = 350
-    seed: int = 42
+    """Configuration complète du parcours.
+
+    ``width``/``height`` sont les dimensions effectives de la carte ; par
+    défaut celles de ``course`` (paysage 400×300). ``from_json`` et le
+    pipeline les dérivent de ``course``, sauf si elles sont données
+    explicitement (alias, exclusifs de l'orientation et des côtés).
+
+    ``seed`` : entier ou texte tel que lu (JSON) ; le pipeline le résout en
+    entier signé 64 bits avec ``golfgen.seed.parse_seed``."""
+    width: int = 400
+    height: int = 300
+    seed: int | str = 42
     num_holes: int = 18
     total_par: int = 72
     scale_ratio: float = 3.0
 
     terrain: TerrainConfig = field(default_factory=TerrainConfig)
     routing: RoutingConfig = field(default_factory=RoutingConfig)
+    course: CourseShapeConfig = field(default_factory=CourseShapeConfig)
 
     def to_dict(self) -> dict:
         return asdict(self)
 
     @classmethod
     def from_json(cls, path: str | Path) -> CourseConfig:
-        """Charge la config depuis un fichier JSON."""
+        """Charge la config depuis un fichier JSON.
+
+        Dimensions : ``width``/``height`` (alias) OU les clés ``orientation``,
+        ``short_side``, ``long_side`` de la section ``course``, jamais les deux
+        (``ValueError``). Sans alias, ``width``/``height`` sont dérivées de
+        ``course``. Les bornes ne sont pas vérifiées ici (cf. ``validate``)."""
         with open(path, 'r') as f:
             data = json.load(f)
 
@@ -80,6 +147,7 @@ class CourseConfig:
         sub_configs = {
             'terrain': (config.terrain, TerrainConfig),
             'routing': (config.routing, RoutingConfig),
+            'course': (config.course, CourseShapeConfig),
         }
         for section, (obj, _cls) in sub_configs.items():
             if section in data:
@@ -87,7 +155,24 @@ class CourseConfig:
                     if hasattr(obj, k):
                         setattr(obj, k, v)
 
+        aliases = [key for key in ('width', 'height') if key in data]
+        shape = [key for key in ('orientation', 'short_side', 'long_side')
+                 if key in data.get('course', {})]
+        if aliases and shape:
+            raise ValueError(f"{path} : {'/'.join(aliases)} et course.{'/'.join(shape)} "
+                             "sont exclusifs (dimensions données deux fois)")
+        if not aliases:
+            config.width, config.height = config.course.dimensions()
         return config
+
+    def validate(self) -> None:
+        """``ValueError`` si le patron, l'orientation ou les dimensions
+        effectives (``width``/``height``) sont hors domaine. À appeler avant
+        tout calcul de relief. Les côtés vérifiés sont ceux de la carte
+        effective : avec les alias, ``course.short_side``/``long_side`` sont
+        ignorés et ``width``/``height`` subissent les mêmes bornes."""
+        self.course.validate_choices()
+        check_sides(min(self.width, self.height), max(self.width, self.height))
 
     def save_json(self, path: str | Path) -> None:
         """Sauvegarde la config en JSON."""

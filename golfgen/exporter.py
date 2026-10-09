@@ -5,14 +5,16 @@ from __future__ import annotations
 import base64
 import json
 import math
+import os
 from pathlib import Path
 from typing import Any
+import uuid
 
 import numpy as np
 
 from . import __version__
 from .config import CourseConfig
-from .routing.model import ElasticHole, WalkingLink
+from .routing.model import ElasticHole, NineLayout, WalkingLink
 from .routing.muirfield import MuirfieldResult, outer_start
 
 
@@ -78,11 +80,11 @@ def _link_v3(link: WalkingLink) -> dict[str, Any]:
     return {
         "from": end(link.from_hole_order),
         "to": end(link.to_hole_order),
-        "length": _r2(math.dist((link.start.x, link.start.y), (link.end.x, link.end.y))),
+        "length": _r2(link.length),
     }
 
 
-def _nine_stats(nine) -> tuple[dict[str, Any], float, int]:
+def _nine_stats(nine: NineLayout) -> tuple[dict[str, Any], float, int]:
     holes = math.fsum(hole.length for hole in nine.holes)
     links = math.fsum(link.length for link in nine.links)
     par = sum(hole.par for hole in nine.holes)
@@ -96,8 +98,10 @@ def muirfield_to_dict(result: MuirfieldResult, heightmap: np.ndarray, *, seed: i
     """Parcours Muirfield au format JSON 3.0 (référence : ``docs/format-3.0.md``).
 
     Fonction pure : ni I/O, ni état global, ni aléa. ``seed`` est l'entier
-    signé tel que saisi (exporté en chaîne, exact au-delà de 2^53) ;
-    ``seed_input`` le texte d'origine, ou None. Unités : blocs (1 bloc = 3 m),
+    signé 64 bits tel que saisi (exporté en chaîne, exact au-delà de 2^53),
+    PAS sa forme u64 donnée au routage ; ce doit être un ``int`` Python
+    (``int(seed)`` à l'appel : un ``np.int64`` est refusé) ; ``seed_input`` le
+    texte d'origine, ou None. Unités : blocs (1 bloc = 3 m),
     flottants arrondis à 2 décimales. Le résultat passe ``json.dumps`` tel quel."""
     if isinstance(seed, bool) or not isinstance(seed, int):
         raise TypeError("seed doit être un entier")
@@ -161,6 +165,22 @@ def muirfield_to_dict(result: MuirfieldResult, heightmap: np.ndarray, *, seed: i
             "links": [_link_v3(link) for link in layout.links],
         },
     }
+
+
+def write_json_atomic(path: str | Path, data: dict[str, Any]) -> None:
+    """Écrit ``data`` en JSON (indenté, UTF-8) de façon atomique : fichier
+    temporaire du même dossier puis ``os.replace``. En cas d'échec, un fichier
+    existant à ``path`` reste intact et aucun temporaire ne subsiste."""
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(f".{path.name}.{os.getpid()}.{uuid.uuid4().hex}.tmp")
+    try:
+        with open(tmp, "x", encoding="utf-8") as handle:
+            json.dump(data, handle, indent=2, ensure_ascii=False)
+        os.replace(tmp, path)
+    except BaseException:
+        tmp.unlink(missing_ok=True)
+        raise
 
 
 class JSONExporter:

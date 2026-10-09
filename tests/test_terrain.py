@@ -48,14 +48,14 @@ class TestTerrainDeterminism:
     """Vérifie que la même seed produit la même heightmap."""
 
     def test_same_seed_same_result(self):
-        config = CourseConfig(seed=42)
+        config = CourseConfig(seed=42, width=350, height=350)
         hm1 = TerrainGenerator(config).generate()
         hm2 = TerrainGenerator(config).generate()
         np.testing.assert_array_equal(hm1, hm2)
 
     def test_different_seed_different_result(self):
-        hm1 = TerrainGenerator(CourseConfig(seed=42)).generate()
-        hm2 = TerrainGenerator(CourseConfig(seed=99)).generate()
+        hm1 = TerrainGenerator(CourseConfig(seed=42, width=350, height=350)).generate()
+        hm2 = TerrainGenerator(CourseConfig(seed=99, width=350, height=350)).generate()
         assert not np.array_equal(hm1, hm2)
 
 

@@ -7,6 +7,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import sys
 import uuid
 
 import numpy as np
@@ -37,22 +38,45 @@ def terrain_cache_path(config: CourseConfig, cache_dir: Path | None = None) -> P
 
 
 def load_or_generate(config: CourseConfig, cache_dir: Path | None = None) -> np.ndarray:
-    """Relief de ``TerrainGenerator(config).generate()``, mis en cache sur disque.
-
-    Seul point d'entrée du cache de relief, partagé par ``pipeline.py`` et le
-    routeur Muirfield. Le relief ne dépend que de la seed, de la taille et de
-    ``config.terrain`` : la clé (cf. ``terrain_cache_path``) couvre exactement
-    ces trois éléments. ``cache_dir`` vaut ``TERRAIN_CACHE_DIR`` par défaut.
-    L'écriture est atomique (fichier temporaire du même dossier puis
-    ``os.replace``) : un lecteur concurrent ne voit jamais un fichier partiel.
+    """Relief de ``TerrainGenerator(config).generate()``, mis en cache sur disque
+    (cf. ``load_or_compute``, dont il ne garde que le relief).
 
     Returns:
         np.ndarray float32 de shape (height, width), identique à
         ``TerrainGenerator(config).generate()``.
     """
+    return load_or_compute(config, cache_dir)[0]
+
+
+def load_or_compute(config: CourseConfig,
+                    cache_dir: Path | None = None) -> tuple[np.ndarray, bool]:
+    """Relief de ``TerrainGenerator(config).generate()`` et sa provenance.
+
+    Seul point d'entrée du cache de relief, partagé par ``pipeline.py`` et le
+    routeur Muirfield. Le relief ne dépend que de la seed, de la taille et de
+    ``config.terrain`` : la clé (cf. ``terrain_cache_path``) couvre exactement
+    ces trois éléments. ``cache_dir`` vaut ``TERRAIN_CACHE_DIR`` par défaut.
+    Un fichier en cache dont la shape n'est pas (height, width) est ignoré :
+    le relief est recalculé et le remplace (message sur stderr).
+    L'écriture est atomique (fichier temporaire du même dossier puis
+    ``os.replace``) : un lecteur concurrent ne voit jamais un fichier partiel.
+
+    Returns:
+        ``(heightmap, from_cache)`` : float32 de shape (height, width) ;
+        ``from_cache`` vaut True si et seulement si le relief renvoyé est
+        celui lu sur disque.
+    """
     path = terrain_cache_path(config, cache_dir)
-    if path.exists():
-        return np.load(path)
+    expected = (config.height, config.width)
+    try:
+        cached = np.load(path)
+    except FileNotFoundError:
+        cached = None
+    if cached is not None:
+        if cached.shape == expected:
+            return cached, True
+        print(f"Cache de relief {path.name} : shape {cached.shape}, attendu {expected} ; "
+              "relief recalculé et cache remplacé.", file=sys.stderr)
     heightmap = TerrainGenerator(config).generate()
     path.parent.mkdir(parents=True, exist_ok=True)
     # Nom unique ouvert en "xb" (et non mkstemp, en 0600) : droits usuels du umask.
@@ -64,7 +88,7 @@ def load_or_generate(config: CourseConfig, cache_dir: Path | None = None) -> np.
     except BaseException:
         tmp.unlink(missing_ok=True)
         raise
-    return heightmap
+    return heightmap, False
 
 
 class TerrainGenerator:
@@ -73,7 +97,6 @@ class TerrainGenerator:
     def __init__(self, config: CourseConfig):
         self.config = config
         self.tc = config.terrain
-        self.rng = np.random.default_rng(config.seed)
 
     def generate(self) -> np.ndarray:
         """Génère la heightmap (float32, valeurs en élévation Minecraft).
@@ -90,7 +113,11 @@ class TerrainGenerator:
         return heightmap
 
     def _multi_octave_noise(self, w: int, h: int) -> np.ndarray:
-        """Bruit OpenSimplex multi-octave (vectorisé)."""
+        """Bruit OpenSimplex multi-octave (vectorisé).
+
+        ``opensimplex.seed`` ramène la seed sur 64 bits signés (``ctypes.c_int64``) :
+        une seed signée et son complément à deux u64 donnent le même bruit, une
+        seed négative est donc acceptée telle quelle."""
         opensimplex.seed(self.config.seed)
 
         # Coordonnées de la grille

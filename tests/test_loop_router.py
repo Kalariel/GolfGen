@@ -43,7 +43,7 @@ def _point_seg_dist(p, a, b):
 
 @pytest.fixture(scope="module", params=SEEDS)
 def course(request):
-    config = CourseConfig(seed=request.param)
+    config = CourseConfig(seed=request.param, width=350, height=350)
     holes, clubhouse_pos = build_course_loop(config, heightmap=None)
     return config, holes, clubhouse_pos
 
@@ -149,7 +149,7 @@ class TestAngles:
 class TestDeterminisme:
 
     def test_same_seed_same_course(self):
-        config = CourseConfig(seed=42)
+        config = CourseConfig(seed=42, width=350, height=350)
         holes_a, _ = build_course_loop(config, heightmap=None)
         holes_b, _ = build_course_loop(config, heightmap=None)
         assert [h["waypoints"] for h in holes_a] == [h["waypoints"] for h in holes_b]
