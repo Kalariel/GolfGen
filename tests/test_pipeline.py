@@ -220,6 +220,7 @@ def test_json_aliases_exclusive_with_course_sides(tmp_path):
     ({"pattern": "links"}, "patron inconnu"),
     ({"orientation": "square"}, "orientation inconnue"),
     ({"style": "desert"}, "style inconnu"),
+    ({"style": 3}, "style inconnu"),
     ({"long_side": 380}, "hors bornes"),
 ])
 def test_invalid_json_course_rejected_before_terrain(course, message, tmp_path,
@@ -323,6 +324,28 @@ def test_routing_failure_keeps_existing_output(tmp_path, no_default_config, cach
     err = capsys.readouterr().err
     assert ("Aucun parcours valide pour la seed -42 (patron muirfield_inverse, 400x300) : "
             "essayez une autre seed.") in err
+
+
+@pytest.mark.parametrize("error", [RuntimeError("trou 7 : green impossible à inclure dans le cœur"),
+                                   ValueError("trou 7 : segment final nul")])
+def test_dressing_failure_exits_cleanly(error, tmp_path, no_default_config, cached_relief,
+                                        monkeypatch, capsys):
+    import golfgen.dressing as dressing_module
+
+    def failing_dress(*args, **kwargs):
+        raise error
+
+    monkeypatch.setattr(dressing_module, "dress_course", failing_dress)
+    output = tmp_path / "course.json"
+    previous = b'{"ancien": "parcours"}\n'
+    output.write_bytes(previous)
+    code = pipeline.main(["--seed", str(SEED), "--output", str(output)])
+    assert code == pipeline.EXIT_ROUTING_FAILED == 3
+    assert output.read_bytes() == previous
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["course.json"]
+    err = capsys.readouterr().err
+    assert f"Habillage impossible pour la seed {SEED} (style links) : {error}." in err
+    assert "Traceback" not in err
 
 
 def test_failed_write_keeps_existing_output(tmp_path, no_default_config, cached_relief,

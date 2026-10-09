@@ -187,13 +187,14 @@ def render_readable_svg(layout: CourseLayout, violations: Sequence[Violation] = 
     for violation in violations:
         counts[violation.kind] = counts.get(violation.kind, 0) + 1
     summary = ", ".join(f"{kind}:{count}" for kind, count in counts.items()) or "aucune"
+    green_legend = "● green" if green_disks else "▱ green habillé · • drapeau"
     out.extend([
         f'<text x="{padding}" y="{top + 18}" font-size="14">{escape(title)}</text>',
         f'<text x="{padding}" y="{top + 38}" font-size="11">{escape(subtitle)}</text>',
         (f'<text x="{padding}" y="{top + 56}" font-size="11">violations {len(violations)} · '
          f'{escape(summary)}</text>'),
         (f'<text x="{padding}" y="{top + 76}" font-size="11">bleu=par3 · vert=par4 · jaune=par5 · '
-         '□ tee · ● green · pointillés = liaisons · rose = violation</text>'),
+         f'□ tee · {green_legend} · pointillés = liaisons · rose = violation</text>'),
         "</svg>",
     ])
     return "\n".join(out) + "\n"

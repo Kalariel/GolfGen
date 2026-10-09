@@ -119,12 +119,19 @@ def green_shape(hole: ElasticHole, core, rng: np.random.Generator,
                 spec: StyleSpec) -> GreenShape:
     """Green du trou, inclus dans ``core`` (polygone du cœur) et contenant le
     drapeau (``hole.green``). Lève ``RuntimeError`` si l'invariant ne peut
-    être tenu (impossible si le drapeau est intérieur au cœur)."""
+    être tenu (impossible si le drapeau est intérieur au cœur), et
+    ``ValueError`` si le segment final de l'axe est de longueur nulle
+    (``ElasticHole`` refuse deux points égaux, pas deux points si proches
+    que la norme s'annule en flottant)."""
     axis = hole.axis
     flag = np.array((axis[-1].x, axis[-1].y))
     before = np.array((axis[-2].x, axis[-2].y))
     tangent = flag - before
-    tangent /= np.linalg.norm(tangent)
+    norm = np.linalg.norm(tangent)
+    if not norm > 0.0 or not math.isfinite(norm):
+        raise ValueError(f"trou {hole.order} : segment final nul, direction d'approche "
+                         "indéfinie")
+    tangent /= norm
     normal = np.array((-tangent[1], tangent[0]))
 
     area = target_area(hole, rng.uniform(), spec)

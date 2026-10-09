@@ -15,6 +15,7 @@ from golfgen.terrain import load_or_compute
 
 EXIT_BAD_PARAMETER = 2          # paramètre invalide (code d'argparse)
 EXIT_ROUTING_FAILED = 3         # aucun parcours valide pour (seed, patron, taille)
+                                # ou habillage impossible (même consigne : autre seed)
 
 
 def run_pipeline(config: CourseConfig, output: Path, *,
@@ -27,8 +28,8 @@ def run_pipeline(config: CourseConfig, output: Path, *,
     (``load_or_compute``), le parcours par le routeur Muirfield, l'habillage
     par ``dress_course`` (style ``config.course.style``, flux aléatoire
     propre : sans effet sur le tracé), et ``output`` reçoit le JSON 3.1, écrit
-    de façon atomique ; en cas d'échec du routage, rien n'est écrit et le
-    code vaut ``EXIT_ROUTING_FAILED`` (3)."""
+    de façon atomique ; en cas d'échec du routage ou de l'habillage, rien
+    n'est écrit et le code vaut ``EXIT_ROUTING_FAILED`` (3)."""
     seed = config.seed
     pattern = config.course.pattern
     style = config.course.style
@@ -68,7 +69,12 @@ def run_pipeline(config: CourseConfig, output: Path, *,
     # --- Habillage (après le tracé, flux aléatoire séparé) ---
     from golfgen.dressing import dress_course
     t0 = time.perf_counter()
-    dressing = dress_course(result, seed=numpy_seed, style=style)
+    try:
+        dressing = dress_course(result, seed=numpy_seed, style=style)
+    except (RuntimeError, ValueError) as exc:
+        print(f"Habillage impossible pour la seed {seed} (style {style}) : {exc}. "
+              "Aucun fichier écrit ; essayez une autre seed.", file=sys.stderr)
+        return EXIT_ROUTING_FAILED
     reduced = sum(hole.green.reduced for hole in dressing.holes.values())
     print(f"3/3  Habillage (style {style}) : 18 greens, {reduced} réduit(s) par le cœur  "
           f"({(time.perf_counter() - t0) * 1000:.0f} ms)")

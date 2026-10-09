@@ -50,3 +50,5 @@ def test_render_readable_green_disks_option(layout):
     assert with_disks.count('fill="#3dbd4e"') == 18
     assert 'fill="#3dbd4e"' not in without
     assert without.count('fill="#e5534b"/>') == with_disks.count('fill="#e5534b"/>')
+    assert "● green" in with_disks and "green habillé" not in with_disks
+    assert "● green" not in without and "▱ green habillé · • drapeau" in without

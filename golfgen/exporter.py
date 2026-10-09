@@ -13,7 +13,7 @@ import uuid
 import numpy as np
 
 from . import __version__
-from .dressing.model import CourseDressing, HoleDressing
+from .dressing.model import STYLE_SPECS, CourseDressing, HoleDressing
 from .routing.model import ElasticHole, NineLayout, WalkingLink
 from .routing.muirfield import MuirfieldResult, outer_start
 from .routing.sites import WATER_LEVEL
@@ -134,6 +134,9 @@ def muirfield_to_dict(result: MuirfieldResult, heightmap: np.ndarray, *, seed: i
     if dressing is not None:
         if not isinstance(dressing, CourseDressing):
             raise TypeError("dressing doit être un CourseDressing ou None")
+        if not isinstance(dressing.style, str) or dressing.style not in STYLE_SPECS:
+            raise ValueError(f"style d'habillage inconnu : {dressing.style!r} "
+                             f"(attendu : {', '.join(STYLE_SPECS)})")
         expected = sorted(hole.order for hole in result.layout.holes)
         if sorted(dressing.holes) != expected:
             raise ValueError("l'habillage ne couvre pas exactement les trous du parcours")
