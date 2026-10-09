@@ -25,7 +25,9 @@ from golfgen.routing.sites import (
     GREEN_SPACING,
     TEE_SPACING,
     WATER_LEVEL,
+    DryMask,
     build_sites,
+    dry_mask,
     load_terrain,
     min_pairwise_distance,
 )
@@ -227,6 +229,41 @@ def test_sites_are_spaced_dry_and_deterministic(seed):
         assert (sites.points[:, 0] <= 350).all()
         again = build_sites(heightmap, seed, kind)
         assert np.array_equal(again.points, sites.points)
+        assert dry_mask(heightmap).is_dry(sites.points).all()
+
+
+def test_dry_mask_matches_brute_force_box_minimum():
+    rng = np.random.default_rng(0)
+    heightmap = rng.uniform(WATER_LEVEL - 3.0, WATER_LEVEL + 12.0, size=(23, 31)).astype(np.float32)
+    padded = np.pad(heightmap, 2, mode="edge")
+    expected = np.array([[padded[y:y + 5, x:x + 5].min() >= WATER_LEVEL for x in range(31)]
+                         for y in range(23)])
+    mask = dry_mask(heightmap)
+    assert (mask.width, mask.height) == (31, 23)
+    assert np.array_equal(mask.dry, expected)
+
+
+def test_dry_mask_is_dry_truncates_and_clamps_like_sites():
+    heightmap = np.full((20, 30), 70.0)
+    heightmap[10, 15] = WATER_LEVEL - 1.0          # une cellule d'eau
+    mask = dry_mask(heightmap)
+    # la boîte de rayon 2 mouille les cellules x 13–17, y 8–12
+    assert not mask.dry[8:13, 13:18].any()
+    assert mask.dry[7, 15] and mask.dry[10, 12] and mask.dry[13, 15] and mask.dry[10, 18]
+    points = [(13.0, 8.0), (17.99, 12.99), (12.99, 10.0), (18.0, 10.0),
+              (-5.0, -5.0), (500.0, 500.0)]
+    assert mask.is_dry(points).tolist() == [False, False, True, True, True, True]
+    assert mask.is_dry(np.array([15.5, 10.5])).tolist() == [False]
+    water_corner = np.full((20, 30), 70.0)
+    water_corner[0, 0] = water_corner[19, 29] = 0.0
+    corner = dry_mask(water_corner)
+    assert corner.is_dry([(-5.0, -5.0), (500.0, 500.0), (10.0, 10.0)]).tolist() == [False, False, True]
+
+
+def test_dry_mask_all_dry():
+    mask = DryMask.all_dry(30, 20)
+    assert mask.dry.shape == (20, 30) and mask.dry.all()
+    assert mask.is_dry([(0.0, 0.0), (29.9, 19.9), (-1.0, 99.0)]).all()
 
 
 def test_flat_relief_falls_back_to_seeded_random_scores():

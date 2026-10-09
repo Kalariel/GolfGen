@@ -4,7 +4,8 @@ Un *site* est un point du terrain jugé apte à recevoir un green (planéité +
 proéminence modérée) ou un tee (planéité seule). Les sites sont obtenus en
 trois temps :
 
-1. grille fine (pas ``GRID_STEP``) décalée d'un bruit seedé, eau exclue ;
+1. grille fine (pas ``GRID_STEP``) décalée d'un bruit seedé, eau exclue
+   (``DryMask``, seule définition du « sec » du routeur) ;
 2. score de relief normalisé dans [0, 1] — ou score aléatoire seedé si le
    relief est trop plat pour départager les candidats ;
 3. amincissement glouton par score décroissant : un candidat n'est retenu que
@@ -54,6 +55,51 @@ class Sites:
 
     def __len__(self) -> int:
         return len(self.points)
+
+
+def grid_indices(points: np.ndarray, width: int, height: int) -> tuple[np.ndarray, np.ndarray]:
+    """Cellules ``(ix, iy)`` du relief sous ``points`` (colonnes x, y) :
+    coordonnées tronquées vers zéro puis bornées à la carte."""
+    ix = np.clip(points[:, 0].astype(int), 0, width - 1)
+    iy = np.clip(points[:, 1].astype(int), 0, height - 1)
+    return ix, iy
+
+
+@dataclass(frozen=True, slots=True)
+class DryMask:
+    """Cellules « sèches » du relief : le minimum du relief dans une boîte de
+    rayon 2 autour de la cellule est ≥ ``WATER_LEVEL``.
+
+    Seule source de vérité du critère sec : les sites de tee et de green
+    (``build_sites``) et le décompte des coudes mouillés du runner l'utilisent.
+    """
+
+    dry: np.ndarray            # (h, w) bool, indexé [y, x]
+
+    @property
+    def width(self) -> int:
+        return int(self.dry.shape[1])
+
+    @property
+    def height(self) -> int:
+        return int(self.dry.shape[0])
+
+    def is_dry(self, points) -> np.ndarray:
+        """``(n,)`` bool : chaque point ``(x, y)`` tombe-t-il sur une cellule
+        sèche ? Même indexation (tronquée, bornée) que les sites."""
+        points = np.asarray(points, dtype=np.float64).reshape(-1, 2)
+        ix, iy = grid_indices(points, self.width, self.height)
+        return self.dry[iy, ix]
+
+    @classmethod
+    def all_dry(cls, width: int, height: int) -> DryMask:
+        """Masque entièrement sec (tests)."""
+        return cls(dry=np.ones((int(height), int(width)), dtype=bool))
+
+
+def dry_mask(heightmap: np.ndarray) -> DryMask:
+    """``DryMask`` du relief ``heightmap`` (indexé ``[y, x]``)."""
+    return DryMask(dry=_box_min(heightmap.astype(np.float64), 2) >= WATER_LEVEL)
 
 
 def load_terrain(seed: int, width: int = 400, height: int = 400,
@@ -141,12 +187,11 @@ def build_sites(heightmap: np.ndarray, seed: int, kind: str) -> Sites:
     gy, gx = np.gradient(heightmap)
     slope = _box_mean(np.hypot(gx, gy), PLANARITY_RADIUS)
     prominence = heightmap - _box_mean(heightmap, PROMINENCE_RADIUS)
-    dry = _box_min(heightmap, 2) >= WATER_LEVEL
+    mask = dry_mask(heightmap)
 
     points = _candidate_grid(heightmap, rng)
-    ix = np.clip(points[:, 0].astype(int), 0, heightmap.shape[1] - 1)
-    iy = np.clip(points[:, 1].astype(int), 0, heightmap.shape[0] - 1)
-    keep = dry[iy, ix]
+    ix, iy = grid_indices(points, mask.width, mask.height)
+    keep = mask.dry[iy, ix]
     points, ix, iy = points[keep], ix[keep], iy[keep]
 
     local_slope = slope[iy, ix]
