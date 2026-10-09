@@ -22,3 +22,7 @@ tools/muirfield/output/*/seed_*.svg
 
 # permissions locales de Claude Code (propres a chaque poste)
 .claude/settings.local.json
+
+# sorties de mesure de tools/dressing (seul report.json est versionne)
+tools/dressing/output/*/*
+!tools/dressing/output/*/report.json

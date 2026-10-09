@@ -68,7 +68,12 @@ def render_readable_svg(layout: CourseLayout, violations: Sequence[Violation] = 
                         heightmap: np.ndarray | None = None,
                         water_level: float | None = None,
                         rings: Sequence[Sequence[Point]] = (),
+                        overlays: Sequence[tuple[Sequence[Point], str]] = (),
                         title: str = "", subtitle: str = "") -> str:
+    """SVG lisible du layout. ``overlays`` : polygones ``(points en blocs,
+    couleur)`` dessinés en surimpression translucide au-dessus des bandes et
+    des liaisons, sous les tees et les greens (vide par défaut : rendu
+    inchangé)."""
     size, padding, footer = 800, 24, 88
     scale = (size - 2 * padding) / max(layout.width, layout.height)
     # hauteur de la zone carte : ``size`` en portrait et au carré (rendu
@@ -139,6 +144,10 @@ def render_readable_svg(layout: CourseLayout, violations: Sequence[Violation] = 
         out.append(f'<polyline points="{fmt(((link.start.x, link.start.y), (link.end.x, link.end.y)))}" '
                    f'fill="none" stroke="{stroke}" stroke-opacity="{0.95 if bad else 0.7}" '
                    f'stroke-width="{2.2 if bad else 1.4}" stroke-dasharray="4 4"/>')
+
+    for polygon, color in overlays:
+        out.append(f'<polygon points="{fmt(polygon)}" fill="{color}" fill-opacity="0.35" '
+                   f'stroke="{color}" stroke-width="2"/>')
 
     for hole in layout.holes:
         color = PAR_COLORS[hole.par]
