@@ -15,9 +15,14 @@ body {
   font-family: 'IBM Plex Mono', monospace;
   height: 100vh;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
+/* Hauteur automatique (polices, retour à la ligne des stats) : la zone
+   principale prend le reste (flex), le canvas suit via ResizeObserver. */
 .header {
+  flex: none;
   padding: 18px 24px;
   display: flex;
   align-items: baseline;
@@ -52,7 +57,8 @@ body {
 
 .main-container {
   display: flex;
-  height: calc(100vh - 65px);
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 /* --- Panneaux (gauche : sidebar, droit : liste des trous) --- */
@@ -98,6 +104,16 @@ body {
   font-size: 14px;
   color: var(--accent);
   margin: 12px 0 6px;
+  letter-spacing: 1px;
+}
+
+/* Sous-titres aller / retour sous le titre « TROUS » du panneau droit. */
+.holes-panel h3 {
+  font-family: 'Silkscreen', cursive;
+  font-size: 12px;
+  font-weight: 400;
+  color: rgba(255,255,255,0.6);
+  margin: 10px 0 4px;
   letter-spacing: 1px;
 }
 

@@ -3,7 +3,7 @@
  * (routeur Muirfield, contrat dans docs/format-3.0.md).
  * Affiche le relief, les 18 trous (couloir tee -> doglegs -> green, largeur
  * totale du fairway), les liaisons et le clubhouse. Zoom/pan interactif.
- * Tout autre format (2.0 compris) est refusé avec un message à l'écran.
+ * Tout autre format est refusé avec un message à l'écran.
  */
 
 // === State ===
@@ -83,7 +83,13 @@ function holeAxis(h) {
 // === Init ===
 function init() {
   document.getElementById('file-input').addEventListener('change', handleFileLoad);
-  window.addEventListener('resize', resizeCanvas);
+  // La hauteur de l'en-tête suit ses polices et son contenu : on suit la zone
+  // de carte elle-même plutôt que la seule fenêtre.
+  if (window.ResizeObserver) {
+    new ResizeObserver(() => resizeCanvas()).observe(document.querySelector('.canvas-wrapper'));
+  } else {
+    window.addEventListener('resize', resizeCanvas);
+  }
 
   canvas.addEventListener('wheel', onWheel, { passive: false });
   canvas.addEventListener('mousedown', onMouseDown);
@@ -514,7 +520,8 @@ function updateSidebar() {
   updateHoleList(routing.holes || []);
 }
 
-// Panneau droit : tableaux aller / retour (trou, par, longueur).
+// Panneau droit : titre « TROUS » toujours affiché, puis tableaux aller /
+// retour (trou, par, longueur).
 function resetHoleList() {
   document.getElementById('hole-list').innerHTML =
     '<h2>TROUS</h2><div class="info-box">Aucun parcours charge.</div>';
@@ -522,23 +529,25 @@ function resetHoleList() {
 
 function updateHoleList(holes) {
   const panel = document.getElementById('hole-list');
-  panel.innerHTML = '';
+  panel.innerHTML = '<h2>TROUS</h2>';
+  let tables = 0;
   ['front', 'back'].forEach(nine => {
     const subset = holes.filter(h => h.nine === nine);
     if (subset.length > 0) {
       panel.appendChild(createHoleTable(nineLabel(nine).toUpperCase(), subset));
+      tables += 1;
     }
   });
-  if (!panel.firstChild) {
-    panel.innerHTML = '<h2>TROUS</h2><div class="info-box">Aucun trou dans ce JSON.</div>';
+  if (tables === 0) {
+    panel.insertAdjacentHTML('beforeend', '<div class="info-box">Aucun trou dans ce JSON.</div>');
   }
 }
 
 function createHoleTable(title, holes) {
   const wrap = document.createElement('div');
-  const h2 = document.createElement('h2');
-  h2.textContent = title;
-  wrap.appendChild(h2);
+  const h3 = document.createElement('h3');
+  h3.textContent = title;
+  wrap.appendChild(h3);
 
   const table = document.createElement('table');
   table.className = 'hole-table';
