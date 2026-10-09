@@ -157,6 +157,20 @@ def test_course_section_read_from_json(tmp_path, no_default_config):
     assert (config.seed, seed_input) == (3178594, " golf ")
 
 
+def test_legacy_routing_section_ignored_with_warning(tmp_path, no_default_config, capsys):
+    """Ancienne config avec ``routing`` (routeur retiré) : lisible, section
+    ignorée, avertissement sur stderr ; sans la section, aucun avertissement."""
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps({"seed": 7, "routing": {"grid_margin": 15}}), encoding="utf-8")
+    config = CourseConfig.from_json(path)
+    assert config.seed == 7 and not hasattr(config, "routing")
+    assert config.to_dict() == CourseConfig(seed=7).to_dict()
+    assert "section « routing » ignorée" in capsys.readouterr().err
+
+    CourseConfig.from_json(REPO_ROOT / "default_config.json")
+    assert capsys.readouterr().err == ""
+
+
 @pytest.mark.parametrize("raw, seed, seed_input", [
     ("golf", 3178594, "golf"), (" 42 ", 42, None), ("-007", -7, None), (7, 7, None),
     ("", 42, None), ("  ", 42, None), (None, 42, None), (2**63, -1773151197, str(2**63)),
@@ -295,22 +309,6 @@ def test_failed_write_keeps_existing_output(tmp_path, no_default_config, cached_
     assert sorted(p.name for p in tmp_path.iterdir()) == ["course.json"]
 
 
-def test_terrain_stage_failed_write_keeps_existing_output(cache_dir, tmp_path, monkeypatch):
-    output = tmp_path / "terrain.json"
-    output.write_bytes(b"ancien")
-    config = CourseConfig(seed=-42, width=40, height=30)
-    terrain_module.load_or_compute(config)              # relief en cache avant la panne
-
-    def broken_dump(*args, **kwargs):
-        raise OSError("disque plein")
-
-    monkeypatch.setattr(json, "dump", broken_dump)
-    with pytest.raises(OSError):
-        pipeline.run_pipeline(config, "terrain", output)
-    assert output.read_bytes() == b"ancien"
-    assert sorted(p.name for p in tmp_path.iterdir()) == ["cache", "terrain.json"]
-
-
 def test_write_json_atomic_fsyncs_before_replace(tmp_path, monkeypatch):
     events = []
     real_fsync, real_replace = os.fsync, os.replace
@@ -349,28 +347,47 @@ def cache_dir(tmp_path, monkeypatch):
     return directory
 
 
-def test_cached_message_miss_then_hit(cache_dir, tmp_path, capsys):
-    output = tmp_path / "terrain.json"
+@pytest.fixture
+def router_reliefs(monkeypatch):
+    """Routeur remplacé par un échec immédiat : la carte 40×30 garde le test
+    rapide ; renvoie les reliefs reçus par le routeur."""
+    reliefs = []
+
+    def failing_build(seed, pattern, heightmap, **kwargs):
+        reliefs.append(heightmap)
+        raise mf.MuirfieldRoutingError(seed, [{"status": "echec"}])
+
+    monkeypatch.setattr(mf, "build_course", failing_build)
+    return reliefs
+
+
+def test_cached_message_miss_then_hit(cache_dir, router_reliefs, tmp_path, capsys):
+    output = tmp_path / "course.json"
     assert pipeline.run_pipeline(CourseConfig(seed=-42, width=40, height=30),
-                                 "terrain", output) == 0
+                                 output) == pipeline.EXIT_ROUTING_FAILED
     assert "1/2  Terrain (Perlin noise)" in capsys.readouterr().out
     assert [p.name for p in cache_dir.iterdir()] == [terrain_cache_path(SMALL).name]
     assert terrain_cache_path(SMALL).name.startswith("terrain_s-42_40x30_")
     assert pipeline.run_pipeline(CourseConfig(seed=-42, width=40, height=30),
-                                 "terrain", output) == 0
+                                 output) == pipeline.EXIT_ROUTING_FAILED
     assert "1/2  Terrain (cached)" in capsys.readouterr().out
+    reference = TerrainGenerator(SMALL).generate()
+    assert len(router_reliefs) == 2
+    assert all(np.array_equal(relief, reference) for relief in router_reliefs)
+    assert not output.exists()
 
 
-def test_wrong_shape_cache_is_recomputed(cache_dir, tmp_path, capsys):
+def test_wrong_shape_cache_is_recomputed(cache_dir, router_reliefs, tmp_path, capsys):
     path = terrain_cache_path(SMALL)
     cache_dir.mkdir()
     np.save(path, np.zeros((5, 5), dtype=np.float32))
     assert pipeline.run_pipeline(CourseConfig(seed=-42, width=40, height=30),
-                                 "terrain", tmp_path / "terrain.json") == 0
+                                 tmp_path / "course.json") == pipeline.EXIT_ROUTING_FAILED
     captured = capsys.readouterr()
     assert "1/2  Terrain (Perlin noise)" in captured.out
     assert "relief recalculé" in captured.err
     reference = TerrainGenerator(SMALL).generate()
+    assert np.array_equal(router_reliefs[0], reference)
     assert np.array_equal(np.load(path), reference)
     heightmap, from_cache = terrain_module.load_or_compute(SMALL)
     assert from_cache and np.array_equal(heightmap, reference)

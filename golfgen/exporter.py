@@ -13,15 +13,14 @@ import uuid
 import numpy as np
 
 from . import __version__
-from .config import CourseConfig
 from .routing.model import ElasticHole, NineLayout, WalkingLink
 from .routing.muirfield import MuirfieldResult, outer_start
 from .routing.sites import WATER_LEVEL
 
 
 def terrain_block(heightmap: np.ndarray) -> dict[str, Any]:
-    """Bloc ``terrain`` commun aux formats 2.0 et 3.0 : heightmap encodée en
-    base64 uint8 (normalisée sur [min, max]), min/max arrondis à 2 décimales."""
+    """Bloc ``terrain`` du format 3.0 (sans ``water_level``) : heightmap encodée
+    en base64 uint8 (normalisée sur [min, max]), min/max arrondis à 2 décimales."""
     h, w = heightmap.shape
     elev_min = float(heightmap.min())
     elev_max = float(heightmap.max())
@@ -153,7 +152,6 @@ def muirfield_to_dict(result: MuirfieldResult, heightmap: np.ndarray, *, seed: i
                 "relaunches": result.relaunches,
             },
         },
-        # 3.0 seul : le bloc 2.0 (``terrain_block``) reste inchangé.
         "terrain": {**terrain_block(heightmap), "water_level": _r2(WATER_LEVEL)},
         "routing": {
             "clubhouse": {**_point(layout.clubhouse), "edge": result.clubhouse_edge},
@@ -191,74 +189,3 @@ def write_json_atomic(path: str | Path, data: dict[str, Any]) -> None:
         tmp.unlink(missing_ok=True)
         raise
 
-
-class JSONExporter:
-    """Sérialise les données du parcours en JSON."""
-
-    def __init__(self, config: CourseConfig):
-        self.config = config
-        self.data: dict[str, Any] = {
-            "metadata": {
-                "version": "2.0",
-                "seed": config.seed,
-                "config": {
-                    "width": config.width,
-                    "height": config.height,
-                    "scale_ratio": config.scale_ratio,
-                    "base_elevation": config.terrain.base_elevation,
-                },
-                "pipeline_stages": [],
-            }
-        }
-
-    def add_terrain(self, heightmap: np.ndarray) -> None:
-        """Ajoute la heightmap au JSON (encodée en base64 uint8)."""
-        if "terrain" not in self.data["metadata"]["pipeline_stages"]:
-            self.data["metadata"]["pipeline_stages"].append("terrain")
-
-        self.data["terrain"] = terrain_block(heightmap)
-
-    def add_routing(self, holes_data: dict | list[dict],
-                    clubhouse_pos: tuple[float, float] | None = None) -> None:
-        """Ajoute les données de routing (18 trous)."""
-        if "routing" not in self.data["metadata"]["pipeline_stages"]:
-            self.data["metadata"]["pipeline_stages"].append("routing")
-        
-        if isinstance(holes_data, dict) and "original" in holes_data and "optimized" in holes_data:
-            # Nouveau format avec positions originales et optimisées
-            self.data["routing"] = {
-                "holes": holes_data["optimized"],
-                "original_positions": holes_data["original"],
-            }
-            print(f"📊 JSON Export: Included {len(holes_data['original'])} original positions")
-            
-            # Debug: afficher un exemple de différences
-            if len(holes_data['original']) > 0:
-                orig = holes_data['original'][0]
-                opt = holes_data['optimized'][0]
-                orig_tee = orig['tee']
-                opt_tee = opt['tee']
-                
-                if isinstance(orig_tee, dict):
-                    print(f"   JSON Example hole 1 - Original tee: ({orig_tee['x']:.1f}, {orig_tee['y']:.1f})")
-                    print(f"   JSON Example hole 1 - Optimized tee: ({opt_tee['x']:.1f}, {opt_tee['y']:.1f})")
-                else:
-                    print(f"   JSON Example hole 1 - Original tee: ({orig_tee[0]:.1f}, {orig_tee[1]:.1f})")
-                    print(f"   JSON Example hole 1 - Optimized tee: ({opt_tee[0]:.1f}, {opt_tee[1]:.1f})")
-        else:
-            # Ancien format pour compatibilité
-            self.data["routing"] = {
-                "holes": holes_data,
-            }
-        
-        if clubhouse_pos is not None:
-            self.data["routing"]["clubhouse"] = {
-                "x": round(clubhouse_pos[0], 1),
-                "y": round(clubhouse_pos[1], 1),
-            }
-
-    def export(self, path: str | Path) -> None:
-        """Écrit le JSON sur disque, de façon atomique (``write_json_atomic``)."""
-        path = Path(path)
-        write_json_atomic(path, self.data)
-        print(f"Export: {path} ({path.stat().st_size / 1024:.1f} Ko)")

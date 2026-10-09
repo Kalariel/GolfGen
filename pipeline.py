@@ -8,32 +8,29 @@ import time
 from pathlib import Path
 
 from golfgen.config import COURSE_PATTERNS, ORIENTATIONS, CourseConfig
-from golfgen.exporter import JSONExporter, muirfield_to_dict, write_json_atomic
+from golfgen.exporter import muirfield_to_dict, write_json_atomic
 from golfgen.seed import java_trim, parse_seed, seed_u64
 from golfgen.terrain import load_or_compute
 
 
-STAGES = ["terrain", "holes"]
 EXIT_BAD_PARAMETER = 2          # paramètre invalide (code d'argparse)
 EXIT_ROUTING_FAILED = 3         # aucun parcours valide pour (seed, patron, taille)
 
 
-def run_pipeline(config: CourseConfig, stage: str, output: Path, *,
+def run_pipeline(config: CourseConfig, output: Path, *,
                  seed_input: str | None = None) -> int:
-    """Exécute le pipeline jusqu'à l'étape indiquée ; renvoie le code de sortie.
+    """Exécute le pipeline complet (relief puis parcours) ; renvoie le code de sortie.
 
     ``config`` doit être résolue et validée (cf. ``resolve_config``) :
-    ``config.seed`` est l'entier signé 64 bits. ``terrain`` écrit le format
-    2.0 et ``holes`` le format 3.0 (routeur Muirfield), tous deux de façon
-    atomique ; en cas d'échec du routage, rien n'est écrit et le code vaut
-    ``EXIT_ROUTING_FAILED`` (3)."""
-    stage_idx = STAGES.index(stage)
+    ``config.seed`` est l'entier signé 64 bits. Le relief passe par le cache
+    (``load_or_compute``), le parcours par le routeur Muirfield, et ``output``
+    reçoit le JSON 3.0, écrit de façon atomique ; en cas d'échec du routage,
+    rien n'est écrit et le code vaut ``EXIT_ROUTING_FAILED`` (3)."""
     seed = config.seed
     pattern = config.course.pattern
 
     shown = f"{seed} (« {seed_input} »)" if seed_input is not None else f"{seed}"
     print(f"Seed: {shown} | Taille: {config.width}x{config.height} | Patron: {pattern}")
-    print(f"Pipeline: {' -> '.join(STAGES[:stage_idx + 1])}")
     print()
 
     # --- Terrain (cache unique, clé seed signée + taille + config de relief) ---
@@ -43,12 +40,6 @@ def run_pipeline(config: CourseConfig, stage: str, output: Path, *,
     print(f"     Heightmap {heightmap.shape[1]}x{heightmap.shape[0]}, "
           f"elev [{heightmap.min():.1f}, {heightmap.max():.1f}]  "
           f"({time.time() - t0:.1f}s)")
-
-    if stage_idx < 1:
-        exporter = JSONExporter(config)
-        exporter.add_terrain(heightmap)
-        exporter.export(output)         # écriture atomique (write_json_atomic)
-        return 0
 
     # --- Holes (routeur Muirfield, format 3.0) ---
     from golfgen.routing.muirfield import (MuirfieldRoutingError, build_course,
@@ -93,8 +84,6 @@ def build_parser() -> argparse.ArgumentParser:
                         help="Seed facon Minecraft Java : blancs de tete et de queue "
                              "retires, puis entier signe 64 bits, sinon texte hache par "
                              "String.hashCode ; vide : defaut (config, 42)")
-    parser.add_argument("--stage", choices=STAGES, default="holes",
-                        help="Etape finale du pipeline (defaut: holes)")
     parser.add_argument("--config", type=str, default=None,
                         help="Fichier de configuration JSON")
     parser.add_argument("--output", type=str, default="output/course.json",
@@ -178,7 +167,7 @@ def main(argv: list[str] | None = None) -> int:
     print()
 
     t_total = time.time()
-    code = run_pipeline(config, args.stage, output, seed_input=seed_input)
+    code = run_pipeline(config, output, seed_input=seed_input)
     if code == 0:
         print()
         print(f"Termine en {time.time() - t_total:.1f}s")

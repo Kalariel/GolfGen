@@ -1,4 +1,4 @@
-"""Format JSON 3.0 (``muirfield_to_dict``) et non-régression du format 2.0."""
+"""Format JSON 3.0 (``muirfield_to_dict``, ``terrain_block``)."""
 
 from __future__ import annotations
 
@@ -12,8 +12,7 @@ import numpy as np
 import pytest
 
 import golfgen
-from golfgen.config import CourseConfig
-from golfgen.exporter import JSONExporter, muirfield_to_dict, terrain_block
+from golfgen.exporter import muirfield_to_dict, terrain_block
 from golfgen.routing import muirfield as mf
 from golfgen.routing.sites import WATER_LEVEL, load_terrain
 
@@ -266,89 +265,48 @@ def test_no_waypoints_anywhere(data):
 
 
 # ----------------------------------------------------------------------
-# Terrain : bloc commun 2.0 / 3.0
+# Terrain : ``terrain_block`` (bloc 3.0 sans ``water_level``)
 # ----------------------------------------------------------------------
 
-def test_terrain_identical_to_v2_helper(built, data):
+def test_terrain_is_terrain_block(built, data):
     _, heightmap = built
     terrain = {k: v for k, v in data["terrain"].items() if k != "water_level"}
     assert terrain == terrain_block(heightmap)
-    exporter = JSONExporter(CourseConfig(seed=SEED, width=WIDTH, height=HEIGHT))
-    exporter.add_terrain(heightmap)
-    assert exporter.data["terrain"] == terrain
-    assert "water_level" not in exporter.data["terrain"]
+    assert "water_level" not in terrain_block(heightmap)
     raw = base64.b64decode(data["terrain"]["elevation"]["data"])
     assert len(raw) == WIDTH * HEIGHT
     assert (data["terrain"]["width"], data["terrain"]["height"]) == (WIDTH, HEIGHT)
 
 
-def test_terrain_water_level(data):
-    """Niveau d'eau du routeur (``sites.WATER_LEVEL``), en unités d'altitude,
-    3.0 seul : sous ce niveau le routeur et les planches PNG voient de l'eau."""
-    water = data["terrain"]["water_level"]
-    assert isinstance(water, float)
-    assert water == WATER_LEVEL
-    assert list(data["terrain"]) == ["width", "height", "elevation", "water_level"]
-
-
-# ----------------------------------------------------------------------
-# Non-régression 2.0 : copie de l'implémentation d'avant la factorisation
-# ----------------------------------------------------------------------
-
-def _legacy_terrain(heightmap: np.ndarray) -> dict:
-    h, w = heightmap.shape
-    elev_min = float(heightmap.min())
-    elev_max = float(heightmap.max())
-    if elev_max - elev_min < 1e-10:
-        uint8_data = np.zeros((h, w), dtype=np.uint8)
-    else:
-        normalized = (heightmap - elev_min) / (elev_max - elev_min)
-        uint8_data = (normalized * 255).astype(np.uint8)
-    encoded = base64.b64encode(uint8_data.tobytes()).decode('ascii')
-    return {
-        "width": w,
-        "height": h,
-        "elevation": {
-            "encoding": "base64_uint8",
-            "data": encoded,
-            "min_elevation": round(elev_min, 2),
-            "max_elevation": round(elev_max, 2),
-        }
-    }
-
-
-def _legacy_export(config: CourseConfig, heightmap: np.ndarray) -> str:
-    data = {
-        "metadata": {
-            "version": "2.0",
-            "seed": config.seed,
-            "config": {
-                "width": config.width,
-                "height": config.height,
-                "scale_ratio": config.scale_ratio,
-                "base_elevation": config.terrain.base_elevation,
-            },
-            "pipeline_stages": ["terrain", "routing"],
-        },
-        "terrain": _legacy_terrain(heightmap),
-        "routing": {"holes": [{"tee": {"x": 1.0, "y": 2.0}}],
-                    "clubhouse": {"x": 3.1, "y": 2.7}},
-    }
-    return json.dumps(data, indent=2, ensure_ascii=False)
-
-
 @pytest.mark.parametrize("kind", ["normal", "flat", "float32"])
-def test_v2_export_unchanged(tmp_path, kind):
+def test_terrain_block_encoding(kind):
+    """uint8 normalisé sur [min, max] (relief plat : zéros), ligne par ligne,
+    min/max arrondis à 2 décimales."""
     rng = np.random.default_rng(7)
     heightmap = {
         "normal": lambda: rng.normal(50, 20, (120, 90)),
         "flat": lambda: np.full((10, 12), 3.0),
         "float32": lambda: rng.uniform(-5, 300, (64, 64)).astype(np.float32),
     }[kind]()
-    config = CourseConfig(seed=42)
-    exporter = JSONExporter(config)
-    exporter.add_terrain(heightmap)
-    exporter.add_routing([{"tee": {"x": 1.0, "y": 2.0}}], clubhouse_pos=(3.14159, 2.71828))
-    path = tmp_path / "course.json"
-    exporter.export(path)
-    assert path.read_text(encoding="utf-8") == _legacy_export(config, heightmap)
+    h, w = heightmap.shape
+    lo, hi = float(heightmap.min()), float(heightmap.max())
+    if kind == "flat":
+        expected = np.zeros((h, w), dtype=np.uint8)
+    else:
+        expected = ((heightmap - lo) / (hi - lo) * 255).astype(np.uint8)
+    block = terrain_block(heightmap)
+    assert (block["width"], block["height"]) == (w, h)
+    elevation = block["elevation"]
+    assert elevation["encoding"] == "base64_uint8"
+    assert (elevation["min_elevation"], elevation["max_elevation"]) == (round(lo, 2), round(hi, 2))
+    decoded = np.frombuffer(base64.b64decode(elevation["data"]), dtype=np.uint8)
+    np.testing.assert_array_equal(decoded.reshape(h, w), expected)
+
+
+def test_terrain_water_level(data):
+    """Niveau d'eau du routeur (``sites.WATER_LEVEL``), en unités d'altitude :
+    sous ce niveau le routeur et les planches PNG voient de l'eau."""
+    water = data["terrain"]["water_level"]
+    assert isinstance(water, float)
+    assert water == WATER_LEVEL
+    assert list(data["terrain"]) == ["width", "height", "elevation", "water_level"]

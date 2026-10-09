@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import sys
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 from typing import Optional
@@ -32,32 +33,6 @@ class TerrainConfig:
     central_flat_radius: int = 45
     central_flat_transition: int = 25
     ns_gradient_strength: float = 0.15
-
-
-@dataclass
-class RoutingConfig:
-    """Paramètres de génération et placement des trous."""
-    par_distribution: list[int] = field(
-        default_factory=lambda: [4, 3, 5, 4, 3, 4, 5, 4, 4,
-                                  4, 5, 3, 4, 4, 5, 3, 4, 4]
-    )
-    # Distances cible (en blocs, 1 bloc = 3m)
-    par3_range: tuple[int, int] = (50, 70)
-    par4_range: tuple[int, int] = (110, 150)
-    par5_range: tuple[int, int] = (170, 195)
-    # Largeurs de fairway
-    fairway_width_par3: int = 9
-    fairway_width_par4: int = 12
-    fairway_width_par5: int = 13
-    # Green
-    green_radius_min: int = 6
-    green_radius_max: int = 10
-    # Placement
-    tee_link_min: float = 12.0   # distance min green→tee suivant
-    tee_link_max: float = 28.0   # distance max green→tee suivant
-    grid_margin: int = 15        # marge min des bords de la carte
-    segment_length: int = 35     # longueur des segments waypoints
-    clubhouse_margin: int = 45   # distance du clubhouse au coin choisi
 
 
 @dataclass
@@ -125,7 +100,6 @@ class CourseConfig:
     scale_ratio: float = 3.0
 
     terrain: TerrainConfig = field(default_factory=TerrainConfig)
-    routing: RoutingConfig = field(default_factory=RoutingConfig)
     course: CourseShapeConfig = field(default_factory=CourseShapeConfig)
 
     def to_dict(self) -> dict:
@@ -141,9 +115,15 @@ class CourseConfig:
         ``course``. Les bornes ne sont pas vérifiées ici (cf. ``validate``).
 
         ``seed`` est normalisée ici par ``parse_seed`` (``seed_input`` en
-        découle) ; une seed ni entière ni texte lève ``ValueError``."""
+        découle) ; une seed ni entière ni texte lève ``ValueError``.
+
+        Une section ``routing`` (paramètres de l'ancien routeur, retiré) est
+        ignorée, avec un avertissement sur stderr."""
         with open(path, 'r') as f:
             data = json.load(f)
+        if 'routing' in data:
+            print(f"{path} : section « routing » ignorée (paramètres de l'ancien "
+                  "routeur, sans effet sur le routeur Muirfield)", file=sys.stderr)
 
         config = cls()
 
@@ -153,7 +133,6 @@ class CourseConfig:
 
         sub_configs = {
             'terrain': (config.terrain, TerrainConfig),
-            'routing': (config.routing, RoutingConfig),
             'course': (config.course, CourseShapeConfig),
         }
         for section, (obj, _cls) in sub_configs.items():

@@ -108,7 +108,6 @@ class TerrainGenerator:
         w, h = self.config.width, self.config.height
         raw = self._multi_octave_noise(w, h)
         raw = self._apply_ns_gradient(raw, h)
-        # _apply_central_flat retiré — fait par l'étape clubhouse
         heightmap = self._normalize(raw)
         return heightmap
 
@@ -145,25 +144,6 @@ class TerrainGenerator:
         """Ajoute un léger gradient nord-sud (plus haut au nord = y=0)."""
         gradient = np.linspace(self.tc.ns_gradient_strength, -self.tc.ns_gradient_strength, h)
         raw += gradient[:, np.newaxis]
-        return raw
-
-    def _apply_central_flat(self, raw: np.ndarray, w: int, h: int) -> np.ndarray:
-        """Aplatit la zone centrale (clubhouse) vers base_elevation."""
-        cx = self.config.clubhouse_x
-        cy = self.config.clubhouse_y
-        radius = self.tc.central_flat_radius
-        transition = self.tc.central_flat_transition
-
-        # Valeur cible pour la zone centrale (0 dans l'espace brut = base_elevation)
-        target = 0.0
-
-        yy, xx = np.mgrid[0:h, 0:w]
-        dist = np.sqrt((xx - cx) ** 2 + (yy - cy) ** 2)
-
-        # Facteur de mélange : 1 au centre, 0 au-delà de radius + transition
-        blend = np.clip((dist - radius) / transition, 0.0, 1.0)
-
-        raw = raw * blend + target * (1 - blend)
         return raw
 
     @staticmethod
