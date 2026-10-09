@@ -111,7 +111,7 @@ clubhouse, clubhouse → 10, …, 18 → clubhouse.
 ```json
 {
   "metadata": {
-    "version": "3.0", "generator": "golfgen 0.0.3",
+    "version": "3.0", "generator": "golfgen 0.1.0",
     "seed": "4", "seed_input": "4",
     "pattern": {"requested": "random", "resolved": "muirfield_inverse"},
     "orientation": "landscape", "short_side": 300.0, "long_side": 400.0,
