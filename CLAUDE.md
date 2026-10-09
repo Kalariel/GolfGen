@@ -3,8 +3,11 @@
 GolfGen : générateur procédural de parcours de golf 18 trous pour Minecraft
 (1 bloc = 3 m) ; un pipeline Python produit un JSON qu'un viewer HTML/JS affiche.
 État : `pipeline.py` (paquet `golfgen/`) route avec le routeur « Muirfield »
-(cœur dans `golfgen/routing/`) et écrit le JSON 3.0 (`docs/format-3.0.md`), que
-lit le viewer 3.x (`viewer/`) ; runner et rendus PNG dans `tools/muirfield/`.
+(cœur dans `golfgen/routing/`), l'habille (`golfgen/dressing/` : formes de greens,
+style `links` ou `parkland`, sans effet sur le tracé) et écrit le JSON 3.1
+(`docs/format-3.0.md`, section « Extension 3.1 » ; 3.0 = même JSON sans habillage),
+que lit le viewer 3.x (`viewer/`) ; runner et rendus PNG dans `tools/muirfield/`,
+planches des greens dans `tools/dressing/`.
 
 ## Commandes
 
@@ -13,7 +16,8 @@ Toujours le venv `.venv` (le python système n'a pas pytest).
 ```bash
 .venv/bin/python -m pytest tests/ -v                 # tous les tests
 .venv/bin/python -m pytest tests/test_routing_*.py   # cœur Muirfield seul
-.venv/bin/python pipeline.py --seed 4                # -> output/course.json (3.0), ≈ 0,4 s
+.venv/bin/python pipeline.py --seed 4                # -> output/course.json (3.1), ≈ 0,4 s
+.venv/bin/python pipeline.py --seed 4 --style parkland  # style d'habillage (défaut links)
 .venv/bin/python -m http.server 8000                 # viewer : http://localhost:8000/viewer/
 .venv/bin/python -m tools.muirfield.run_muirfield \
     --round custom --pattern muirfield_inverse --size 300x400 --seeds 1-6
@@ -43,4 +47,4 @@ Options : `pipeline.py --help`, `.venv/bin/python -m tools.muirfield.run_muirfie
 - Vault Obsidian :
   - `/home/kalariel/Documents/Git/ObsidianVault/dev-kb/golfgen/_overview.md`
   - `/home/kalariel/Documents/Git/ObsidianVault/dev-kb/golfgen/elastic-routing-muirfield.md` (historique et décisions)
-  - `/home/kalariel/Documents/Git/ObsidianVault/dev-kb/golfgen/session-2026-10-08-reprise.md` (statut et prompt de reprise)
+  - `/home/kalariel/Documents/Git/ObsidianVault/dev-kb/golfgen/session-2026-10-10-reprise.md` (statut et prompt de reprise)
