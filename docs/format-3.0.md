@@ -1,9 +1,10 @@
-# Format JSON 3.0 — parcours Muirfield
+# Format JSON 3.0 — parcours Muirfield (et extension 3.1 : habillage)
 
 Référence du JSON produit par `golfgen.exporter.muirfield_to_dict(result,
-heightmap, *, seed, seed_input=None)` et lu par le viewer (`viewer/`, qui
-refuse tout `metadata.version` hors 3.x). C'est le seul format écrit par
-`pipeline.py`.
+heightmap, *, seed, seed_input=None, dressing=None)` et lu par le viewer
+(`viewer/`, qui refuse tout `metadata.version` hors 3.x). Sans `dressing`, le
+dict est du 3.0 ; avec, du 3.1 (section « Extension 3.1 » plus bas), que
+`pipeline.py` écrit toujours.
 
 `muirfield_to_dict` est pure (ni I/O, ni état global, ni aléa) : même entrée,
 même dict. Le dict passe `json.dumps` sans encodeur (aucun type numpy).
@@ -25,7 +26,7 @@ même dict. Le dict passe `json.dumps` sans encodeur (aucun type numpy).
 
 | Champ | Type | Unité / valeurs |
 |---|---|---|
-| `version` | chaîne | `"3.0"` |
+| `version` | chaîne | `"3.0"` (`"3.1"` avec habillage) |
 | `generator` | chaîne | `"golfgen <version du paquet>"` (`golfgen.__version__`, égal à `setup.py`) |
 | `seed` | chaîne | entier signé tel que saisi, en décimal (`str(seed)`) ; voir plus bas |
 | `seed_input` | chaîne ou `null` | texte d'origine saisi par l'utilisateur, sinon `null` |
@@ -166,14 +167,47 @@ trimé), et `null` dès que `Long.parseLong` a réussi (même pour `"-007"` ou
 `"+5"`). Le routage reçoit
 `seed & 0xFFFF_FFFF_FFFF_FFFF` (égal à `seed` si `seed ≥ 0`).
 
+## Extension 3.1 : habillage
+
+Ajout strictement additif (règle ci-dessous) : un lecteur 3.0 lit un 3.1 en
+ignorant les nouvelles clés. Produit quand `muirfield_to_dict` reçoit
+`dressing` (`golfgen.dressing.dress_course(result, *, seed, style)`), ce que
+fait toujours `pipeline.py`.
+
+| Champ | Type | Unité / valeurs |
+|---|---|---|
+| `metadata.version` | chaîne | `"3.1"` |
+| `metadata.style` | chaîne | `"links"` ou `"parkland"` (`--style`, défaut `links`) |
+| `routing.holes[].features` | objet | habillage du trou ; une clé par élément (aujourd'hui `green` ; `tees`, `double_green` à venir) |
+| `features.green.outline` | liste de `{x, y}` | blocs : contour du green, 32 sommets, polygone simple fermé implicitement |
+| `features.green.center` | `{x, y}` | blocs : centre de la forme (sur l'axe, reculé de 0 à 1,5 bloc depuis le drapeau vers l'approche, puis suivi de la réduction éventuelle) |
+| `features.green.area` | nombre | blocs² : aire du contour tel qu'exporté |
+
+Invariants :
+
+- **green ⊂ cœur** : le contour est inclus dans le cœur du trou,
+  `buffered_axis(axe, width / 2)` (`golfgen.routing.geometry`) ; s'il en
+  sortait, la forme est réduite par homothétie ×0,95 centrée sur le drapeau
+  jusqu'à inclusion (contrôle fait sur les coordonnées arrondies).
+- Le contour **contient le drapeau** (`holes[].green`).
+- Aire signée positive dans le repère (x, y) (sens horaire à l'écran, `y`
+  vers le bas). Aire visée (provisoire) : links 60–95 blocs², parkland
+  50–75, croissante avec la longueur du trou ; une forme réduite est
+  plus petite.
+- **Le tracé ne dépend pas de l'habillage** : `routing` sans les clés
+  `features` est identique octet pour octet au 3.0 de la même seed, quel que
+  soit le style (aléa de l'habillage sur un flux séparé).
+- Un lecteur teste la présence de `features` (et de chacune de ses clés)
+  plutôt que la version.
+
 ## Extension
 
 - **Ajouts de champs = version mineure** (`3.1`, `3.2`, …) : un lecteur 3.x
   ignore les clés qu'il ne connaît pas, et aucun champ existant ne change de
   type, d'unité ou de sens. Retirer ou redéfinir un champ = `4.0`.
-- **Une section par couche** pour le façonnage à venir : les formes s'ajoutent
-  sur les objets existants (`holes[].green.outline`, `holes[].tee.outline`,
-  `holes[].fairway`…) et chaque nouvelle couche indépendante arrive dans sa
+- **Une section par couche** pour le façonnage à venir : les formes d'un trou
+  s'ajoutent sous `holes[].features` (`green` en 3.1, puis `tees`,
+  `double_green`…) et chaque nouvelle couche indépendante arrive dans sa
   propre section de premier niveau ou de `routing` (`bunkers`, `trees`,
   `water`…), absente tant que l'étape correspondante n'est pas implémentée.
   Un lecteur teste la présence de la section au lieu de supposer une version.

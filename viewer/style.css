@@ -333,6 +333,7 @@ body {
 .legend .swatch.par4 { background: #56d364; }
 .legend .swatch.par5 { background: #f2cc60; }
 .legend .swatch.water { background: #1d4f73; }
+.legend .swatch.greenshape { background: #9be58f; outline: 1px solid #2b7a34; }
 
 .legend .sym {
   display: inline-block;

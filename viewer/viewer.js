@@ -2,7 +2,9 @@
  * Viewer de parcours de golf — lit le JSON 3.x produit par `pipeline.py`
  * (routeur Muirfield, contrat dans docs/format-3.0.md).
  * Affiche le relief, les 18 trous (couloir tee -> doglegs -> green, largeur
- * totale du fairway), les liaisons et le clubhouse. Zoom/pan interactif.
+ * totale du fairway), les liaisons et le clubhouse ; en 3.1, l'habillage
+ * (`holes[].features`, contours de greens), détecté par présence et non par
+ * version. Zoom/pan interactif.
  * Tout autre format est refusé avec un message à l'écran.
  */
 
@@ -28,6 +30,7 @@ let show = {
   links: true,
   grid: true,
   nums: true,
+  dressing: true,
 };
 
 let highlightedHole = null;
@@ -44,6 +47,8 @@ const C = {
   ink: '#0d1117',
   paper: '#f0f6fc',
   green: '#3dbd4e',
+  greenShape: '#9be58f',     // green habillé (3.1) : vert clair...
+  greenEdge: '#2b7a34',      // ...avec contour
   flag: '#e5534b',
   link: '#e6edf3',
   club: '#e5534b',
@@ -78,6 +83,23 @@ function fmtMeters(blocks) {
 
 function holeAxis(h) {
   return [h.tee, ...(h.doglegs || []), h.green];
+}
+
+/** Contour du green habillé (3.1, `features.green.outline`), sinon null. */
+function greenOutline(h) {
+  const g = h.features && h.features.green;
+  return g && Array.isArray(g.outline) && g.outline.length >= 3 ? g.outline : null;
+}
+
+function hasDressing() {
+  const holes = courseData && courseData.routing ? courseData.routing.holes || [] : [];
+  return holes.some(h => greenOutline(h) !== null);
+}
+
+/** Bouton « Habillage » : désactivé si le fichier n'a pas de `features`. */
+function updateDressingButton() {
+  const btn = document.getElementById('btn-dressing');
+  if (btn) btn.disabled = !hasDressing();
 }
 
 // === Init ===
@@ -365,6 +387,7 @@ function loadCourseData(json) {
 
     updateHeader();
     updateSidebar();
+    updateDressingButton();
     fitView();
     updateZoomDisplay();
     draw();
@@ -483,6 +506,9 @@ function updateSidebar() {
     html += infoRow('Patron resolu', meta.pattern.resolved);
   }
   html += infoRow('Taille', `${mapW} x ${mapH} blocs (${mapW * blockM} x ${mapH * blockM} m)`);
+  if (meta.style) {
+    html += infoRow('Style', meta.style);
+  }
   if (meta.orientation) {
     html += infoRow('Orientation', ORIENTATION_LABEL[meta.orientation] || meta.orientation);
   }
@@ -599,6 +625,7 @@ function draw() {
   drawMapFrame();
   if (courseData.routing) {
     if (show.holes) drawCorridors();
+    if (show.dressing && hasDressing()) drawDressing();
     if (show.links) drawLinks();
     if (show.holes) drawHoleMarkers();
     drawClubhouse();
@@ -698,6 +725,23 @@ function drawCorridors() {
   });
 }
 
+/** Habillage (3.1) : contours de greens, en vert clair avec contour. */
+function drawDressing() {
+  const holes = courseData.routing.holes || [];
+  ctx.lineJoin = 'round';
+  holes.forEach(h => {
+    const outline = greenOutline(h);
+    if (!outline) return;
+    tracePolyline(outline);
+    ctx.closePath();
+    ctx.fillStyle = C.greenShape;
+    ctx.fill();
+    ctx.strokeStyle = C.greenEdge;
+    ctx.lineWidth = h.id === highlightedHole ? 2 : 1.2;
+    ctx.stroke();
+  });
+}
+
 function endpoint(ref, side) {
   const routing = courseData.routing;
   if (ref === 'clubhouse') return routing.clubhouse;
@@ -734,13 +778,21 @@ function drawHoleMarkers() {
     ctx.strokeRect(tx - 4, ty - 4, 8, 8);
 
     const [gx, gy] = toCanvas(h.green.x, h.green.y);
-    ctx.beginPath();
-    ctx.arc(gx, gy, Math.max(4, GREEN_RADIUS * camZoom), 0, Math.PI * 2);
-    ctx.fillStyle = C.green;
-    ctx.fill();
-    ctx.strokeStyle = C.paper;
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
+    if (show.dressing && greenOutline(h)) {
+      // green habillé déjà dessiné : seul le trou du drapeau
+      ctx.beginPath();
+      ctx.arc(gx, gy, 1.8, 0, Math.PI * 2);
+      ctx.fillStyle = C.ink;
+      ctx.fill();
+    } else {
+      ctx.beginPath();
+      ctx.arc(gx, gy, Math.max(4, GREEN_RADIUS * camZoom), 0, Math.PI * 2);
+      ctx.fillStyle = C.green;
+      ctx.fill();
+      ctx.strokeStyle = C.paper;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
     // Drapeau
     ctx.beginPath();
     ctx.moveTo(gx, gy);
@@ -933,7 +985,10 @@ function updateTooltip(clientX, clientY, mx, my) {
     tooltip.innerHTML = `<div class="tt-title">Trou ${esc(hole.id)} — Par ${esc(hole.par)}</div>`
       + `Nine : ${esc(nineLabel(hole.nine))}<br>`
       + `Longueur : ${esc(fmtBlocks(hole.length))} (${esc(fmtMeters(hole.length))})<br>`
-      + `Largeur : ${esc(Number(hole.width).toFixed(1))} blocs (${esc(fmtMeters(hole.width))})`;
+      + `Largeur : ${esc(Number(hole.width).toFixed(1))} blocs (${esc(fmtMeters(hole.width))})`
+      + (greenOutline(hole) && hole.features.green.area !== undefined
+        ? `<br>Green : ${esc(Number(hole.features.green.area).toFixed(0))} blocs²`
+        : '');
     setHighlight(hole.id);
     return;
   }
