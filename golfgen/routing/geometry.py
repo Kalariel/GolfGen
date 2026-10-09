@@ -1,8 +1,9 @@
 """Oracle géométrique indépendant pour les parcours élastiques.
 
-Le module dépend uniquement du modèle de données. Il ne connaît ni squelette,
-ni mutation, ni optimiseur : une recherche future ne peut donc pas déclarer
-elle-même son résultat valide.
+Le module dépend uniquement du modèle de données (et du masque sec du relief,
+``DryMask``, fourni par l'appelant). Il ne connaît ni squelette, ni mutation,
+ni optimiseur : une recherche future ne peut donc pas déclarer elle-même son
+résultat valide.
 """
 
 from __future__ import annotations
@@ -10,8 +11,12 @@ from __future__ import annotations
 from collections import Counter
 from dataclasses import dataclass
 import math
+from typing import TYPE_CHECKING
 
 from golfgen.routing.model import CourseLayout, ElasticHole, PAR_SPECS
+
+if TYPE_CHECKING:
+    from golfgen.routing.sites import DryMask
 
 
 Point = tuple[float, float]
@@ -362,8 +367,18 @@ def _validate_nine_pars(layout: CourseLayout, rules: ValidationRules) -> list[Vi
     return violations
 
 
-def validate(layout: CourseLayout, rules: ValidationRules | None = None) -> list[Violation]:
-    """Retourne toutes les violations finales, dans un ordre déterministe."""
+def validate(layout: CourseLayout, rules: ValidationRules | None = None, *,
+             dry: DryMask) -> list[Violation]:
+    """Retourne toutes les violations finales, dans un ordre déterministe.
+
+    ``dry`` (obligatoire, sans défaut : un oubli doit lever, pas sauter le
+    contrôle) est le masque sec du relief de la carte ; un coude de dogleg
+    posé sur une cellule mouillée viole ``dogleg_water``. Les segments
+    droits peuvent franchir l'eau."""
+    expected = (int(layout.height), int(layout.width))
+    if tuple(dry.dry.shape) != expected:
+        raise ValueError(f"masque sec {tuple(dry.dry.shape)}, carte attendue "
+                         f"{expected[0]}×{expected[1]}")
     rules = rules or ValidationRules(width=layout.width, height=layout.height)
     geometries = {hole.order: build_hole_geometry(hole) for hole in layout.holes}
     violations: list[Violation] = []
@@ -397,6 +412,15 @@ def validate(layout: CourseLayout, rules: ValidationRules | None = None) -> list
                 "bounds", (hole.order,),
                 f"cœur à moins de {rules.edge_min:.2f} bloc du bord",
             ))
+        if hole.doglegs:
+            wet = [point for point, ok in zip(hole.doglegs,
+                                              dry.is_dry([(p.x, p.y) for p in hole.doglegs]))
+                   if not ok]
+            if wet:
+                violations.append(Violation(
+                    "dogleg_water", (hole.order,),
+                    "coude dans l'eau : " + ", ".join(f"({p.x:.2f}, {p.y:.2f})" for p in wet),
+                ))
         if rules.clubhouse_clear_radius is not None:
             distance = _point_polygon_distance(clubhouse, geometry.core)
             if distance < rules.clubhouse_clear_radius - EPSILON:

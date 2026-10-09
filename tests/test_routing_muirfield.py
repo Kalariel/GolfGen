@@ -13,6 +13,8 @@ from collections import Counter
 import dataclasses
 import math
 
+import hashlib
+
 import numpy as np
 import pytest
 
@@ -38,6 +40,11 @@ FORMATS = ((300, 400), (350, 400))
 CASES = [(w, h, seed) for w, h in FORMATS for seed in SEEDS]
 
 
+def _dry(seed: int, width: int, height: int) -> DryMask:
+    """Masque sec réel (relief en cache) d'une carte routée."""
+    return dry_mask(load_terrain(seed, width, height))
+
+
 @pytest.fixture(scope="module")
 def results():
     return {(w, h, seed): mf.build_muirfield(seed, width=w, height=h) for w, h, seed in CASES}
@@ -48,7 +55,7 @@ def test_zero_final_violations(results, case):
     result = results[case]
     assert result.violations == ()
     w, h, _ = case
-    assert validate(result.layout, ValidationRules(width=w, height=h)) == []
+    assert validate(result.layout, ValidationRules(width=w, height=h), dry=_dry(case[2], w, h)) == []
 
 
 def test_build_is_deterministic(results):
@@ -186,7 +193,8 @@ def test_prefilters_only_reject_what_the_checks_reject(results):
     candidat qu'ils écartent est aussi rejeté par ``PartialLayout.check``."""
     layout = results[(350, 400, 3)].layout
     partial = PartialLayout(ValidationRules(width=350, height=400),
-                            (layout.clubhouse.x, layout.clubhouse.y))
+                            (layout.clubhouse.x, layout.clubhouse.y),
+                            dry=DryMask.all_dry(350, 400))
     for hole in layout.front.holes:
         partial.push(hole, ())
     for link in layout.front.links:
@@ -227,9 +235,32 @@ def test_sites_are_spaced_dry_and_deterministic(seed):
         assert (heightmap[iy, ix] >= WATER_LEVEL).all()
         assert ((sites.scores >= 0.0) & (sites.scores <= 1.0)).all()
         assert (sites.points[:, 0] <= 350).all()
-        again = build_sites(heightmap, seed, kind)
-        assert np.array_equal(again.points, sites.points)
         assert dry_mask(heightmap).is_dry(sites.points).all()
+        shared = build_sites(heightmap, seed, kind, mask=dry_mask(heightmap))
+        assert np.array_equal(shared.points, sites.points)
+
+
+# Empreinte dorée de build_sites (seed 1, 350×400), figée sur le code du lot 0
+# round 1 (d33c099) : nombre de sites et SHA-256 des points (float64 petit-boutiste).
+SITES_FINGERPRINT = {
+    "green": (604, "3052f1766e4f0487e623ec642297f246bf6d8c5e35c4e4443ac9c747d2225f8f"),
+    "tee": (581, "4561ea572b4ac5c051a208e1d34614992ac5e31a1f38819670d51ae1df2f2885"),
+}
+
+
+@pytest.mark.parametrize("kind", sorted(SITES_FINGERPRINT))
+def test_sites_match_the_golden_fingerprint_bit_for_bit(kind):
+    heightmap = load_terrain(1, 350, 400)
+    for mask in (None, dry_mask(heightmap)):
+        sites = build_sites(heightmap, 1, kind, mask=mask)
+        digest = hashlib.sha256(np.ascontiguousarray(sites.points, dtype="<f8").tobytes()).hexdigest()
+        assert (len(sites), digest) == SITES_FINGERPRINT[kind]
+
+
+def test_build_sites_rejects_a_mask_of_another_size():
+    heightmap = np.full((40, 50), 70.0)
+    with pytest.raises(ValueError, match="masque sec"):
+        build_sites(heightmap, 1, "green", mask=DryMask.all_dry(40, 50))
 
 
 def test_dry_mask_matches_brute_force_box_minimum():
@@ -266,6 +297,18 @@ def test_dry_mask_all_dry():
     assert mask.is_dry([(0.0, 0.0), (29.9, 19.9), (-1.0, 99.0)]).all()
 
 
+def test_dry_mask_is_read_only_and_compared_by_identity():
+    source = np.ones((4, 5), dtype=bool)
+    mask = DryMask(dry=source)
+    with pytest.raises(ValueError):
+        mask.dry[0, 0] = False
+    source[0, 0] = False                         # copie : la source reste libre
+    assert mask.dry[0, 0]
+    other = DryMask(dry=source)
+    assert mask == mask and mask != other        # identité, pas d'ambiguïté ndarray
+    assert len({mask, other}) == 2
+
+
 def test_flat_relief_falls_back_to_seeded_random_scores():
     flat = np.full((400, 400), 70.0, dtype=np.float32)
     first = build_sites(flat, 5, "green")
@@ -282,18 +325,18 @@ def test_default_square_map_is_valid():
     result = mf.build_muirfield(1)
     assert (result.width, result.height) == (400.0, 400.0)
     assert result.violations == ()
-    assert validate(result.layout) == []
+    assert validate(result.layout, dry=_dry(1, 400, 400)) == []
 
 
 def test_layout_rejected_by_the_oracle_is_never_returned(monkeypatch):
     real = mf.validate
     calls = []
 
-    def first_call_fails(layout, rules):
+    def first_call_fails(layout, rules, *, dry):
         calls.append(1)
         if len(calls) == 1:
             return [Violation("fairway_gap", (1, 2), "injectée")]
-        return real(layout, rules)
+        return real(layout, rules, dry=dry)
 
     monkeypatch.setattr(mf, "validate", first_call_fails)
     result = mf.build_muirfield(3, width=350, height=400)
@@ -302,7 +345,7 @@ def test_layout_rejected_by_the_oracle_is_never_returned(monkeypatch):
     assert result.violations == ()
 
     monkeypatch.setattr(mf, "validate",
-                        lambda layout, rules: [Violation("length", (1,), "injectée")])
+                        lambda layout, rules, *, dry: [Violation("length", (1,), "injectée")])
     monkeypatch.setattr(mf, "MAX_ATTEMPTS", 3)
     with pytest.raises(mf.MuirfieldRoutingError) as info:
         mf.build_muirfield(3, width=350, height=400)
@@ -322,7 +365,7 @@ def test_link_bounds_are_derived_from_rules():
 def test_custom_link_rules_are_honoured():
     rules = ValidationRules(width=350, height=400, link_min=14.0, link_max=40.0)
     result = mf.build_muirfield(3, width=350, height=400, rules=rules)
-    assert validate(result.layout, rules) == []
+    assert validate(result.layout, rules, dry=_dry(3, 350, 400)) == []
     assert all(14.0 - 1e-9 <= link.length <= 40.0 + 1e-9 for link in result.layout.links)
 
 
@@ -375,7 +418,7 @@ def _hole(order, tee, green, par=4, width=11.0):
 
 
 def _partial(*holes, links=()):
-    partial = PartialLayout(RULES, CLUBHOUSE)
+    partial = PartialLayout(RULES, CLUBHOUSE, dry=DryMask.all_dry(400, 400))
     for hole in holes:
         partial.push(hole, ())
     for link in links:
@@ -507,7 +550,8 @@ def test_round_a_failures_now_route_cleanly(seed):
     trou 1 (19, 28), back bloqué vers 17/18 (8, 25, 27)."""
     result = mf.build_muirfield(seed, width=300, height=400)
     assert result.violations == ()
-    assert validate(result.layout, ValidationRules(width=300, height=400)) == []
+    assert validate(result.layout, ValidationRules(width=300, height=400),
+                    dry=_dry(seed, 300, 400)) == []
 
 
 # -- round B : patron explicite, Muirfield inversé ---------------------------
@@ -546,7 +590,8 @@ def test_inverse_pattern_is_valid(inverse_results, seed):
     result = inverse_results[seed]
     assert result.pattern == "muirfield_inverse"
     assert result.violations == ()
-    assert validate(result.layout, ValidationRules(width=300, height=400)) == []
+    assert validate(result.layout, ValidationRules(width=300, height=400),
+                    dry=_dry(seed, 300, 400)) == []
     pars = [tuple(h.par for h in nine.holes) for nine in (result.layout.front, result.layout.back)]
     assert all(mf.par_sequence_ok(p) and mf.nine_par_ok(p) for p in pars)
 
@@ -662,9 +707,10 @@ def test_attempt_statuses_are_classified(inverse_results, seed):
     assert {a["status"] for a in inverse_results[seed].attempts} <= known
 
 
-def _toy_search(tees, greens, holes=()):
+def _toy_search(tees, greens, holes=(), dry=None):
     rules = ValidationRules(width=400, height=400)
-    partial = PartialLayout(rules, (200.0, 394.0))
+    partial = PartialLayout(rules, (200.0, 394.0),
+                            dry=dry if dry is not None else DryMask.all_dry(400, 400))
     for hole in holes:
         partial.push(hole, ())
     tees, greens = np.asarray(tees, float), np.asarray(greens, float)
@@ -714,6 +760,45 @@ def test_dogleg_prefilter_keeps_the_free_corner_only():
     kept = list(search.candidates(level, 4, [], np.zeros((1, 2))))
     assert len(kept) == 1 and kept[0].doglegs[0].y < 200.0
     assert search.partial.check(kept[0], ()) is None             # le coude gardé est valide
+    # coude mouillé : l'eau sous le coude y < 200 ne laisse que l'autre ;
+    # avec le bloqueur côté y > 200 en plus, plus aucun candidat
+    low = next(hole.doglegs[0] for hole in free if hole.doglegs[0].y < 200.0)
+    water = np.ones((400, 400), dtype=bool)
+    water[int(low.y), int(low.x)] = False
+    wet = DryMask(dry=water)
+    dry_side = list(_toy_search([tee], [green], dry=wet).candidates(level, 4, [], np.zeros((1, 2))))
+    assert len(dry_side) == 1 and dry_side[0].doglegs[0].y > 200.0
+    assert list(_toy_search([tee], [green], holes=(blocker,), dry=wet).candidates(
+        level, 4, [], np.zeros((1, 2)))) == []
+
+
+def test_partial_check_rejects_a_wet_dogleg_corner():
+    hole = ElasticHole(order=12, par=4, tee=ControlPoint(100.0, 200.0),
+                       green=ControlPoint(195.0, 200.0),
+                       doglegs=(ControlPoint(157.0, 225.5),), width=11.0)
+    water = np.ones((400, 400), dtype=bool)
+    water[225, 157] = False
+    assert PartialLayout(RULES, CLUBHOUSE, dry=DryMask(dry=water)).check(hole, ()) == "dogleg_water"
+    assert PartialLayout(RULES, CLUBHOUSE, dry=DryMask.all_dry(400, 400)).check(hole, ()) is None
+    # l'eau sous un segment droit (hors coude) reste permise
+    water = np.ones((400, 400), dtype=bool)
+    water[208, 120] = False         # sous le segment tee → coude
+    assert PartialLayout(RULES, CLUBHOUSE, dry=DryMask(dry=water)).check(hole, ()) is None
+    with pytest.raises(TypeError):
+        PartialLayout(RULES, CLUBHOUSE)
+
+
+def test_routed_layouts_have_no_wet_dogleg(results, inverse_results):
+    layouts = [((w, h, seed), r.layout) for (w, h, seed), r in results.items()]
+    layouts += [((300, 400, seed), r.layout) for seed, r in inverse_results.items()]
+    corners = 0
+    for (w, h, seed), layout in layouts:
+        mask = _dry(seed, w, h)
+        for hole in layout.holes:
+            if hole.doglegs:
+                corners += len(hole.doglegs)
+                assert mask.is_dry([(p.x, p.y) for p in hole.doglegs]).all(), (w, h, seed, hole.order)
+    assert corners > 50
 
 
 # -- round C : nits B et largeurs variables (C1) -------------------------------
@@ -922,7 +1007,7 @@ def test_identical_plan_is_skipped(monkeypatch):
 
     monkeypatch.setattr(mf, "iter_plans", twice)
     monkeypatch.setattr(mf, "validate",
-                        lambda layout, rules: [Violation("length", (1,), "injectée")])
+                        lambda layout, rules, *, dry: [Violation("length", (1,), "injectée")])
     with pytest.raises(mf.MuirfieldRoutingError) as info:
         mf.build_muirfield(3, width=350, height=400)
     assert [a["status"] for a in info.value.attempts] == ["echec_validate"]

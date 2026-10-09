@@ -4,10 +4,12 @@
 liaisons, et répond à une seule question : *ce trou candidat, avec sa ou ses
 liaisons, introduit-il une violation finale ?* Les familles contrôlées sont
 celles de ``geometry.validate`` qui dépendent d'un trou et de ses voisins
-déjà posés : longueur/largeur, bords, clubhouse dégagé, croisement d'axes,
-écart fairway (avec TOUS les trous posés), liaison hors plage, liaison
-bloquée (dans les deux sens : nouvelle liaison vs fairways posés, liaisons
-posées vs nouveau fairway) et pile parallèle consécutive.
+déjà posés : longueur/largeur, bords, coude de dogleg dans l'eau (même
+``DryMask`` que ``validate``, partagé par ``build_course``), clubhouse
+dégagé, croisement d'axes, écart fairway (avec TOUS les trous posés),
+liaison hors plage, liaison bloquée (dans les deux sens : nouvelle liaison
+vs fairways posés, liaisons posées vs nouveau fairway) et pile parallèle
+consécutive.
 
 Les prédicats sont ceux de l'oracle (mêmes fonctions, mêmes epsilons) : un
 layout construit uniquement à partir de candidats acceptés ne peut donc pas
@@ -38,6 +40,7 @@ from golfgen.routing.geometry import (
     segments_intersect,
 )
 from golfgen.routing.model import PAR_SPECS, ElasticHole
+from golfgen.routing.sites import DryMask
 
 
 Point = tuple[float, float]
@@ -81,6 +84,8 @@ class PartialLayout:
 
     rules: ValidationRules
     clubhouse: Point
+    # masque sec du relief : nommé, obligatoire, sans défaut (un oubli lève)
+    dry: DryMask = field(kw_only=True)
     holes: list[_Placed] = field(default_factory=list)
     links: list[tuple[PlannedLink, BBox]] = field(default_factory=list)
     _stack: list[tuple[int, int]] = field(default_factory=list)
@@ -114,6 +119,8 @@ class PartialLayout:
                or p[1] < rules.edge_min - EPSILON or p[1] > rules.height - rules.edge_min + EPSILON
                for p in core):
             return "bounds"
+        if hole.doglegs and not self.dry.is_dry([(p.x, p.y) for p in hole.doglegs]).all():
+            return "dogleg_water"
         if (rules.clubhouse_clear_radius is not None
                 and _point_polygon_distance(self.clubhouse, core)
                 < rules.clubhouse_clear_radius - EPSILON):

@@ -9,6 +9,7 @@ from collections import Counter
 from dataclasses import replace
 import math
 
+import numpy as np
 import pytest
 
 from golfgen.routing.geometry import (
@@ -23,9 +24,11 @@ from golfgen.routing.model import (
     ElasticHole,
     NineLayout,
 )
+from golfgen.routing.sites import DryMask
 
 
 NINE_PARS = (3, 4, 4, 4, 4, 5, 5, 4, 3)
+DRY = DryMask.all_dry(400, 400)         # cartes synthétiques 400×400, sans eau
 
 
 def _striped_nine(start_order, y_values, start_x, direction):
@@ -99,11 +102,11 @@ def _replace_hole(layout, order, **changes):
 
 
 def _kinds(layout, rules=PERMISSIVE):
-    return {violation.kind for violation in validate(layout, rules)}
+    return {violation.kind for violation in validate(layout, rules, dry=DRY)}
 
 
 def test_synthetic_layout_is_valid_under_explicitly_permissive_rules():
-    assert validate(build_synthetic_layout(), PERMISSIVE) == []
+    assert validate(build_synthetic_layout(), PERMISSIVE, dry=DRY) == []
 
 
 def test_geometry_builds_core_and_larger_rough_from_elastic_axis():
@@ -150,7 +153,7 @@ def test_validator_reports_axis_crossing_and_fairway_gap():
         tee=ControlPoint(140.0, 140.0),
         green=ControlPoint(140.0, 215.0),
     )
-    violations = validate(broken, PERMISSIVE)
+    violations = validate(broken, PERMISSIVE, dry=DRY)
 
     assert any(item.kind == "axis_crossing" and item.holes == (1, 10)
                for item in violations)
@@ -172,7 +175,7 @@ def test_validator_reports_clubhouse_clearance():
 
 
 def test_final_rules_report_link_distance_and_blocking():
-    violations = validate(build_synthetic_layout(), ValidationRules())
+    violations = validate(build_synthetic_layout(), ValidationRules(), dry=DRY)
     counts = Counter(item.kind for item in violations)
 
     assert counts["link_distance"] > 0
@@ -193,7 +196,7 @@ def test_synthetic_layout_parallel_stack_matches_expected_consecutive_series():
     # chaque nine, se trouvent être alignés et en recouvrement projeté avec
     # TOUS les trous de leur bande (pas seulement leur voisin immédiat), donc
     # la série maximale les inclut aussi.
-    violations = [v for v in validate(build_synthetic_layout(), ValidationRules())
+    violations = [v for v in validate(build_synthetic_layout(), ValidationRules(), dry=DRY)
                   if v.kind == "parallel_stack"]
 
     assert sorted(v.holes for v in violations) == [
@@ -261,7 +264,7 @@ def _parallel_stack_touching(layout, orders):
     quelques trous et doivent ignorer ce bruit de fond sans rapport.
     """
     orders = set(orders)
-    violations = validate(layout, ValidationRules())
+    violations = validate(layout, ValidationRules(), dry=DRY)
     return [v for v in violations if v.kind == "parallel_stack" and set(v.holes) & orders]
 
 
@@ -379,11 +382,48 @@ def test_validator_reports_per_nine_par_bounds_while_global_quota_stays_exact():
     )
 
     assert sum(item.kind == "par5_per_nine"
-               for item in validate(par5_unbalanced, PERMISSIVE)) == 2
+               for item in validate(par5_unbalanced, PERMISSIVE, dry=DRY)) == 2
     assert sum(item.kind == "par3_per_nine"
-               for item in validate(par3_unbalanced, PERMISSIVE)) == 2
+               for item in validate(par3_unbalanced, PERMISSIVE, dry=DRY)) == 2
 
 
 def test_validator_reports_rule_and_layout_map_size_mismatch():
     rules = replace(PERMISSIVE, width=399.0)
     assert "map_size" in _kinds(build_synthetic_layout(), rules)
+
+
+# -- coudes de dogleg jamais dans l'eau (lot 0) --------------------------------
+
+def _wet_mask(*cells):
+    """Masque 400×400 sec sauf les cellules ``(x, y)`` données."""
+    dry = np.ones((400, 400), dtype=bool)
+    for x, y in cells:
+        dry[y, x] = False
+    return DryMask(dry=dry)
+
+
+def _with_dogleg(corner):
+    layout = build_synthetic_layout()
+    hole = layout.holes[3]                       # trou 4, par 4, tee→green horizontal
+    mid_x = (hole.tee.x + hole.green.x) / 2.0
+    return _replace_hole(layout, 4, doglegs=(ControlPoint(mid_x, hole.tee.y + corner),))
+
+
+def test_wet_dogleg_corner_is_a_violation():
+    layout = _with_dogleg(-2.0)
+    corner = layout.holes[3].doglegs[0]
+    wet = _wet_mask((int(corner.x), int(corner.y)))
+    violations = [v for v in validate(layout, PERMISSIVE, dry=wet) if v.kind == "dogleg_water"]
+    assert [v.holes for v in violations] == [(4,)]
+    assert validate(layout, PERMISSIVE, dry=DRY) == []        # coude sec : accepté
+    # l'eau sous un segment droit (pas sous le coude) reste permise
+    tee = layout.holes[3].tee
+    assert validate(layout, PERMISSIVE, dry=_wet_mask((int(tee.x) + 3, int(tee.y)))) == []
+
+
+def test_validate_requires_a_dry_mask_of_the_map_size():
+    layout = build_synthetic_layout()
+    with pytest.raises(TypeError):
+        validate(layout, PERMISSIVE)
+    with pytest.raises(ValueError, match="masque sec"):
+        validate(layout, PERMISSIVE, dry=DryMask.all_dry(399, 400))

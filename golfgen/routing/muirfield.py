@@ -83,7 +83,7 @@ from golfgen.routing.partial_checks import (
     PlannedLink,
     segment_segment_distances,
 )
-from golfgen.routing.sites import Sites, build_sites, load_terrain
+from golfgen.routing.sites import Sites, build_sites, dry_mask, load_terrain
 
 
 Point = tuple[float, float]
@@ -734,6 +734,7 @@ class _Search:
                 ok = ((corner[:, 0] >= DOGLEG_EDGE_MARGIN) & (corner[:, 0] <= self.width - DOGLEG_EDGE_MARGIN)
                       & (corner[:, 1] >= DOGLEG_EDGE_MARGIN) & (corner[:, 1] <= self.height - DOGLEG_EDGE_MARGIN)
                       & self._in_anchor(order, corner))
+                ok &= self.partial.dry.is_dry(corner)          # coude jamais dans l'eau
                 ok &= obstacles.chords_clear(tees_d, corner, radius, gap)
                 ok &= obstacles.chords_clear(corner, greens_d, radius, gap)
                 corners.append((corner, ok))
@@ -1117,8 +1118,9 @@ def build_course(seed: int, pattern: str = "muirfield", heightmap: np.ndarray | 
     ``terrain`` : ``TerrainConfig`` du relief chargé quand ``heightmap`` est
     absent (défaut : ``TerrainConfig()``) ; ignoré si ``heightmap`` est fourni.
 
-    Le résultat renvoyé a TOUJOURS zéro violation ``validate(layout, rules)`` ;
-    les plages de liaison sont dérivées de ``rules`` (``link_bounds``)."""
+    Le résultat renvoyé a TOUJOURS zéro violation ``validate(layout, rules,
+    dry=...)`` (masque sec du relief, coudes jamais dans l'eau) ; les plages
+    de liaison sont dérivées de ``rules`` (``link_bounds``)."""
     requested = pattern
     pattern = resolve_pattern(seed, pattern)
     if width_mode not in WIDTH_MODES:
@@ -1135,8 +1137,11 @@ def build_course(seed: int, pattern: str = "muirfield", heightmap: np.ndarray | 
     links = link_bounds(rules)
 
     t0 = time.perf_counter()
-    green_sites = build_sites(heightmap, seed, "green")
-    tee_sites = build_sites(heightmap, seed, "tee")
+    # masque sec construit UNE fois : sites, pré-filtre des coudes,
+    # PartialLayout et validate partagent la même définition de l'eau
+    dry = dry_mask(heightmap)
+    green_sites = build_sites(heightmap, seed, "green", mask=dry)
+    tee_sites = build_sites(heightmap, seed, "tee", mask=dry)
     timings["sites"] = time.perf_counter() - t0
 
     t0 = time.perf_counter()
@@ -1150,7 +1155,7 @@ def build_course(seed: int, pattern: str = "muirfield", heightmap: np.ndarray | 
         clubhouse = frame.origin
         return _Search(
             width=width, height=height, tees=tee_sites, greens=green_sites, frame=frame,
-            partial=PartialLayout(rules, clubhouse),
+            partial=PartialLayout(rules, clubhouse, dry=dry),
             outer_tee_ok=~frame.in_corridor(tee_sites.points),
             outer_green_ok=~frame.in_corridor(green_sites.points),
             links=links, pattern=pattern, width_fractions=fractions,
@@ -1238,7 +1243,7 @@ def build_course(seed: int, pattern: str = "muirfield", heightmap: np.ndarray | 
                 back=NineLayout.from_holes(10, ch, tuple(back)),
             )
             t1 = time.perf_counter()
-            violations = tuple(validate(layout, rules))
+            violations = tuple(validate(layout, rules, dry=dry))
             timings["validate"] = time.perf_counter() - t1
         if routed is None:
             # phase atteinte : ancrages (1/9/10/18), milieu du nine extérieur

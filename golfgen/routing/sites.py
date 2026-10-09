@@ -22,6 +22,7 @@ from dataclasses import dataclass
 import math
 
 import numpy as np
+import numpy.typing as npt
 
 from golfgen.config import CourseConfig, TerrainConfig
 from golfgen.terrain import load_or_generate
@@ -65,16 +66,25 @@ def grid_indices(points: np.ndarray, width: int, height: int) -> tuple[np.ndarra
     return ix, iy
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True, eq=False)
 class DryMask:
     """Cellules « sèches » du relief : le minimum du relief dans une boîte de
     rayon 2 autour de la cellule est ≥ ``WATER_LEVEL``.
 
     Seule source de vérité du critère sec : les sites de tee et de green
-    (``build_sites``) et le décompte des coudes mouillés du runner l'utilisent.
+    (``build_sites``), les coudes de dogleg (pré-filtre, ``PartialLayout``,
+    ``validate``) et le décompte des coudes mouillés du runner l'utilisent.
+
+    ``eq=False`` : l'égalité générée comparerait des ``ndarray`` (ambiguë) ;
+    l'identité suffit. Le tableau est une copie en lecture seule.
     """
 
     dry: np.ndarray            # (h, w) bool, indexé [y, x]
+
+    def __post_init__(self) -> None:
+        dry = np.array(self.dry, dtype=bool)
+        dry.setflags(write=False)
+        object.__setattr__(self, "dry", dry)
 
     @property
     def width(self) -> int:
@@ -84,7 +94,7 @@ class DryMask:
     def height(self) -> int:
         return int(self.dry.shape[0])
 
-    def is_dry(self, points) -> np.ndarray:
+    def is_dry(self, points: npt.ArrayLike) -> np.ndarray:
         """``(n,)`` bool : chaque point ``(x, y)`` tombe-t-il sur une cellule
         sèche ? Même indexation (tronquée, bornée) que les sites."""
         points = np.asarray(points, dtype=np.float64).reshape(-1, 2)
@@ -178,16 +188,23 @@ def _normalize(values: np.ndarray) -> np.ndarray:
     return (values - low) / (high - low)
 
 
-def build_sites(heightmap: np.ndarray, seed: int, kind: str) -> Sites:
-    """Sites ``kind`` (``"green"`` ou ``"tee"``) pour ce relief et cette seed."""
+def build_sites(heightmap: np.ndarray, seed: int, kind: str,
+                mask: DryMask | None = None) -> Sites:
+    """Sites ``kind`` (``"green"`` ou ``"tee"``) pour ce relief et cette seed.
+
+    ``mask`` : ``dry_mask(heightmap)`` déjà calculé (partagé par l'appelant),
+    recalculé s'il est absent."""
     if kind not in ("green", "tee"):
         raise ValueError("kind doit valoir 'green' ou 'tee'")
+    if mask is None:
+        mask = dry_mask(heightmap)
+    elif mask.dry.shape != heightmap.shape:
+        raise ValueError(f"masque sec {mask.dry.shape}, relief {heightmap.shape}")
     rng = np.random.default_rng([seed, 0 if kind == "green" else 1])
     heightmap = heightmap.astype(np.float64)
     gy, gx = np.gradient(heightmap)
     slope = _box_mean(np.hypot(gx, gy), PLANARITY_RADIUS)
     prominence = heightmap - _box_mean(heightmap, PROMINENCE_RADIUS)
-    mask = dry_mask(heightmap)
 
     points = _candidate_grid(heightmap, rng)
     ix, iy = grid_indices(points, mask.width, mask.height)
