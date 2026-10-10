@@ -52,7 +52,7 @@ SIZES = {"400x300": (400, 300), "300x400": (300, 400)}
 OVERVIEW_SEEDS = (4,)
 ZOOM_SEEDS = (1, 4)
 PLANCHE_SIZE = (400, 300)
-SPAN = 30.0                     # côté du recadrage (blocs) ; grands greens : ≤ 10,4 blocs du drapeau
+SPAN = 30.0                     # côté du recadrage (blocs) ; grands greens ≤ 10,4 blocs du drapeau
 TILE = 260                      # px
 FOOTER = 58                     # px sous le recadrage (trois lignes)
 GREEN_FILL = "#9be58f"
@@ -172,8 +172,8 @@ def core_margin(outline, core) -> float:
 def measure(hole: ElasticHole, green) -> dict:
     """Mesures d'un green : type, bascule et sa cause, allongement et axe
     d'inertie, aire rastérisée, concavité et largeur rastérisées, col et
-    creux vectoriel (haricot, sinon ``None``), marge au bord du cœur, ρ effectif (diamètre du disque de même
-    aire / largeur du cœur)."""
+    creux vectoriel (haricot, sinon ``None``), marge au bord du cœur, ρ
+    effectif (diamètre du disque de même aire / largeur du cœur)."""
     cells = rasterize(green.outline)
     tangent = approach_tangent(hole)
     elongation, _ = inertia(green.outline)
@@ -447,7 +447,8 @@ def _svg_to_png(svg: str, path: Path) -> Path:
 def _montage(tiles: list[Path], columns: int, path: Path, title: str) -> Path:
     subprocess.run(["magick", "montage", *map(str, tiles), "-tile", f"{columns}x",
                     "-geometry", "+4+4", "-background", "#0d1117", "-fill", "#f0f6fc",
-                    "-font", MONTAGE_FONT, "-pointsize", "18", "-title", title, str(path)], check=True)
+                    "-font", MONTAGE_FONT, "-pointsize", "18", "-title", title, str(path)],
+                   check=True)
     for tile in tiles:
         tile.unlink()
     return path

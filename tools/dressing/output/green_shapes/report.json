@@ -1,10 +1,10 @@
 {
   "dressing_median_budget_ms": 10.0,
   "dressing_ms": {
-    "max": 11.5,
-    "mean": 8.0,
-    "median": 7.9,
-    "min": 5.8,
+    "max": 11.6,
+    "mean": 7.9,
+    "median": 7.8,
+    "min": 5.7,
     "q25": 7.0,
     "q75": 8.8
   },
@@ -196,12 +196,12 @@
         }
       },
       "dressing_ms": {
-        "max": 11.5,
+        "max": 11.6,
         "mean": 8.5,
-        "median": 8.6,
-        "min": 6.4,
-        "q25": 7.7,
-        "q75": 9.2
+        "median": 8.4,
+        "min": 6.6,
+        "q25": 7.6,
+        "q75": 9.4
       },
       "eligibility": {
         "bean_given_eligible": 0.696,
@@ -239,9 +239,9 @@
       },
       "fallbacks": {
         "by_cause": {
-          "calage": 0,
+          "calage": 3,
           "col": 0,
-          "creux_inatteignable": 3,
+          "creux_inatteignable": 0,
           "creux_raster": 0
         },
         "count": 3,
@@ -436,12 +436,12 @@
         }
       },
       "dressing_ms": {
-        "max": 9.4,
+        "max": 9.5,
         "mean": 7.4,
-        "median": 7.5,
-        "min": 5.8,
+        "median": 7.3,
+        "min": 5.7,
         "q25": 6.7,
-        "q75": 8.1
+        "q75": 8.0
       },
       "eligibility": {
         "bean_given_eligible": 0.8,
@@ -479,9 +479,9 @@
       },
       "fallbacks": {
         "by_cause": {
-          "calage": 0,
+          "calage": 3,
           "col": 0,
-          "creux_inatteignable": 8,
+          "creux_inatteignable": 5,
           "creux_raster": 1
         },
         "count": 9,

@@ -277,6 +277,28 @@ def test_bean_depth_recalibrated_within_four_evaluations(style, monkeypatch):
         assert abs(shoelace(shape) - area) <= 1e-6
 
 
+@pytest.mark.parametrize("failing_call, cause", [(1, "creux_inatteignable"), (2, "calage")])
+def test_bean_fallback_cause_by_evaluation(failing_call, cause, monkeypatch):
+    """Capsule hors domaine : ``creux_inatteignable`` si c'est la flèche
+    visée (première évaluation), ``calage`` si c'est la flèche recalée."""
+    spec = STYLE_SPECS["links"]
+    calls = []
+
+    def failing(*args):
+        calls.append(args)
+        return None if len(calls) == failing_call else _capsule(*args)
+
+    monkeypatch.setattr(green_module, "_capsule", failing)
+    # creux mesuré 0,5 au-dessus du visé (1,75) : recalage, flèche 1,25 > 0
+    monkeypatch.setattr(green_module, "hull_depth", lambda shape: 2.25)
+    draws = _Draws(kind=0.0, position=0.5, depth=1.75, side=1.0, recess=0.0,
+                   coefficients=np.zeros(1), phases=np.zeros(1))
+    area = spec.green_area[1]
+    shape, got = _bean(draws, _aspect("bean", 0.5, area, spec), area, spec.bean_depth)
+    assert shape is None and got == cause
+    assert len(calls) == failing_call
+
+
 def test_dressing_time_order_of_magnitude(courses):
     # 10 ms médian par parcours est la CIBLE (mesurée sur 60 parcours dans
     # report.json), pas le seuil du test : les mesures tournent sur un PC de

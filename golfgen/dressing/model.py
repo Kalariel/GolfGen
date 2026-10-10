@@ -81,9 +81,12 @@ class StyleSpec:
 # inhérent à la capsule.
 # Creux du haricot 1,5–2,0 blocs dans les deux styles. Causes de bascule
 # haricot → allongé (``golfgen.dressing.green.FALLBACK_CAUSES``) : creux
-# inatteignable (arc intérieur inexistant ; cause légitime, au même titre
-# que le col), recalage du creux non convergé, col < 5,5 blocs ou creux
-# rastérisé < 1 bloc sur le contour placé.
+# inatteignable (arc intérieur inexistant pour la flèche visée, dès la
+# première évaluation), calage (échec du recalage du creux : non convergé, ou
+# sécante qui pousse la flèche hors du domaine de la capsule ; cause réelle,
+# 0,5–1,0 % des haricots, qu'un bornage de la flèche pourrait réduire : piste
+# future, non faite pour ne pas recalibrer), col < 5,5 blocs ou creux
+# rastérisé < 1 bloc sur le contour placé (réduit compris).
 #
 # Éligibilité et tirage des types (R1b) : mesurés sur 30 seeds × 2 formats
 # (400x300 et 300x400, patron random), soit 1080 trous par style ; les seeds
@@ -105,12 +108,18 @@ class StyleSpec:
 #   d'éligibles) : les bascules grossissent les allongés, le rapport des
 #   poids nominaux (0,30 / 0,65 en links) ferait dériver les ronds vers le
 #   bas.
+# Bascules par cause ci-dessous : haricots forcés sur les éligibles (base de
+# P_eff) ; sur les haricots tirés au même échantillon (``report.json``),
+# links 3/370 (3 calages), parkland 9/317 (5 creux inatteignables, 3 calages,
+# 1 creux rastérisé) : sous-ensemble des forcés, mêmes taux à l'échantillon
+# près.
 # links : seuil 84 blocs² ; éligibles 547/1080 = 50,6 % ; bascule 4/547
-#   = 0,7 % (3 creux inatteignables, 1 creux rastérisé) ; P_eff = 0,35 /
+#   = 0,7 % (3 calages, 1 creux rastérisé) ; P_eff = 0,35 /
 #   (0,506 × 0,993) = 0,696 ; rond 0,30 / (1 − 0,696 × 0,506) = 0,463.
 # parkland : seuil 77 blocs² ; éligibles 415/1080 = 38,4 % ; bascule 10/415
-#   = 2,4 % (9 creux inatteignables, 1 creux rastérisé) ; P_eff = 0,30 /
-#   (0,384 × 0,976) = 0,800 ; rond 0,30 / (1 − 0,800 × 0,384) = 0,433.
+#   = 2,4 % (5 creux inatteignables, 4 calages, 1 creux rastérisé) ;
+#   P_eff = 0,30 / (0,384 × 0,976) = 0,800 ; rond 0,30 / (1 − 0,800 × 0,384)
+#   = 0,433.
 STYLE_SPECS: Mapping[str, StyleSpec] = MappingProxyType({
     "links": StyleSpec("links", green_rho=(0.68, 0.85), green_area=(50.0, 135.0),
                        harmonic_amplitude=0.12,

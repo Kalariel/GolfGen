@@ -30,10 +30,13 @@ la flèche est recalée par sécante (``BEAN_MAX_EVALUATIONS`` évaluations au
 plus, première comprise). Règle, sans tolérance : le haricot devient un
 allongé (même tirage d'allongement, ramené dans la plage des allongés, placé
 à son tour), compté par ``GreenShape.fallback_cause`` (``FALLBACK_CAUSES``),
-si son creux est inatteignable (arc intérieur de rayon ``R − w/2`` ≤ 0 :
-``creux_inatteignable``, cause légitime au même titre que le col) ou si le
-recalage ne converge pas (``calage``), ou si, une fois placé (contour final
-arrondi, réduit le cas échéant), son COL (largeur du contour au droit du
+si son creux visé est inatteignable (arc intérieur de rayon ``R − w/2`` ≤ 0
+dès la première évaluation : ``creux_inatteignable``) ou si le recalage
+échoue (``calage`` : pas de convergence, ou sécante qui pousse la flèche hors
+du domaine de la capsule ; un bornage de la flèche pourrait le réduire), ou
+si, une fois placé (contour final arrondi, réduit le cas échéant : règle plus
+stricte que celle des tests, qui n'exigent le creux rastérisé que des
+haricots non réduits), son COL (largeur du contour au droit du
 sommet le plus creux, perpendiculaire à l'approche, ``neck_width``) est
 < ``BEAN_MIN_NECK`` (``col``) ou son creux rastérisé (``raster_concavity``)
 est < 1 bloc (``creux_raster``).
@@ -350,9 +353,10 @@ def _bean(draws: "_Draws", length: float, area: float,
     sécante (pente 1 au premier pas : sans harmonique, creux = flèche).
 
     Renvoie ``(contour, None)``, ou ``(None, cause)`` si le haricot bascule :
-    ``"creux_inatteignable"`` (arc intérieur inexistant pour la flèche
-    demandée), ``"calage"`` (pas de convergence en ``BEAN_MAX_EVALUATIONS``
-    évaluations)."""
+    ``"creux_inatteignable"`` (arc intérieur inexistant pour la flèche visée,
+    dès la première évaluation), ``"calage"`` (échec du recalage : pas de
+    convergence en ``BEAN_MAX_EVALUATIONS`` évaluations, ou sécante qui pousse
+    la flèche hors du domaine de la capsule)."""
     target = min(max(draws.depth, depth_range[0] + BEAN_DEPTH_TOLERANCE),
                  depth_range[1] - BEAN_DEPTH_TOLERANCE)
     w = math.sqrt(area / (length - 1.0 + math.pi / 4.0))
@@ -376,8 +380,8 @@ def _bean(draws: "_Draws", length: float, area: float,
     sagitta = target
     for _ in range(BEAN_MAX_EVALUATIONS):
         shape, f = build(sagitta)
-        if shape is None:
-            return None, "creux_inatteignable"
+        if shape is None:                   # hors domaine : visé ou recalé
+            return None, "creux_inatteignable" if previous is None else "calage"
         if abs(f) <= BEAN_DEPTH_TOLERANCE:
             return shape, None
         slope = 1.0

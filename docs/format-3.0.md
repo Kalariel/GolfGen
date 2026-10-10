@@ -229,14 +229,23 @@ Constantes dans `golfgen/dressing/model.py` (`STYLE_SPECS`) et
   allongement médian (haricots forcés, `λ` fixe, links / parkland) : 2,1 →
   1,67 / 1,63 ; 2,2 → 1,75 / 1,70 ; 2,3 → 1,85 / 1,80 ; 2,4 → 1,95 / 1,90.
   Le green **bascule** en allongé, sans tolérance, et la cause est comptée :
-  creux inatteignable (arc intérieur inexistant ; cause légitime, au même
-  titre que le col), recalage du creux non convergé, ou, une fois placé, col
-  < 5,5 blocs ou creux rendu en blocs < 1 bloc.
+  creux inatteignable (arc intérieur inexistant pour la flèche visée, dès la
+  première évaluation), calage (échec du recalage du creux : non convergé,
+  ou sécante qui pousse la flèche hors du domaine de la capsule), ou, une
+  fois placé, col < 5,5 blocs ou creux rendu en blocs < 1 bloc. Le creux
+  rendu est exigé de tout haricot placé, réduit compris (règle plus stricte
+  que nécessaire : aucun haricot réduit ne bascule ainsi aujourd'hui).
 - **Éligibilité** : un haricot exige un grand green, aire visée ≥ 84
   blocs² (links) ou 77 (parkland) ; seuils validés, conservés (la capsule
   tiendrait la bascule ≤ 5 % dès 74 et 72). Bascules mesurées sur les
-  haricots tirés : links 3/370 (0,8 %, creux inatteignable), parkland 9/317
-  (2,8 % : 8 creux inatteignables, 1 creux rastérisé).
+  haricots tirés : links 3/370 (0,8 % : 3 calages), parkland 9/317 (2,8 % :
+  5 creux inatteignables, 3 calages, 1 creux rendu) ; ce sont un
+  sous-ensemble des bascules des haricots forcés sur tous les éligibles, base
+  du calage de P_eff ci-dessous : links 4/547 (0,7 % : 3 calages, 1 creux
+  rendu), parkland 10/415 (2,4 % : 5 creux inatteignables, 4 calages, 1
+  creux rendu). Le calage est une cause réelle (0,5–1,0 % des haricots) : un
+  bornage de la flèche dans le domaine de la capsule pourrait le réduire
+  (piste future ; il changerait les formes et obligerait à recalibrer).
 - **Parts nettes visées** (après bascules) : links rond 0,30 / allongé 0,35 /
   haricot 0,35 ; parkland 0,30 / 0,40 / 0,30 (mesuré 0,288 / 0,372 / 0,340
   et 0,297 / 0,418 / 0,285). Tirage : haricot avec
