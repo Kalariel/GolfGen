@@ -180,7 +180,7 @@ fait toujours `pipeline.py`.
 | `metadata.style` | chaîne | `"links"` ou `"parkland"` (`--style`, défaut `links`) |
 | `routing.holes[].features` | objet | habillage du trou ; une clé par élément (aujourd'hui `green` ; `tees`, `double_green` à venir) |
 | `features.green.outline` | liste de `{x, y}` | blocs : contour du green, 32 sommets, polygone simple fermé implicitement |
-| `features.green.center` | `{x, y}` | blocs : centre de la forme (sur l'axe, reculé de 0 à 1,5 bloc depuis le drapeau vers l'approche, puis suivi de la réduction éventuelle) |
+| `features.green.center` | `{x, y}` | blocs : centre de la forme (sur l'axe, reculé depuis le drapeau vers l'approche de `max(r, avant − width/2 + 0,5)`, `r` tiré dans 0–1,5 bloc et `avant` l'étendue de la forme devant son centre, puis suivi de la réduction éventuelle) |
 | `features.green.area` | nombre | blocs² : aire du contour tel qu'exporté |
 
 Invariants :
@@ -191,14 +191,48 @@ Invariants :
   jusqu'à inclusion (contrôle fait sur les coordonnées arrondies).
 - Le contour **contient le drapeau** (`holes[].green`).
 - Aire signée positive dans le repère (x, y) (sens horaire à l'écran, `y`
-  vers le bas). Aire visée (provisoire) : links 60–95 blocs², parkland
-  50–75, croissante avec la longueur du trou ; une forme réduite est
-  plus petite.
+  vers le bas). Aire visée : voir « Formes et tailles » ; une forme réduite
+  est plus petite.
 - **Le tracé ne dépend pas de l'habillage** : `routing` sans les clés
   `features` est identique octet pour octet au 3.0 de la même seed, quel que
   soit le style (aléa de l'habillage sur un flux séparé).
 - Un lecteur teste la présence de `features` (et de chacune de ses clés)
   plutôt que la version.
+
+### Formes et tailles des greens (3.1)
+
+Le JSON ne porte que le contour : le type de green n'est pas exporté.
+Constantes dans `golfgen/dressing/model.py` (`STYLE_SPECS`) et
+`golfgen/dressing/green.py` ; chiffres mesurés sur 30 seeds × 2 formats
+(400×300 et 300×400, patron `random`, 1080 trous par style ; détail dans
+`tools/dressing/output/green_shapes/report.json`).
+
+- **Types** : rond, allongé, haricot. Base : ellipse dont le grand axe suit
+  l'approche (dernier segment de l'axe, écart mesuré ≤ 15°), petit axe ≥ 5,5
+  blocs, déformée par l'harmonique 3 seule (links ≤ 12 %, parkland ≤ 6 %).
+  Allongement de base : rond 1,0–1,3 ; allongé 1,45–1,9 en links, 1,45–1,75
+  en parkland (mesuré ≥ 1,44) ; haricot 1,15–1,45, l'encoche l'allonge
+  (mesuré ≈ 1,75 médian).
+- **Haricot** : encoche en cosinus surélevé de ±90° sur un flanc, bornée à
+  0,9 du rayon, calée pour un creux (distance du contour à son enveloppe
+  convexe) tiré dans 1,5–2,0 blocs, dans les deux styles. Si le col (largeur
+  au droit du creux, perpendiculaire à l'approche) est < 5,5 blocs ou si le
+  creux est inatteignable, le green **bascule** en allongé.
+- **Éligibilité** : un haricot exige une aire visée ≥ 84 blocs² (links) ou
+  77 (parkland), plus petite aire à partir de laquelle la bascule reste
+  ≤ 5 % des haricots éligibles (mesuré 4,4 % et 4,6 %).
+- **Parts nettes visées** (après bascules) : links rond 0,30 / allongé 0,35 /
+  haricot 0,35 ; parkland 0,30 / 0,40 / 0,30. Tirage : haricot avec
+  P_eff = part visée / (part d'éligibles × (1 − bascule)) parmi les
+  éligibles (links 0,35 / (0,506 × 0,956) = 0,723 ; parkland 0,30 /
+  (0,382 × 0,954) = 0,822) ; sinon rond avec la probabilité
+  `round_given_plain` (0,473 et 0,438, calée pour que les bascules, comptées
+  en allongés, ne fassent pas dériver la part des ronds), allongé sinon.
+- **Tailles (provisoires)** : `ρ` = diamètre du disque de même aire / largeur
+  `width` du cœur, dans links 0,68–0,85, parkland 0,62–0,76, à mi-chemin
+  entre la longueur normalisée du trou et un tirage ; aire visée
+  `π/4·(ρ·width)²` bornée à links 50–135 blocs², parkland 42–105. Retour aux
+  plages fixes 60–95 / 50–75 si les bunkers ne passent pas.
 
 ## Extension
 
