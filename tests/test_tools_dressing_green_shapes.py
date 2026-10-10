@@ -52,7 +52,8 @@ def test_raster_outline_and_concavity():
 def _row(**values):
     row = {"style": "links", "case": "x#1", "par": 3, "area": 70.0, "target_area": 70.0,
            "reduced": False, "shrink_steps": 0, "width": 14.0, "kind": "round",
-           "fallback": False, "elongation": 1.1, "axis_deviation": 0.0, "raster_area": 70,
+           "fallback": False, "fallback_cause": None, "hull_depth": None, "elongation": 1.1,
+           "axis_deviation": 0.0, "raster_area": 70,
            "concavity": 0.0, "raster_width": 8.0, "neck": None, "margin": 2.0, "rho": 0.68}
     row.update(values)
     return row
@@ -63,9 +64,9 @@ def test_summarize_counts_kinds_fallbacks_and_reductions():
         _row(par=3, area=60.0, reduced=True, shrink_steps=2, width=10.0),
         _row(par=3),
         _row(par=4, area=90.0, target_area=90.0, kind="bean", neck=6.2, concavity=1.5,
-             elongation=1.7),
+             elongation=1.7, hull_depth=1.7),
         _row(par=4, area=95.0, target_area=95.0, kind="elongated", fallback=True,
-             elongation=1.6),
+             fallback_cause="col", elongation=1.6),
     ]
     summary = gs.summarize(rows, {"links": [0.006, 0.008]})["links"]
     assert (summary["greens"], summary["reduced"], summary["max_shrink_steps"]) == (4, 1, 2)
@@ -76,6 +77,9 @@ def test_summarize_counts_kinds_fallbacks_and_reductions():
         "round": 2, "elongated": 1, "bean": 1}
     assert summary["kinds"]["bean"]["target"] == 0.35
     assert summary["fallbacks"]["count"] == 1 and summary["fallbacks"]["pct"] == 50.0
+    assert summary["fallbacks"]["by_cause"]["col"] == 1
+    assert sum(summary["fallbacks"]["by_cause"].values()) == 1
+    assert summary["beans"]["hull_depth"]["median"] == 1.7
     eligibility = summary["eligibility"]
     assert eligibility["bean_min_area"] == STYLE_SPECS["links"].bean_min_area
     assert eligibility["eligible"] == 2 and eligibility["beans_below_threshold"] == 0

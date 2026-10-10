@@ -19,7 +19,7 @@ from types import SimpleNamespace
 import pytest
 
 from golfgen.dressing import GREEN_KINDS, STYLE_SPECS, dress_course
-from golfgen.dressing.green import BEAN_MIN_NECK
+from golfgen.dressing.green import BEAN_MIN_NECK, FALLBACK_CAUSES
 from golfgen.routing.model import ElasticHole
 from tools.dressing import green_shapes as gs
 
@@ -32,12 +32,13 @@ SEEDS = range(1, 31)
 SHARE_TOLERANCE = 0.03
 AXIS_MAX_DEGREES = 15.0         # grand axe d'inertie / approche (allongé, haricot)
 ELONGATED_MIN = 1.4             # allongement mesuré minimal d'un allongé
+BEAN_MAX_ELONGATION = 2.0       # allongement mesuré maximal d'un haricot (au-delà : saucisse)
 RASTER_WIDTH_MIN = 5.0          # blocs, traversée par le centre ⟂ approche
-NECK_ROUNDING = 0.01            # blocs : col contrôlé avant l'arrondi à 2 décimales
-# Haricots dont l'encoche (creux vectoriel 1,54 et 1,71) tombe en marche
-# d'escalier au rastérisé (creux rastérisé 0) : connus et rapportés, toute
-# nouvelle occurrence fait échouer le test.
-KNOWN_UNREADABLE = {"links": ["300x400/22#11"], "parkland": ["400x300/7#7"]}
+# Creux vectoriel d'un haricot non réduit : calé dans ``bean_depth`` sur le
+# contour local, puis mesuré ici sur le contour placé, dont les coordonnées
+# sont arrondies à 2 décimales (déplacement ≤ 0,005·√2 par sommet) : seule
+# tolérance, due à cet arrondi.
+HULL_DEPTH_ROUNDING = 0.01
 
 
 def load_snapshot() -> list[tuple[str, int, tuple[ElasticHole, ...]]]:
@@ -110,11 +111,36 @@ def test_elongated_are_elongated(rows_by_style, style):
 
 
 @pytest.mark.parametrize("style", sorted(STYLE_SPECS))
-def test_bean_notch_readable_and_neck(rows_by_style, style):
+def test_beans_are_not_sausages(rows_by_style, style):
     beans = [r for r in rows_by_style[style] if r["kind"] == "bean"]
-    unreadable = sorted(r["case"] for r in beans if r["concavity"] < 1.0)
-    assert unreadable == KNOWN_UNREADABLE[style]
-    assert min(r["neck"] for r in beans) >= BEAN_MIN_NECK - NECK_ROUNDING
+    assert beans and max(r["elongation"] for r in beans) <= BEAN_MAX_ELONGATION
+
+
+@pytest.mark.parametrize("style", sorted(STYLE_SPECS))
+def test_bean_neck_and_raster_notch(rows_by_style, style):
+    """Règle, sans exception : col ≥ ``BEAN_MIN_NECK`` pour tout haricot,
+    creux rastérisé ≥ 1 bloc pour tout haricot non réduit (le générateur
+    fait basculer en allongé tout haricot placé qui ne les tient pas)."""
+    beans = [r for r in rows_by_style[style] if r["kind"] == "bean"]
+    assert beans and min(r["neck"] for r in beans) >= BEAN_MIN_NECK
+    assert all(r["concavity"] >= 1.0 for r in beans if not r["reduced"])
+
+
+@pytest.mark.parametrize("style", sorted(STYLE_SPECS))
+def test_bean_hull_depth_in_range(rows_by_style, style):
+    lo, hi = STYLE_SPECS[style].bean_depth
+    beans = [r for r in rows_by_style[style] if r["kind"] == "bean" and not r["reduced"]]
+    assert beans
+    for row in beans:
+        assert lo - HULL_DEPTH_ROUNDING <= row["hull_depth"] <= hi + HULL_DEPTH_ROUNDING, row
+
+
+@pytest.mark.parametrize("style", sorted(STYLE_SPECS))
+def test_fallbacks_have_a_cause(rows_by_style, style):
+    for row in rows_by_style[style]:
+        assert (row["fallback_cause"] is not None) == row["fallback"], row
+        if row["fallback"]:
+            assert row["kind"] == "elongated" and row["fallback_cause"] in FALLBACK_CAUSES, row
 
 
 @pytest.mark.parametrize("style", sorted(STYLE_SPECS))

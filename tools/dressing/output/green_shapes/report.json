@@ -1,12 +1,12 @@
 {
   "dressing_median_budget_ms": 10.0,
   "dressing_ms": {
-    "max": 12.3,
-    "mean": 9.3,
-    "median": 9.2,
-    "min": 7.4,
-    "q25": 8.4,
-    "q75": 10.2
+    "max": 11.5,
+    "mean": 8.0,
+    "median": 7.9,
+    "min": 5.8,
+    "q25": 7.0,
+    "q75": 8.8
   },
   "pattern": "random",
   "planches": [
@@ -66,43 +66,63 @@
       "area_by_kind": {
         "bean": {
           "max": 135.1,
-          "mean": 108.3,
-          "median": 105.6,
-          "min": 84.1,
-          "q25": 95.8,
-          "q75": 121.3
+          "mean": 107.5,
+          "median": 104.5,
+          "min": 84.2,
+          "q25": 94.5,
+          "q75": 120.5
         },
         "elongated": {
           "max": 135.1,
-          "mean": 78.1,
-          "median": 75.0,
+          "mean": 78.6,
+          "median": 74.8,
           "min": 50.0,
           "q25": 62.3,
-          "q75": 84.9
+          "q75": 85.0
         },
         "round": {
           "max": 135.0,
-          "mean": 77.0,
-          "median": 74.0,
+          "mean": 77.9,
+          "median": 74.3,
           "min": 50.0,
-          "q25": 61.5,
-          "q75": 83.4
+          "q25": 62.4,
+          "q75": 83.9
         }
       },
       "axis_deviation_max": {
-        "bean": 6.07,
+        "bean": 0.42,
         "elongated": 0.06,
         "round": 4.31
       },
       "beans": {
-        "concavity_median": 1.74,
-        "greens": 373,
-        "neck_min": 5.554,
-        "readable": 372,
-        "readable_pct": 99.7,
-        "unreadable": [
-          "300x400/22#11"
-        ]
+        "concavity_median": 1.83,
+        "depth_over_neck": {
+          "max": 0.299,
+          "mean": 0.238,
+          "median": 0.236,
+          "min": 0.182,
+          "q25": 0.219,
+          "q75": 0.257
+        },
+        "greens": 367,
+        "hull_depth": {
+          "max": 2.0,
+          "mean": 1.745,
+          "median": 1.729,
+          "min": 1.505,
+          "q25": 1.622,
+          "q75": 1.881
+        },
+        "neck_min": 6.462,
+        "readable": 367,
+        "readable_pct": 100.0,
+        "reduced": 0,
+        "unreadable": [],
+        "v_like": {
+          "greens": 0,
+          "max_target_area": null,
+          "ratio_min": 0.3
+        }
       },
       "by_par": {
         "3": {
@@ -176,29 +196,29 @@
         }
       },
       "dressing_ms": {
-        "max": 12.3,
-        "mean": 9.7,
-        "median": 9.7,
-        "min": 7.6,
-        "q25": 8.9,
-        "q75": 10.4
+        "max": 11.5,
+        "mean": 8.5,
+        "median": 8.6,
+        "min": 6.4,
+        "q25": 7.7,
+        "q75": 9.2
       },
       "eligibility": {
-        "bean_given_eligible": 0.723,
+        "bean_given_eligible": 0.696,
         "bean_min_area": 84.0,
         "beans_below_threshold": 0,
         "eligible": 547,
         "eligible_pct": 50.6,
-        "round_given_plain": 0.473
+        "round_given_plain": 0.463
       },
       "elongation": {
         "bean": {
-          "max": 2.15,
-          "mean": 1.75,
-          "median": 1.75,
-          "min": 1.35,
-          "q25": 1.63,
-          "q75": 1.87
+          "max": 1.96,
+          "mean": 1.74,
+          "median": 1.74,
+          "min": 1.53,
+          "q25": 1.68,
+          "q75": 1.81
         },
         "elongated": {
           "max": 1.88,
@@ -218,26 +238,32 @@
         }
       },
       "fallbacks": {
-        "count": 18,
-        "drawn_beans": 391,
+        "by_cause": {
+          "calage": 0,
+          "col": 0,
+          "creux_inatteignable": 3,
+          "creux_raster": 0
+        },
+        "count": 3,
+        "drawn_beans": 370,
         "max_pct": 5.0,
-        "pct": 4.6
+        "pct": 0.8
       },
       "greens": 1080,
       "kinds": {
         "bean": {
-          "greens": 373,
-          "share": 0.345,
+          "greens": 367,
+          "share": 0.34,
           "target": 0.35
         },
         "elongated": {
-          "greens": 403,
-          "share": 0.373,
+          "greens": 402,
+          "share": 0.372,
           "target": 0.35
         },
         "round": {
-          "greens": 304,
-          "share": 0.281,
+          "greens": 311,
+          "share": 0.288,
           "target": 0.3
         }
       },
@@ -248,8 +274,8 @@
         135.0
       ],
       "raster_area_diff": {
-        "max_abs": 6.25,
-        "mean": 0.08
+        "max_abs": 5.0,
+        "mean": -0.0
       },
       "raster_width_min": 5.15,
       "reduced": 0,
@@ -280,48 +306,68 @@
       "area_by_kind": {
         "bean": {
           "max": 105.0,
-          "mean": 92.0,
-          "median": 90.8,
+          "mean": 91.9,
+          "median": 90.9,
           "min": 77.0,
-          "q25": 82.7,
-          "q75": 101.7
+          "q25": 82.4,
+          "q75": 101.5
         },
         "elongated": {
           "max": 105.0,
-          "mean": 63.1,
-          "median": 62.0,
+          "mean": 63.2,
+          "median": 61.8,
           "min": 42.0,
           "q25": 51.5,
-          "q75": 71.8
+          "q75": 71.7
         },
         "round": {
           "max": 105.0,
-          "mean": 62.8,
-          "median": 61.8,
+          "mean": 63.9,
+          "median": 62.6,
           "min": 42.0,
-          "q25": 51.7,
-          "q75": 70.0
+          "q25": 52.5,
+          "q75": 71.5
         }
       },
       "axis_deviation_max": {
-        "bean": 3.27,
+        "bean": 0.25,
         "elongated": 0.08,
         "round": 9.07
       },
       "beans": {
         "concavity_median": 1.71,
-        "greens": 322,
-        "neck_min": 5.497,
-        "readable": 321,
-        "readable_pct": 99.7,
-        "unreadable": [
-          "400x300/7#7"
-        ]
+        "depth_over_neck": {
+          "max": 0.313,
+          "mean": 0.255,
+          "median": 0.252,
+          "min": 0.207,
+          "q25": 0.239,
+          "q75": 0.274
+        },
+        "greens": 308,
+        "hull_depth": {
+          "max": 1.996,
+          "mean": 1.735,
+          "median": 1.729,
+          "min": 1.508,
+          "q25": 1.619,
+          "q75": 1.842
+        },
+        "neck_min": 6.23,
+        "readable": 308,
+        "readable_pct": 100.0,
+        "reduced": 0,
+        "unreadable": [],
+        "v_like": {
+          "greens": 11,
+          "max_target_area": 81.52,
+          "ratio_min": 0.3
+        }
       },
       "by_par": {
         "3": {
           "area": {
-            "max": 83.2,
+            "max": 83.1,
             "mean": 55.1,
             "median": 53.5,
             "min": 42.0,
@@ -369,7 +415,7 @@
           "area": {
             "max": 105.0,
             "mean": 84.2,
-            "median": 82.4,
+            "median": 82.3,
             "min": 54.0,
             "q25": 70.0,
             "q75": 103.6
@@ -390,34 +436,34 @@
         }
       },
       "dressing_ms": {
-        "max": 11.4,
-        "mean": 9.0,
-        "median": 8.8,
-        "min": 7.4,
-        "q25": 8.2,
-        "q75": 9.9
+        "max": 9.4,
+        "mean": 7.4,
+        "median": 7.5,
+        "min": 5.8,
+        "q25": 6.7,
+        "q75": 8.1
       },
       "eligibility": {
-        "bean_given_eligible": 0.822,
+        "bean_given_eligible": 0.8,
         "bean_min_area": 77.0,
         "beans_below_threshold": 0,
         "eligible": 415,
         "eligible_pct": 38.4,
-        "round_given_plain": 0.438
+        "round_given_plain": 0.433
       },
       "elongation": {
         "bean": {
-          "max": 2.03,
-          "mean": 1.77,
-          "median": 1.77,
-          "min": 1.47,
-          "q25": 1.7,
-          "q75": 1.85
+          "max": 1.88,
+          "mean": 1.7,
+          "median": 1.7,
+          "min": 1.53,
+          "q25": 1.65,
+          "q75": 1.75
         },
         "elongated": {
           "max": 1.73,
           "mean": 1.58,
-          "median": 1.57,
+          "median": 1.56,
           "min": 1.44,
           "q25": 1.5,
           "q75": 1.65
@@ -427,45 +473,51 @@
           "mean": 1.15,
           "median": 1.15,
           "min": 1.0,
-          "q25": 1.07,
+          "q25": 1.08,
           "q75": 1.22
         }
       },
       "fallbacks": {
-        "count": 14,
-        "drawn_beans": 336,
+        "by_cause": {
+          "calage": 0,
+          "col": 0,
+          "creux_inatteignable": 8,
+          "creux_raster": 1
+        },
+        "count": 9,
+        "drawn_beans": 317,
         "max_pct": 5.0,
-        "pct": 4.2
+        "pct": 2.8
       },
       "greens": 1080,
       "kinds": {
         "bean": {
-          "greens": 322,
-          "share": 0.298,
+          "greens": 308,
+          "share": 0.285,
           "target": 0.3
         },
         "elongated": {
-          "greens": 449,
-          "share": 0.416,
+          "greens": 451,
+          "share": 0.418,
           "target": 0.4
         },
         "round": {
-          "greens": 309,
-          "share": 0.286,
+          "greens": 321,
+          "share": 0.297,
           "target": 0.3
         }
       },
-      "margin_min": 0.496,
+      "margin_min": 0.497,
       "max_shrink_steps": 0,
       "range": [
         42.0,
         105.0
       ],
       "raster_area_diff": {
-        "max_abs": 5.19,
-        "mean": -0.04
+        "max_abs": 5.15,
+        "mean": 0.0
       },
-      "raster_width_min": 5.05,
+      "raster_width_min": 5.15,
       "reduced": 0,
       "reduced_pct": 0.0,
       "reduction_criterion": {

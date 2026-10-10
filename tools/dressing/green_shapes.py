@@ -11,10 +11,12 @@ style. Sorties sous ``tools/dressing/output/green_shapes/`` :
   le cœur du trou, l'axe d'approche, le drapeau et le centre de la forme ;
   légende : type, allongement, aire, col du haricot, réduction ;
 - ``report.json`` (versionné) : par style, types (parts nettes et visées),
-  bascules haricot → allongé, éligibilité (seuil, part d'éligibles, P_eff),
-  allongement par type, haricots lisibles (creux rastérisé ≥ 1), col
-  minimal, aires par par et par type, ρ effectif, marge minimale au bord du
-  cœur, réductions, écart d'aire rastérisée, temps de l'habillage.
+  bascules haricot → allongé (par cause), éligibilité (seuil, part
+  d'éligibles, P_eff), allongement par type, haricots lisibles (creux
+  rastérisé ≥ 1), col minimal, creux vectoriel, rapport creux / col
+  (indicateur de V), aires par par et par type, ρ effectif, marge minimale
+  au bord du cœur, réductions, écart d'aire rastérisée, temps de
+  l'habillage.
 
     .venv/bin/python -m tools.dressing.green_shapes
     .venv/bin/python -m tools.dressing.green_shapes --stats-seeds 1-6 --no-planche
@@ -34,7 +36,8 @@ import time
 import numpy as np
 
 from golfgen.dressing import GREEN_KINDS, STYLE_SPECS, CourseDressing, dress_course
-from golfgen.dressing.green import neck_width, points_in_polygon
+from golfgen.dressing.green import (FALLBACK_CAUSES, hull_depth, neck_width,
+                                    raster_concavity, rasterize)
 from golfgen.routing.geometry import build_hole_geometry
 from golfgen.routing.model import ElasticHole
 from golfgen.routing.muirfield import MuirfieldResult, build_course
@@ -66,18 +69,7 @@ def route(seed: int, width: int, height: int,
     return heightmap, build_course(seed, pattern, heightmap, width=width, height=height)
 
 
-# --- mesures (rastérisation propre à l'outil) ---------------------------------
-
-def rasterize(outline) -> np.ndarray:
-    """Cases ``(k, 2)`` (coin bas-gauche entier) du green rastérisé : une case
-    est verte si son centre est dans le polygone (``points_in_polygon``)."""
-    polygon = np.asarray(outline, dtype=float)
-    lo = np.floor(polygon.min(axis=0)).astype(int)
-    hi = np.ceil(polygon.max(axis=0)).astype(int)
-    xs, ys = np.meshgrid(np.arange(lo[0], hi[0]), np.arange(lo[1], hi[1]), indexing="ij")
-    cells = np.column_stack((xs.ravel(), ys.ravel()))
-    return cells[points_in_polygon(cells + 0.5, polygon)]
-
+# --- mesures (rastérisation et creux rastérisé : ``golfgen.dressing.green``) ---
 
 def approach_tangent(hole: ElasticHole) -> np.ndarray:
     """Direction unitaire de l'approche (dernier segment de l'axe)."""
@@ -107,56 +99,6 @@ def axis_deviation(outline, tangent: np.ndarray) -> float:
     """Angle (degrés, 0–90) entre le grand axe d'inertie et l'approche."""
     _, major = inertia(outline)
     return math.degrees(math.acos(min(1.0, abs(float(np.dot(major, tangent))))))
-
-
-def _hull(points: np.ndarray) -> np.ndarray:
-    """Enveloppe convexe (chaîne monotone), sens trigonométrique, sans
-    points alignés."""
-    pts = sorted(set(map(tuple, points.tolist())))
-    if len(pts) < 3:
-        return np.asarray(pts, dtype=float)
-
-    def half(seq):
-        out = []
-        for q in seq:
-            while len(out) >= 2 and ((out[-1][0] - out[-2][0]) * (q[1] - out[-2][1])
-                                     - (out[-1][1] - out[-2][1]) * (q[0] - out[-2][0])) <= 0:
-                out.pop()
-            out.append(q)
-        return out
-    lower, upper = half(pts), half(reversed(pts))
-    return np.asarray(lower[:-1] + upper[:-1], dtype=float)
-
-
-def raster_concavity(cells: np.ndarray) -> float:
-    """Concavité rastérisée (blocs) : 1 + distance maximale au bord de
-    l'enveloppe convexe des centres verts d'un centre de case NON verte situé
-    dans cette enveloppe (bord compris) ; 0 si aucun (forme rastérisée
-    « convexe » : aucune case manquante entre deux cases vertes). Une rangée
-    de cases manquante entre deux cornes vaut 1."""
-    if len(cells) < 3:
-        return 0.0
-    hull = _hull(cells.astype(float) + 0.5)
-    if len(hull) < 3:
-        return 0.0
-    lo, hi = cells.min(axis=0), cells.max(axis=0)
-    xs, ys = np.meshgrid(np.arange(lo[0], hi[0] + 1), np.arange(lo[1], hi[1] + 1),
-                         indexing="ij")
-    grid = np.column_stack((xs.ravel(), ys.ravel()))
-    green = {tuple(c) for c in cells.tolist()}
-    missing = np.array([c for c in grid.tolist() if tuple(c) not in green], dtype=float)
-    if not len(missing):
-        return 0.0
-    centers = missing + 0.5
-    a, b = hull, np.roll(hull, -1, axis=0)
-    edge = b - a
-    length = np.linalg.norm(edge, axis=1)
-    # distance signée intérieure à chaque arête (enveloppe trigonométrique)
-    inside = ((edge[:, 0] * (centers[:, 1:2] - a[:, 1]) - edge[:, 1] * (centers[:, 0:1] - a[:, 0]))
-              / length)
-    depth = inside.min(axis=1)
-    depth = depth[depth >= -1e-9]
-    return round(1.0 + float(depth.max()), 2) if len(depth) else 0.0
 
 
 def raster_width(cells: np.ndarray, center, tangent: np.ndarray, step: float = 0.05) -> float:
@@ -228,18 +170,21 @@ def core_margin(outline, core) -> float:
 
 
 def measure(hole: ElasticHole, green) -> dict:
-    """Mesures d'un green : type, bascule, allongement et axe d'inertie, aire
-    rastérisée, concavité et largeur rastérisées, col (haricot, sinon
-    ``None``), marge au bord du cœur, ρ effectif (diamètre du disque de même
+    """Mesures d'un green : type, bascule et sa cause, allongement et axe
+    d'inertie, aire rastérisée, concavité et largeur rastérisées, col et
+    creux vectoriel (haricot, sinon ``None``), marge au bord du cœur, ρ effectif (diamètre du disque de même
     aire / largeur du cœur)."""
     cells = rasterize(green.outline)
     tangent = approach_tangent(hole)
     elongation, _ = inertia(green.outline)
     outline = np.asarray(green.outline, dtype=float)
-    neck = neck_width(outline, tangent) if green.kind == "bean" else None
+    bean = green.kind == "bean"
+    neck = neck_width(outline, tangent) if bean else None
     return {
         "kind": green.kind,
         "fallback": green.bean_fallback,
+        "fallback_cause": green.fallback_cause,
+        "hull_depth": round(hull_depth(outline), 3) if bean else None,
         "elongation": round(elongation, 3),
         "axis_deviation": round(axis_deviation(green.outline, tangent), 2),
         "raster_area": int(len(cells)),
@@ -278,6 +223,10 @@ REDUCED_MAX_PCT = 5.0           # critère : ≤ 5 % de greens réduits par styl
 REDUCED_MAX_STEPS = 3           # critère : ≤ 3 pas ×0,95
 FALLBACK_MAX_PCT = 5.0          # critère : ≤ 5 % des haricots tirés basculent
 DRESSING_MEDIAN_MS = 10.0       # budget : habillage médian par parcours
+# Indicateur (pas une règle) : haricot « en V » si creux / col ≥ ce rapport
+# (creux profond sur un col étroit : encoche étroite en blocs) ; calé à l'œil
+# sur les planches R1b (parkland seed 1 #2 et seed 4 #17 à A ≈ 81).
+V_DEPTH_NECK_RATIO = 0.30
 
 
 def _quantiles(values: list[float], digits: int = 1) -> dict[str, float]:
@@ -322,6 +271,7 @@ def summarize(rows: list[dict], timings: dict[str, list[float]] | None = None) -
                 "max_shrink_steps": max((r["shrink_steps"] for r in group), default=0),
             }
         readable = [r for r in beans if r["concavity"] >= 1.0]
+        v_like = [r for r in beans if r["hull_depth"] / r["neck"] >= V_DEPTH_NECK_RATIO]
         max_steps = max((r["shrink_steps"] for r in items), default=0)
         diffs = [r["raster_area"] - r["area"] for r in items]
         summary = {
@@ -333,7 +283,9 @@ def summarize(rows: list[dict], timings: dict[str, list[float]] | None = None) -
                       for i, kind in enumerate(GREEN_KINDS)},
             "fallbacks": {"count": fallbacks, "drawn_beans": drawn,
                           "pct": round(100.0 * fallbacks / drawn, 1) if drawn else 0.0,
-                          "max_pct": FALLBACK_MAX_PCT},
+                          "max_pct": FALLBACK_MAX_PCT,
+                          "by_cause": {cause: sum(r["fallback_cause"] == cause for r in items)
+                                       for cause in FALLBACK_CAUSES}},
             "eligibility": {"bean_min_area": spec.bean_min_area,
                             "eligible": len(eligible),
                             "eligible_pct": round(100.0 * len(eligible) / n, 1),
@@ -351,7 +303,15 @@ def summarize(rows: list[dict], timings: dict[str, list[float]] | None = None) -
                       "unreadable": sorted(r["case"] for r in beans if r["concavity"] < 1.0),
                       "concavity_median": round(float(np.median(
                           [r["concavity"] for r in beans])), 2) if beans else 0.0,
-                      "neck_min": min((r["neck"] for r in beans), default=None)},
+                      "neck_min": min((r["neck"] for r in beans), default=None),
+                      "hull_depth": _quantiles([r["hull_depth"] for r in beans], 3)
+                      if beans else None,
+                      "depth_over_neck": _quantiles([r["hull_depth"] / r["neck"]
+                                                     for r in beans], 3) if beans else None,
+                      "v_like": {"ratio_min": V_DEPTH_NECK_RATIO, "greens": len(v_like),
+                                 "max_target_area": max((r["target_area"] for r in v_like),
+                                                        default=None)},
+                      "reduced": sum(r["reduced"] for r in beans)},
             "area": _quantiles([r["area"] for r in items]),
             "area_by_kind": {kind: _quantiles([r["area"] for r in group])
                              for kind, group in by_kind.items() if group},

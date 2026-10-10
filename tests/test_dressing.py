@@ -15,7 +15,10 @@ import pytest
 from golfgen import config as config_module
 from golfgen.dressing import (RNG_LABEL, STYLE_SPECS, CourseDressing, DressingError,
                               dress_course)
-from golfgen.dressing.green import (GREEN_VERTICES, green_shape, pick_kind,
+from golfgen.dressing import green as green_module
+from golfgen.dressing.green import (BEAN_DEPTH_TOLERANCE, BEAN_MAX_EVALUATIONS, BEAN_MIN_NECK,
+                                    GREEN_VERTICES, _aspect, _bean, _capsule, _capsule_alpha,
+                                    _Draws, green_shape, hull_depth, neck_width, pick_kind,
                                     points_in_polygon, polygon_inside, shoelace, target_area)
 from golfgen.exporter import muirfield_to_dict
 from golfgen.routing import muirfield as mf
@@ -199,6 +202,79 @@ def test_pick_kind_eligibility(style):
         plain = [k for k in plain if k != "bean"]
         share = plain.count("round") / len(plain)
         assert abs(share - spec.round_given_plain) <= 0.005
+
+
+@pytest.mark.parametrize("w", (7.0, 8.0))
+@pytest.mark.parametrize("length", (2.15, 2.24))
+@pytest.mark.parametrize("sagitta", (1.5, 1.75, 2.0))
+def test_capsule_depth_neck_and_round_ends(w, length, sagitta):
+    """Capsule courbée nue : creux = flèche, col = w, et chaque sommet à w/2
+    de l'arc médian (bords parallèles, bouts en demi-cercles)."""
+    arc = (length - 1.0) * w
+    polygon = _capsule(w, arc, sagitta)
+    assert polygon is not None and len(polygon) == GREEN_VERTICES
+    assert shoelace(polygon) > 0.0 and _is_simple([tuple(p) for p in polygon])
+    assert abs(hull_depth(polygon) - sagitta) <= 1e-9
+    assert abs(neck_width(polygon, np.array((1.0, 0.0))) - w) <= 1e-9
+    alpha = _capsule_alpha(sagitta / arc)
+    radius = arc / (2.0 * alpha)
+    center = np.array((0.0, sagitta / 2.0 - radius))
+    rel = polygon - center
+    angle = np.arctan2(rel[:, 0], rel[:, 1])
+    ends = center + radius * np.array([(-math.sin(alpha), math.cos(alpha)),
+                                       (math.sin(alpha), math.cos(alpha))])
+    on_arc = np.abs(np.linalg.norm(rel, axis=1) - radius)
+    to_ends = np.linalg.norm(polygon[:, None, :] - ends[None, :, :], axis=2).min(axis=1)
+    distance = np.where(np.abs(angle) <= alpha, on_arc, to_ends)
+    assert np.allclose(distance, w / 2.0, atol=1e-9)
+
+
+def test_capsule_without_inner_arc_is_none():
+    # flèche trop forte pour la longueur (w = 5,5, λ = 2,15, creux 2) : rayon
+    # de l'arc médian ≤ w/2, creux inatteignable
+    assert _capsule(5.5, 1.15 * 5.5, 2.0) is None
+
+
+@pytest.mark.parametrize("style", sorted(STYLE_SPECS))
+def test_bean_length_keeps_neck(style):
+    # λ plafonné : w = √(aire / (λ − 1 + π/4)) ≥ BEAN_MIN_NECK, même petit
+    spec = STYLE_SPECS[style]
+    for area in (40.0, 60.0, spec.bean_min_area, spec.green_area[1]):
+        for position in (0.0, 0.5, 1.0):
+            length = _aspect("bean", position, area, spec)
+            assert length <= spec.kind_aspects[2][1]
+            assert math.sqrt(area / (length - 1.0 + math.pi / 4.0)) >= BEAN_MIN_NECK - 1e-9
+
+
+@pytest.mark.parametrize("style", sorted(STYLE_SPECS))
+def test_bean_depth_recalibrated_within_four_evaluations(style, monkeypatch):
+    """Avec l'harmonique, creux recalé à ``BEAN_DEPTH_TOLERANCE`` du creux
+    visé en ``BEAN_MAX_EVALUATIONS`` évaluations au plus."""
+    spec = STYLE_SPECS[style]
+    calls = []
+
+    def counted(*args):
+        calls.append(args)
+        return _capsule(*args)
+
+    monkeypatch.setattr(green_module, "_capsule", counted)
+    rng = np.random.default_rng(11)
+    for _ in range(40):
+        depth = rng.uniform(*spec.bean_depth)
+        draws = _Draws(kind=0.0, position=rng.uniform(), depth=depth,
+                       side=1.0 if rng.uniform() < 0.5 else -1.0, recess=0.0,
+                       coefficients=np.array([spec.harmonic_amplitude]),
+                       phases=rng.uniform(0.0, 2.0 * math.pi, size=1))
+        area = rng.uniform(spec.bean_min_area, spec.green_area[1])
+        calls.clear()
+        shape, cause = _bean(draws, _aspect("bean", draws.position, area, spec), area,
+                             spec.bean_depth)
+        assert 1 <= len(calls) <= BEAN_MAX_EVALUATIONS
+        assert cause is None, cause
+        target = min(max(depth, spec.bean_depth[0] + BEAN_DEPTH_TOLERANCE),
+                     spec.bean_depth[1] - BEAN_DEPTH_TOLERANCE)
+        assert abs(hull_depth(shape) - target) <= BEAN_DEPTH_TOLERANCE
+        assert abs(shoelace(shape) - area) <= 1e-6
 
 
 def test_dressing_time_order_of_magnitude(courses):
