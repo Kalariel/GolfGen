@@ -5,12 +5,16 @@ Même chaîne que ``pipeline.py`` : relief (cache), ``build_course`` (patron
 style. Sorties sous ``tools/dressing/output/green_shapes/`` :
 
 - ``overview_seed<N>.png`` : planche d'ensemble (``render_readable_svg``,
-  greens en ``overlays``), links et parkland côte à côte ;
+  greens rendus en blocs en ``overlays``), links et parkland côte à côte ;
 - ``zoom_seed<N>_<style>.png`` : les 18 greens recadrés (``SPAN`` blocs de
-  côté, centrés sur le drapeau) avec le cœur du trou, l'axe d'approche, le
-  drapeau et le centre de la forme ;
-- ``report.json`` (versionné) : aires par par et par style, greens réduits
-  par l'inclusion dans le cœur, temps de l'habillage.
+  côté, centrés sur le drapeau), rendus en blocs sous leur contour fin, avec
+  le cœur du trou, l'axe d'approche, le drapeau et le centre de la forme ;
+  légende : type, allongement, aire, col du haricot, réduction ;
+- ``report.json`` (versionné) : par style, types (parts nettes et visées),
+  bascules haricot → allongé, éligibilité (seuil, part d'éligibles, P_eff),
+  allongement par type, haricots lisibles (creux rastérisé ≥ 1), col
+  minimal, aires par par et par type, ρ effectif, marge minimale au bord du
+  cœur, réductions, écart d'aire rastérisée, temps de l'habillage.
 
     .venv/bin/python -m tools.dressing.green_shapes
     .venv/bin/python -m tools.dressing.green_shapes --stats-seeds 1-6 --no-planche
@@ -22,13 +26,15 @@ import argparse
 from collections import defaultdict
 from html import escape
 import json
+import math
 from pathlib import Path
 import subprocess
 import time
 
 import numpy as np
 
-from golfgen.dressing import STYLE_SPECS, CourseDressing, dress_course
+from golfgen.dressing import GREEN_KINDS, STYLE_SPECS, CourseDressing, dress_course
+from golfgen.dressing.green import neck_width, points_in_polygon
 from golfgen.routing.geometry import build_hole_geometry
 from golfgen.routing.model import ElasticHole
 from golfgen.routing.muirfield import MuirfieldResult, build_course
@@ -43,11 +49,12 @@ SIZES = {"400x300": (400, 300), "300x400": (300, 400)}
 OVERVIEW_SEEDS = (4,)
 ZOOM_SEEDS = (1, 4)
 PLANCHE_SIZE = (400, 300)
-SPAN = 30.0                     # côté du recadrage (blocs)
+SPAN = 30.0                     # côté du recadrage (blocs) ; grands greens : ≤ 10,4 blocs du drapeau
 TILE = 260                      # px
-FOOTER = 40                     # px sous le recadrage
+FOOTER = 58                     # px sous le recadrage (trois lignes)
 GREEN_FILL = "#9be58f"
-GREEN_EDGE = "#2b7a34"
+GREEN_EDGE = "#1f5f28"         # contour fin (vectoriel)
+CELL_EDGE = "#6fbf64"          # joints des blocs
 REDUCED_COLOR = "#ff2d7a"
 OVERLAY_COLOR = "#d9ffd2"       # overlay translucide (opacité 0.35) : plus clair que les bandes
 MONTAGE_FONT = "DejaVu-Sans"
@@ -59,6 +66,206 @@ def route(seed: int, width: int, height: int,
     return heightmap, build_course(seed, pattern, heightmap, width=width, height=height)
 
 
+# --- mesures (rastérisation propre à l'outil) ---------------------------------
+
+def rasterize(outline) -> np.ndarray:
+    """Cases ``(k, 2)`` (coin bas-gauche entier) du green rastérisé : une case
+    est verte si son centre est dans le polygone (``points_in_polygon``)."""
+    polygon = np.asarray(outline, dtype=float)
+    lo = np.floor(polygon.min(axis=0)).astype(int)
+    hi = np.ceil(polygon.max(axis=0)).astype(int)
+    xs, ys = np.meshgrid(np.arange(lo[0], hi[0]), np.arange(lo[1], hi[1]), indexing="ij")
+    cells = np.column_stack((xs.ravel(), ys.ravel()))
+    return cells[points_in_polygon(cells + 0.5, polygon)]
+
+
+def approach_tangent(hole: ElasticHole) -> np.ndarray:
+    """Direction unitaire de l'approche (dernier segment de l'axe)."""
+    tangent = np.array((hole.axis[-1].x - hole.axis[-2].x, hole.axis[-1].y - hole.axis[-2].y))
+    return tangent / np.linalg.norm(tangent)
+
+
+def inertia(outline) -> tuple[float, np.ndarray]:
+    """Allongement mesuré (√(λ₁/λ₂) des moments d'inertie du polygone, = a/b
+    pour une ellipse) et direction unitaire du grand axe d'inertie."""
+    p = np.asarray(outline, dtype=float)
+    p = p - p.mean(axis=0)
+    x, y = p[:, 0], p[:, 1]
+    x1, y1 = np.roll(x, -1), np.roll(y, -1)
+    cross = x * y1 - x1 * y
+    area = cross.sum() / 2.0
+    cx = ((x + x1) * cross).sum() / (6.0 * area)
+    cy = ((y + y1) * cross).sum() / (6.0 * area)
+    sxx = (cross * (x * x + x * x1 + x1 * x1)).sum() / (12.0 * area) - cx * cx
+    syy = (cross * (y * y + y * y1 + y1 * y1)).sum() / (12.0 * area) - cy * cy
+    sxy = (cross * (2 * x * y + x * y1 + x1 * y + 2 * x1 * y1)).sum() / (24.0 * area) - cx * cy
+    values, vectors = np.linalg.eigh(np.array([[sxx, sxy], [sxy, syy]]))
+    return float(math.sqrt(values[1] / values[0])), vectors[:, 1]
+
+
+def axis_deviation(outline, tangent: np.ndarray) -> float:
+    """Angle (degrés, 0–90) entre le grand axe d'inertie et l'approche."""
+    _, major = inertia(outline)
+    return math.degrees(math.acos(min(1.0, abs(float(np.dot(major, tangent))))))
+
+
+def _hull(points: np.ndarray) -> np.ndarray:
+    """Enveloppe convexe (chaîne monotone), sens trigonométrique, sans
+    points alignés."""
+    pts = sorted(set(map(tuple, points.tolist())))
+    if len(pts) < 3:
+        return np.asarray(pts, dtype=float)
+
+    def half(seq):
+        out = []
+        for q in seq:
+            while len(out) >= 2 and ((out[-1][0] - out[-2][0]) * (q[1] - out[-2][1])
+                                     - (out[-1][1] - out[-2][1]) * (q[0] - out[-2][0])) <= 0:
+                out.pop()
+            out.append(q)
+        return out
+    lower, upper = half(pts), half(reversed(pts))
+    return np.asarray(lower[:-1] + upper[:-1], dtype=float)
+
+
+def raster_concavity(cells: np.ndarray) -> float:
+    """Concavité rastérisée (blocs) : 1 + distance maximale au bord de
+    l'enveloppe convexe des centres verts d'un centre de case NON verte situé
+    dans cette enveloppe (bord compris) ; 0 si aucun (forme rastérisée
+    « convexe » : aucune case manquante entre deux cases vertes). Une rangée
+    de cases manquante entre deux cornes vaut 1."""
+    if len(cells) < 3:
+        return 0.0
+    hull = _hull(cells.astype(float) + 0.5)
+    if len(hull) < 3:
+        return 0.0
+    lo, hi = cells.min(axis=0), cells.max(axis=0)
+    xs, ys = np.meshgrid(np.arange(lo[0], hi[0] + 1), np.arange(lo[1], hi[1] + 1),
+                         indexing="ij")
+    grid = np.column_stack((xs.ravel(), ys.ravel()))
+    green = {tuple(c) for c in cells.tolist()}
+    missing = np.array([c for c in grid.tolist() if tuple(c) not in green], dtype=float)
+    if not len(missing):
+        return 0.0
+    centers = missing + 0.5
+    a, b = hull, np.roll(hull, -1, axis=0)
+    edge = b - a
+    length = np.linalg.norm(edge, axis=1)
+    # distance signée intérieure à chaque arête (enveloppe trigonométrique)
+    inside = ((edge[:, 0] * (centers[:, 1:2] - a[:, 1]) - edge[:, 1] * (centers[:, 0:1] - a[:, 0]))
+              / length)
+    depth = inside.min(axis=1)
+    depth = depth[depth >= -1e-9]
+    return round(1.0 + float(depth.max()), 2) if len(depth) else 0.0
+
+
+def raster_width(cells: np.ndarray, center, tangent: np.ndarray, step: float = 0.05) -> float:
+    """Largeur rastérisée (blocs) : longueur, dans l'union des cases vertes,
+    de la traversée continue par le centre de la forme, perpendiculaire à
+    l'approche."""
+    green = {tuple(c) for c in cells.tolist()}
+    normal = np.array((-tangent[1], tangent[0]))
+    total = 0.0
+    for sign in (1.0, -1.0):
+        t = 0.0 if sign > 0 else step
+        while t < SPAN:
+            p = np.asarray(center, dtype=float) + sign * t * normal
+            if (int(math.floor(p[0])), int(math.floor(p[1]))) not in green:
+                break
+            t += step
+        total += t
+    return round(total, 2)
+
+
+def raster_outline(cells: np.ndarray) -> list[list[Point]]:
+    """Contour(s) de l'union des cases ``cells`` (anneaux fermés implicitement,
+    sommets aux coins des cases, points alignés retirés)."""
+    edges: set[tuple[Point, Point]] = set()
+    for x, y in cells.tolist():
+        corners = ((x, y), (x + 1, y), (x + 1, y + 1), (x, y + 1))
+        for a, b in zip(corners, corners[1:] + corners[:1]):
+            if (b, a) in edges:
+                edges.remove((b, a))
+            else:
+                edges.add((a, b))
+    following: dict[Point, list[Point]] = defaultdict(list)
+    for a, b in sorted(edges):
+        following[a].append(b)
+    rings = []
+    while following:
+        start = min(following)
+        ring, current = [start], start
+        while True:
+            nxt = following[current].pop()
+            if not following[current]:
+                del following[current]
+            if nxt == start:
+                break
+            ring.append(nxt)
+            current = nxt
+        kept = [q for i, q in enumerate(ring)
+                if (ring[i - 1][0] - q[0]) * (ring[(i + 1) % len(ring)][1] - q[1])
+                != (ring[i - 1][1] - q[1]) * (ring[(i + 1) % len(ring)][0] - q[0])]
+        rings.append([(float(x), float(y)) for x, y in kept])
+    return rings
+
+
+def _point_segments_distance(points: np.ndarray, polygon: np.ndarray) -> float:
+    """Distance minimale des ``points`` aux arêtes du polygone fermé."""
+    a = polygon[None, :, :]
+    ab = np.roll(polygon, -1, axis=0)[None, :, :] - a
+    ap = points[:, None, :] - a
+    t = np.clip((ap * ab).sum(axis=2) / np.maximum((ab * ab).sum(axis=2), 1e-12), 0.0, 1.0)
+    return float(np.linalg.norm(ap - t[..., None] * ab, axis=2).min())
+
+
+def core_margin(outline, core) -> float:
+    """Marge (blocs) : distance minimale entre le contour du green et le bord
+    du cœur (côtés du cœur en pratique : le recul adaptatif écarte le bout)."""
+    green = np.asarray(outline, dtype=float)
+    edge = np.asarray(core, dtype=float)
+    return min(_point_segments_distance(green, edge), _point_segments_distance(edge, green))
+
+
+def measure(hole: ElasticHole, green) -> dict:
+    """Mesures d'un green : type, bascule, allongement et axe d'inertie, aire
+    rastérisée, concavité et largeur rastérisées, col (haricot, sinon
+    ``None``), marge au bord du cœur, ρ effectif (diamètre du disque de même
+    aire / largeur du cœur)."""
+    cells = rasterize(green.outline)
+    tangent = approach_tangent(hole)
+    elongation, _ = inertia(green.outline)
+    outline = np.asarray(green.outline, dtype=float)
+    neck = neck_width(outline, tangent) if green.kind == "bean" else None
+    return {
+        "kind": green.kind,
+        "fallback": green.bean_fallback,
+        "elongation": round(elongation, 3),
+        "axis_deviation": round(axis_deviation(green.outline, tangent), 2),
+        "raster_area": int(len(cells)),
+        "concavity": raster_concavity(cells),
+        "raster_width": raster_width(cells, green.center, tangent),
+        "neck": None if neck is None else round(neck, 3),
+        "margin": round(core_margin(green.outline, build_hole_geometry(hole).core), 3),
+        "rho": round(math.sqrt(4.0 * green.area / math.pi) / hole.width, 4),
+    }
+
+
+def green_rows(result, dressing: CourseDressing, *, case: str) -> list[dict]:
+    """Une ligne par green pour ``summarize`` : style, par, aires, réduction,
+    largeur du cœur et mesures (``measure``) ; ``case`` identifie le parcours."""
+    rows = []
+    for hole in sorted(result.layout.holes, key=lambda h: h.order):
+        green = dressing[hole.order].green
+        row = {"style": dressing.style, "case": f"{case}#{hole.order}", "par": hole.par,
+               "area": green.area, "target_area": green.target_area,
+               "reduced": green.reduced, "shrink_steps": green.shrink_steps,
+               "width": hole.width}
+        row.update(measure(hole, green))
+        rows.append(row)
+    return rows
+
+
 def timed_dressing(result: MuirfieldResult, seed: int, style: str) -> tuple[CourseDressing, float]:
     t0 = time.perf_counter()
     dressing = dress_course(result, seed=seed, style=style)
@@ -67,52 +274,116 @@ def timed_dressing(result: MuirfieldResult, seed: int, style: str) -> tuple[Cour
 
 # --- statistiques -------------------------------------------------------------
 
-def _quantiles(values: list[float]) -> dict[str, float]:
+REDUCED_MAX_PCT = 5.0           # critère : ≤ 5 % de greens réduits par style
+REDUCED_MAX_STEPS = 3           # critère : ≤ 3 pas ×0,95
+FALLBACK_MAX_PCT = 5.0          # critère : ≤ 5 % des haricots tirés basculent
+DRESSING_MEDIAN_MS = 10.0       # budget : habillage médian par parcours
+
+
+def _quantiles(values: list[float], digits: int = 1) -> dict[str, float]:
     array = np.asarray(values, dtype=float)
     keys = ("min", "q25", "median", "q75", "max")
-    stats = dict(zip(keys, (round(float(v), 1)
+    stats = dict(zip(keys, (round(float(v), digits)
                             for v in np.quantile(array, (0.0, 0.25, 0.5, 0.75, 1.0)))))
-    stats["mean"] = round(float(array.mean()), 1)
+    stats["mean"] = round(float(array.mean()), digits)
     return stats
 
 
-def summarize(rows: list[dict]) -> dict:
-    """``rows`` : ``{style, par, area, target_area, reduced, shrink_steps, width}``
-    par green ; synthèse par style puis par par."""
-    grouped: dict[str, dict[int, list[dict]]] = defaultdict(lambda: defaultdict(list))
+def summarize(rows: list[dict], timings: dict[str, list[float]] | None = None) -> dict:
+    """``rows`` : lignes de ``green_rows`` ; ``timings`` : durées d'habillage
+    (s) par style. Synthèse par style : types (parts nettes et visées),
+    bascules, éligibilité, allongement, haricots, aires par par et par type,
+    ρ effectif, marges, réductions, écart d'aire rastérisée, temps."""
+    grouped: dict[str, list[dict]] = defaultdict(list)
     for row in rows:
-        grouped[row["style"]][row["par"]].append(row)
+        grouped[row["style"]].append(row)
     out = {}
     for style in sorted(grouped):
+        spec = STYLE_SPECS[style]
+        items = grouped[style]
+        n = len(items)
+        by_kind = {kind: [r for r in items if r["kind"] == kind] for kind in GREEN_KINDS}
+        beans = by_kind["bean"]
+        fallbacks = sum(r["fallback"] for r in items)
+        drawn = len(beans) + fallbacks
+        eligible = [r for r in items if r["target_area"] >= spec.bean_min_area]
+        reduced = [r for r in items if r["reduced"]]
         by_par = {}
-        for par in sorted(grouped[style]):
-            items = grouped[style][par]
-            reduced = [r for r in items if r["reduced"]]
+        for par in sorted({r["par"] for r in items}):
+            group = [r for r in items if r["par"] == par]
+            group_reduced = [r for r in group if r["reduced"]]
             by_par[str(par)] = {
-                "greens": len(items),
-                "area": _quantiles([r["area"] for r in items]),
-                "target_area": _quantiles([r["target_area"] for r in items]),
-                "reduced": len(reduced),
-                "reduced_pct": round(100.0 * len(reduced) / len(items), 1),
-                "reduced_widths": sorted(round(r["width"], 1) for r in reduced),
-                "max_shrink_steps": max((r["shrink_steps"] for r in items), default=0),
+                "greens": len(group),
+                "area": _quantiles([r["area"] for r in group]),
+                "target_area": _quantiles([r["target_area"] for r in group]),
+                "reduced": len(group_reduced),
+                "reduced_pct": round(100.0 * len(group_reduced) / len(group), 1),
+                "reduced_widths": sorted(round(r["width"], 1) for r in group_reduced),
+                "max_shrink_steps": max((r["shrink_steps"] for r in group), default=0),
             }
-        all_items = [r for par in grouped[style].values() for r in par]
-        out[style] = {
-            "range": list(STYLE_SPECS[style].green_area),
-            "greens": len(all_items),
-            "reduced": sum(r["reduced"] for r in all_items),
-            "area": _quantiles([r["area"] for r in all_items]),
+        readable = [r for r in beans if r["concavity"] >= 1.0]
+        max_steps = max((r["shrink_steps"] for r in items), default=0)
+        diffs = [r["raster_area"] - r["area"] for r in items]
+        summary = {
+            "range": list(spec.green_area),
+            "greens": n,
+            "kinds": {kind: {"greens": len(by_kind[kind]),
+                             "share": round(len(by_kind[kind]) / n, 3),
+                             "target": spec.kind_weights[i]}
+                      for i, kind in enumerate(GREEN_KINDS)},
+            "fallbacks": {"count": fallbacks, "drawn_beans": drawn,
+                          "pct": round(100.0 * fallbacks / drawn, 1) if drawn else 0.0,
+                          "max_pct": FALLBACK_MAX_PCT},
+            "eligibility": {"bean_min_area": spec.bean_min_area,
+                            "eligible": len(eligible),
+                            "eligible_pct": round(100.0 * len(eligible) / n, 1),
+                            "bean_given_eligible": spec.bean_given_eligible,
+                            "round_given_plain": spec.round_given_plain,
+                            "beans_below_threshold": sum(r["target_area"] < spec.bean_min_area
+                                                         for r in beans)},
+            "elongation": {kind: _quantiles([r["elongation"] for r in group], 2)
+                           for kind, group in by_kind.items() if group},
+            "axis_deviation_max": {kind: max(r["axis_deviation"] for r in group)
+                                   for kind, group in by_kind.items() if group},
+            "beans": {"greens": len(beans), "readable": len(readable),
+                      "readable_pct": round(100.0 * len(readable) / len(beans), 1)
+                      if beans else 0.0,
+                      "unreadable": sorted(r["case"] for r in beans if r["concavity"] < 1.0),
+                      "concavity_median": round(float(np.median(
+                          [r["concavity"] for r in beans])), 2) if beans else 0.0,
+                      "neck_min": min((r["neck"] for r in beans), default=None)},
+            "area": _quantiles([r["area"] for r in items]),
+            "area_by_kind": {kind: _quantiles([r["area"] for r in group])
+                             for kind, group in by_kind.items() if group},
             "by_par": by_par,
+            "rho": _quantiles([r["rho"] for r in items], 3),
+            "margin_min": min(r["margin"] for r in items),
+            "raster_width_min": min(r["raster_width"] for r in items),
+            "raster_area_diff": {"mean": round(float(np.mean(diffs)), 2),
+                                 "max_abs": round(float(np.abs(diffs).max()), 2)},
+            "reduced": len(reduced),
+            "reduced_pct": round(100.0 * len(reduced) / n, 1),
+            "max_shrink_steps": max_steps,
+            "reduction_criterion": {"max_pct": REDUCED_MAX_PCT, "max_steps": REDUCED_MAX_STEPS,
+                                    "ok": 100.0 * len(reduced) / n <= REDUCED_MAX_PCT
+                                    and max_steps <= REDUCED_MAX_STEPS},
         }
+        if timings and timings.get(style):
+            summary["dressing_ms"] = _quantiles([t * 1000 for t in timings[style]])
+        out[style] = summary
     return out
 
 
 # --- rendu --------------------------------------------------------------------
 
+KIND_LABELS = {"round": "rond", "elongated": "allongé", "bean": "haricot"}
+
+
 def tile_svg(hole: ElasticHole, dressing: CourseDressing, *, label: str = "") -> str:
     """Recadrage ``SPAN``×``SPAN`` blocs centré sur le drapeau : cœur du trou
-    (couleur du par), axe (approche), green, centre (croix), drapeau."""
+    (couleur du par), axe (approche), green rendu EN BLOCS (cases
+    ``rasterize``) sous son contour fin, centre (croix), drapeau ; légende :
+    type, allongement, aire, col du haricot, réduction."""
     green = dressing[hole.order].green
     flag = (hole.green.x, hole.green.y)
     scale = TILE / SPAN
@@ -129,7 +400,8 @@ def tile_svg(hole: ElasticHole, dressing: CourseDressing, *, label: str = "") ->
     axis = [(p.x, p.y) for p in hole.axis]
     fx, fy = pt(flag)
     cx, cy = pt(green.center)
-    reduced = green.reduced
+    cells = rasterize(green.outline)
+    data = measure(hole, green)
     out = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{TILE}" height="{TILE + FOOTER}">',
         '<rect width="100%" height="100%" fill="#0d1117"/>',
@@ -140,8 +412,15 @@ def tile_svg(hole: ElasticHole, dressing: CourseDressing, *, label: str = "") ->
         f'stroke="{color}" stroke-width="1.5"/>',
         f'<polyline points="{fmt(axis)}" fill="none" stroke="#f0f6fc" stroke-opacity="0.7" '
         'stroke-width="1.2" stroke-dasharray="5 4"/>',
-        f'<polygon points="{fmt(green.outline)}" fill="{GREEN_FILL}" fill-opacity="0.85" '
-        f'stroke="{GREEN_EDGE}" stroke-width="1.6"/>',
+    ]
+    for x, y in cells.tolist():
+        px, py = pt((x, y))
+        out.append(f'<rect class="cell" x="{px:.1f}" y="{py:.1f}" width="{scale:.2f}" '
+                   f'height="{scale:.2f}" fill="{GREEN_FILL}" stroke="{CELL_EDGE}" '
+                   'stroke-width="0.4"/>')
+    out.extend([
+        f'<polygon points="{fmt(green.outline)}" fill="none" stroke="{GREEN_EDGE}" '
+        'stroke-width="1"/>',
         f'<path d="M{cx - 4:.1f},{cy:.1f}h8M{cx:.1f},{cy - 4:.1f}v8" stroke="#0d1117" '
         'stroke-width="1.3"/>',
         f'<circle cx="{fx:.1f}" cy="{fy:.1f}" r="2.2" fill="#0d1117"/>',
@@ -154,15 +433,21 @@ def tile_svg(hole: ElasticHole, dressing: CourseDressing, *, label: str = "") ->
         'stroke="#f0f6fc" stroke-width="2"/>',
         f'<text x="8" y="{TILE - 13}" font-size="10">5 blocs</text>',
         '</svg>',
-    ]
-    shrink = f' · réduit ×{green.scale:.2f}' if reduced else ''
-
+    ])
+    kind = KIND_LABELS[green.kind] + (" (bascule)" if green.bean_fallback else "")
     first = f"#{hole.order} par {hole.par} · L {hole.length:.0f} · l {hole.width:.1f}"
-    second = f"A {green.area:.0f} bl² (visée {green.target_area:.0f}){shrink}"
-    style = f' style="fill:{REDUCED_COLOR}"' if reduced else ""
+    second = f"{kind} · allong. {data['elongation']:.2f} · A {green.area:.0f} bl²"
+    extras = []
+    if data["neck"] is not None:
+        extras.append(f"col {data['neck']:.1f}")
+    if green.reduced:
+        extras.append(f"réduit ×{green.scale:.2f} ({green.shrink_steps} pas)")
+    third = " · ".join(extras) or "—"
+    style = f' style="fill:{REDUCED_COLOR}"' if green.reduced else ""
     out.extend([
         f'<text x="6" y="{TILE + 15}" font-size="11.5">{escape(first)}</text>',
-        f'<text x="6" y="{TILE + 32}" font-size="11.5"{style}>{escape(second)}</text>',
+        f'<text x="6" y="{TILE + 32}" font-size="11.5">{escape(second)}</text>',
+        f'<text x="6" y="{TILE + 49}" font-size="11.5"{style}>{escape(third)}</text>',
     ])
     if label:
         out.append(f'<text x="{TILE - 6}" y="16" font-size="11" text-anchor="end">'
@@ -173,15 +458,21 @@ def tile_svg(hole: ElasticHole, dressing: CourseDressing, *, label: str = "") ->
 
 def overview_svg(result: MuirfieldResult, heightmap: np.ndarray, dressing: CourseDressing,
                  *, seed: int, timing: float) -> str:
-    overlays = [(dressing[hole.order].green.outline, OVERLAY_COLOR)
-                for hole in result.layout.holes]
-    reduced = sum(h.green.reduced for h in dressing.holes.values())
+    """Planche d'ensemble : greens rendus en blocs (contour de l'union des
+    cases rastérisées) en ``overlays``."""
+    overlays = [(ring, OVERLAY_COLOR)
+                for hole in result.layout.holes
+                for ring in raster_outline(rasterize(dressing[hole.order].green.outline))]
+    greens = [h.green for h in dressing.holes.values()]
+    reduced = sum(g.reduced for g in greens)
+    kinds = ", ".join(f"{sum(g.kind == kind for g in greens)} {KIND_LABELS[kind]}"
+                      for kind in GREEN_KINDS)
     return render_readable_svg(
         result.layout, result.violations, heightmap=heightmap, water_level=WATER_LEVEL,
         overlays=overlays, green_disks=False,
         title=f"seed {seed} · {int(result.width)}×{int(result.height)} · {result.pattern} · "
               f"style {dressing.style}",
-        subtitle=f"greens habillés (vert clair) · {reduced} réduit(s) par le cœur · "
+        subtitle=f"greens en blocs (vert clair) : {kinds} · {reduced} réduit(s) · "
                  f"habillage {timing * 1000:.1f} ms")
 
 
@@ -247,7 +538,8 @@ def main() -> None:
     sizes = [s for s in args.sizes.split(",") if s]
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    rows, timings, failures = [], [], []
+    rows, failures = [], []
+    timings: dict[str, list[float]] = defaultdict(list)
     for size in sizes:
         width, height = SIZES[size]
         for seed in seeds:
@@ -258,19 +550,17 @@ def main() -> None:
                 continue
             for style in STYLE_SPECS:
                 dressing, timing = timed_dressing(result, seed, style)
-                timings.append(timing)
-                for hole in result.layout.holes:
-                    green = dressing[hole.order].green
-                    rows.append({"style": style, "par": hole.par, "area": green.area,
-                                 "target_area": green.target_area, "reduced": green.reduced,
-                                 "shrink_steps": green.shrink_steps, "width": hole.width})
+                timings[style].append(timing)
+                rows.extend(green_rows(result, dressing, case=f"{size}/{seed}"))
             print(f"{size} seed {seed} : ok", flush=True)
 
+    all_timings = [t for values in timings.values() for t in values]
     report = {
         "sizes": sizes, "seeds": list(seeds), "pattern": "random",
         "routing_failures": failures,
-        "dressing_ms": _quantiles([t * 1000 for t in timings]),
-        "styles": summarize(rows),
+        "dressing_ms": _quantiles([t * 1000 for t in all_timings]),
+        "dressing_median_budget_ms": DRESSING_MEDIAN_MS,
+        "styles": summarize(rows, timings),
     }
     if not args.no_planche:
         report["planches"] = [p.name for p in render_planches(OUTPUT_DIR)]
@@ -278,10 +568,18 @@ def main() -> None:
         json.dumps(report, indent=2, sort_keys=True, ensure_ascii=False) + "\n",
         encoding="utf-8")
     for style, data in report["styles"].items():
-        print(f"[{style}] {data['greens']} greens, {data['reduced']} réduits, aire {data['area']}")
+        shares = " / ".join(f"{KIND_LABELS[k]} {v['share']:.3f} (visée {v['target']:.2f})"
+                            for k, v in data["kinds"].items())
+        print(f"[{style}] {data['greens']} greens : {shares}")
+        print(f"   bascules {data['fallbacks']}, éligibilité {data['eligibility']}")
+        print(f"   haricots {data['beans']}")
+        print(f"   allongement {data['elongation']}")
+        print(f"   réduits {data['reduced']} ({data['reduced_pct']} %), "
+              f"pas max {data['max_shrink_steps']}, marge min {data['margin_min']}, "
+              f"ρ {data['rho']}, écart raster {data['raster_area_diff']}")
         for par, stats in data["by_par"].items():
-            print(f"   par {par} : n={stats['greens']} aire {stats['area']} "
-                  f"réduits {stats['reduced']} ({stats['reduced_pct']} %)")
+            print(f"   par {par} : n={stats['greens']} aire {stats['area']}")
+        print(f"   habillage (ms) : {data.get('dressing_ms')}")
     print(f"habillage (ms) : {report['dressing_ms']}")
 
 

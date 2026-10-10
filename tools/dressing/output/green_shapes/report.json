@@ -1,11 +1,12 @@
 {
+  "dressing_median_budget_ms": 10.0,
   "dressing_ms": {
-    "max": 6.2,
-    "mean": 5.6,
-    "median": 5.6,
-    "min": 5.3,
-    "q25": 5.5,
-    "q75": 5.7
+    "max": 12.3,
+    "mean": 9.3,
+    "median": 9.2,
+    "min": 7.4,
+    "q25": 8.4,
+    "q75": 10.2
   },
   "pattern": "random",
   "planches": [
@@ -55,77 +56,63 @@
   "styles": {
     "links": {
       "area": {
-        "max": 91.0,
-        "mean": 75.9,
-        "median": 76.1,
-        "min": 56.8,
-        "q25": 71.0,
-        "q75": 81.1
+        "max": 135.1,
+        "mean": 88.2,
+        "median": 84.7,
+        "min": 50.0,
+        "q25": 68.9,
+        "q75": 105.6
+      },
+      "area_by_kind": {
+        "bean": {
+          "max": 135.1,
+          "mean": 108.3,
+          "median": 105.6,
+          "min": 84.1,
+          "q25": 95.8,
+          "q75": 121.3
+        },
+        "elongated": {
+          "max": 135.1,
+          "mean": 78.1,
+          "median": 75.0,
+          "min": 50.0,
+          "q25": 62.3,
+          "q75": 84.9
+        },
+        "round": {
+          "max": 135.0,
+          "mean": 77.0,
+          "median": 74.0,
+          "min": 50.0,
+          "q25": 61.5,
+          "q75": 83.4
+        }
+      },
+      "axis_deviation_max": {
+        "bean": 6.07,
+        "elongated": 0.06,
+        "round": 4.31
+      },
+      "beans": {
+        "concavity_median": 1.74,
+        "greens": 373,
+        "neck_min": 5.554,
+        "readable": 372,
+        "readable_pct": 99.7,
+        "unreadable": [
+          "300x400/22#11"
+        ]
       },
       "by_par": {
         "3": {
           "area": {
-            "max": 80.0,
-            "mean": 69.2,
-            "median": 68.7,
-            "min": 56.8,
-            "q25": 64.5,
-            "q75": 73.6
-          },
-          "greens": 240,
-          "max_shrink_steps": 2,
-          "reduced": 6,
-          "reduced_pct": 2.5,
-          "reduced_widths": [
-            10.0,
-            10.0,
-            10.5,
-            10.5,
-            10.5,
-            10.5
-          ],
-          "target_area": {
-            "max": 80.0,
-            "mean": 69.4,
-            "median": 69.1,
-            "min": 60.5,
-            "q25": 64.7,
-            "q75": 73.6
-          }
-        },
-        "4": {
-          "area": {
-            "max": 86.7,
-            "mean": 76.3,
-            "median": 76.7,
-            "min": 67.1,
-            "q25": 71.8,
-            "q75": 80.6
-          },
-          "greens": 600,
-          "max_shrink_steps": 1,
-          "reduced": 1,
-          "reduced_pct": 0.2,
-          "reduced_widths": [
-            11.5
-          ],
-          "target_area": {
-            "max": 86.7,
-            "mean": 76.3,
-            "median": 76.7,
-            "min": 67.2,
-            "q25": 71.8,
-            "q75": 80.6
-          }
-        },
-        "5": {
-          "area": {
-            "max": 91.0,
-            "mean": 81.9,
-            "median": 82.1,
-            "min": 72.8,
-            "q25": 77.5,
-            "q75": 86.4
+            "max": 102.1,
+            "mean": 66.9,
+            "median": 64.9,
+            "min": 50.0,
+            "q25": 52.5,
+            "q75": 78.1
           },
           "greens": 240,
           "max_shrink_steps": 0,
@@ -133,40 +120,213 @@
           "reduced_pct": 0.0,
           "reduced_widths": [],
           "target_area": {
-            "max": 91.0,
-            "mean": 81.9,
-            "median": 82.1,
-            "min": 72.8,
-            "q25": 77.5,
-            "q75": 86.4
+            "max": 102.1,
+            "mean": 66.9,
+            "median": 64.9,
+            "min": 50.0,
+            "q25": 52.5,
+            "q75": 78.1
+          }
+        },
+        "4": {
+          "area": {
+            "max": 135.0,
+            "mean": 90.0,
+            "median": 88.1,
+            "min": 50.0,
+            "q25": 71.4,
+            "q75": 107.1
+          },
+          "greens": 600,
+          "max_shrink_steps": 0,
+          "reduced": 0,
+          "reduced_pct": 0.0,
+          "reduced_widths": [],
+          "target_area": {
+            "max": 135.0,
+            "mean": 90.0,
+            "median": 88.1,
+            "min": 50.0,
+            "q25": 71.4,
+            "q75": 107.1
+          }
+        },
+        "5": {
+          "area": {
+            "max": 135.1,
+            "mean": 105.1,
+            "median": 101.0,
+            "min": 66.3,
+            "q25": 86.5,
+            "q75": 128.3
+          },
+          "greens": 240,
+          "max_shrink_steps": 0,
+          "reduced": 0,
+          "reduced_pct": 0.0,
+          "reduced_widths": [],
+          "target_area": {
+            "max": 135.0,
+            "mean": 105.1,
+            "median": 101.0,
+            "min": 66.3,
+            "q25": 86.5,
+            "q75": 128.3
           }
         }
       },
+      "dressing_ms": {
+        "max": 12.3,
+        "mean": 9.7,
+        "median": 9.7,
+        "min": 7.6,
+        "q25": 8.9,
+        "q75": 10.4
+      },
+      "eligibility": {
+        "bean_given_eligible": 0.723,
+        "bean_min_area": 84.0,
+        "beans_below_threshold": 0,
+        "eligible": 547,
+        "eligible_pct": 50.6,
+        "round_given_plain": 0.473
+      },
+      "elongation": {
+        "bean": {
+          "max": 2.15,
+          "mean": 1.75,
+          "median": 1.75,
+          "min": 1.35,
+          "q25": 1.63,
+          "q75": 1.87
+        },
+        "elongated": {
+          "max": 1.88,
+          "mean": 1.64,
+          "median": 1.63,
+          "min": 1.44,
+          "q25": 1.53,
+          "q75": 1.75
+        },
+        "round": {
+          "max": 1.29,
+          "mean": 1.15,
+          "median": 1.15,
+          "min": 1.0,
+          "q25": 1.07,
+          "q75": 1.22
+        }
+      },
+      "fallbacks": {
+        "count": 18,
+        "drawn_beans": 391,
+        "max_pct": 5.0,
+        "pct": 4.6
+      },
       "greens": 1080,
+      "kinds": {
+        "bean": {
+          "greens": 373,
+          "share": 0.345,
+          "target": 0.35
+        },
+        "elongated": {
+          "greens": 403,
+          "share": 0.373,
+          "target": 0.35
+        },
+        "round": {
+          "greens": 304,
+          "share": 0.281,
+          "target": 0.3
+        }
+      },
+      "margin_min": 0.494,
+      "max_shrink_steps": 0,
       "range": [
-        60.0,
-        95.0
+        50.0,
+        135.0
       ],
-      "reduced": 7
+      "raster_area_diff": {
+        "max_abs": 6.25,
+        "mean": 0.08
+      },
+      "raster_width_min": 5.15,
+      "reduced": 0,
+      "reduced_pct": 0.0,
+      "reduction_criterion": {
+        "max_pct": 5.0,
+        "max_steps": 3,
+        "ok": true
+      },
+      "rho": {
+        "max": 0.831,
+        "mean": 0.758,
+        "median": 0.759,
+        "min": 0.683,
+        "q25": 0.734,
+        "q75": 0.78
+      }
     },
     "parkland": {
       "area": {
-        "max": 72.2,
-        "mean": 61.4,
-        "median": 61.6,
-        "min": 50.3,
-        "q25": 57.9,
-        "q75": 65.0
+        "max": 105.0,
+        "mean": 71.6,
+        "median": 69.2,
+        "min": 42.0,
+        "q25": 56.5,
+        "q75": 86.2
+      },
+      "area_by_kind": {
+        "bean": {
+          "max": 105.0,
+          "mean": 92.0,
+          "median": 90.8,
+          "min": 77.0,
+          "q25": 82.7,
+          "q75": 101.7
+        },
+        "elongated": {
+          "max": 105.0,
+          "mean": 63.1,
+          "median": 62.0,
+          "min": 42.0,
+          "q25": 51.5,
+          "q75": 71.8
+        },
+        "round": {
+          "max": 105.0,
+          "mean": 62.8,
+          "median": 61.8,
+          "min": 42.0,
+          "q25": 51.7,
+          "q75": 70.0
+        }
+      },
+      "axis_deviation_max": {
+        "bean": 3.27,
+        "elongated": 0.08,
+        "round": 9.07
+      },
+      "beans": {
+        "concavity_median": 1.71,
+        "greens": 322,
+        "neck_min": 5.497,
+        "readable": 321,
+        "readable_pct": 99.7,
+        "unreadable": [
+          "400x300/7#7"
+        ]
       },
       "by_par": {
         "3": {
           "area": {
-            "max": 64.3,
-            "mean": 56.7,
-            "median": 56.5,
-            "min": 50.3,
-            "q25": 53.3,
-            "q75": 59.7
+            "max": 83.2,
+            "mean": 55.1,
+            "median": 53.5,
+            "min": 42.0,
+            "q25": 43.1,
+            "q75": 64.2
           },
           "greens": 240,
           "max_shrink_steps": 0,
@@ -174,22 +334,22 @@
           "reduced_pct": 0.0,
           "reduced_widths": [],
           "target_area": {
-            "max": 64.3,
-            "mean": 56.7,
-            "median": 56.5,
-            "min": 50.3,
-            "q25": 53.4,
-            "q75": 59.7
+            "max": 83.1,
+            "mean": 55.1,
+            "median": 53.5,
+            "min": 42.0,
+            "q25": 43.1,
+            "q75": 64.2
           }
         },
         "4": {
           "area": {
-            "max": 69.1,
-            "mean": 61.6,
-            "median": 61.9,
-            "min": 55.1,
-            "q25": 58.4,
-            "q75": 64.7
+            "max": 105.0,
+            "mean": 73.2,
+            "median": 72.2,
+            "min": 42.0,
+            "q25": 58.0,
+            "q75": 87.2
           },
           "greens": 600,
           "max_shrink_steps": 0,
@@ -197,22 +357,22 @@
           "reduced_pct": 0.0,
           "reduced_widths": [],
           "target_area": {
-            "max": 69.1,
-            "mean": 61.6,
-            "median": 61.9,
-            "min": 55.1,
-            "q25": 58.4,
-            "q75": 64.7
+            "max": 105.0,
+            "mean": 73.2,
+            "median": 72.2,
+            "min": 42.0,
+            "q25": 58.0,
+            "q75": 87.2
           }
         },
         "5": {
           "area": {
-            "max": 72.2,
-            "mean": 65.7,
-            "median": 65.8,
-            "min": 59.2,
-            "q25": 62.5,
-            "q75": 68.9
+            "max": 105.0,
+            "mean": 84.2,
+            "median": 82.4,
+            "min": 54.0,
+            "q25": 70.0,
+            "q75": 103.6
           },
           "greens": 240,
           "max_shrink_steps": 0,
@@ -220,21 +380,107 @@
           "reduced_pct": 0.0,
           "reduced_widths": [],
           "target_area": {
-            "max": 72.2,
-            "mean": 65.7,
-            "median": 65.8,
-            "min": 59.2,
-            "q25": 62.5,
-            "q75": 68.9
+            "max": 105.0,
+            "mean": 84.2,
+            "median": 82.4,
+            "min": 53.9,
+            "q25": 69.9,
+            "q75": 103.6
           }
         }
       },
+      "dressing_ms": {
+        "max": 11.4,
+        "mean": 9.0,
+        "median": 8.8,
+        "min": 7.4,
+        "q25": 8.2,
+        "q75": 9.9
+      },
+      "eligibility": {
+        "bean_given_eligible": 0.822,
+        "bean_min_area": 77.0,
+        "beans_below_threshold": 0,
+        "eligible": 415,
+        "eligible_pct": 38.4,
+        "round_given_plain": 0.438
+      },
+      "elongation": {
+        "bean": {
+          "max": 2.03,
+          "mean": 1.77,
+          "median": 1.77,
+          "min": 1.47,
+          "q25": 1.7,
+          "q75": 1.85
+        },
+        "elongated": {
+          "max": 1.73,
+          "mean": 1.58,
+          "median": 1.57,
+          "min": 1.44,
+          "q25": 1.5,
+          "q75": 1.65
+        },
+        "round": {
+          "max": 1.29,
+          "mean": 1.15,
+          "median": 1.15,
+          "min": 1.0,
+          "q25": 1.07,
+          "q75": 1.22
+        }
+      },
+      "fallbacks": {
+        "count": 14,
+        "drawn_beans": 336,
+        "max_pct": 5.0,
+        "pct": 4.2
+      },
       "greens": 1080,
+      "kinds": {
+        "bean": {
+          "greens": 322,
+          "share": 0.298,
+          "target": 0.3
+        },
+        "elongated": {
+          "greens": 449,
+          "share": 0.416,
+          "target": 0.4
+        },
+        "round": {
+          "greens": 309,
+          "share": 0.286,
+          "target": 0.3
+        }
+      },
+      "margin_min": 0.496,
+      "max_shrink_steps": 0,
       "range": [
-        50.0,
-        75.0
+        42.0,
+        105.0
       ],
-      "reduced": 0
+      "raster_area_diff": {
+        "max_abs": 5.19,
+        "mean": -0.04
+      },
+      "raster_width_min": 5.05,
+      "reduced": 0,
+      "reduced_pct": 0.0,
+      "reduction_criterion": {
+        "max_pct": 5.0,
+        "max_steps": 3,
+        "ok": true
+      },
+      "rho": {
+        "max": 0.744,
+        "mean": 0.683,
+        "median": 0.683,
+        "min": 0.622,
+        "q25": 0.665,
+        "q75": 0.701
+      }
     }
   }
 }
