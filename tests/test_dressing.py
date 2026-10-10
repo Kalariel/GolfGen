@@ -15,8 +15,8 @@ import pytest
 from golfgen import config as config_module
 from golfgen.dressing import (RNG_LABEL, STYLE_SPECS, CourseDressing, DressingError,
                               dress_course)
-from golfgen.dressing.green import (GREEN_VERTICES, green_shape, points_in_polygon,
-                                    polygon_inside, shoelace)
+from golfgen.dressing.green import (GREEN_VERTICES, green_shape, pick_kind,
+                                    points_in_polygon, polygon_inside, shoelace, target_area)
 from golfgen.exporter import muirfield_to_dict
 from golfgen.routing import muirfield as mf
 from golfgen.routing.model import ControlPoint, ElasticHole
@@ -138,10 +138,74 @@ def test_dressing_leaves_routing_untouched(courses):
         assert validate(result.layout, rules, dry=dry_mask(heightmap)) == []
 
 
+def test_snapshot_matches_router(courses):
+    # l'instantané de tests/test_dressing_kinds.py est le routeur actuel
+    from tests.test_dressing_kinds import load_snapshot
+    snapshot = {((400, 300) if size == "400x300" else (300, 400)) + (seed,): holes
+                for size, seed, holes in load_snapshot()}
+    for case, (_, result) in courses.items():
+        holes = tuple(sorted(result.layout.holes, key=lambda h: h.order))
+        assert snapshot[case] == holes, case
+
+
+def _straight_hole(width: float, length: float = 300.0) -> ElasticHole:
+    return ElasticHole(order=1, par=4, tee=ControlPoint(0.0, 0.0),
+                       green=ControlPoint(length, 0.0), width=width)
+
+
+@pytest.mark.parametrize("style", sorted(STYLE_SPECS))
+def test_area_grows_with_core_width_at_equal_draws(style):
+    spec = STYLE_SPECS[style]
+    lo, hi = spec.green_area
+    widths = [8.0 + 0.5 * i for i in range(25)]
+    for u in (0.0, 0.3, 0.7, 1.0):
+        targets = [target_area(_straight_hole(w), u, spec) for w in widths]
+        assert all(a <= b for a, b in zip(targets, targets[1:]))
+        assert all(a < b for a, b in zip(targets, targets[1:]) if lo < b and a < hi)
+    # même flux aléatoire (mêmes tirages) : aire du green croissante avec l
+    areas = []
+    for width in widths:
+        hole = _straight_hole(width)
+        core = np.asarray(build_hole_geometry(hole).core, dtype=float)
+        green = green_shape(hole, core, np.random.default_rng(11), spec)
+        if not green.reduced:
+            areas.append(green.area)
+    assert len(areas) >= 20
+    assert all(a <= b + AREA_TOLERANCE for a, b in zip(areas, areas[1:]))
+    assert areas[-1] > areas[0]
+
+
+@pytest.mark.parametrize("style", sorted(STYLE_SPECS))
+def test_target_area_bounds(style):
+    spec = STYLE_SPECS[style]
+    lo, hi = spec.green_area
+    assert target_area(_straight_hole(2.0), 1.0, spec) == lo
+    assert target_area(_straight_hole(60.0), 0.0, spec) == hi
+    for width in (5.0, 10.0, 15.0, 20.0, 30.0):
+        for u in (0.0, 0.5, 1.0):
+            assert lo <= target_area(_straight_hole(width), u, spec) <= hi
+
+
+@pytest.mark.parametrize("style", sorted(STYLE_SPECS))
+def test_pick_kind_eligibility(style):
+    spec = STYLE_SPECS[style]
+    big, small = spec.bean_min_area, spec.bean_min_area - 0.01
+    grid = [i / 1000 for i in range(1000)]
+    assert all(pick_kind(u, small, spec) != "bean" for u in grid)
+    beans = sum(pick_kind(u, big, spec) == "bean" for u in grid)
+    assert abs(beans / 1000 - spec.bean_given_eligible) <= 0.002
+    for area in (small, big):
+        plain = [pick_kind(u, area, spec) for u in grid]
+        plain = [k for k in plain if k != "bean"]
+        share = plain.count("round") / len(plain)
+        assert abs(share - spec.round_given_plain) <= 0.005
+
+
 def test_dressing_time_order_of_magnitude(courses):
-    # 50 ms est la CIBLE (≈ 6 ms mesurés au repos, cf. report.json), pas le
-    # seuil du test : les mesures tournent sur un PC de bureau chargé. Le
-    # garde-fou ne vise qu'une régression d'ordre de grandeur.
+    # 10 ms médian par parcours est la CIBLE (mesurée sur 60 parcours dans
+    # report.json), pas le seuil du test : les mesures tournent sur un PC de
+    # bureau chargé. Le garde-fou (10× la cible) vise une régression d'ordre
+    # de grandeur.
     _, result = courses[(400, 300, 4)]
     best = math.inf
     for _ in range(5):
@@ -149,7 +213,7 @@ def test_dressing_time_order_of_magnitude(courses):
         dress_course(result, seed=4, style="links")
         best = min(best, time.perf_counter() - t0)
     print(f"\nhabillage seed 4 : {best * 1000:.1f} ms")
-    assert best <= 0.250
+    assert best <= 0.100
 
 
 @pytest.mark.parametrize("style", sorted(STYLE_SPECS))
