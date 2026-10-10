@@ -207,26 +207,43 @@ Constantes dans `golfgen/dressing/model.py` (`STYLE_SPECS`) et
 (400×300 et 300×400, patron `random`, 1080 trous par style ; détail dans
 `tools/dressing/output/green_shapes/report.json`).
 
-- **Types** : rond, allongé, haricot. Base : ellipse dont le grand axe suit
-  l'approche (dernier segment de l'axe, écart mesuré ≤ 15°), petit axe ≥ 5,5
-  blocs, déformée par l'harmonique 3 seule (links ≤ 12 %, parkland ≤ 6 %).
-  Allongement de base : rond 1,0–1,3 ; allongé 1,45–1,9 en links, 1,45–1,75
-  en parkland (mesuré ≥ 1,44) ; haricot 1,15–1,45, l'encoche l'allonge
-  (mesuré ≈ 1,75 médian).
-- **Haricot** : encoche en cosinus surélevé de ±90° sur un flanc, bornée à
-  0,9 du rayon, calée pour un creux (distance du contour à son enveloppe
-  convexe) tiré dans 1,5–2,0 blocs, dans les deux styles. Si le col (largeur
-  au droit du creux, perpendiculaire à l'approche) est < 5,5 blocs ou si le
-  creux est inatteignable, le green **bascule** en allongé.
-- **Éligibilité** : un haricot exige une aire visée ≥ 84 blocs² (links) ou
-  77 (parkland), plus petite aire à partir de laquelle la bascule reste
-  ≤ 5 % des haricots éligibles (mesuré 4,4 % et 4,6 %).
+- **Types** : rond, allongé, haricot. Rond et allongé : ellipse dont le
+  grand axe suit l'approche (dernier segment de l'axe, écart mesuré ≤ 15°),
+  petit axe ≥ 5,5 blocs, déformée par l'harmonique 3 seule (links ≤ 12 %,
+  parkland ≤ 6 %). Allongement : rond 1,0–1,3 ; allongé 1,45–1,9 en links,
+  1,45–1,75 en parkland (mesuré ≥ 1,44).
+- **Haricot : capsule courbée.** Stade de largeur `w` (bouts en
+  demi-cercles) dont l'axe médian est un arc de cercle de flèche `s`, corde
+  dans l'axe de l'approche, creux d'un côté tiré. `λ` = longueur dépliée /
+  largeur, tiré dans 2,15–2,24 dans les deux styles ; `w` vient de l'aire
+  visée (`aire = w·(λ − 1)·w + π·w²/4`), `λ` plafonné pour que `w` ≥ 5,5
+  blocs : le **col** (largeur au droit du creux, perpendiculaire à
+  l'approche) vaut `w`. Le **creux** (distance du contour à son enveloppe
+  convexe) vaut la flèche `s`, tirée dans 1,5–2,0 blocs dans les deux
+  styles. Harmonique 3 au poids ×0,5 (à ×1, elle refait des lobes) ; elle
+  déplace le creux, recalé sur `s` par sécante (4 évaluations au plus,
+  ±0,01 bloc ; mesuré 1,505–2,0, à l'arrondi des coordonnées près).
+  Allongement mesuré (moment d'inertie) : links 1,53–1,96, médiane 1,74 ;
+  parkland 1,53–1,88, médiane 1,70 (≤ 2,0 : au-delà, saucisse ; plus que
+  l'ancienne encoche, inhérent à la capsule). Correspondance `λ` →
+  allongement médian (haricots forcés, `λ` fixe, links / parkland) : 2,1 →
+  1,67 / 1,63 ; 2,2 → 1,75 / 1,70 ; 2,3 → 1,85 / 1,80 ; 2,4 → 1,95 / 1,90.
+  Le green **bascule** en allongé, sans tolérance, et la cause est comptée :
+  creux inatteignable (arc intérieur inexistant ; cause légitime, au même
+  titre que le col), recalage du creux non convergé, ou, une fois placé, col
+  < 5,5 blocs ou creux rendu en blocs < 1 bloc.
+- **Éligibilité** : un haricot exige un grand green, aire visée ≥ 84
+  blocs² (links) ou 77 (parkland) ; seuils validés, conservés (la capsule
+  tiendrait la bascule ≤ 5 % dès 74 et 72). Bascules mesurées sur les
+  haricots tirés : links 3/370 (0,8 %, creux inatteignable), parkland 9/317
+  (2,8 % : 8 creux inatteignables, 1 creux rastérisé).
 - **Parts nettes visées** (après bascules) : links rond 0,30 / allongé 0,35 /
-  haricot 0,35 ; parkland 0,30 / 0,40 / 0,30. Tirage : haricot avec
+  haricot 0,35 ; parkland 0,30 / 0,40 / 0,30 (mesuré 0,288 / 0,372 / 0,340
+  et 0,297 / 0,418 / 0,285). Tirage : haricot avec
   P_eff = part visée / (part d'éligibles × (1 − bascule)) parmi les
-  éligibles (links 0,35 / (0,506 × 0,956) = 0,723 ; parkland 0,30 /
-  (0,382 × 0,954) = 0,822) ; sinon rond avec la probabilité
-  `round_given_plain` (0,473 et 0,438, calée pour que les bascules, comptées
+  éligibles (links 0,35 / (0,506 × 0,993) = 0,696 ; parkland 0,30 /
+  (0,384 × 0,976) = 0,800) ; sinon rond avec la probabilité
+  `round_given_plain` (0,463 et 0,433, calée pour que les bascules, comptées
   en allongés, ne fassent pas dériver la part des ronds), allongé sinon.
 - **Tailles (provisoires)** : `ρ` = diamètre du disque de même aire / largeur
   `width` du cœur, dans links 0,68–0,85, parkland 0,62–0,76, à mi-chemin
