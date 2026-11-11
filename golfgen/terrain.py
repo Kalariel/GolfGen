@@ -1,7 +1,9 @@
-"""Génération de terrain par Perlin noise (OpenSimplex), et son cache disque."""
+"""Génération de terrain par Perlin noise (OpenSimplex), son cache disque, et
+son encodage sans perte pour le JSON (``relief_f32_block``)."""
 
 from __future__ import annotations
 
+import base64
 from dataclasses import asdict
 import hashlib
 import json
@@ -9,6 +11,8 @@ import os
 from pathlib import Path
 import sys
 import uuid
+import zlib
+from typing import Any, Mapping
 
 import numpy as np
 import opensimplex
@@ -171,3 +175,64 @@ class TerrainGenerator:
         elev_range = self.tc.elevation_max - self.tc.elevation_min
         heightmap = (normalized * elev_range + self.tc.elevation_min).astype(np.float32)
         return heightmap
+
+
+RELIEF_F32_ENCODING = "zlib_base64_float32le_byteshuffle"
+"""Codage de ``terrain.elevation_f32`` : float32 petit-boutistes, octets
+regroupés par plan (byte shuffle), puis zlib, puis base64."""
+
+
+class ReliefExportError(ValueError):
+    """Relief non exportable sans perte (``relief_f32_block``) : le JSON ne
+    suffirait pas à l'habillage. Distincte des autres ``ValueError`` de
+    l'export (incohérences internes), que le pipeline laisse remonter."""
+
+
+def relief_f32_block(heightmap: np.ndarray) -> dict[str, Any]:
+    """Relief SANS PERTE (``terrain.elevation_f32``) : float32 petit-boutiste,
+    ligne par ligne (``y`` puis ``x``), octets regroupés par plan (« byte
+    shuffle » : les octets 0 des ``n`` valeurs, puis les octets 1, 2 et 3 ;
+    ≈ 30 % de moins après zlib que l'ordre naturel, les plans de poids fort
+    variant peu), compressé zlib puis base64. Entrée de
+    l'habillage (masque sec, eau, relief : ``golfgen.dressing.from_json``),
+    à côté du uint8 de ``golfgen.exporter.terrain_block`` gardé pour le
+    viewer. Un relief non représentable exactement en float32 (float64 hors
+    de la grille float32, NaN) lève ``ReliefExportError`` : le bloc ne
+    serait plus sans perte."""
+    relief = np.asarray(heightmap)
+    exact = relief.astype("<f4")
+    if not np.array_equal(exact, relief):
+        raise ReliefExportError("relief non représentable exactement en float32")
+    planes = np.ascontiguousarray(exact).reshape(-1).view(np.uint8).reshape(-1, 4).T
+    data = zlib.compress(np.ascontiguousarray(planes).tobytes())
+    return {"encoding": RELIEF_F32_ENCODING, "data": base64.b64encode(data).decode("ascii")}
+
+
+def relief_from_f32_block(block: dict[str, Any], width: int, height: int) -> np.ndarray:
+    """Inverse de ``relief_f32_block`` : tableau float32 ``(height, width)``,
+    plans d'octets remis en place, identique au bit près au relief exporté.
+    Bloc qui n'est pas un objet, encodage inconnu, données illisibles, flux
+    zlib incomplet ou suivi de données, ou taille incohérente :
+    ``ValueError``. La décompression est bornée à ``4·width·height + 1``
+    octets : un bloc trop gros est refusé sans être décompressé en entier."""
+    if not isinstance(block, Mapping):
+        raise ValueError("bloc de relief float32 : objet attendu")
+    if block.get("encoding") != RELIEF_F32_ENCODING:
+        raise ValueError(f"encodage de relief inconnu : {block.get('encoding')!r} "
+                         f"(attendu : {RELIEF_F32_ENCODING})")
+    expected = 4 * width * height
+    try:
+        stream = zlib.decompressobj()
+        raw = stream.decompress(base64.b64decode(block["data"], validate=True), expected + 1)
+    except zlib.error as exc:
+        raise ValueError(f"relief float32 illisible : {exc}") from None
+    if len(raw) > expected or stream.unconsumed_tail:
+        raise ValueError(f"relief float32 de plus de {expected} octets "
+                         f"({width}×{height} float32)")
+    if not stream.eof or stream.unused_data:
+        raise ValueError("relief float32 illisible : flux zlib incomplet ou suivi de données")
+    if len(raw) != expected:
+        raise ValueError(f"relief de {len(raw)} octets, attendu {expected} "
+                         f"({width}×{height} float32)")
+    values = np.ascontiguousarray(np.frombuffer(raw, dtype=np.uint8).reshape(4, -1).T)
+    return values.view("<f4").astype(np.float32).reshape(height, width)

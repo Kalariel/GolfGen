@@ -2,17 +2,20 @@
 
 Générateur procédural de parcours de golf 18 trous pour Minecraft (1 bloc = 3 m).
 Un pipeline Python (`pipeline.py`) produit le relief et le routage des 18 trous
-avec le routeur « Muirfield », et les écrit dans un JSON au format 3.0
-(`docs/format-3.0.md`) ; un viewer HTML/JS l'affiche sur un canvas interactif.
+avec le routeur « Muirfield », les habille (fairways, formes de greens, 1 à 3 boîtes de départ par trou, bunkers, chemins, arbres), et les écrit
+dans un JSON au format 3.4 (`docs/format-3.0.md` ; 3.3 avec `--no-trees`, 3.2 avec `--no-paths`, 3.1 avec `--no-bunkers`) ; un viewer HTML/JS l'affiche sur un canvas interactif.
 
 ## Structure
 
 ```
-golfgen/ + pipeline.py          pipeline : terrain OpenSimplex, routage Muirfield, export JSON 3.0
+golfgen/ + pipeline.py          pipeline : terrain OpenSimplex, routage Muirfield, habillage, bunkers, chemins, arbres, export JSON 3.4
 golfgen/routing/                routeur « Muirfield » : model, geometry, partial_checks, sites, muirfield
+golfgen/dressing/               habillage post-routage (fairways, greens, départs), sans effet sur le tracé ;
+                                bunkers/ (clé bunkers), paths/ (chemins, clé paths) et trees/ (arbres, clé trees)
 viewer/                         viewer 3.x (servi en http, charge output/course.json)
 tools/muirfield/                runner de planches, rendu lisible, métriques de forme ; sorties dans output/
-docs/format-3.0.md              contrat du JSON 3.0 (champs, unités, repère)
+tools/dressing/                 rough_plate.py : planches rendues par le viewer (trous, seeds) ; sorties dans output/
+docs/format-3.0.md              contrat du JSON 3.0 et de ses extensions 3.1, 3.2, 3.3 et 3.4 (champs, unités, repère)
 docs/muirfield-spike.md         historique du spike Muirfield (chemins historiques)
 docs/calibration-tailles.md     calibration des tailles de terrain (R3, R3b) et pistes ouvertes
 tests/                          tests pytest (pipeline, cœur test_routing_*, outils test_tools_*)
@@ -30,17 +33,23 @@ abandonnés est récupérable via les tags git `archive/*`).
 python -m venv .venv
 .venv/bin/pip install -r requirements.txt
 
-# Parcours complet (relief + 18 trous) -> output/course.json, format 3.0
+# Parcours complet (relief + 18 trous + habillage + bunkers + chemins + arbres) -> output/course.json, format 3.4
 .venv/bin/python pipeline.py --seed 4
+.venv/bin/python pipeline.py --seed 4 --no-trees     # sans arbres : format 3.3
+.venv/bin/python pipeline.py --seed 4 --no-paths     # sans chemins ni arbres : format 3.2
+.venv/bin/python pipeline.py --seed 4 --no-bunkers   # sans bunkers, chemins ni arbres : format 3.1, ≈ 0,4 s
 
 # Tests
-.venv/bin/python -m pytest tests/ -v
+.venv/bin/python -m pytest tests/ -v                 # tests rapides (les « slow » sont exclus)
+.venv/bin/python -m pytest tests/ -v --run-slow      # tous les tests
 .venv/bin/python -m pytest tests/test_routing_*.py   # cœur Muirfield seul
 ```
 
 La seed 4 sert d'exemple car elle est rapide avec les options par défaut
-(400×300, patron `random`, tiré en `muirfield_inverse`) : ≈ 0,4 s avec le
-relief en cache, ≈ 6 s au premier lancement (calcul du relief). La seed par
+(400×300, patron `random`, tiré en `muirfield_inverse`) : ≈ 10 s avec le
+relief en cache, dont ≈ 7,4 s de bunkers, ≈ 0,2 s de chemins et ≈ 1,5 s
+d'arbres (≈ 0,4 s avec `--no-bunkers`), plus
+≈ 6 s au premier lancement (calcul du relief). La seed par
 défaut de la config (42) marche aussi mais prend ≈ 19 s de routage.
 
 ### Options de `pipeline.py`
@@ -51,6 +60,24 @@ défaut de la config (42) marche aussi mais prend ≈ 19 s de routage.
   config (42). Même seed, mêmes options : même parcours.
 - `--pattern {muirfield,muirfield_inverse,random}` : patron du parcours
   (défaut `random`, tirage déterministe par seed).
+- `--style {links,parkland}` : style d'habillage (défaut `links`) ; ne change
+  jamais le tracé, seulement les formes (greens, fairways).
+- `--no-bunkers` : saute l'étape des bunkers (actifs par défaut) et donc celles
+  des chemins et des arbres (versions en escalier) ; le JSON est alors le 3.1,
+  sans clés `bunkers`, `paths` ni `trees`.
+- `--no-paths` : saute l'étape des chemins (actifs par défaut) et donc celle des
+  arbres ; le JSON est alors le 3.2 d'avant (identique hors `metadata.generator`
+  et `stats.elapsed_seconds`), sans clés `paths` ni `trees`.
+- `--no-trees` : saute l'étape des arbres (actifs par défaut) ; le JSON est
+  alors le 3.3 d'avant (identique hors `metadata.generator` et
+  `stats.elapsed_seconds`), sans clé `trees`.
+- `--tree-margin M` (0 à 12, défaut 5) : marge en blocs du corridor de lisière
+  et de remplissage ; ni les arbres stratégiques ni les ancrages n'en dépendent.
+  Refusée avec `--no-trees`, `--no-paths` ou `--no-bunkers`.
+- `--trees-debug` : ajoute compteurs et bosquets dans `trees.debug` ; refusé
+  avec `--no-trees`, `--no-paths` ou `--no-bunkers`.
+- `--paths-debug` : ajoute le détail des chemins par liaison (tracé, statut,
+  pont, cases) dans `paths.debug` ; refusé avec `--no-paths` ou `--no-bunkers`.
 - `--orientation {landscape,portrait}` : `landscape` = largeur sur le grand
   côté (défaut), `portrait` = l'inverse.
 - `--short N` (300 à 350, défaut 300) et `--long N` (400 à 500, défaut 400) :
@@ -60,11 +87,20 @@ défaut de la config (42) marche aussi mais prend ≈ 19 s de routage.
   (défaut `default_config.json` s'il existe dans le répertoire courant ; une
   section `routing` d'une ancienne config est ignorée, avec un avertissement).
 
-Le pipeline fait toujours le relief puis le parcours, et écrit le JSON 3.0.
+Le pipeline fait toujours le relief, le parcours puis l'habillage, puis les
+bunkers (sauf `--no-bunkers`), les chemins (sauf `--no-paths` ou
+`--no-bunkers`) et les arbres (sauf `--no-trees`, `--no-paths` ou
+`--no-bunkers`), et écrit le JSON 3.4 (3.3 sans arbres, 3.2 sans chemins, 3.1
+sans bunkers).
+Les bunkers non posés ne sont signalés que dans la console.
 
 Codes de sortie : `0` succès ; `2` paramètre invalide (rien n'est calculé) ;
 `3` aucun parcours valide pour cette seed, ce patron et cette taille (rien
-n'est écrit, essayer une autre seed).
+n'est écrit, essayer une autre seed) ; même code pour un tracé des chemins
+impossible (`PathError` : une liaison sans route ou coupée, un bogue par
+construction, signalé comme tel ; `--no-paths` pour s'en passer) ou pour un
+invariant cassé dans la pose des arbres (`TreeError` : un bogue, signalé comme
+tel ; `--no-trees` pour s'en passer).
 
 ### Viewer
 
@@ -80,11 +116,21 @@ Il charge `output/course.json` au démarrage ; un autre fichier se charge par
 le bouton « Choisir un JSON... » ou par l'URL
 `http://localhost:8000/viewer/?json=../chemin/vers/parcours.json`. Il n'accepte
 que le format 3.x (`metadata.version`) et affiche un message clair pour tout
-autre fichier. Affichage : relief, couloir de chaque trou (axe
-tee → doglegs → green, largeur totale du fairway) coloré par par, numéro,
-sens de jeu, tee, green, liaisons, clubhouse ; panneau seed, patron, taille,
-sens des nines, stats par nine et tableaux des trous ; survol d'un trou :
-numéro, nine, par, longueur et largeur (blocs et mètres).
+autre fichier.
+
+Affichage : relief, rough (surface par défaut de toute la terre ferme),
+fairways, greens et boîtes de départ habillés, bunkers (3.2), chemins en
+cases (3.3 : terre battue, ponts en bois, parvis plus foncé ; boutons
+« Chemins » et, masqués par défaut, « Ancrages » pour les repères des
+virages), arbres en cercles de rayon réel (3.4 : bouton « Arbres » présent
+seulement avec la clé `trees`, une couleur par couche avec « Debug »), numéro, tee, green, clubhouse, liaisons (tirets, masquées quand le
+fichier a des chemins ; bouton « Liaisons »). Panneau : seed, patron, taille,
+sens des nines, stats par nine, tableaux des trous. Survol d'un trou : numéro,
+nine, par, longueur et largeur (blocs et mètres), aire du green, départs,
+morceaux et aire du fairway. Option « Debug » : couloir de chaque trou (axe
+tee → doglegs → green, largeur totale du fairway) coloré par par, axe, sens de
+jeu, contour de la bande de jeu (cœur + marge de rough). Un fichier sans
+`features.fairway` (3.0, 3.1 d'avant le R5) s'affiche en couloirs.
 
 ## Routeur Muirfield
 
@@ -117,7 +163,13 @@ Options : `--round` (rc, rc-30, land, land-30, custom), `--pattern`,
 
 ## État et prochaines étapes
 
-- Chaîne unique : seed → relief → routeur Muirfield → JSON 3.0 → viewer.
+- Chaîne unique : seed → relief → routeur Muirfield → habillage → bunkers → chemins → arbres → JSON 3.4 → viewer
+  (le viewer affiche les chemins de la clé `paths`, détectée par présence).
+- Fairways (habillage) : B v1 avec col, profil en long (carry, avant-green), style
+  `links`/`parkland`, coupés au-dessus de l'eau (bande de 2 blocs, fragments < 5 b²
+  retirés, plusieurs morceaux possibles), exportés dans `features.fairway` ; le rough est
+  la surface par défaut (rien n'est exporté pour lui).
 - Défaut de forme connu : tracé en « hélice » sur certaines seeds.
 - Planifié : largeur de fairway variable à l'intérieur d'un trou.
-- Étapes du pipeline encore à créer : obstacles, végétation, ponts/ruisseaux.
+- Étape du pipeline encore à créer : ruisseaux (bunkers, arbres et ponts des
+  chemins sont livrés).

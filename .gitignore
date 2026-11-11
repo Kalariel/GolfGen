@@ -22,3 +22,6 @@ tools/muirfield/output/*/seed_*.svg
 
 # permissions locales de Claude Code (propres a chaque poste)
 .claude/settings.local.json
+
+# sorties de tools/dressing (planches de rough_plate.py, non versionnées)
+tools/dressing/output/

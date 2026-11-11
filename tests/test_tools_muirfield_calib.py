@@ -266,3 +266,23 @@ def test_run_calib_refuses_width_mode_of_another_phase(flat_output):
         rm.run_calib([CalibSize(300, 400, "portrait", 300, 400)], patterns=("muirfield",),
                      seeds=(1,), width_mode="min")
     assert not (flat_output / rm.CALIB_DIR).exists()
+
+
+def test_wet_doglegs_lists_doglegs_on_wet_cells_with_dry_mask():
+    from types import SimpleNamespace
+
+    from golfgen.routing.model import ControlPoint, ElasticHole
+    from golfgen.routing.sites import WATER_LEVEL, DryMask, dry_mask
+
+    heightmap = np.full((60, 80), 100.0)
+    heightmap[30, 40] = WATER_LEVEL - 5.0          # mouille x 38–42, y 28–32
+    holes = (
+        ElasticHole(order=3, par=4, tee=ControlPoint(5.0, 5.0), green=ControlPoint(70.0, 50.0),
+                    doglegs=(ControlPoint(40.5, 29.25),)),
+        ElasticHole(order=4, par=4, tee=ControlPoint(5.0, 50.0), green=ControlPoint(70.0, 5.0),
+                    doglegs=(ControlPoint(37.9, 30.0),)),
+        ElasticHole(order=5, par=3, tee=ControlPoint(5.0, 30.0), green=ControlPoint(40.0, 30.0)),
+    )
+    layout = SimpleNamespace(holes=holes)
+    assert rm.wet_doglegs(layout, dry_mask(heightmap)) == [{"hole": 3, "x": 40.5, "y": 29.25}]
+    assert rm.wet_doglegs(layout, DryMask.all_dry(80, 60)) == []

@@ -333,6 +333,21 @@ body {
 .legend .swatch.par4 { background: #56d364; }
 .legend .swatch.par5 { background: #f2cc60; }
 .legend .swatch.water { background: #1d4f73; }
+.legend .swatch.rough { background: #557f3e; }
+.legend .swatch.fairway { background: #7fb85e; outline: 1px solid #2f5124; }
+.legend .swatch.band { background: transparent; outline: 1px dashed #f0f6fc; }
+.legend .swatch.greenshape { background: #9be58f; outline: 1px solid #2b7a34; }
+.legend .swatch.teeshape { background: #d2a8ff; outline: 1px solid #0d1117; }
+.legend .swatch.sand { background: #e8d9a8; outline: 1px solid #a68c50; }
+.legend .swatch.path { background: #c9a46a; outline: 1px solid #5c4022; }
+.legend .swatch.bridge { background: #8b5a2b; outline: 1px solid #5c4022; }
+.legend .swatch.plaza { background: #b08a55; outline: 1px solid #5c4022; }
+.legend .swatch.tree { background: #10481c; outline: 1px solid #06230c; }
+.legend .swatch.tree-retombee { background: #f08a1a; outline: 1px solid #06230c; }
+.legend .swatch.tree-green { background: #d61fb0; outline: 1px solid #06230c; }
+.legend .swatch.tree-ancrage { background: #20c4e8; outline: 1px solid #06230c; }
+.legend .swatch.tree-lisiere { background: #7b5cff; outline: 1px solid #06230c; }
+.legend .swatch.tree-remplissage { background: #1f7a3a; outline: 1px solid #06230c; }
 
 .legend .sym {
   display: inline-block;
@@ -375,6 +390,16 @@ body {
   width: 16px;
   border-top: 1.5px dashed #e6edf3;
   vertical-align: middle;
+}
+
+.legend .sym.anchor::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #14420f;
+  border: 1px solid #f0f6fc;
 }
 
 .legend .sym.arrow {

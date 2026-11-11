@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Capture du viewer (planche du rough, R5b)</title>
+<!--
+  Page de capture de tools/dressing/rough_plate.py.
+  Charge viewer/viewer.js tel quel dans un canvas plein cadre (aucune barre
+  latérale), puis pose la caméra donnée par ?vue=zoom,panX,panY (pixels par
+  bloc, décalage en pixels) une fois le JSON chargé, et active l'option Debug
+  avec ?debug=1. Le viewer lit lui-même ?json=. Grille masquée ; les autres
+  couches sont celles du viewer par défaut : chemins (clé paths, 3.3)
+  affichés, ancrages masqués, liaisons droites masquées s'il y a des
+  chemins ; ?ancrages=1 affiche les ancrages des virages ; arbres (clé trees,
+  3.4) masqués, pour que les planches du rough ne changent pas, ?arbres=1 les
+  affiche.
+-->
+<style>
+  html, body { margin: 0; padding: 0; overflow: hidden; background: #1a2410; }
+  .canvas-wrapper { position: fixed; inset: 0; }
+  canvas { display: block; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<div class="canvas-wrapper"><canvas id="map"></canvas></div>
+<div class="hidden">
+  <div id="tooltip"></div><div id="coords"></div>
+  <input type="file" id="file-input"><div id="filename"></div>
+  <span id="stat-seed"></span><span id="stat-size"></span><span id="stat-pattern"></span>
+  <span id="stat-course"></span><span id="stat-format"></span>
+  <div id="course-info"></div><div id="hole-list"></div><span id="zoom-level"></span>
+</div>
+<script src="/viewer/viewer.js"></script>
+<script>
+  (function () {
+    const vue = (new URLSearchParams(window.location.search).get('vue') || '')
+      .split(',').map(Number);
+    const timer = setInterval(() => {
+      if (!courseData) return;
+      clearInterval(timer);
+      show.grid = false;
+      show.debug = new URLSearchParams(window.location.search).get('debug') === '1';
+      setLayer('anchors', new URLSearchParams(window.location.search).get('ancrages') === '1');
+      setLayer('trees', new URLSearchParams(window.location.search).get('arbres') === '1');
+      if (vue.length === 3 && vue.every(Number.isFinite)) {
+        [camZoom, camPanX, camPanY] = vue;
+      }
+      draw();
+      document.title = 'pret';
+    }, 20);
+  })();
+</script>
+</body>
+</html>

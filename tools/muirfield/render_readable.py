@@ -68,7 +68,14 @@ def render_readable_svg(layout: CourseLayout, violations: Sequence[Violation] = 
                         heightmap: np.ndarray | None = None,
                         water_level: float | None = None,
                         rings: Sequence[Sequence[Point]] = (),
+                        overlays: Sequence[tuple[Sequence[Point], str]] = (),
+                        green_disks: bool = True,
                         title: str = "", subtitle: str = "") -> str:
+    """SVG lisible du layout. ``overlays`` : polygones ``(points en blocs,
+    couleur)`` dessinés en surimpression translucide au-dessus des bandes et
+    des liaisons, sous les tees et les greens (vide par défaut : rendu
+    inchangé). ``green_disks=False`` remplace le disque du green par un point
+    au pied du drapeau (pour laisser voir des greens dessinés en overlay)."""
     size, padding, footer = 800, 24, 88
     scale = (size - 2 * padding) / max(layout.width, layout.height)
     # hauteur de la zone carte : ``size`` en portrait et au carré (rendu
@@ -140,6 +147,10 @@ def render_readable_svg(layout: CourseLayout, violations: Sequence[Violation] = 
                    f'fill="none" stroke="{stroke}" stroke-opacity="{0.95 if bad else 0.7}" '
                    f'stroke-width="{2.2 if bad else 1.4}" stroke-dasharray="4 4"/>')
 
+    for polygon, color in overlays:
+        out.append(f'<polygon points="{fmt(polygon)}" fill="{color}" fill-opacity="0.35" '
+                   f'stroke="{color}" stroke-width="2"/>')
+
     for hole in layout.holes:
         color = PAR_COLORS[hole.par]
         tee, green = (hole.tee.x, hole.tee.y), (hole.green.x, hole.green.y)
@@ -147,8 +158,11 @@ def render_readable_svg(layout: CourseLayout, violations: Sequence[Violation] = 
         g = pt(green)
         out.append(f'<rect x="{t[0] - 4:.1f}" y="{t[1] - 4:.1f}" width="8" height="8" fill="#f0f6fc" '
                    'stroke="#0d1117" stroke-width="1"/>')
-        out.append(f'<circle cx="{g[0]:.1f}" cy="{g[1]:.1f}" r="{4.5 * scale:.1f}" fill="#3dbd4e" '
-                   'stroke="#f0f6fc" stroke-width="1.5"/>')
+        if green_disks:
+            out.append(f'<circle cx="{g[0]:.1f}" cy="{g[1]:.1f}" r="{4.5 * scale:.1f}" '
+                       'fill="#3dbd4e" stroke="#f0f6fc" stroke-width="1.5"/>')
+        else:
+            out.append(f'<circle cx="{g[0]:.1f}" cy="{g[1]:.1f}" r="1.6" fill="#0d1117"/>')
         out.append(f'<line x1="{g[0]:.1f}" y1="{g[1]:.1f}" x2="{g[0]:.1f}" y2="{g[1] - 13:.1f}" '
                    'stroke="#f0f6fc" stroke-width="1.2"/>')
         out.append(f'<polygon points="{g[0]:.1f},{g[1] - 13:.1f} {g[0] + 7:.1f},{g[1] - 10.5:.1f} '
@@ -173,13 +187,14 @@ def render_readable_svg(layout: CourseLayout, violations: Sequence[Violation] = 
     for violation in violations:
         counts[violation.kind] = counts.get(violation.kind, 0) + 1
     summary = ", ".join(f"{kind}:{count}" for kind, count in counts.items()) or "aucune"
+    green_legend = "● green" if green_disks else "▱ green habillé · • drapeau"
     out.extend([
         f'<text x="{padding}" y="{top + 18}" font-size="14">{escape(title)}</text>',
         f'<text x="{padding}" y="{top + 38}" font-size="11">{escape(subtitle)}</text>',
         (f'<text x="{padding}" y="{top + 56}" font-size="11">violations {len(violations)} · '
          f'{escape(summary)}</text>'),
         (f'<text x="{padding}" y="{top + 76}" font-size="11">bleu=par3 · vert=par4 · jaune=par5 · '
-         '□ tee · ● green · pointillés = liaisons · rose = violation</text>'),
+         f'□ tee · {green_legend} · pointillés = liaisons · rose = violation</text>'),
         "</svg>",
     ])
     return "\n".join(out) + "\n"

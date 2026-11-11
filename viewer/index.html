@@ -32,9 +32,22 @@
     <div class="layer-toggles">
       <button id="btn-terrain" class="active" onclick="toggle('terrain')">Relief</button>
       <button id="btn-holes" class="active" onclick="toggle('holes')">Trous</button>
-      <button id="btn-links" class="active" onclick="toggle('links')">Liaisons</button>
+      <button id="btn-links" class="active" onclick="toggle('links')"
+              title="Liaisons droites à pied (masquées par défaut quand le fichier a des chemins)">Liaisons</button>
       <button id="btn-grid" class="active" onclick="toggle('grid')">Grille</button>
-      <button id="btn-nums" class="active" onclick="toggle('nums')">Numeros</button>
+      <button id="btn-nums" class="active" onclick="toggle('nums')">Numéros</button>
+      <button id="btn-dressing" class="active" onclick="toggle('dressing')"
+              title="Formes des greens, greens doubles et boîtes de départ (format 3.1)">Habillage</button>
+      <button id="btn-bunkers" class="active" onclick="toggle('bunkers')"
+              title="Sable des bunkers (format 3.2)">Bunkers</button>
+      <button id="btn-paths" class="active" onclick="toggle('paths')"
+              title="Chemins, ponts et parvis du clubhouse (format 3.3)">Chemins</button>
+      <button id="btn-anchors" onclick="toggle('anchors')"
+              title="Ancrages des virages des chemins (format 3.3)">Ancrages</button>
+      <button id="btn-trees" class="active" style="display: none" onclick="toggle('trees')"
+              title="Arbres (format 3.4), une couleur par couche avec Debug">Arbres</button>
+      <button id="btn-debug" onclick="toggle('debug')"
+              title="Couloirs, axes, sens de jeu et bande de jeu (cœur + marge de rough)">Debug</button>
     </div>
 
     <h2>ZOOM</h2>
@@ -53,9 +66,25 @@
       <div><span class="swatch par5"></span>Par 5</div>
       <div><span class="sym tee"></span>Tee</div>
       <div><span class="sym green"></span>Green (drapeau)</div>
+      <div><span class="swatch rough"></span>Rough (3.1)</div>
+      <div><span class="swatch fairway"></span>Fairway (3.1)</div>
+      <div><span class="swatch greenshape"></span>Green habille (3.1)</div>
+      <div><span class="swatch teeshape"></span>Departs (3.1)</div>
+      <div><span class="swatch sand"></span>Bunkers (3.2)</div>
+      <div><span class="swatch path"></span>Chemins (3.3)</div>
+      <div><span class="swatch bridge"></span>Ponts (3.3)</div>
+      <div><span class="swatch plaza"></span>Parvis (3.3)</div>
+      <div><span class="sym anchor"></span>Ancrage de virage (3.3)</div>
+      <div><span class="swatch tree"></span>Arbres (3.4)</div>
+      <div><span class="swatch tree-retombee"></span>Arbres de retombée (debug)</div>
+      <div><span class="swatch tree-green"></span>Arbres de green (debug)</div>
+      <div><span class="swatch tree-ancrage"></span>Arbres d'ancrage (debug)</div>
+      <div><span class="swatch tree-lisiere"></span>Lisière (debug)</div>
+      <div><span class="swatch tree-remplissage"></span>Remplissage (debug)</div>
       <div><span class="sym club"></span>Clubhouse</div>
-      <div><span class="sym link"></span>Liaison a pied</div>
+      <div><span class="sym link"></span>Liaison à pied</div>
       <div><span class="sym arrow">&#9654;</span>Sens de jeu</div>
+      <div><span class="swatch band"></span>Bande de jeu (debug)</div>
       <div><span class="swatch water"></span>Eau</div>
     </div>
 

@@ -4,10 +4,12 @@
 liaisons, et répond à une seule question : *ce trou candidat, avec sa ou ses
 liaisons, introduit-il une violation finale ?* Les familles contrôlées sont
 celles de ``geometry.validate`` qui dépendent d'un trou et de ses voisins
-déjà posés : longueur/largeur, bords, clubhouse dégagé, croisement d'axes,
-écart fairway (avec TOUS les trous posés), liaison hors plage, liaison
-bloquée (dans les deux sens : nouvelle liaison vs fairways posés, liaisons
-posées vs nouveau fairway) et pile parallèle consécutive.
+déjà posés : longueur/largeur, bords, coude de dogleg dans l'eau (même
+``DryMask`` que ``validate``, partagé par ``build_course``), clubhouse
+dégagé, croisement d'axes, écart fairway (avec TOUS les trous posés),
+liaison hors plage, liaison bloquée (dans les deux sens : nouvelle liaison
+vs fairways posés, liaisons posées vs nouveau fairway) et pile parallèle
+consécutive.
 
 Les prédicats sont ceux de l'oracle (mêmes fonctions, mêmes epsilons) : un
 layout construit uniquement à partir de candidats acceptés ne peut donc pas
@@ -30,14 +32,15 @@ from golfgen.routing.geometry import (
     HoleGeometry,
     ValidationRules,
     _consecutive_parallel_series,
-    _point_polygon_distance,
-    _segment_crosses_polygon,
     _segments,
     build_hole_geometry,
+    point_polygon_distance,
     polygon_gap,
+    segment_crosses_polygon,
     segments_intersect,
 )
 from golfgen.routing.model import PAR_SPECS, ElasticHole
+from golfgen.routing.sites import DryMask
 
 
 Point = tuple[float, float]
@@ -81,10 +84,17 @@ class PartialLayout:
 
     rules: ValidationRules
     clubhouse: Point
+    # masque sec du relief : nommé, obligatoire, sans défaut (un oubli lève)
+    dry: DryMask = field(kw_only=True)
     holes: list[_Placed] = field(default_factory=list)
     links: list[tuple[PlannedLink, BBox]] = field(default_factory=list)
     _stack: list[tuple[int, int]] = field(default_factory=list)
     checks: int = 0
+
+    def __post_init__(self) -> None:
+        # même contrôle que ``validate`` : ``is_dry`` borne les indices, un
+        # masque d'une autre taille passerait sinon en silence
+        self.dry.require_size(self.rules.width, self.rules.height)
 
     def nine_holes(self, start_order: int) -> list[ElasticHole]:
         return [p.hole for p in self.holes if start_order <= p.hole.order < start_order + 9]
@@ -114,8 +124,10 @@ class PartialLayout:
                or p[1] < rules.edge_min - EPSILON or p[1] > rules.height - rules.edge_min + EPSILON
                for p in core):
             return "bounds"
+        if hole.doglegs and not self.dry.is_dry([(p.x, p.y) for p in hole.doglegs]).all():
+            return "dogleg_water"
         if (rules.clubhouse_clear_radius is not None
-                and _point_polygon_distance(self.clubhouse, core)
+                and point_polygon_distance(self.clubhouse, core)
                 < rules.clubhouse_clear_radius - EPSILON):
             return "clubhouse_clear"
 
@@ -138,12 +150,12 @@ class PartialLayout:
                 for placed in self.holes:
                     if placed.hole.order in link.owners or _bbox_apart(link_box, placed.core_box, 1.0):
                         continue
-                    if _segment_crosses_polygon(link.start, link.end, placed.geometry.core):
+                    if segment_crosses_polygon(link.start, link.end, placed.geometry.core):
                         return "link_blocked"
             for link, link_box in self.links:
                 if hole.order in link.owners or _bbox_apart(link_box, box, 1.0):
                     continue
-                if _segment_crosses_polygon(link.start, link.end, core):
+                if segment_crosses_polygon(link.start, link.end, core):
                     return "link_blocked"
 
         if rules.max_parallel_stack is not None:

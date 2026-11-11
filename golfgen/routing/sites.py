@@ -4,7 +4,9 @@ Un *site* est un point du terrain jugé apte à recevoir un green (planéité +
 proéminence modérée) ou un tee (planéité seule). Les sites sont obtenus en
 trois temps :
 
-1. grille fine (pas ``GRID_STEP``) décalée d'un bruit seedé, eau exclue ;
+1. grille fine (pas ``GRID_STEP``) décalée d'un bruit seedé, eau exclue
+   (``DryMask``, seule définition du « sec » du routeur, déduite du masque
+   d'eau brut ``WaterMask``) ;
 2. score de relief normalisé dans [0, 1] — ou score aléatoire seedé si le
    relief est trop plat pour départager les candidats ;
 3. amincissement glouton par score décroissant : un candidat n'est retenu que
@@ -21,12 +23,14 @@ from dataclasses import dataclass
 import math
 
 import numpy as np
+import numpy.typing as npt
 
 from golfgen.config import CourseConfig, TerrainConfig
 from golfgen.terrain import load_or_generate
 
 
 WATER_LEVEL = 60.0             # sous ce niveau : eau (~1 % de la carte, seeds 1–3)
+DRY_RADIUS = 2                 # cellules : le sec du routeur est à DRY_RADIUS de toute eau (boîte)
 GRID_STEP = 3.0                # pas de la grille fine de candidats
 GRID_JITTER = 1.2              # amplitude du bruit seedé sur la grille
 EDGE_MARGIN = 12.0             # un site reste à distance du bord (cœur dans la carte)
@@ -56,6 +60,142 @@ class Sites:
         return len(self.points)
 
 
+def grid_indices(points: np.ndarray, width: int, height: int) -> tuple[np.ndarray, np.ndarray]:
+    """Cellules ``(ix, iy)`` du relief sous ``points`` (colonnes x, y) :
+    coordonnées tronquées vers zéro puis bornées à la carte."""
+    ix = np.clip(points[:, 0].astype(int), 0, width - 1)
+    iy = np.clip(points[:, 1].astype(int), 0, height - 1)
+    return ix, iy
+
+
+@dataclass(frozen=True, slots=True, eq=False)
+class WaterMask:
+    """Cellules d'eau du relief, à la vraie berge : relief < ``WATER_LEVEL``
+    (plus exactement « non ≥ », une cellule NaN compte comme eau, comme dans
+    l'ancien critère sec), SANS élargissement.
+
+    Seule source du critère d'eau : ``DryMask.from_water`` en déduit le sec
+    du routeur (élargi de ``DRY_RADIUS``), l'habillage
+    (``golfgen.dressing.water``) le lit tel quel pour garder greens, départs
+    et greens doubles sur la terre ferme. La cellule ``(ix, iy)`` couvre le
+    carré ``[ix, ix + 1] × [iy, iy + 1]`` (indexation de ``grid_indices``).
+
+    ``eq=False`` : comme ``DryMask``. Le tableau est une copie en lecture
+    seule."""
+
+    water: np.ndarray          # (h, w) bool, indexé [y, x]
+
+    def __post_init__(self) -> None:
+        water = np.array(self.water, dtype=bool)
+        water.setflags(write=False)
+        object.__setattr__(self, "water", water)
+
+    @property
+    def width(self) -> int:
+        return int(self.water.shape[1])
+
+    @property
+    def height(self) -> int:
+        return int(self.water.shape[0])
+
+    def require_size(self, width: float, height: float) -> None:
+        """Lève ``ValueError`` si le masque n'a pas la taille de la carte
+        ``width × height``."""
+        expected = (int(height), int(width))
+        if tuple(self.water.shape) != expected:
+            raise ValueError(f"masque d'eau {tuple(self.water.shape)}, carte attendue "
+                             f"{expected[0]}×{expected[1]}")
+
+    def cells_near(self, x0: float, y0: float, x1: float, y1: float) -> np.ndarray:
+        """Cellules d'eau ``(k, 2)`` (colonnes ix, iy) dont le carré rencontre
+        le rectangle fermé ``[x0, x1] × [y0, y1]`` (bornées à la carte)."""
+        lo_x = max(int(math.floor(x0)) - 1, 0)
+        lo_y = max(int(math.floor(y0)) - 1, 0)
+        hi_x = min(int(math.floor(x1)) + 1, self.width - 1)
+        hi_y = min(int(math.floor(y1)) + 1, self.height - 1)
+        if lo_x > hi_x or lo_y > hi_y:
+            return np.zeros((0, 2), dtype=np.int64)
+        iy, ix = np.nonzero(self.water[lo_y:hi_y + 1, lo_x:hi_x + 1])
+        cells = np.column_stack((ix + lo_x, iy + lo_y)).astype(np.int64)
+        keep = ((cells[:, 0] + 1 >= x0) & (cells[:, 0] <= x1)
+                & (cells[:, 1] + 1 >= y0) & (cells[:, 1] <= y1))
+        return cells[keep]
+
+    @classmethod
+    def none(cls, width: int, height: int) -> WaterMask:
+        """Masque sans eau (tests)."""
+        return cls(water=np.zeros((int(height), int(width)), dtype=bool))
+
+
+def water_mask(heightmap: np.ndarray) -> WaterMask:
+    """``WaterMask`` du relief ``heightmap`` (indexé ``[y, x]``)."""
+    return WaterMask(water=~(heightmap.astype(np.float64) >= WATER_LEVEL))
+
+
+@dataclass(frozen=True, slots=True, eq=False)
+class DryMask:
+    """Cellules « sèches » du relief : aucune cellule d'eau (``WaterMask``)
+    dans la boîte de rayon ``DRY_RADIUS`` autour de la cellule (bornée à la
+    carte), c'est-à-dire minimum du relief dans la boîte ≥ ``WATER_LEVEL``.
+
+    Seule source de vérité du critère sec : les sites de tee et de green
+    (``build_sites``), les coudes de dogleg (pré-filtre, ``PartialLayout``,
+    ``validate``) et le décompte des coudes mouillés du runner l'utilisent.
+    Il est déduit du masque d'eau brut (``from_water``), lui-même seule
+    source du critère d'eau.
+
+    ``eq=False`` : l'égalité générée comparerait des ``ndarray`` (ambiguë) ;
+    l'identité suffit. Le tableau est une copie en lecture seule.
+    """
+
+    dry: np.ndarray            # (h, w) bool, indexé [y, x]
+
+    def __post_init__(self) -> None:
+        dry = np.array(self.dry, dtype=bool)
+        dry.setflags(write=False)
+        object.__setattr__(self, "dry", dry)
+
+    @property
+    def width(self) -> int:
+        return int(self.dry.shape[1])
+
+    @property
+    def height(self) -> int:
+        return int(self.dry.shape[0])
+
+    def require_size(self, width: float, height: float) -> None:
+        """Lève ``ValueError`` si le masque n'a pas la taille de la carte
+        ``width × height`` (``is_dry`` borne les indices : un masque d'une
+        autre taille passerait sinon en silence)."""
+        expected = (int(height), int(width))
+        if tuple(self.dry.shape) != expected:
+            raise ValueError(f"masque sec {tuple(self.dry.shape)}, carte attendue "
+                             f"{expected[0]}×{expected[1]}")
+
+    def is_dry(self, points: npt.ArrayLike) -> np.ndarray:
+        """``(n,)`` bool : chaque point ``(x, y)`` tombe-t-il sur une cellule
+        sèche ? Même indexation (tronquée, bornée) que les sites."""
+        points = np.asarray(points, dtype=np.float64).reshape(-1, 2)
+        ix, iy = grid_indices(points, self.width, self.height)
+        return self.dry[iy, ix]
+
+    @classmethod
+    def from_water(cls, water: WaterMask) -> DryMask:
+        """Sec du routeur : ``water`` élargi de ``DRY_RADIUS`` (boîte), complété."""
+        return cls(dry=~_box_any(water.water, DRY_RADIUS))
+
+    @classmethod
+    def all_dry(cls, width: int, height: int) -> DryMask:
+        """Masque entièrement sec (tests)."""
+        return cls(dry=np.ones((int(height), int(width)), dtype=bool))
+
+
+def dry_mask(heightmap: np.ndarray) -> DryMask:
+    """``DryMask`` du relief ``heightmap`` (indexé ``[y, x]``), déduit de
+    ``water_mask(heightmap)``."""
+    return DryMask.from_water(water_mask(heightmap))
+
+
 def load_terrain(seed: int, width: int = 400, height: int = 400,
                  terrain: TerrainConfig | None = None) -> np.ndarray:
     """Relief de la seed pour la ``TerrainConfig`` donnée (défaut : ``TerrainConfig()``).
@@ -76,13 +216,15 @@ def _box_mean(values: np.ndarray, radius: int) -> np.ndarray:
     return total / (size * size)
 
 
-def _box_min(values: np.ndarray, radius: int) -> np.ndarray:
+def _box_any(values: np.ndarray, radius: int) -> np.ndarray:
+    """OU glissant (2r+1)² d'un masque booléen, bords répliqués (boîte bornée
+    à la carte) : élargissement du masque d'eau en ``DryMask``."""
     padded = np.pad(values, radius, mode="edge")
     h, w = values.shape
-    result = np.full(values.shape, np.inf)
+    result = np.zeros(values.shape, dtype=bool)
     for dy in range(2 * radius + 1):
         for dx in range(2 * radius + 1):
-            result = np.minimum(result, padded[dy:dy + h, dx:dx + w])
+            result |= padded[dy:dy + h, dx:dx + w]
     return result
 
 
@@ -132,21 +274,27 @@ def _normalize(values: np.ndarray) -> np.ndarray:
     return (values - low) / (high - low)
 
 
-def build_sites(heightmap: np.ndarray, seed: int, kind: str) -> Sites:
-    """Sites ``kind`` (``"green"`` ou ``"tee"``) pour ce relief et cette seed."""
+def build_sites(heightmap: np.ndarray, seed: int, kind: str,
+                mask: DryMask | None = None) -> Sites:
+    """Sites ``kind`` (``"green"`` ou ``"tee"``) pour ce relief et cette seed.
+
+    ``mask`` : ``dry_mask(heightmap)`` déjà calculé (partagé par l'appelant),
+    recalculé s'il est absent."""
     if kind not in ("green", "tee"):
         raise ValueError("kind doit valoir 'green' ou 'tee'")
+    if mask is None:
+        mask = dry_mask(heightmap)
+    elif mask.dry.shape != heightmap.shape:
+        raise ValueError(f"masque sec {mask.dry.shape}, relief {heightmap.shape}")
     rng = np.random.default_rng([seed, 0 if kind == "green" else 1])
     heightmap = heightmap.astype(np.float64)
     gy, gx = np.gradient(heightmap)
     slope = _box_mean(np.hypot(gx, gy), PLANARITY_RADIUS)
     prominence = heightmap - _box_mean(heightmap, PROMINENCE_RADIUS)
-    dry = _box_min(heightmap, 2) >= WATER_LEVEL
 
     points = _candidate_grid(heightmap, rng)
-    ix = np.clip(points[:, 0].astype(int), 0, heightmap.shape[1] - 1)
-    iy = np.clip(points[:, 1].astype(int), 0, heightmap.shape[0] - 1)
-    keep = dry[iy, ix]
+    ix, iy = grid_indices(points, mask.width, mask.height)
+    keep = mask.dry[iy, ix]
     points, ix, iy = points[keep], ix[keep], iy[keep]
 
     local_slope = slope[iy, ix]
